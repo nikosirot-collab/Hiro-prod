@@ -597,20 +597,40 @@ async function _fbGet(docId) {
   try {
     const url = `${_API}/${docId}?key=${_KEY}`;
     const res = await fetch(url);
-    if (!res.ok) return {};
+    if (!res.ok) return null; // null = document n'existe pas
     const json = await res.json();
     return _fromFirestore(json);
-  } catch(e) { return {}; }
+  } catch(e) { return null; }
 }
 
-// Polling toutes les 10 secondes pour Hiro Access
 let _pollInterval = null;
+let _pollSlowdown = false;
 function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
-  _fbGet(docId).then(d=>{if(!_saving)onData(d);});
-  _pollInterval = setInterval(()=>{
-    if(!_saving) _fbGet(docId).then(onData);
-  }, interval);
+  const tryFetch = () => {
+    if(_saving) return;
+    _fbGet(docId).then(d=>{
+      if(d===null){
+        // Document n'existe pas — ralentir le polling à 30s
+        if(!_pollSlowdown){
+          _pollSlowdown=true;
+          clearInterval(_pollInterval);
+          _pollInterval=setInterval(tryFetch, 30000);
+        }
+        onData({});
+      } else {
+        // Document existe — polling normal
+        if(_pollSlowdown){
+          _pollSlowdown=false;
+          clearInterval(_pollInterval);
+          _pollInterval=setInterval(tryFetch, interval);
+        }
+        onData(d);
+      }
+    });
+  };
+  tryFetch();
+  _pollInterval = setInterval(tryFetch, interval);
 }
 </script>
 
@@ -832,83 +852,87 @@ function mKeyLabel(mKey){
   return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
 }
 
-let _histDocs=null; // cache
+let _histDocs=null;
 
 async function loadHistorique() {
   const el=document.getElementById('historique-content');
   el.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement…</div>`;
-  try {
-    const listUrl=`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production?key=${_KEY}&pageSize=52`;
-    const res=await fetch(listUrl);
-    if(!res.ok){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur ${res.status}</div>`;return;}
-    const json=await res.json();
-    const curMonday=ds(mondayOf(0));
-    const nextMonday=ds(mondayOf(1));
-    const docs=(json.documents||[]).filter(d=>{
-      const dateStr=d.name.split('/').pop().replace('week_','');
-      return dateStr!==curMonday&&dateStr!==nextMonday&&dateStr<curMonday;
-    });
-    _histDocs=docs;
-    if(docs.length===0){
-      el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
-      return;
-    }
 
-    // Grouper par mois majoritaire
-    const byMonth={};
-    docs.forEach(doc=>{
-      const dateStr=doc.name.split('/').pop().replace('week_','');
-      const monday=new Date(dateStr);
-      const mKey=majorityMonth(monday);
-      if(!byMonth[mKey]) byMonth[mKey]=[];
-      byMonth[mKey].push({dateStr,doc});
-    });
+  // Génère les IDs des 26 dernières semaines (6 mois)
+  const curMonday=mondayOf(0);
+  const weekIds=[];
+  for(let i=1;i<=26;i++){
+    const m=new Date(curMonday);m.setDate(m.getDate()-i*7);
+    weekIds.push(ds(m));
+  }
 
-    // Trier semaines par date desc dans chaque mois
-    Object.values(byMonth).forEach(arr=>arr.sort((a,b)=>b.dateStr.localeCompare(a.dateStr)));
+  // Charge par batch de 8
+  const results=[];
+  for(let i=0;i<weekIds.length;i+=8){
+    const batch=weekIds.slice(i,i+8);
+    const fetched=await Promise.all(batch.map(async dateStr=>{
+      try{
+        const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
+        if(!res.ok) return null;
+        const json=await res.json();
+        return {dateStr,hData:_fromFirestore(json)};
+      }catch(e){return null;}
+    }));
+    fetched.forEach(r=>{if(r) results.push(r);});
+  }
 
-    // Afficher les mois comme accordéons cliquables
-    let html='';
-    Object.keys(byMonth).sort().reverse().forEach(mKey=>{
-      const weeks=byMonth[mKey];
-      const label=mKeyLabel(mKey);
-      html+=`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-        <div onclick="toggleHistMonth('${mKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--surface);">
-          <div>
-            <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${label}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${weeks.length} semaine${weeks.length>1?'s':''}</div>
-          </div>
-          <span id="chev-${mKey}" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">›</span>
+  if(results.length===0){
+    el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
+    return;
+  }
+
+  const byMonth={};
+  results.forEach(({dateStr,hData})=>{
+    const mKey=majorityMonth(new Date(dateStr));
+    if(!byMonth[mKey]) byMonth[mKey]=[];
+    byMonth[mKey].push({dateStr,hData});
+  });
+  Object.values(byMonth).forEach(arr=>arr.sort((a,b)=>b.dateStr.localeCompare(a.dateStr)));
+
+  let html='';
+  Object.keys(byMonth).sort().reverse().forEach(mKey=>{
+    const wks=byMonth[mKey];
+    const label=mKeyLabel(mKey);
+    html+=`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div onclick="toggleHistMonth('${mKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--surface);">
+        <div>
+          <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${label}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${wks.length} semaine${wks.length>1?'s':''}</div>
         </div>
-        <div id="month-${mKey}" style="display:none;border-top:1px solid var(--border);">
-          ${weeks.map(({dateStr,doc})=>{
-            const monday=new Date(dateStr);
-            const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
-            const wLabel=fmtS(monday)+' – '+fmtS(sunday);
-            const hData=_fromFirestore(doc);
-            let bacs=0,thon=0;
-            for(let di=0;di<7;di++){
-              const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-              SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
-              ['dsm','mgt','paita','ville'].forEach(s=>{
-                const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz,false);
-                const fk=dStr+'__f__'+s+'__t';
-                thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
-              });
-            }
-            return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
-              <div>
-                <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
-                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
-              </div>
-              <span style="font-size:16px;color:var(--text-hint);">›</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-    });
-    el.innerHTML=html;
-  } catch(e){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur: ${e.message}</div>`;}
+        <span id="chev-${mKey}" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">›</span>
+      </div>
+      <div id="month-${mKey}" style="display:none;border-top:1px solid var(--border);">
+        ${wks.map(({dateStr,hData})=>{
+          const monday=new Date(dateStr);
+          const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+          const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+          let bacs=0,thon=0;
+          for(let di=0;di<7;di++){
+            const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+            SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+            ['dsm','mgt','paita','ville'].forEach(s=>{
+              const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz,false);
+              const fk=dStr+'__f__'+s+'__t';
+              thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
+            });
+          }
+          return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+            </div>
+            <span style="font-size:16px;color:var(--text-hint);">›</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+  el.innerHTML=html;
 }
 
 function toggleHistMonth(mKey){
