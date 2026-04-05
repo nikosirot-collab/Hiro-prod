@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiro Prod — Cuisine Centrale</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --border: #e2e0d8;
+  --border-strong: #c8c5ba;
+  --text: #1a1916;
+  --text-muted: #6b6860;
+  --text-hint: #a09d96;
+  --dsm: #1a5fa8;
+  --dsm-light: #e8f1fb;
+  --mgt: #0d7a52;
+  --mgt-light: #e4f5ee;
+  --paita: #b84a1a;
+  --paita-light: #faeee8;
+  --thon: #1a5fa8;
+  --saumon: #0d7a52;
+  --aburi: #b84a1a;
+  --accent: #1a1916;
+  --today: #e4f5ee;
+  --today-border: #0d7a52;
+  --fete: #fef3e2;
+  --fete-border: #d4900a;
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.app-header {
+  background: var(--text);
+  color: #fff;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  min-height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+@media(min-width:768px){ .app-header { padding: 0 2rem; } }
+.app-header h1 { font-size: 15px; font-weight: 500; letter-spacing: 0.02em; }
+.app-header .subtitle { font-size: 11px; color: #999; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+
+/* NAV TABS */
+.nav-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+@media(min-width:768px){ .nav-tabs { padding: 0 2rem; } }
+.nav-tab {
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
+
+/* MAIN */
+.main { padding: 1rem; max-width: 1600px; }
+@media(min-width:768px){ .main { padding: 1.5rem 2rem; } }
+
+/* WEEK BAR */
+.week-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.week-nav { display: flex; align-items: center; gap: 8px; }
+.week-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+}
+.week-btn:hover { background: var(--bg); }
+.week-label { font-size: 14px; font-weight: 500; min-width: 170px; text-align: center; }
+.tz-tag { font-size: 11px; color: var(--text-hint); background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 3px 9px; }
+
+/* CONTROLS */
+.controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.toggle-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+.toggle-btn.active { background: var(--fete); border-color: var(--fete-border); color: #7a4f00; }
+.print-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.print-btn:hover { background: var(--text); color: #fff; border-color: var(--text); }
+.print-btn svg { width: 14px; height: 14px; }
+
+/* METRICS */
+.metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-bottom: 1rem; }
+@media(min-width:600px){ .metrics { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; } }
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+.metric-card .lbl { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.metric-card .val { font-size: 22px; font-weight: 500; font-family: 'DM Mono', monospace; }
+.metric-card .sub { font-size: 11px; color: var(--text-hint); margin-top: 2px; }
+.c-dsm { color: var(--dsm); }
+.c-mgt { color: var(--mgt); }
+.c-aburi { color: var(--aburi); }
+.c-purple { color: #5b4bb5; }
+
+/* SECTION */
+.section { margin-bottom: 1.5rem; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { border-collapse: collapse; width: 100%; background: var(--surface); }
+th, td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 6px 8px; text-align: center; white-space: nowrap; }
+th:last-child, td:last-child { border-right: none; }
+tr:last-child td { border-bottom: none; }
+th {
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
+  background: #faf9f6; padding: 7px 8px;
+}
+.th-dsm { color: var(--dsm) !important; }
+.th-mgt { color: var(--mgt) !important; }
+.th-paita { color: var(--paita) !important; }
+.td-day {
+  text-align: left; font-weight: 500; background: #faf9f6;
+  min-width: 90px; padding-left: 12px;
+}
+.td-day .date-sub { font-size: 11px; font-weight: 400; color: var(--text-hint); display: block; }
+.td-today { background: var(--today) !important; }
+.td-today-day { background: var(--today) !important; border-left: 3px solid var(--today-border) !important; }
+.td-total { font-weight: 600; background: #f0efe9 !important; }
+.td-blue-total { font-weight: 600; background: var(--dsm-light) !important; color: var(--dsm); }
+
+.inp {
+  width: 68px; height: 28px;
+  font-size: 13px; font-family: 'DM Mono', monospace;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0 6px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: center;
+  transition: border-color 0.1s, background 0.1s;
+}
+.inp:focus { outline: none; border-color: var(--accent); background: #fff; }
+.inp-sm { width: 54px; }
+
+.tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
+.tag-today { background: var(--mgt-light); color: var(--mgt); font-weight: 600; }
+.tag-dim { background: var(--bg); color: var(--text-hint); border: 1px solid var(--border); }
+.tag-fete { background: var(--fete); color: #7a4f00; }
+
+.val-thon { color: var(--thon); font-weight: 500; font-family: 'DM Mono', monospace; }
+.val-saumon { color: var(--saumon); font-weight: 500; font-family: 'DM Mono', monospace; }
+.val-aburi { color: var(--aburi); font-weight: 500; font-family: 'DM Mono', monospace; }
+.val-mono { font-family: 'DM Mono', monospace; }
+.val-marmite { color: var(--dsm); font-family: 'DM Mono', monospace; font-weight: 500; }
+.val-temps { color: #5b4bb5; font-family: 'DM Mono', monospace; font-weight: 500; }
+
+.note-box {
+  background: var(--fete);
+  border: 1px solid var(--fete-border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #5a3c00;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.note-box b { font-weight: 600; }
+
+/* PAGE SECTIONS */
+.page { display: none; }
+.page.active { display: block; }
+
+/* PRINT STYLES */
+@media print {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff; font-size: 11px; }
+  .app-header, .nav-tabs, .week-bar, .controls, .metrics, .no-print { display: none !important; }
+  .print-page { display: block !important; }
+  .main { padding: 0; max-width: none; }
+  @page { size: A4 landscape; margin: 12mm 10mm; }
+  table { font-size: 10px; }
+  th, td { padding: 4px 5px; }
+  .print-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; letter-spacing: 0.02em; }
+  .print-subtitle { font-size: 10px; color: #666; margin-bottom: 8px; }
+  .print-section { margin-bottom: 14px; }
+  .print-section-title { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #666; margin-bottom: 4px; }
+  .tbl-wrap { border: 1px solid #ccc; border-radius: 0; }
+  .page-break { page-break-before: always; }
+}
+
+.print-page { display: none; }
+
+/* SEPARATOR */
+.col-sep { border-left: 2px solid var(--border-strong) !important; }
+
+@media (max-width: 768px) {
+  .app-header { padding: 0 1rem; }
+  .nav-tabs { padding: 0 0.5rem; }
+  .main { padding: 1rem; }
+  .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .metric-card { padding: 10px 12px; }
+  .metric-card .val { font-size: 18px; }
+  .toggle-btn span { display: none; }
+  .print-btn span { display: none; }
+  .week-label { min-width: 120px; font-size: 12px; }
+  .tz-tag { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="data:image/jpeg;base64,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" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="Hiro Sushi">
+    <div>
+      <div style="font-size:15px;font-weight:500;letter-spacing:.02em;color:#fff;">Hiro Prod</div>
+      <div class="subtitle">Cuisine centrale — saisie &amp; production</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="sync-status" style="font-size:11px;color:#aaa;">○ Chargement</span>
+    <span id="clock" style="font-family:'DM Mono',monospace;font-size:12px;color:#aaa"></span>
+    <span style="font-size:10px;background:#333;color:#ccc;padding:3px 8px;border-radius:20px;">PROD</span>
+  </div>
+</header>
+
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('riz')">Riz & Production</div>
+  <div class="nav-tab" onclick="showPage('poisson')">Découpe Poisson</div>
+  <div class="nav-tab" onclick="showPage('rolls')">Rolls</div>
+  <div class="nav-tab" onclick="showPage('thon')">Commande Thon</div>
+  <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
+</nav>
+
+<div class="main">
+  <div class="week-bar">
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)">&#8592;</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button class="week-btn" onclick="changeWeek(1)">&#8594;</button>
+    </div>
+    <div class="controls">
+      <span class="tz-tag">Nouméa — GMT+11</span>
+      <label class="toggle-btn" id="feteBtn">
+        <input type="checkbox" id="feteToggle" onchange="toggleFete()" style="display:none">
+        &#127876; Mode fêtes (décembre)
+      </label>
+      <button class="print-btn" onclick="printPoisson()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimer découpe poisson
+      </button>
+      <button class="print-btn" onclick="printRolls()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimer rolls
+      </button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card"><div class="lbl">Total bacs bleus</div><div class="val c-dsm" id="m-bacs">—</div><div class="sub">semaine</div></div>
+    <div class="metric-card"><div class="lbl">Total marmites</div><div class="val" id="m-marmites">—</div><div class="sub">semaine</div></div>
+    <div class="metric-card"><div class="lbl">Temps de production</div><div class="val c-purple" id="m-temps">—</div><div class="sub">total · moy. <span id="m-temps-avg" style="font-weight:600;color:#5b4bb5">—</span> min/jour</div></div>
+    <div class="metric-card"><div class="lbl">Tranches thon semaine</div><div class="val c-dsm" id="m-thon">—</div><div class="sub">total découpe</div></div>
+  </div>
+
+  <!-- PAGE RIZ -->
+  <div id="page-riz" class="page active">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Production riz Asia</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" style="min-width:90px;text-align:left;padding-left:12px">Date</th>
+              <th colspan="2" class="th-dsm col-sep">DSM</th>
+              <th colspan="2" class="th-mgt col-sep">MGT</th>
+              <th colspan="2" class="th-paita col-sep">Paita</th>
+              <th colspan="2" class="col-sep">Ville</th>
+              <th colspan="2" class="col-sep">Asia</th>
+              <th class="col-sep" rowspan="2">Marmites</th>
+              <th rowspan="2">Temps prod (min)</th>
+              <th rowspan="2">Qté marmite riz</th>
+            </tr>
+            <tr>
+              <th class="col-sep">Boules</th><th>Bacs</th>
+              <th class="col-sep">Boules</th><th>Bacs</th>
+              <th class="col-sep">Boules</th><th>Bacs</th>
+              <th class="col-sep">Boules</th><th>Bacs</th>
+              <th class="col-sep">Boules</th><th>Bacs</th>
+            </tr>
+          </thead>
+          <tbody id="body-riz"></tbody>
+          <tfoot id="foot-riz"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE POISSON -->
+  <div id="page-poisson" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Quantité poisson Hiro</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" style="min-width:90px;text-align:left;padding-left:12px">Date</th>
+              <th colspan="4" class="th-dsm col-sep">DSM</th>
+              <th colspan="4" class="th-mgt col-sep">MGT</th>
+              <th colspan="4" class="th-paita col-sep">Paita</th>
+              <th colspan="3" class="col-sep">Ville</th>
+            </tr>
+            <tr>
+              <th class="col-sep">Riz</th><th class="c-dsm">Thon</th><th class="c-mgt">Saumon</th><th class="c-aburi">Aburi</th>
+              <th class="col-sep">Riz</th><th class="c-dsm">Thon</th><th class="c-mgt">Saumon</th><th class="c-aburi">Aburi</th>
+              <th class="col-sep">Riz</th><th class="c-dsm">Thon</th><th class="c-mgt">Saumon</th><th class="c-aburi">Aburi</th>
+              <th class="col-sep c-dsm">Thon</th><th class="c-mgt">Saumon</th><th class="c-aburi">Aburi</th>
+            </tr>
+          </thead>
+          <tbody id="body-fish"></tbody>
+          <tfoot id="foot-fish"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE ROLLS -->
+  <div id="page-rolls" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Quantité rolls</span></div>
+      <div class="note-box no-print">
+        Dimanche = 0 rolls sauf mode fêtes · Rolls auto pour DSM/MGT/Paita (palier inférieur) · Saisie manuelle pour Ville et Asia
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:90px;text-align:left;padding-left:12px">Date</th>
+              <th colspan="2" class="th-dsm col-sep">DSM</th>
+              <th colspan="2" class="th-mgt col-sep">MGT</th>
+              <th colspan="2" class="th-paita col-sep">Paita</th>
+              <th colspan="2" class="col-sep">Ville</th>
+              <th colspan="2" class="col-sep">Asia</th>
+              <th class="col-sep">Total rolls</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th class="col-sep">Riz</th><th>Rolls</th>
+              <th class="col-sep">Riz</th><th>Rolls</th>
+              <th class="col-sep">Riz</th><th>Rolls</th>
+              <th class="col-sep">Riz</th><th>Rolls</th>
+              <th class="col-sep">Riz</th><th>Rolls</th>
+              <th class="col-sep"></th>
+            </tr>
+          </thead>
+          <tbody id="body-rolls"></tbody>
+          <tfoot id="foot-rolls"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE THON -->
+  <div id="page-thon" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Commande thon</span></div>
+      <div class="note-box">
+        <b>Règle :</b> 700–800 tranches = 20–25 kg · +800 tranches = 25 kg · 1000+ tranches = 30–35 kg de thon.<br>
+        <b>Note Charles :</b> Ajouter 5 kg en plus quand Charles coupe beaucoup de chutes et qu'il y a des petites longes de thon.
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:90px;text-align:left;padding-left:12px">Date</th>
+              <th>DSM — tranches thon</th>
+              <th>MGT — tranches thon</th>
+              <th>Paita — tranches thon</th>
+              <th>Ville — tranches thon</th>
+              <th>Total tranches thon</th>
+              <th>Kg à commander</th>
+            </tr>
+          </thead>
+          <tbody id="body-thon"></tbody>
+          <tfoot id="foot-thon"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE TOTAUX -->
+  <div id="page-totaux" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Total thon / saumon / aburi par jour</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:90px;text-align:left;padding-left:12px">Date</th>
+              <th class="c-dsm">Thon total</th>
+              <th class="c-mgt">Saumon total</th>
+              <th class="c-aburi">Aburi total</th>
+              <th>Total tranches</th>
+            </tr>
+          </thead>
+          <tbody id="body-total"></tbody>
+          <tfoot id="foot-total"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT ZONE POISSON -->
+<div id="print-poisson" class="print-page" style="display:none">
+  <div class="print-title" id="pt-poisson-title"></div>
+  <div class="print-subtitle" id="pt-poisson-sub"></div>
+  <div class="print-section">
+    <div class="print-section-title">Quantité poisson Hiro — Découpe par magasin</div>
+    <div id="pt-poisson-table"></div>
+  </div>
+</div>
+
+<!-- PRINT ZONE ROLLS -->
+<div id="print-rolls" class="print-page" style="display:none">
+  <div class="print-title" id="pt-rolls-title"></div>
+  <div class="print-subtitle" id="pt-rolls-sub"></div>
+  <div class="print-section">
+    <div class="print-section-title">Quantité rolls par magasin</div>
+    <div id="pt-rolls-table"></div>
+  </div>
+</div>
+
+<script>
+// ─── FIRESTORE REST API (sans SDK) ───
+const _PROJECT = 'hiro-sushi-nc';
+const _API = `https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production`;
+const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+function _toFirestore(obj) {
+  const fields = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (typeof v === 'number') fields[k] = { integerValue: v };
+    else if (typeof v === 'string') fields[k] = { stringValue: v };
+    else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
+  }
+  return { fields };
+}
+
+function _fromFirestore(doc) {
+  if (!doc || !doc.fields) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(doc.fields)) {
+    if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue);
+    else if (v.doubleValue !== undefined) out[k] = parseFloat(v.doubleValue);
+    else if (v.stringValue !== undefined) out[k] = v.stringValue;
+    else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+  }
+  return out;
+}
+
+function _setStatus(ok) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = ok ? '● Sync' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
+}
+
+async function _fbSave(docId, key, val) {
+  try {
+    const url = `${_API}/${docId}?key=${_KEY}`;
+    const field = typeof val === 'number' ? {integerValue: val} : {stringValue: String(val)};
+    const body = { fields: { [key]: field } };
+    const res = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    _setStatus(res.ok);
+  } catch(e) { _setStatus(false); }
+}
+
+async function _fbGet(docId) {
+  try {
+    const url = `${_API}/${docId}?key=${_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return {};
+    const json = await res.json();
+    return _fromFirestore(json);
+  } catch(e) { return {}; }
+}
+
+// Polling toutes les 10 secondes pour Hiro Access
+let _pollInterval = null;
+function _fbPoll(docId, onData, interval=10000) {
+  if (_pollInterval) clearInterval(_pollInterval);
+  _fbGet(docId).then(onData);
+  _pollInterval = setInterval(() => _fbGet(docId).then(onData), interval);
+}
+</script>
+
+<script>
+const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SHOPS = ['dsm','mgt','paita','ville','asia'];
+const TODAY_NC = new Date(2026, 3, 5);
+
+function mondayOf(off) {
+  const d = new Date(TODAY_NC);
+  const dow = d.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff + off * 7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function dayOf(off, di) {
+  const m = mondayOf(off);
+  m.setDate(m.getDate() + di);
+  return m;
+}
+function ds(d) {
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtS(d) {
+  return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+}
+function fmtWeek(off) {
+  const m = mondayOf(off), e = new Date(m);
+  e.setDate(e.getDate()+6);
+  return fmtS(m)+' – '+fmtS(e)+' '+e.getFullYear();
+}
+
+const FISH = {
+  dsm: [{r:500,t:150,s:150,a:50},{r:750,t:200,s:200,a:150},{r:1000,t:300,s:300,a:250},{r:1250,t:350,s:350,a:300},{r:1500,t:450,s:450,a:300},{r:1750,t:500,s:500,a:450},{r:2000,t:550,s:550,a:500}],
+  mgt: [{r:500,t:150,s:150,a:50,tf:150,sf:150,af:50},{r:750,t:200,s:200,a:150,tf:200,sf:200,af:150},{r:1000,t:300,s:300,a:250,tf:350,sf:350,af:250},{r:1250,t:350,s:350,a:250,tf:400,sf:400,af:250},{r:1500,t:450,s:450,a:250,tf:450,sf:450,af:300},{r:1750,t:500,s:500,a:400,tf:500,sf:500,af:400},{r:2000,t:550,s:550,a:450,tf:550,sf:550,af:450}],
+  paita: [{r:500,t:150,s:150,a:50},{r:750,t:200,s:180,a:200},{r:1000,t:200,s:200,a:250},{r:1250,t:235,s:200,a:250},{r:1500,t:400,s:360,a:250},{r:1750,t:500,s:500,a:400},{r:2000,t:550,s:550,a:450}],
+  ville: {t:65,s:95,a:30}
+};
+const RTBL = [{r:0,v:0},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
+
+function getFish(shop, riz, isFete) {
+  if (shop==='ville') return riz>0 ? {...FISH.ville} : null;
+  if (shop==='asia') return null;
+  const rows = FISH[shop]; if (!rows||!riz) return null;
+  const sorted = [...rows].sort((a,b)=>a.r-b.r);
+  let row = sorted[0];
+  for (const ro of sorted) { if (riz>=ro.r) row=ro; else break; }
+  if (shop==='mgt'&&isFete) return {t:row.tf||row.t,s:row.sf||row.s,a:row.af||row.a};
+  return {t:row.t,s:row.s,a:row.a};
+}
+function getRolls(riz, isDim, isFete) {
+  if (isDim&&!isFete) return 0;
+  if (!riz||riz<=0) return 0;
+  let v=0;
+  for (const row of RTBL) { if (riz>=row.r) v=row.v; else break; }
+  return v;
+}
+function thonKg(tranches) {
+  if (!tranches||tranches<=0) return '—';
+  if (tranches<=800) return '20–25';
+  if (tranches<=1000) return '25';
+  return '30–35';
+}
+function fb(x) { return x===0?'0':x%1===0?String(x):x.toFixed(1); }
+
+let isFete=false, weekOff=0, data={};
+
+const PREFILL = {
+  '2026-03-30':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
+  '2026-03-31':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-01':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-02':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-03':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
+  '2026-04-04':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
+  '2026-04-05':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
+  '2026-04-06':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
+  '2026-04-07':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-08':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-09':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-10':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
+  '2026-04-11':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
+  '2026-04-12':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
+};
+
+function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
+function getR(d,s){return data[d+'__r__'+s]||0;}
+function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
+function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
+
+function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
+
+function subscribeWeek(){
+  _fbPoll(weekDocId(), remote=>{
+    Object.assign(data, remote);
+    _setStatus(true);
+    render();
+  }, 8000);
+}
+
+function toggleFete(){
+  isFete=document.getElementById('feteToggle').checked;
+  document.getElementById('feteBtn').classList.toggle('active',isFete);
+  render();
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function changeWeek(d){weekOff+=d;data={};document.getElementById('weekLabel').textContent=fmtWeek(weekOff);subscribeWeek();}
+
+function render() {
+  const todayDs = ds(TODAY_NC);
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let rizR='',fishR='',rollR='',thonR='',totR='';
+  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totRolls={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totFish={t:0,s:0,a:0};
+
+  for (let di=0;di<7;di++) {
+    const d=dayOf(weekOff,di), dStr=ds(d), short=fmtS(d);
+    const isDim=(di===6), isToday=(dStr===todayDs);
+    const label=DAYS[di];
+
+    const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const bacs={}; SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
+    const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
+    const marmites=Math.round(totBacs/2+(isDim?0:2));
+    const temps=Math.round(totBacs*5*10)/10;
+    wBacs+=totBacs; wMarmites+=marmites; wTemps+=temps;
+    SHOPS.forEach(s=>{totRiz[s]+=v[s];});
+
+    const dc=isToday?'td-day td-today-day':'td-day';
+    const dc2=isToday?'td-today':'';
+    const tags=(isToday?`<span class="tag tag-today">auj.</span>`:'')+(isDim?`<span class="tag tag-dim">dim</span>`:'');
+
+    // RIZ
+    rizR+=`<tr>
+      <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.dsm||''}" placeholder="0" onchange="setV('${dStr}','dsm',this.value)"></td><td class="${dc2}">${bacs.dsm||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.mgt||''}" placeholder="0" onchange="setV('${dStr}','mgt',this.value)">${isFete&&v.mgt?`<span class="tag tag-fete">f</span>`:''}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
+      <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites):'—'}</td>
+      <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites):'—'}</td>
+    </tr>`;
+
+    // FISH
+    const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
+      fd[s]=getFish(s,v[s],isFete);
+      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
+    });
+    const cv=(s,f,cls)=>fd[s]?`<span class="${cls}">${fd[s][f]}</span>`:'—';
+    const dayT=(fd.dsm?.t||0)+(fd.mgt?.t||0)+(fd.paita?.t||0)+(fd.ville?.t||0);
+    const dayS=(fd.dsm?.s||0)+(fd.mgt?.s||0)+(fd.paita?.s||0)+(fd.ville?.s||0);
+    const dayA=(fd.dsm?.a||0)+(fd.mgt?.a||0)+(fd.paita?.a||0)+(fd.ville?.a||0);
+    totFish.t+=dayT; totFish.s+=dayS; totFish.a+=dayA;
+    wThon+=dayT;
+
+    fishR+=`<tr>
+      <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2}">${cv('dsm','t','val-thon')}</td><td class="${dc2}">${cv('dsm','s','val-saumon')}</td><td class="${dc2}">${cv('dsm','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2}">${cv('mgt','t','val-thon')}</td><td class="${dc2}">${cv('mgt','s','val-saumon')}</td><td class="${dc2}">${cv('mgt','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2}">${cv('paita','t','val-thon')}</td><td class="${dc2}">${cv('paita','s','val-saumon')}</td><td class="${dc2}">${cv('paita','a','val-aburi')}</td>
+      <td class="${dc2} col-sep">${cv('ville','t','val-thon')}</td><td class="${dc2}">${cv('ville','s','val-saumon')}</td><td class="${dc2}">${cv('ville','a','val-aburi')}</td>
+    </tr>`;
+
+    // ROLLS
+    const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
+    const vR=getR(dStr,'ville'); const aR=getR(dStr,'asia');
+    const villeR=vR!==undefined?vR:0; const asiaR=aR!==undefined?aR:0;
+    totRolls.dsm+=ar.dsm; totRolls.mgt+=ar.mgt; totRolls.paita+=ar.paita; totRolls.ville+=villeR; totRolls.asia+=asiaR;
+    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR+asiaR;
+
+    rollR+=`<tr>
+      <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.dsm||'—'}</td>
+      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.mgt||'—'}</td>
+      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.paita||'—'}</td>
+      <td class="${dc2} col-sep val-mono">${v.ville||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${villeR||''}" placeholder="0" onchange="setR('${dStr}','ville',this.value)"></td>
+      <td class="${dc2} col-sep val-mono">${v.asia||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${asiaR||''}" placeholder="0" onchange="setR('${dStr}','asia',this.value)"></td>
+      <td class="${dc2} col-sep val-mono" style="font-weight:600">${totDayRolls||'—'}</td>
+    </tr>`;
+
+    // THON — commande basée sur le lendemain (sauf dimanche = pas de commande, samedi = dim + lundi suivant)
+    let thonRow = '';
+    if (isDim) {
+      // Pas de commande le dimanche
+      thonRow = `<tr>
+        <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+        <td colspan="5" style="text-align:center;color:var(--text-hint);font-size:12px;">Pas de commande le dimanche</td>
+      </tr>`;
+    } else if (di === 5) {
+      // Samedi → dimanche (di=6) + lundi semaine suivante (di=0, weekOff+1)
+      const dDim = dayOf(weekOff, 6); const dsDim = ds(dDim);
+      const vDim = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vDim[s]=getV(dsDim,s);});
+      const fdDim = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdDim[s]=getFish(s,vDim[s],isFete);});
+      const tDim = (fdDim.dsm?.t||0)+(fdDim.mgt?.t||0)+(fdDim.paita?.t||0)+(fdDim.ville?.t||0);
+
+      const dLun = dayOf(weekOff+1, 0); const dsLun = ds(dLun);
+      const vLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=getV(dsLun,s);});
+      const fdLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s],isFete);});
+      const tLun = (fdLun.dsm?.t||0)+(fdLun.mgt?.t||0)+(fdLun.paita?.t||0)+(fdLun.ville?.t||0);
+      const hasLun = SHOPS.some(s=>vLun[s]>0);
+      const totalSam = tDim + tLun;
+      const kgSam = totalSam > 0 ? thonKg(totalSam) : '—';
+      thonRow = `<tr>
+        <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+        <td colspan="4" style="font-size:12px;color:var(--text-muted);">
+          Dim : <span class="val-thon">${tDim||'—'}</span> tranches
+          &nbsp;+&nbsp; Lun S+1 : <span class="val-thon">${hasLun?tLun:'<em style="color:var(--text-hint)">en attente</em>'}</span> tranches
+        </td>
+        <td class="${dc2} val-mono" style="font-weight:600">${totalSam||'—'}</td>
+        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${kgSam}</td>
+      </tr>`;
+    } else {
+      // Lundi→Vendredi → tranches du lendemain
+      const dNext = dayOf(weekOff, di+1); const dsNext = ds(dNext);
+      const vNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
+      const fdNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s],isFete);});
+      const tNext = (fdNext.dsm?.t||0)+(fdNext.mgt?.t||0)+(fdNext.paita?.t||0)+(fdNext.ville?.t||0);
+      const kgNext = thonKg(tNext);
+      thonRow = `<tr>
+        <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+        <td class="${dc2} val-thon">${fdNext.dsm?.t||'—'}</td>
+        <td class="${dc2} val-thon">${fdNext.mgt?.t||'—'}</td>
+        <td class="${dc2} val-thon">${fdNext.paita?.t||'—'}</td>
+        <td class="${dc2} val-thon">${fdNext.ville?.t||'—'}</td>
+        <td class="${dc2} val-mono" style="font-weight:600">${tNext||'—'}</td>
+        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${kgNext}</td>
+      </tr>`;
+    }
+    thonR += thonRow;
+
+    // TOTAUX
+    totR+=`<tr>
+      <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
+      <td class="${dc2} val-thon">${dayT||'—'}</td>
+      <td class="${dc2} val-saumon">${dayS||'—'}</td>
+      <td class="${dc2} val-aburi">${dayA||'—'}</td>
+      <td class="${dc2} val-mono" style="font-weight:600">${(dayT+dayS+dayA)||'—'}</td>
+    </tr>`;
+  }
+
+  // Set bodies
+  document.getElementById('body-riz').innerHTML=rizR;
+  document.getElementById('body-fish').innerHTML=fishR;
+  document.getElementById('body-rolls').innerHTML=rollR;
+  document.getElementById('body-thon').innerHTML=thonR;
+  document.getElementById('body-total').innerHTML=totR;
+
+  // Footers
+  document.getElementById('foot-riz').innerHTML=`<tr>
+    <td class="td-total td-day">Total semaine</td>
+    <td class="td-total col-sep">${totRiz.dsm||'—'}</td><td class="td-total">${fb(totRiz.dsm/250)}</td>
+    <td class="td-total col-sep">${totRiz.mgt||'—'}</td><td class="td-total">${fb(totRiz.mgt/250)}</td>
+    <td class="td-total col-sep">${totRiz.paita||'—'}</td><td class="td-total">${fb(totRiz.paita/250)}</td>
+    <td class="td-total col-sep">${totRiz.ville||'—'}</td><td class="td-total">${fb(totRiz.ville/250)}</td>
+    <td class="td-total col-sep">${totRiz.asia||'—'}</td><td class="td-total">${fb(totRiz.asia/250)}</td>
+    <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
+    <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
+    <td class="td-blue-total">${fb(wMarmites)}</td>
+  </tr>`;
+
+  document.getElementById('foot-fish').innerHTML=`<tr>
+    <td class="td-total td-day">Total</td>
+    <td class="td-total col-sep">—</td><td class="td-total val-thon">${totFS.dsm.t}</td><td class="td-total val-saumon">${totFS.dsm.s}</td><td class="td-total val-aburi">${totFS.dsm.a}</td>
+    <td class="td-total col-sep">—</td><td class="td-total val-thon">${totFS.mgt.t}</td><td class="td-total val-saumon">${totFS.mgt.s}</td><td class="td-total val-aburi">${totFS.mgt.a}</td>
+    <td class="td-total col-sep">—</td><td class="td-total val-thon">${totFS.paita.t}</td><td class="td-total val-saumon">${totFS.paita.s}</td><td class="td-total val-aburi">${totFS.paita.a}</td>
+    <td class="td-total col-sep val-thon">${totFS.ville.t}</td><td class="td-total val-saumon">${totFS.ville.s}</td><td class="td-total val-aburi">${totFS.ville.a}</td>
+  </tr>`;
+
+  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita+totRolls.ville+totRolls.asia;
+  document.getElementById('foot-rolls').innerHTML=`<tr>
+    <td class="td-total td-day">Total</td>
+    <td class="td-total col-sep">—</td><td class="td-blue-total">${totRolls.dsm}</td>
+    <td class="td-total col-sep">—</td><td class="td-blue-total">${totRolls.mgt}</td>
+    <td class="td-total col-sep">—</td><td class="td-blue-total">${totRolls.paita}</td>
+    <td class="td-total col-sep">—</td><td class="td-blue-total">${totRolls.ville}</td>
+    <td class="td-total col-sep">—</td><td class="td-blue-total">${totRolls.asia}</td>
+    <td class="td-blue-total col-sep">${totAllRolls}</td>
+  </tr>`;
+
+  const totThonTranches=totFS.dsm.t+totFS.mgt.t+totFS.paita.t+totFS.ville.t;
+  document.getElementById('foot-thon').innerHTML=`<tr>
+    <td class="td-total td-day">Total semaine</td>
+    <td class="td-total val-thon">${totFS.dsm.t}</td>
+    <td class="td-total val-thon">${totFS.mgt.t}</td>
+    <td class="td-total val-thon">${totFS.paita.t}</td>
+    <td class="td-total val-thon">${totFS.ville.t}</td>
+    <td class="td-blue-total">${totThonTranches}</td>
+    <td class="td-blue-total">${thonKg(Math.round(totThonTranches/7))}/jour</td>
+  </tr>`;
+
+  document.getElementById('foot-total').innerHTML=`<tr>
+    <td class="td-total td-day">Total semaine</td>
+    <td class="td-blue-total val-thon">${totFish.t}</td>
+    <td class="td-blue-total val-saumon">${totFish.s}</td>
+    <td class="td-blue-total val-aburi">${totFish.a}</td>
+    <td class="td-blue-total">${totFish.t+totFish.s+totFish.a}</td>
+  </tr>`;
+
+  document.getElementById('m-bacs').textContent=fb(wBacs);
+  document.getElementById('m-marmites').textContent=fb(wMarmites);
+  document.getElementById('m-temps').textContent=fb(wTemps)+' min';
+  document.getElementById('m-temps-avg').textContent=fb(Math.round(wTemps/7*10)/10);
+  document.getElementById('m-thon').textContent=wThon;
+}
+
+function buildPrintTable(type) {
+  const week = fmtWeek(weekOff);
+  const todayDs = ds(TODAY_NC);
+  let html = '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
+  
+  if (type==='poisson') {
+    html += `<thead>
+      <tr style="background:#f0efe9">
+        <th rowspan="2" style="text-align:left;padding:5px 8px;border:1px solid #ccc;min-width:80px">Date</th>
+        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#1a5fa8">DSM</th>
+        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#0d7a52">MGT</th>
+        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#b84a1a">Paita</th>
+        <th colspan="3" style="padding:4px;border:1px solid #ccc">Ville</th>
+      </tr>
+      <tr style="background:#f0efe9">
+        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
+        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
+        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
+        <th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
+      </tr></thead><tbody>`;
+    let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+    for (let di=0;di<7;di++) {
+      const d=dayOf(weekOff,di), dStr=ds(d), short=fmtS(d);
+      const isDim=(di===6), isToday=(dStr===todayDs);
+      const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
+        fd[s]=getFish(s,v[s],isFete);
+        if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
+      });
+      const bg=isToday?'background:#e4f5ee;':'background:#fff;';
+      const cv=(s,f)=>fd[s]?fd[s][f]:'—';
+      html+=`<tr style="${bg}">
+        <td style="padding:5px 8px;border:1px solid #ccc;font-weight:500">${DAYS[di]}${isDim?' (dim)':''}<br><span style="font-size:9px;color:#888">${short}</span></td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.dsm||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('dsm','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('dsm','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('dsm','a')}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.mgt||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('mgt','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('mgt','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('mgt','a')}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.paita||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('paita','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('paita','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('paita','a')}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('ville','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('ville','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('ville','a')}</td>
+      </tr>`;
+    }
+    html+=`<tr style="background:#e8f1fb;font-weight:600">
+      <td style="padding:5px 8px;border:1px solid #ccc">Total</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.dsm.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.dsm.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.dsm.a}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.mgt.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.mgt.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.mgt.a}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.paita.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.paita.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.paita.a}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.ville.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.ville.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.ville.a}</td>
+    </tr>`;
+    html+='</tbody></table>';
+    return {html, week};
+  }
+
+  if (type==='rolls') {
+    html+=`<thead><tr style="background:#f0efe9">
+      <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;min-width:80px">Date</th>
+      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#1a5fa8">DSM</th>
+      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#0d7a52">MGT</th>
+      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#b84a1a">Paita</th>
+      <th colspan="2" style="padding:4px;border:1px solid #ccc">Ville</th>
+      <th colspan="2" style="padding:4px;border:1px solid #ccc">Asia</th>
+      <th style="padding:4px;border:1px solid #ccc">Total rolls</th>
+    </tr>
+    <tr style="background:#f0efe9">
+      <th style="padding:4px;border:1px solid #ccc"></th>
+      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
+      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
+      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
+      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
+      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
+      <th style="padding:4px;border:1px solid #ccc"></th>
+    </tr></thead><tbody>`;
+    let totR={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+    for (let di=0;di<7;di++) {
+      const d=dayOf(weekOff,di), dStr=ds(d), short=fmtS(d);
+      const isDim=(di===6), isToday=(dStr===todayDs);
+      const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
+      const vR=getR(dStr,'ville')||0, aR=getR(dStr,'asia')||0;
+      totR.dsm+=ar.dsm;totR.mgt+=ar.mgt;totR.paita+=ar.paita;totR.ville+=vR;totR.asia+=aR;
+      const tot=ar.dsm+ar.mgt+ar.paita+vR+aR;
+      const bg=isToday?'background:#e4f5ee;':'background:#fff;';
+      html+=`<tr style="${bg}">
+        <td style="padding:5px 8px;border:1px solid #ccc;font-weight:500">${DAYS[di]}${isDim?' (dim)':''}<br><span style="font-size:9px;color:#888">${short}</span></td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.dsm||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.dsm||'—'}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.mgt||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.mgt||'—'}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.paita||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.paita||'—'}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.ville||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${vR||'—'}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.asia||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${aR||'—'}</td>
+        <td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:700;color:#1a5fa8">${tot||'—'}</td>
+      </tr>`;
+    }
+    const totAll=totR.dsm+totR.mgt+totR.paita+totR.ville+totR.asia;
+    html+=`<tr style="background:#e8f1fb;font-weight:600">
+      <td style="padding:5px 8px;border:1px solid #ccc">Total</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.dsm}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.mgt}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.paita}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.ville}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.asia}</td>
+      <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totAll}</td>
+    </tr>`;
+    html+='</tbody></table>';
+    return {html, week};
+  }
+}
+
+function printPoisson() {
+  const {html, week} = buildPrintTable('poisson');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Découpe Poisson — ${week}</title>
+  <style>
+    @page{size:A4 landscape;margin:12mm 10mm;}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{font-family:'DM Sans',sans-serif;font-size:11px;color:#1a1916;}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1a1916;}
+    .title{font-size:14px;font-weight:600;}
+    .sub{font-size:10px;color:#666;margin-top:2px;}
+    .badge{font-size:9px;padding:2px 8px;border-radius:20px;background:#f0efe9;color:#666;}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  </head><body>
+  <div class="header">
+    <div><div class="title">Quantité Poisson Hiro — Découpe par magasin</div><div class="sub">Semaine du ${week} · Cuisine centrale Hiro Sushi · Nouméa</div></div>
+    <div class="badge">${isFete?'Mode fêtes (décembre)':'Production standard'}</div>
+  </div>
+  ${html}
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function printRolls() {
+  const {html, week} = buildPrintTable('rolls');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rolls — ${week}</title>
+  <style>
+    @page{size:A4 landscape;margin:12mm 10mm;}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    body{font-family:'DM Sans',sans-serif;font-size:11px;color:#1a1916;}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1a1916;}
+    .title{font-size:14px;font-weight:600;}
+    .sub{font-size:10px;color:#666;margin-top:2px;}
+    .badge{font-size:9px;padding:2px 8px;border-radius:20px;background:#f0efe9;color:#666;}
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  </head><body>
+  <div class="header">
+    <div><div class="title">Quantité Rolls par magasin</div><div class="sub">Semaine du ${week} · Cuisine centrale Hiro Sushi · Nouméa</div></div>
+    <div class="badge">${isFete?'Mode fêtes (décembre)':'Production standard'}</div>
+  </div>
+  ${html}
+  <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+
+
+function updateClock(){
+  const now=new Date();
+  const utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const nc=new Date(utc+11*3600000);
+  document.getElementById('clock').textContent='Nouméa — '+nc.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock,1000); updateClock();
+
+document.getElementById('weekLabel').textContent=fmtWeek(0);
+subscribeWeek();
+</script>
+</body>
+</html>
