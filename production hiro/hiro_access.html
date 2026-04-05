@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hiro Access</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-s:#c8c5ba;
+  --text:#1a1916;--muted:#6b6860;--hint:#a09d96;
+  --dsm:#1a5fa8;--dsm-l:#e8f1fb;--dsm-d:#0c3d6e;
+  --mgt:#0d7a52;--mgt-l:#e4f5ee;--mgt-d:#074d34;
+  --paita:#b84a1a;--paita-l:#faeee8;--paita-d:#7a2f0e;
+  --today:#e4f5ee;--today-b:#0d7a52;
+  --fete:#fef3e2;--fete-b:#d4900a;
+  --r:10px;--r-sm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-icon{width:32px;height:32px;background:#333;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.hdr-title{font-size:15px;font-weight:500;}
+.hdr-sub{font-size:10px;color:#999;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.readonly-badge{font-size:10px;background:#2a4a2a;color:#7fcf7f;padding:3px 9px;border-radius:20px;font-weight:500;}
+#clock{font-family:'DM Mono',monospace;font-size:11px;color:#aaa;}
+
+/* NAV */
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:52px;z-index:99;}
+.nav::-webkit-scrollbar{display:none;}
+.nav-tab{padding:11px 16px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;transition:all .15s;}
+.nav-tab.active{color:var(--text);font-weight:500;border-bottom-color:var(--text);}
+
+/* WEEK NAV */
+.week-bar{padding:12px 1rem;display:flex;align-items:center;justify-content:space-between;background:var(--surface);border-bottom:1px solid var(--border);gap:8px;}
+.week-nav{display:flex;align-items:center;gap:8px;}
+.wbtn{width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+.week-label{font-size:13px;font-weight:500;text-align:center;min-width:130px;}
+.fete-tag{font-size:11px;background:var(--fete);border:1px solid var(--fete-b);color:#7a4f00;padding:4px 10px;border-radius:20px;font-weight:500;}
+
+/* MAIN */
+.main{padding:1rem;}
+.page{display:none;}.page.active{display:block;}
+
+/* METRICS ROW */
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.mc .lbl{font-size:11px;color:var(--muted);margin-bottom:3px;}
+.mc .val{font-size:22px;font-weight:500;font-family:'DM Mono',monospace;}
+.mc .sub{font-size:11px;color:var(--hint);margin-top:2px;}
+
+/* DAY CARDS */
+.day-list{display:flex;flex-direction:column;gap:10px;}
+.day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.day-card.is-today{border-color:var(--today-b);border-width:2px;}
+.day-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.day-head-left{display:flex;align-items:center;gap:10px;}
+.day-dot{width:8px;height:8px;border-radius:50%;background:var(--border-s);flex-shrink:0;}
+.day-dot.is-today{background:var(--today-b);}
+.day-name{font-size:15px;font-weight:500;}
+.day-date{font-size:12px;color:var(--muted);}
+.day-chevron{font-size:16px;color:var(--muted);transition:transform .2s;}
+.day-chevron.open{transform:rotate(180deg);}
+.day-body{display:none;padding:12px 14px;}
+.day-body.open{display:block;}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle;}
+.tag-today{background:var(--mgt-l);color:var(--mgt-d);font-weight:600;}
+.tag-dim{background:var(--bg);color:var(--hint);border:1px solid var(--border);}
+.tag-fete{background:var(--fete);color:#7a4f00;}
+
+/* SHOP BLOCKS inside day card */
+.shop-block{margin-bottom:14px;}
+.shop-block:last-child{margin-bottom:0;}
+.shop-label{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.shop-label.dsm{color:var(--dsm);}
+.shop-label.mgt{color:var(--mgt);}
+.shop-label.paita{color:var(--paita);}
+.shop-label.ville{color:var(--muted);}
+.data-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.data-label{font-size:13px;color:var(--muted);}
+.data-val{font-size:14px;font-weight:500;font-family:'DM Mono',monospace;}
+.data-val.vt{color:var(--dsm);}
+.data-val.vs{color:var(--mgt);}
+.data-val.va{color:var(--paita);}
+.data-val.vp{color:#5b4bb5;}
+
+/* SUMMARY TABLE (desktop-friendly inside card) */
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;}
+.sum-cell{background:var(--bg);border-radius:var(--r-sm);padding:8px 10px;text-align:center;}
+.sum-cell .slbl{font-size:10px;color:var(--muted);margin-bottom:2px;}
+.sum-cell .sval{font-size:16px;font-weight:500;font-family:'DM Mono',monospace;}
+
+/* WEEKLY TABLE (for desktop view) */
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);}
+table{border-collapse:collapse;width:100%;background:var(--surface);}
+th,td{border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:7px 9px;text-align:center;white-space:nowrap;}
+th:last-child,td:last-child{border-right:none;}
+tr:last-child td{border-bottom:none;}
+th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
+.td-day{text-align:left;font-weight:500;background:#faf9f6;min-width:90px;padding-left:12px;}
+.td-day .ds{font-size:10px;font-weight:400;color:var(--hint);display:block;}
+.td-today{background:var(--today)!important;}
+.td-today-day{background:var(--today)!important;border-left:3px solid var(--today-b)!important;}
+.td-tot{font-weight:600;background:#f0efe9!important;}
+.td-btot{font-weight:600;background:var(--dsm-l)!important;color:var(--dsm);}
+.col-sep{border-left:2px solid var(--border-s)!important;}
+.th-dsm{color:var(--dsm)!important;}
+.th-mgt{color:var(--mgt)!important;}
+.th-paita{color:var(--paita)!important;}
+.vt2{color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace;}
+.vs2{color:var(--mgt);font-weight:500;font-family:'DM Mono',monospace;}
+.va2{color:var(--paita);font-weight:500;font-family:'DM Mono',monospace;}
+.vmono{font-family:'DM Mono',monospace;}
+
+/* VIEW TOGGLE */
+.view-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:12px;}
+.vt-btn{flex:1;padding:7px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;font-family:'DM Sans',sans-serif;color:var(--muted);-webkit-tap-highlight-color:transparent;}
+.vt-btn.active{background:var(--surface);color:var(--text);border-radius:var(--r-sm);}
+
+/* SECTION LABEL */
+.slabel{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:1rem 0 8px;}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:10px 0;}
+
+/* NOTE */
+.note{background:var(--fete);border:1px solid var(--fete-b);border-radius:var(--r);padding:10px 14px;font-size:12px;color:#5a3c00;line-height:1.7;margin-bottom:10px;}
+.note b{font-weight:600;}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAB4AHgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7LooooAKqavqdhpNmbvUbqK2hBChnP3mPRVHVmPYDJPauY+KHxB0XwNo1xeX91bpLFF5jea5WOFCSA8hAJAJBCqoLuQQoOCR8ReLPjB4k+LvxG07wvpOunw9Y6pdLZjU7kFJSrttwApPkxngbEOWzh3fqAD6O+Kv7TXhbwnLLZW0qtdpkGIJ51xn3iDBY+3+sdWH9w14jafGv4ufFnWLjSPAfh43AjjMk8l7c7o4Y+zyYMcCD2ZWPuat+Efhl8JV8d658LL/wV4nvn0u2mOreL7y6NulgyRl1kSJDsEbcFSxJbI4IzXI/CKzutc/ZZ+JvhzwqZLnW4dStr24htwRNd2K7RgKOWA2uxH4d+QCj8UJf2gPAmm22q6vrMtlpV6+yG+0KeBLdn5+QvbgYbg9euDjODXMfDTV/jB8QfGtn4b0Hx74iF9c73MtxrU6RRIilnd23HAAHoT2Fdt8JYNTtf2V/itH4nt57fw/ILQ6WblCqtfCTkRA9TxHux6fWuR/Zd0/X7v4i3N54Q1+30zxJpumXF5pltNCJF1ORQA1pgkD50LflntkAHX+KG+Kui+Dbrxho/wAVtJ8e6Lp1wkGoSxP9sazdjhS63MedrEgBh1q94P8A2h/iZ4e8PWmv6voNw+gT3DWsN9au0MbyqMsoWTfESB2CL0PIxxf+KmjJqvwE1/xlq/gO8+GHiH+0ba2msbdpLa010l882zY5QlnBwcFScnnHO/tRxSaHbeAPgvpCNKdB0yKS6SMf6+/ujluO/XI/66GgD6U+FP7TXhbxZLFZXMqrdvgCIp5Nxn2iLFZO/wDq3Zj/AHBXuukanYatZi8066iuYSSpZD91h1Vh1Vh3BwR3r89fjR8NrW4+J/hL4O+ANGsX17T9Iii1W6QhPtF0y+bJJK3TCp82eoDY7AV0fh3xd8S/gnNY3viXULTxH4ank+yxa7o96t8qOvWF2yPNCjP7uTDAA+W6YNAH3nRXG/C/4g6L450a3vLC6t3lli8xfKctHMgIBeMkAkAkBlIDISAwGQT2VABRRRQAVyXxS8baf4J8OT6jd3EEUixPIGmyUiRcbpXA5KgsoCjlmZEHLCum1G8t9PsJ767kEVvbxtLK5/hVRkn8q/PL9rH4qTeJPHh0MoZtPsbpH1G280qJZEJxbFl5CxAspx/y0eVum3ABC8+rftH+NdU0m38UW2jy28b3Oi6ZqDfNqc3Ri7j5RMVA9Qq4VAEU43vDmit8UPAL/CbW9PXQfil4Ijf+xDIghe9t0+ZrZj/eHUN/uuDjeT0HhLwn8K5dOv8A46/DfSL3WJdFtlnTwaTvOn34PErnO9oUwXAGc7SQeNq+d+IvjRL4/wBF0q8vdFuIfirpV5G2leINMCQrLCG3Ms69PlGccbcZJwNwYA7r4l/G3xe3wx8HeMtC8Zvo3ijTLt9J8RaE7IHmuEX/AF7wsMspCYbIwCwAwQa4LV/F/jDxV8QdL8VeGtDh8D+KWtfLuf7DSVrnUmJyZPsqAtggfxDB7seMd/8ABT4I+Ividrk/jrxJqMkNtfztPda0IlWe9kJ+YWaYCxpnjzyuT/AAMmvsDwH4G8KeBtNNh4Y0W209H5mlUbpp2/vSSHLO3uxNAHx9qnwg+PHxQjtZPGH9t3lvF88I1rVILGNGIxkW8SylTjjJANPt/wBkLxzblLiBvCsU8ZDIU1q8V1I6EMIOD74r7O8T+INI8M6U+p6zeR2tspwCeWduyqo5Y+wrzT/hoDwr9r8v+ytY8jOPN2R5x67d2awq4mjSdpySZ6ODyjG42LnQpOSXU+YfiJ+z38XrhBNrFpr2ux26ny5LfW01Pyx6LFN5T/8AfOajX4o+INH1OxuvFXw60Dxb4s0CFUs9QvIJrTUoAg+Rp4GAaXb13Acdd2ea+7PC/iHR/E2lJqWi3sd1bsdpI4ZG7qynlT7GqHjzwN4U8c6aLDxPottqCJzDKw2zQN/ejkGGRvdSK2jJSV1scNSnOlJwmrNbpnw38PtQ1y48P/8AC8vDNpeeI/iFaeKpH1y2hJcCxlhI2mBQT5bElQ4+7jH8PFn48aXd+GZ2+Gvgbw6Vs/iGtjrsekSRsb3TZ8tm3VQcKNw6kcAMOgzW/wDGn4MeLPhbqMnjDwlr+pRWSjaut2sjRXVqD/BeCPHmRngecBkfxg8GuA8O/GibwFomo30WmX9/8V7+dor7X9Zdblbe2GNiwgk5yuPbocsNoDIJY5Na/Zu8Y6Tpl54lttVluolutY0vT3zJpkvRCrn5fOCk+zLlWBRgT92/C7xtp/jbw5BqNpcQTSNEkhaHISVGztlQHkKSrAqeVZXQ8qa+TvFXhD4WyadYfHj4kaZf6Kus27Ty+EASjajfk8yxNu3rC/3yDjGQScHB5T9lr4h6r4Q8YWthPpt3Y6JrNzLJoiSh/KLlgHtkkbG9XARc84lWInGWyAfoTRUGnXlvqFhBfWkglt7iNZYnH8SsMg/lRQB5B+1f47Hg34fXMsEii5VPNRTg7pdwWBSO/wC8/eY7rA471+aE0jzSvLK7SO7FmZjksT1JPc19Rft+eKGvfE9noMcpKCaSd0P92LMMf5P9qP8AwKvlqgDo/h3428S+APE0HiHwtqUljexfK2BuSVD1R1PDKfQ+xGCAa+hP2X/hPN8RPF2oa54kgQacLg3OteXGI1nmkPmLYoBgKmCHlA6ApHxzXzr4IsHvtcRktvtRtwJFgxnzpCwSKPHcNIyKfYmv1N+FPhK0+H/w603QPNRpLWEy310x/wBdcN880rE+rljz0GB2oA6u3hit4I4IIkiijUIiIoVVUDAAA4AA7U+vAfG3x7uV1CW18J2Fs1tGSou7sMxl91QEYHoScn0FReEvj9fJdpD4o0uCS2Y4NxZAq6e5Qkhh9CD9a8/+1MNz8vN/kfTLhDNXR9r7P5XV/u/TfyOf/aW1e7vfiK+mSO32bToI1iTtudQ7N9TkD6CvL69c/aN062vr/TPG+jzJd6XqkCwtPEcr5iZ259CV4we6EVhH4doPg6PHn9pv5xfP2Xyxs2eb5f3uu7PPp2968DF0alTEVGtba/I/SMmx2Gw2WYZS929oWt9vqn21T3L/AOzXq91Y/EeLTY3b7NqMEiTJ23IpdW+owR9GNfUtfM/7OOm29pqepeNdWmS00zSrdohPKcL5j4z9cLxj1cCtjxb8f7r7W8PhfSoBbqcC4vQxZ/cIpG0fU59hXp4DEww2GTqvdu3ofJ8R5TXzbNpLBwvypKT2V/Xva3me+3EMVxBJBPEksUilHR1DKykYIIPBBHavhD9qH4TS/D3xbp+t+HbdG0xpxcaN5kYkWCaM+Y1i4OQyYBeIHqA8fPFe7+Cvj3NLqEVr4s0+2it5CFN5abh5XuyEnI9SDx6GvTviv4StPH/w71LQDKiyXUIlsblT/qLhfnhlUj0cKeOoyO9eph8VTxCvTZ8fmeUYvLJqGIja+z3T+Z8SL44+Hl9aQ/FL4razN8QfGV2GFl4ZhQw2enqrEKsueNvfaMg55DZLV5X8Wfiv4s+JOtWt9rNzFa2un5Gm2FknlQWS8cRgc5+VfmJzwOgAFYHjewey1t2e2NqbgGRoMY8mQMUljx2CyK6j2ArCroPNP0y/ZQ8djxl8PreWeRTcsnmuowNsu4rOoHb94PMx2WdB2or5y/YD8UNZeKLzQZJSEM0c6IP7suIZPzf7Kf8AgNFAHlX7T+qS6n8WLkykkw2dsOfWSITN/wCPTNXl9d58fs/8LX1jP922x9Ps0WP0rg6APdP2OtCi1j4seG4Zl3RnVDeP7LaQPKPw814fyFfeXxtkuYfhV4ga1LCT7LtJXrsLKH/8dJr44/YFEZ+Jun7sbhaamV/3sWf9K+9L22gvbOa0uollgnjaOSNujKRgg/hUVYc8HFdUdGErKhiIVWrqLTt3s7nwietdF8PvCGoeNNcfStOntoJI4Gnd52IUKCBwAMk5IruPG3wO8R6ffyyeGlTVNPYkxoZVSeMf3SGwGx6g8+lYej/C/wCJUd6k1no9zp80Zys5u0i2e+4Nn8q+QWDq06iU4Nry/wAz9ulnmCxGGc6GIjGTWjbWj802md/8NvAnijRry+8IeKtKS+8M6pGxaSGYPHFMvKuOjITjGcDkLXXP4f8ACreCv+FWDxVAJg2Nvmx/advnebt25+926e+KsfDCTUbK3fSvEXj3Tta1WQfuraKWN3hwDn5uHc+uRxivCR8MfH3/AAlwsv7Ku/O+1b/7R/5Y53Z83zP/AB71zxjNexK1CnFQpuV7rXdLtofEUr5jiqrxGIjT5OWSaVlKSvadpW22dtz0H4keBPE+rXFh4N8J6Utj4Z0yNW82aYJHNO3JcnlnIz1x1LV5H8QPCGoeC9cXSdRntp5HhWZHgYlSpJHIIBByDX0h8UW1a+gTTPDPjrT9H1SMYltJJo0kmyMj5uXQ/Qc5rwjWfhn8SXvnmvtEvb6dzlpxcpMX99xbP51y5jh1zPkg2+/ReVketwxmkvZx+sVoQjZ+67qUm/tNyte++l0cIOtfYPwTluZvhV4fe6ZjJ9l2gt12BmCf+OgV4t4J+CHiTUr+KTxHGuk6eCDIvmK88g/uqFJC59SePQ19K2Nrb2NlDZ2sSxW8EaxxIvRVUYAH4VvlGFq05OpNW6HncbZxhMVThh6ElJp3bWqWlrX87/gfnD+2LoUWj/FjxJDAu2MaoLxPcXcCSn/yIk35mvC6+n/2+hGPibqG3G42mllv97F5/SvmCvdPzs9Q/Zg1SXTPixbGIkGazuRx6xxGZf8Ax6FaKy/gD/yVfSP925z9Ps0uf0ooA0f2mtNl074r3fmgjzrO1YZ9UhWJv/HomrzKvp79vjww9j4wtNcjibY0ktu7+znz4/zZ7gf9s6+YaAPef2Mtbi0n4s+G3mfZG2pSWT+/2u3ZF/8AIkMY/EV+j46V+RHgDUZ7DX4xbXH2aaYqIJs48qdXWSF89sSImT6E1+qXww8W2fjjwHpPiizXyxfQBpYT1gmHyyxH3Vwy/hQBs61qVno+k3WqahKIrW1iaWVz2UD9T7V8pfEj4m694wupYVml0/SckR2cT7dw9ZCPvH26D0717z+0LDczfCjVfs24hGiklA7xiRS3+P4V8mV8/nOIqRkqSdla/qfpfAuV4apSli5pOadlfpZJ39Xfc9v+DsvhbwR8Pbvxze3NtdarPvhit0YeYmGwIgOoLEBifTHYc6j/ABP8QD4Kp4nDQf2qdY+ylvLGzbvL4x6bBs9cc9a+e8DO4gD3xXvk/g67X9mRIPJf7Yp/tcx45xu3EfXyzWOExFWcHCmrKMXt37+p35zlmEoV4VsU+eVSrHfpHX3fRde+lyp8Yn8LeOPh7a+O7G5trbVLfZFLA7DzHywBiI6llJLA+mex44z4a/E/XvCN1FBNNLqOkZAktJW3FB6xk/dPt0Pt1rgsDOcDPrQOtcVTGTlVVWOj626nvYbIqFPCPB1Xzwu7J/ZT6J+Xfc+6dI1C01XS7bUrCVZrW5iWWJx3UjIq0elcF+z/ABXMXwn0cXORuErxg9ozIxX9OfxrY+J/i2z8D+A9W8UXi+YLKAtFCOs8x+WKIe7OVX8a+vozdSnGT6pH4jjqEcNialGLuoyav6Ox8C/tm63Fq3xZ8SPC++MalHZJ7fZLdUb/AMiTSD8DXg1dD4/1Ge/1+Rbm4+0zQlhPNnPmzs7STPnvmR3wfQCuerQ5T039mXTZdR+K9p5QJ8mzumP1eFol/wDHpVor1H9gfww9/wCMLvXJIjsSSK3R/ZD58n5MluP+2lFAH0X+154Dbxj8P5xbQh7vYEi45EyktB9MsXi/7ePavzXdSrFSCCOoPav2N1axt9T0240+7QvBcRmNwDg4I6g9iOoPY4NfnB+1p8NL3wf42udbjg/0O+nxclFwqXLAtvA6BZQDIvYMJUH+roA8QFfVn7IHxph8MalLpuv3YTRtRlT7c7niyujhFuj6Ry/Ksh/hcKxwGr5Tro/Cui+JpNOuvEuhWEt3bafKkN35SebsEit/rIxkmNgrAkjb2PWgD9cJ4re8tJIJkSaCZCjowyrqRgg+oINeDeLfgDcm/kn8L6pbLaucrbXm4GP2DgHcPqM+5rx79mv9oufw7aw+Hdbiu9R0SLCJbqTJeaao7Rg83EA/u/6xBx8wAr7H8I+KPD3i3RotY8NaxZ6rYSdJraQMAfRh1VvUEAj0rnxGFpYhWqI9PLM4xeWScsPK191un8jyXwJ8BxZ6jFfeKr+3u0iYMtnbBtjkdN7NgkewHPr2r3AohQxlQVIwRjjHpTqKdDDU8PHlponMs1xWZVFUxErtbdEvRHhHjn4CtcajLeeE7+2t4ZWLGzutwWMnsjgHj2I49ar+D/gDdC/jn8U6lbG1Q5a1syxMvszkDA9cDPuK9/rH8XeKPD3hLRpdY8S6xZ6VYR9ZrmQKCfRR1ZvQAEn0rneWYZz5+X/I9OPFuaqh7FVPK9lf7/138zThjgtLVIYkSGCFAqKowqKBgAegAFfDH7X/AMaYfE+pRaboF2H0bTpX+wuh4vboZRrof9M4vmWM/wATlmGQtaP7Rf7Ql74ril8L+HLW/s9JnBVrVQy32prjP7wL80FuRyV/1jj+6pNfJmqX9zqV691dOGkbAAVQqooGFVQOFUDAAHAArvPnG76sqmlRSzBQCSegHekr3D9kv4aXnjDxtba3JB/odjPi2LrlXuVAbeR0KxAiRuxYxIf9ZQI+uf2RPAbeDvh/ALmEJd7CkvHPnMQ0/wBcMEi/7d/eivZdJsbfTNNt9PtEKQW8YjQE5OAOpPcnqT3OTRQBarh/jD4B07x14YubG5tI55WhMZRm2iaMkHYWwdpDAMj4Ox1B5G5W7iigD8mvix8PtW8AeInsbxJZbGR3+yXTR7PMCn5kdedkq5AZM8ZBBKsrHT8T6gPhxr39g+F4oYtW04It9rEkYkne42guIdwIijUkqCo3NjcW5Cj9E/i78MNE8faPcW13a27zTKA6y5CTFQdpJHKOuTtkXlckEMpKH41+Lvw5OgTF/GXh7WtVisIVU6ppkscV8sCAKgu4mVklCqAouY8AgDd83ygA8w8R2epa14Af4neIdZ1G81291tLKKSUg+ZGkBLSs3XO5UVT32v6VY+G/iTx4L271Xw5a6vdXllEr3V5pErxXixlgoMhQESrnAJkR+vUZrI8QePtQv7bU9JsbO2sNAvILe2h04oJRbx27FomVyM+blpC0gwWMsnGGwNPwz4Y0rQLC317xj4obSlvLYTWemabIZby7iboZCmVgjPX5zuIHCd6APbNJ/ad+KHh+zjbXPLnidtiSa7oMkDMQOVEtuwDEf9c/wra/4bI1fyf+QV4T8zHX7RfYz9PI/rXz94s1HV/EPgu5j0PVLVvDWlzR3VzpFtE8Jt2Y+Wtw4cs0vLBPMLsQXAO0MKrfCiznvZ0sIbrTo5by4EcAaaCOYNwCxZoJXCAc54Awx9aAPcvFf7TXxTu5bewt1j0ue7hjmt49J0J5JpopBlGV7hjwwIIYRnPavK9W1bxNr/iSWTxHeatHrUUrQGCcve6yGX7yqHAS2UZ+8BHgdA2K7C51OPxV47um0G7fU7C3ic2yTJqE0MtvaW525jQwpuZIs7eQzHHevKvFMcXg/wAc24XT9Uazkit7m90/UmEX2pSQ7RMIpGIjbGApYsvQ8jNAHUWF7d+GdFv/ABD4dhuba/0q5t5ml07bcxR5kUML67P3y5IXyosIcnd6Hifibo9jp+tw6pokZTQtagGoaaM58pGJDwE/3opFeM+uwHuK7XxDr2k+FfFFwWu7zxLpOo2LR21lGyW1rHp1ym5UwoIEy/KSAqhZYwSWxW/8HvhhqvxA8AWmg6hZapEn9pi/0+TyEDCBkKziLc2SkhWEmRwsamMkF2OwgHmfwm+H2reP/ESWNmksVjE6C7ulj3+WGPyoi8b5XwQqZ5wSSFVmH6W/B7wFp3gXwxbWNtaRwSrCIxGrbhDGCTsDYG4liWd8De7E8DaqwfCL4YaJ4B0e3trS1t1mhUhFjyUhLAbiCeXdsDdI3LYAAVQEHf0AFFFFABRRRQAVn67ouma3bLBqNqsoQ7o3BKyRN/eRxhlPuCKKKAPnT4rfsq+H9fkmvtIQQXL5YyWuyCUn/aTAhk5PYRE92NfPfiH9nXxH4allF9aPqcJcCMrdrp8oHfInRon/AOASGiigDH1jw94h8K+FNW0jRPhl4rt5NahS3vNUvVNwv2dZFlMcPkxhBueOMlizEhcDGTnkPDl/4y8O2VxZaJpmo2dzdOPPnS1fzWQf8swcZVTk7scsDg8ZBKKAPRvAVj4t1Lxvb69d+FvG9rpsVm63EItp7mCWRoXjcK8rKIkbdxuZtuTzgVR8E/s3+OvEUqGc2tnFnDCA/bJB/wB+sxg/78i0UUAfSfwp/ZV8P6BJDfawgnulw3mXQSeUH/ZTBhjPHcSkdmBr6L0LRdM0S2aDTrVYg53SuSWklb+87nLMfck0UUAaFFFFABRRRQB//9k=" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="Hiro Sushi">
+    <div>
+      <div class="hdr-title">Hiro Access</div>
+      <div class="hdr-sub">Consultation · lecture seule</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="sync-status" style="font-size:11px;color:#aaa;">○ Chargement</span>
+    <span id="clock"></span>
+    <span class="readonly-badge">LECTURE</span>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-tab active" onclick="showPage('riz',this)">Riz</div>
+  <div class="nav-tab" onclick="showPage('poisson',this)">Poisson</div>
+  <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
+  <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
+  <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
+</nav>
+
+<div class="week-bar">
+  <div class="week-nav">
+    <button class="wbtn" onclick="changeWeek(-1)">&#8592;</button>
+    <span class="week-label" id="weekLabel"></span>
+    <button class="wbtn" onclick="changeWeek(1)">&#8594;</button>
+  </div>
+  <span class="fete-tag" id="feteTag" style="display:none">&#127876; Fêtes</span>
+</div>
+
+<div class="main">
+
+  <!-- METRICS -->
+  <div class="metrics">
+    <div class="mc"><div class="lbl">Bacs bleus</div><div class="val" style="color:var(--dsm)" id="m-bacs">—</div><div class="sub">semaine</div></div>
+    <div class="mc"><div class="lbl">Marmites</div><div class="val" id="m-marmites">—</div><div class="sub">semaine</div></div>
+    <div class="mc"><div class="lbl">Temps prod</div><div class="val" style="color:#5b4bb5" id="m-temps">—</div><div class="sub">moy. <span id="m-avg" style="font-weight:600;color:#5b4bb5">—</span> min/j</div></div>
+    <div class="mc"><div class="lbl">Tranches thon</div><div class="val" style="color:var(--dsm)" id="m-thon">—</div><div class="sub">semaine</div></div>
+  </div>
+
+  <!-- PAGE RIZ -->
+  <div id="page-riz" class="page active">
+    <div class="view-toggle">
+      <button class="vt-btn active" onclick="setView('riz','cards',this)">Par jour</button>
+      <button class="vt-btn" onclick="setView('riz','table',this)">Tableau</button>
+    </div>
+    <div id="riz-cards"></div>
+    <div id="riz-table" style="display:none">
+      <div class="tbl-wrap"><table>
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:left;padding-left:12px;min-width:90px">Date</th>
+            <th colspan="2" class="th-dsm col-sep">DSM</th>
+            <th colspan="2" class="th-mgt col-sep">MGT</th>
+            <th colspan="2" class="th-paita col-sep">Paita</th>
+            <th colspan="2" class="col-sep">Ville</th>
+            <th colspan="2" class="col-sep">Asia</th>
+            <th class="col-sep" rowspan="2">Marmites</th>
+            <th rowspan="2">Temps (min)</th>
+          </tr>
+          <tr>
+            <th class="col-sep">Boules</th><th>Bacs</th>
+            <th class="col-sep">Boules</th><th>Bacs</th>
+            <th class="col-sep">Boules</th><th>Bacs</th>
+            <th class="col-sep">Boules</th><th>Bacs</th>
+            <th class="col-sep">Boules</th><th>Bacs</th>
+          </tr>
+        </thead>
+        <tbody id="body-riz"></tbody>
+        <tfoot id="foot-riz"></tfoot>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- PAGE POISSON -->
+  <div id="page-poisson" class="page">
+    <div class="view-toggle">
+      <button class="vt-btn active" onclick="setView('poisson','cards',this)">Par jour</button>
+      <button class="vt-btn" onclick="setView('poisson','table',this)">Tableau</button>
+    </div>
+    <div id="poisson-cards"></div>
+    <div id="poisson-table" style="display:none">
+      <div class="tbl-wrap"><table>
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:left;padding-left:12px;min-width:90px">Date</th>
+            <th colspan="4" class="th-dsm col-sep">DSM</th>
+            <th colspan="4" class="th-mgt col-sep">MGT</th>
+            <th colspan="4" class="th-paita col-sep">Paita</th>
+            <th colspan="3" class="col-sep">Ville</th>
+          </tr>
+          <tr>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+            <th class="col-sep th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+          </tr>
+        </thead>
+        <tbody id="body-fish"></tbody>
+        <tfoot id="foot-fish"></tfoot>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- PAGE ROLLS -->
+  <div id="page-rolls" class="page">
+    <div class="view-toggle">
+      <button class="vt-btn active" onclick="setView('rolls','cards',this)">Par jour</button>
+      <button class="vt-btn" onclick="setView('rolls','table',this)">Tableau</button>
+    </div>
+    <div id="rolls-cards"></div>
+    <div id="rolls-table" style="display:none">
+      <div class="tbl-wrap"><table>
+        <thead>
+          <tr>
+            <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
+            <th colspan="2" class="th-dsm col-sep">DSM</th>
+            <th colspan="2" class="th-mgt col-sep">MGT</th>
+            <th colspan="2" class="th-paita col-sep">Paita</th>
+            <th colspan="2" class="col-sep">Ville</th>
+            <th colspan="2" class="col-sep">Asia</th>
+            <th class="col-sep">Total</th>
+          </tr>
+          <tr>
+            <th></th>
+            <th class="col-sep">Riz</th><th>Rolls</th>
+            <th class="col-sep">Riz</th><th>Rolls</th>
+            <th class="col-sep">Riz</th><th>Rolls</th>
+            <th class="col-sep">Riz</th><th>Rolls</th>
+            <th class="col-sep">Riz</th><th>Rolls</th>
+            <th class="col-sep"></th>
+          </tr>
+        </thead>
+        <tbody id="body-rolls"></tbody>
+        <tfoot id="foot-rolls"></tfoot>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- PAGE THON -->
+  <div id="page-thon" class="page">
+    <div class="note">
+      <b>Règle :</b> 700–800 tranches = 20–25 kg · +800 = 25 kg · 1000+ = 30–35 kg<br>
+      <b>Note Charles :</b> +5 kg quand beaucoup de chutes et petites longes de thon.
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
+        <th>DSM</th><th>MGT</th><th>Paita</th><th>Ville</th>
+        <th>Total tranches</th><th>Kg à commander</th>
+      </tr></thead>
+      <tbody id="body-thon"></tbody>
+      <tfoot id="foot-thon"></tfoot>
+    </table></div>
+  </div>
+
+  <!-- PAGE TOTAUX -->
+  <div id="page-totaux" class="page">
+    <div class="tbl-wrap"><table>
+      <thead><tr>
+        <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
+        <th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+        <th>Total</th>
+      </tr></thead>
+      <tbody id="body-total"></tbody>
+      <tfoot id="foot-total"></tfoot>
+    </table></div>
+  </div>
+
+</div>
+
+<script>
+// ─── FIRESTORE REST API (sans SDK) ───
+const _PROJECT = 'hiro-sushi-nc';
+const _API = `https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production`;
+const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+function _fromFirestore(doc) {
+  if (!doc || !doc.fields) return {};
+  const out = {};
+  for (const [k, v] of Object.entries(doc.fields)) {
+    if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue);
+    else if (v.doubleValue !== undefined) out[k] = parseFloat(v.doubleValue);
+    else if (v.stringValue !== undefined) out[k] = v.stringValue;
+    else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+  }
+  return out;
+}
+
+function _setStatus(ok) {
+  const el = document.getElementById('sync-status');
+  if (el) { el.textContent = ok ? '● Live' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
+}
+
+async function _fbGet(docId) {
+  try {
+    const res = await fetch(`${_API}/${docId}?key=${_KEY}`);
+    if (!res.ok) return {};
+    return _fromFirestore(await res.json());
+  } catch(e) { return {}; }
+}
+
+let _pollInterval = null;
+function _fbPoll(docId, onData, interval=5000) {
+  if (_pollInterval) clearInterval(_pollInterval);
+  _fbGet(docId).then(d => { _setStatus(true); onData(d); }).catch(()=>_setStatus(false));
+  _pollInterval = setInterval(() => {
+    _fbGet(docId).then(d => { _setStatus(true); onData(d); }).catch(()=>_setStatus(false));
+  }, interval);
+}
+</script>
+
+<script>
+const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+const SHOPS=['dsm','mgt','paita','ville','asia'];
+const TODAY_NC=new Date(2026,3,5);
+const isFete=false;
+
+function mondayOf(off){
+  const d=new Date(TODAY_NC),dow=d.getDay(),diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff+off*7);d.setHours(0,0,0,0);return d;
+}
+function dayOf(off,di){const m=mondayOf(off);m.setDate(m.getDate()+di);return m;}
+function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtS(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+function fmtWeek(off){const m=mondayOf(off),e=new Date(m);e.setDate(e.getDate()+6);return fmtS(m)+' – '+fmtS(e)+' '+e.getFullYear();}
+
+const FISH={
+  dsm:[{r:500,t:150,s:150,a:50},{r:750,t:200,s:200,a:150},{r:1000,t:300,s:300,a:250},{r:1250,t:350,s:350,a:300},{r:1500,t:450,s:450,a:300},{r:1750,t:500,s:500,a:450},{r:2000,t:550,s:550,a:500}],
+  mgt:[{r:500,t:150,s:150,a:50,tf:150,sf:150,af:50},{r:750,t:200,s:200,a:150,tf:200,sf:200,af:150},{r:1000,t:300,s:300,a:250,tf:350,sf:350,af:250},{r:1250,t:350,s:350,a:250,tf:400,sf:400,af:250},{r:1500,t:450,s:450,a:250,tf:450,sf:450,af:300},{r:1750,t:500,s:500,a:400,tf:500,sf:500,af:400},{r:2000,t:550,s:550,a:450,tf:550,sf:550,af:450}],
+  paita:[{r:500,t:150,s:150,a:50},{r:750,t:200,s:180,a:200},{r:1000,t:200,s:200,a:250},{r:1250,t:235,s:200,a:250},{r:1500,t:400,s:360,a:250},{r:1750,t:500,s:500,a:400},{r:2000,t:550,s:550,a:450}],
+  ville:{t:65,s:95,a:30}
+};
+const RTBL=[{r:0,v:0},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
+
+function getFish(shop,riz){
+  if(shop==='ville')return riz>0?{...FISH.ville}:null;
+  if(shop==='asia')return null;
+  const rows=FISH[shop];if(!rows||!riz)return null;
+  const sorted=[...rows].sort((a,b)=>a.r-b.r);
+  let row=sorted[0];
+  for(const ro of sorted){if(riz>=ro.r)row=ro;else break;}
+  if(shop==='mgt'&&isFete)return{t:row.tf||row.t,s:row.sf||row.s,a:row.af||row.a};
+  return{t:row.t,s:row.s,a:row.a};
+}
+function getRolls(riz,isDim){
+  if(isDim&&!isFete)return 0;
+  if(!riz||riz<=0)return 0;
+  let v=0;for(const row of RTBL){if(riz>=row.r)v=row.v;else break;}return v;
+}
+function thonKg(t){
+  if(!t||t<=0)return'—';
+  if(t<=800)return'20–25 kg';
+  if(t<=1000)return'25 kg';
+  return'30–35 kg';
+}
+function fb(x){return x===0?'0':x%1===0?String(x):x.toFixed(1);}
+
+const PREFILL={
+  '2026-03-30':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
+  '2026-03-31':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-01':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-02':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-03':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
+  '2026-04-04':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
+  '2026-04-05':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
+  '2026-04-06':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
+  '2026-04-07':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-08':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-09':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
+  '2026-04-10':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
+  '2026-04-11':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
+  '2026-04-12':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
+};
+
+let weekOff=0, data={};
+const viewState={riz:'cards',poisson:'cards',rolls:'cards'};
+
+function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
+function getR(d,s){return data[d+'__r__'+s]||0;}
+
+function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
+
+function subscribeWeek(){
+  _fbPoll(weekDocId(), remote=>{
+    data={};Object.assign(data,remote);
+    renderWithState();
+  }, 3000);
+}
+
+// Sauvegarde l'état ouvert/fermé des cartes avant render, le restaure après
+function renderWithState(){
+  const openIds=new Set();
+  document.querySelectorAll('.day-body.open').forEach(el=>openIds.add(el.id));
+  render();
+  openIds.forEach(id=>{
+    const body=document.getElementById(id);
+    const chevId=id.replace('body-','chev-');
+    const chev=document.getElementById(chevId);
+    if(body){body.classList.add('open');}
+    if(chev){chev.classList.add('open');}
+  });
+}
+
+function showPage(p,el){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  el.classList.add('active');
+}
+
+function setView(page,mode,el){
+  viewState[page]=mode;
+  el.closest('.view-toggle').querySelectorAll('.vt-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(page+'-cards').style.display=mode==='cards'?'block':'none';
+  document.getElementById(page+'-table').style.display=mode==='table'?'block':'none';
+}
+
+function changeWeek(d){weekOff+=d;data={};_lastDataStr='';document.getElementById('weekLabel').textContent=fmtWeek(weekOff);subscribeWeek();}
+
+function toggleDay(id){
+  const body=document.getElementById('body-'+id);
+  const chev=document.getElementById('chev-'+id);
+  const open=body.classList.toggle('open');
+  chev.classList.toggle('open',open);
+}
+
+function render(){
+  const todayDs=ds(TODAY_NC);
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let rizCards='',fishCards='',rollCards='';
+  let rizTbl='',fishTbl='',rollTbl='',thonTbl='',totTbl='';
+  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totRolls={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totFish={t:0,s:0,a:0};
+
+  for(let di=0;di<7;di++){
+    const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
+    const isDim=(di===6),isToday=(dStr===todayDs);
+    const label=DAYS[di];
+    const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const bacs={};SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
+    const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
+    const marmites=Math.round(totBacs/2+(isDim?0:2));
+    const temps=Math.round(totBacs*5*10)/10;
+    wBacs+=totBacs;wMarmites+=marmites;wTemps+=temps;
+    SHOPS.forEach(s=>{totRiz[s]+=v[s];});
+
+    const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
+      fd[s]=getFish(s,v[s]);
+      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
+    });
+    const dayT=(fd.dsm?.t||0)+(fd.mgt?.t||0)+(fd.paita?.t||0)+(fd.ville?.t||0);
+    const dayS=(fd.dsm?.s||0)+(fd.mgt?.s||0)+(fd.paita?.s||0)+(fd.ville?.s||0);
+    const dayA=(fd.dsm?.a||0)+(fd.mgt?.a||0)+(fd.paita?.a||0)+(fd.ville?.a||0);
+    totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
+
+    const ar={dsm:getRolls(v.dsm,isDim),mgt:getRolls(v.mgt,isDim),paita:getRolls(v.paita,isDim)};
+    const totDayRolls=ar.dsm+ar.mgt+ar.paita;
+    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;
+
+    const tags=(isToday?`<span class="tag tag-today">Aujourd'hui</span>`:'')+(isDim?`<span class="tag tag-dim">Dim</span>`:'');
+    const cardId=dStr.replace(/-/g,'');
+    const todayClass=isToday?'day-card is-today':'day-card';
+    const openDefault=isToday?' open':'';
+
+    // ─── RIZ CARD ───
+    rizCards+=`<div class="${todayClass}">
+      <div class="day-head" onclick="toggleDay('riz${cardId}')">
+        <div class="day-head-left">
+          <div class="day-dot${isToday?' is-today':''}"></div>
+          <div><div class="day-name">${label}${tags}</div><div class="day-date">${short}</div></div>
+        </div>
+        <div id="chev-riz${cardId}" class="day-chevron${openDefault}">&#8964;</div>
+      </div>
+      <div id="body-riz${cardId}" class="day-body${openDefault}">
+        <div class="shop-block">
+          <div class="data-row"><span class="data-label">DSM</span><span class="data-val">${v.dsm||'—'} boules · ${bacs.dsm||'—'} bacs</span></div>
+          <div class="data-row"><span class="data-label">MGT</span><span class="data-val">${v.mgt||'—'} boules · ${bacs.mgt||'—'} bacs</span></div>
+          <div class="data-row"><span class="data-label">Paita</span><span class="data-val">${v.paita||'—'} boules · ${bacs.paita||'—'} bacs</span></div>
+          ${v.ville>0?`<div class="data-row"><span class="data-label">Ville</span><span class="data-val">${v.ville} boules · ${bacs.ville} bacs</span></div>`:''}
+          ${v.asia>0?`<div class="data-row"><span class="data-label">Asia</span><span class="data-val">${v.asia} boules · ${bacs.asia} bacs</span></div>`:''}
+        </div>
+        <div class="divider"></div>
+        <div class="sum-grid">
+          <div class="sum-cell"><div class="slbl">Marmites</div><div class="sval" style="color:var(--dsm)">${totBacs>0?fb(marmites):'—'}</div></div>
+          <div class="sum-cell"><div class="slbl">Temps prod</div><div class="sval" style="color:#5b4bb5">${totBacs>0?fb(temps)+' min':'—'}</div></div>
+          <div class="sum-cell"><div class="slbl">Total bacs</div><div class="sval">${totBacs>0?fb(totBacs):'—'}</div></div>
+        </div>
+      </div>
+    </div>`;
+
+    // ─── POISSON CARD ───
+    const fishRow=(shop,name,riz)=>fd[shop]?`
+      <tr>
+        <td style="text-align:left;font-weight:500;padding:6px 8px;background:#faf9f6;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px">${name}<span style="font-size:10px;color:var(--hint);display:block;font-weight:400">${riz} boules</span></td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--dsm);font-size:14px">${fd[shop].t}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--mgt);font-size:14px">${fd[shop].s}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--paita);font-size:14px">${fd[shop].a}</td>
+      </tr>`:'';
+    const totalRow=`
+      <tr style="background:var(--dsm-l)">
+        <td style="text-align:left;font-weight:600;padding:6px 8px;border-right:1px solid var(--border);font-size:12px;color:var(--dsm)">Total jour</td>
+        <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--dsm);font-size:14px">${dayT}</td>
+        <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--mgt);font-size:14px">${dayS}</td>
+        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-weight:600;color:var(--paita);font-size:14px">${dayA}</td>
+      </tr>`;
+    fishCards+=`<div class="${todayClass}">
+      <div class="day-head" onclick="toggleDay('fish${cardId}')">
+        <div class="day-head-left">
+          <div class="day-dot${isToday?' is-today':''}"></div>
+          <div><div class="day-name">${label}${tags}</div><div class="day-date">${short} · ${dayT} / ${dayS} / ${dayA} tranches</div></div>
+        </div>
+        <div id="chev-fish${cardId}" class="day-chevron${openDefault}">&#8964;</div>
+      </div>
+      <div id="body-fish${cardId}" class="day-body${openDefault}">
+        <div style="overflow-x:auto;border-radius:6px;border:1px solid var(--border);">
+          <table style="width:100%;border-collapse:collapse;min-width:260px;">
+            <thead>
+              <tr style="background:#faf9f6">
+                <th style="text-align:left;padding:5px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--muted);font-weight:500">Magasin</th>
+                <th style="padding:5px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--dsm);font-weight:500">Thon</th>
+                <th style="padding:5px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:11px;color:var(--mgt);font-weight:500">Saumon</th>
+                <th style="padding:5px 8px;border-bottom:1px solid var(--border);font-size:11px;color:var(--paita);font-weight:500">Aburi</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${fishRow('dsm','DSM',v.dsm)}
+              ${fishRow('mgt','MGT',v.mgt)}
+              ${fishRow('paita','Paita',v.paita)}
+              ${v.ville>0?fishRow('ville','Ville',v.ville):''}
+              ${totalRow}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+    // ─── ROLLS CARD ───
+    rollCards+=`<div class="${todayClass}">
+      <div class="day-head" onclick="toggleDay('roll${cardId}')">
+        <div class="day-head-left">
+          <div class="day-dot${isToday?' is-today':''}"></div>
+          <div><div class="day-name">${label}${tags}</div><div class="day-date">${short} · Total : ${totDayRolls||'—'} rolls</div></div>
+        </div>
+        <div id="chev-roll${cardId}" class="day-chevron${openDefault}">&#8964;</div>
+      </div>
+      <div id="body-roll${cardId}" class="day-body${openDefault}">
+        <div class="data-row"><span class="data-label">DSM (${v.dsm||'—'} bls)</span><span class="data-val">${ar.dsm||'—'} rolls</span></div>
+        <div class="data-row"><span class="data-label">MGT (${v.mgt||'—'} bls)</span><span class="data-val">${ar.mgt||'—'} rolls</span></div>
+        <div class="data-row"><span class="data-label">Paita (${v.paita||'—'} bls)</span><span class="data-val">${ar.paita||'—'} rolls</span></div>
+        ${isDim?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">Dimanche — pas de rolls</div>`:''}
+      </div>
+    </div>`;
+
+    // ─── TABLE ROWS ───
+    const dc=isToday?'td-day td-today-day':'td-day';
+    const dc2=isToday?'td-today':'';
+
+    rizTbl+=`<tr>
+      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+      <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${bacs.dsm||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${bacs.paita||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2}">${bacs.ville||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
+      <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites):'—'}</td>
+      <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
+    </tr>`;
+
+    const fcv=(s,f,cls)=>fd[s]?`<span class="${cls}">${fd[s][f]}</span>`:'—';
+    fishTbl+=`<tr>
+      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+      <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${fcv('dsm','t','vt2')}</td><td class="${dc2}">${fcv('dsm','s','vs2')}</td><td class="${dc2}">${fcv('dsm','a','va2')}</td>
+      <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2}">${fcv('mgt','t','vt2')}</td><td class="${dc2}">${fcv('mgt','s','vs2')}</td><td class="${dc2}">${fcv('mgt','a','va2')}</td>
+      <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${fcv('paita','t','vt2')}</td><td class="${dc2}">${fcv('paita','s','vs2')}</td><td class="${dc2}">${fcv('paita','a','va2')}</td>
+      <td class="${dc2} col-sep">${fcv('ville','t','vt2')}</td><td class="${dc2}">${fcv('ville','s','vs2')}</td><td class="${dc2}">${fcv('ville','a','va2')}</td>
+    </tr>`;
+
+    rollTbl+=`<tr>
+      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+      <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.dsm||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.mgt||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.paita||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2} vmono">—</td>
+      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2} vmono">—</td>
+      <td class="${dc2} col-sep vmono" style="font-weight:600">${totDayRolls||'—'}</td>
+    </tr>`;
+
+    // THON — basé sur lendemain, pas de commande dimanche, samedi = dim + lundi S+1
+    let thonTblRow='';
+    if(isDim){
+      thonTblRow=`<tr>
+        <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+        <td colspan="5" style="text-align:center;color:var(--hint);font-size:12px;">Pas de commande</td>
+      </tr>`;
+    } else if(di===5){
+      const dDim=dayOf(weekOff,6),dsDim=ds(dDim);
+      const vDim={};['dsm','mgt','paita','ville'].forEach(s=>{vDim[s]=getV(dsDim,s);});
+      const fdDim={};['dsm','mgt','paita','ville'].forEach(s=>{fdDim[s]=getFish(s,vDim[s]);});
+      const tDim=(fdDim.dsm?.t||0)+(fdDim.mgt?.t||0)+(fdDim.paita?.t||0)+(fdDim.ville?.t||0);
+      const dLun=dayOf(weekOff+1,0),dsLun=ds(dLun);
+      const vLun={};['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=getV(dsLun,s);});
+      const fdLun={};['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s]);});
+      const tLun=(fdLun.dsm?.t||0)+(fdLun.mgt?.t||0)+(fdLun.paita?.t||0)+(fdLun.ville?.t||0);
+      const hasLun=SHOPS.some(s=>vLun[s]>0);
+      const totSam=tDim+tLun;
+      thonTblRow=`<tr>
+        <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+        <td colspan="4" style="font-size:12px;color:var(--muted);">
+          Dim : <span class="vt2">${tDim||'—'}</span>
+          + Lun S+1 : ${hasLun?`<span class="vt2">${tLun}</span>`:`<em style="color:var(--hint)">en attente</em>`}
+        </td>
+        <td class="vmono" style="font-weight:600">${totSam||'—'}</td>
+        <td style="font-weight:600;color:var(--dsm)">${thonKg(totSam)}</td>
+      </tr>`;
+    } else {
+      const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
+      const vNext={};['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
+      const fdNext={};['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s]);});
+      const tNext=(fdNext.dsm?.t||0)+(fdNext.mgt?.t||0)+(fdNext.paita?.t||0)+(fdNext.ville?.t||0);
+      thonTblRow=`<tr>
+        <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+        <td class="${dc2} vt2">${fdNext.dsm?.t||'—'}</td>
+        <td class="${dc2} vt2">${fdNext.mgt?.t||'—'}</td>
+        <td class="${dc2} vt2">${fdNext.paita?.t||'—'}</td>
+        <td class="${dc2} vt2">${fdNext.ville?.t||'—'}</td>
+        <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
+        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${thonKg(tNext)}</td>
+      </tr>`;
+    }
+    thonTbl+=thonTblRow;
+
+    totTbl+=`<tr>
+      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+      <td class="${dc2} vt2">${dayT||'—'}</td>
+      <td class="${dc2} vs2">${dayS||'—'}</td>
+      <td class="${dc2} va2">${dayA||'—'}</td>
+      <td class="${dc2} vmono" style="font-weight:600">${(dayT+dayS+dayA)||'—'}</td>
+    </tr>`;
+  }
+
+  // Cards
+  document.getElementById('riz-cards').innerHTML=`<div class="day-list">${rizCards}</div>`;
+  document.getElementById('poisson-cards').innerHTML=`<div class="day-list">${fishCards}</div>`;
+  document.getElementById('rolls-cards').innerHTML=`<div class="day-list">${rollCards}</div>`;
+
+  // Table bodies
+  document.getElementById('body-riz').innerHTML=rizTbl;
+  document.getElementById('body-fish').innerHTML=fishTbl;
+  document.getElementById('body-rolls').innerHTML=rollTbl;
+  document.getElementById('body-thon').innerHTML=thonTbl;
+  document.getElementById('body-total').innerHTML=totTbl;
+
+  // Footers
+  document.getElementById('foot-riz').innerHTML=`<tr>
+    <td class="td-tot td-day">Total</td>
+    <td class="td-tot col-sep">${totRiz.dsm||'—'}</td><td class="td-tot">${fb(totRiz.dsm/250)}</td>
+    <td class="td-tot col-sep">${totRiz.mgt||'—'}</td><td class="td-tot">${fb(totRiz.mgt/250)}</td>
+    <td class="td-tot col-sep">${totRiz.paita||'—'}</td><td class="td-tot">${fb(totRiz.paita/250)}</td>
+    <td class="td-tot col-sep">${totRiz.ville||'—'}</td><td class="td-tot">${fb(totRiz.ville/250)}</td>
+    <td class="td-tot col-sep">${totRiz.asia||'—'}</td><td class="td-tot">${fb(totRiz.asia/250)}</td>
+    <td class="td-btot col-sep">${fb(wMarmites)}</td>
+    <td class="td-btot">${fb(wTemps)} min (~${fb(Math.round(wTemps/7*10)/10)}/j)</td>
+  </tr>`;
+
+  document.getElementById('foot-fish').innerHTML=`<tr>
+    <td class="td-tot td-day">Total</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.paita.t}</td><td class="td-tot vs2">${totFS.paita.s}</td><td class="td-tot va2">${totFS.paita.a}</td>
+    <td class="td-tot col-sep vt2">${totFS.ville.t}</td><td class="td-tot vs2">${totFS.ville.s}</td><td class="td-tot va2">${totFS.ville.a}</td>
+  </tr>`;
+
+  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita;
+  document.getElementById('foot-rolls').innerHTML=`<tr>
+    <td class="td-tot td-day">Total</td>
+    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.dsm}</td>
+    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.mgt}</td>
+    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.paita}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
+    <td class="td-btot col-sep">${totAllRolls}</td>
+  </tr>`;
+
+  const totThon=totFS.dsm.t+totFS.mgt.t+totFS.paita.t+totFS.ville.t;
+  document.getElementById('foot-thon').innerHTML=`<tr>
+    <td class="td-tot td-day">Total</td>
+    <td class="td-tot vt2">${totFS.dsm.t}</td>
+    <td class="td-tot vt2">${totFS.mgt.t}</td>
+    <td class="td-tot vt2">${totFS.paita.t}</td>
+    <td class="td-tot vt2">${totFS.ville.t}</td>
+    <td class="td-btot">${totThon}</td>
+    <td class="td-btot">—</td>
+  </tr>`;
+
+  document.getElementById('foot-total').innerHTML=`<tr>
+    <td class="td-tot td-day">Total</td>
+    <td class="td-btot vt2">${totFish.t}</td>
+    <td class="td-btot vs2">${totFish.s}</td>
+    <td class="td-btot va2">${totFish.a}</td>
+    <td class="td-btot">${totFish.t+totFish.s+totFish.a}</td>
+  </tr>`;
+
+  // Metrics
+  document.getElementById('m-bacs').textContent=fb(wBacs);
+  document.getElementById('m-marmites').textContent=fb(wMarmites);
+  document.getElementById('m-temps').textContent=fb(wTemps)+' min';
+  document.getElementById('m-avg').textContent=fb(Math.round(wTemps/7*10)/10);
+  document.getElementById('m-thon').textContent=wThon;
+}
+
+// Clock Nouméa
+function updateClock(){
+  const now=new Date(),utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const nc=new Date(utc+11*3600000);
+  document.getElementById('clock').textContent=nc.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(updateClock,1000);updateClock();
+
+document.getElementById('weekLabel').textContent=fmtWeek(0);
+subscribeWeek();
+</script>
+</body>
+</html>
