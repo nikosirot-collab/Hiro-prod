@@ -155,6 +155,7 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
   <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
+  <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
 <div class="week-bar">
@@ -305,6 +306,15 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
     </table></div>
   </div>
 
+  <!-- PAGE HISTORIQUE -->
+  <div id="page-historique" class="page">
+    <div style="padding:8px 0;">
+      <div id="historique-content" style="padding:4px 0;">
+        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement…</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -446,6 +456,7 @@ function showPage(p,el){
   document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   el.classList.add('active');
+  if(p==='historique') loadHistorique();
 }
 
 function setView(page,mode,el){
@@ -456,7 +467,15 @@ function setView(page,mode,el){
   document.getElementById(page+'-table').style.display=mode==='table'?'block':'none';
 }
 
-function changeWeek(d){weekOff+=d;data={};_lastDataStr='';document.getElementById('weekLabel').textContent=fmtWeek(weekOff);subscribeWeek();}
+function changeWeek(d){
+  const newOff=weekOff+d;
+  if(newOff>1) return;
+  weekOff=newOff;
+  data={};
+  document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
+  document.querySelector('.wbtn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
+  subscribeWeek();
+}
 
 function toggleDay(id){
   const body=document.getElementById('body-'+id);
@@ -760,6 +779,113 @@ function updateClock(){
   document.getElementById('clock').textContent=nc.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
 }
 setInterval(updateClock,1000);updateClock();
+
+// ─── HISTORIQUE ───
+async function loadHistorique() {
+  const el=document.getElementById('historique-content');
+  el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement…</div>`;
+  try {
+    const listUrl=`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production?key=${_KEY}&pageSize=52`;
+    const res=await fetch(listUrl);
+    if(!res.ok){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur ${res.status}</div>`;return;}
+    const json=await res.json();
+    const curMonday=ds(mondayOf(0));
+    const nextMonday=ds(mondayOf(1));
+    const docs=(json.documents||[]).filter(d=>{
+      const dateStr=d.name.split('/').pop().replace('week_','');
+      return dateStr!==curMonday&&dateStr!==nextMonday&&dateStr<curMonday;
+    });
+    if(docs.length===0){
+      el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
+      return;
+    }
+    docs.sort((a,b)=>b.name.localeCompare(a.name));
+    const byMonth={};
+    docs.forEach(doc=>{
+      const dateStr=doc.name.split('/').pop().replace('week_','');
+      const d=new Date(dateStr);
+      const mKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+      const mLabel=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      if(!byMonth[mKey]){byMonth[mKey]={label:mLabel,docs:[]};}
+      byMonth[mKey].docs.push({dateStr,doc});
+    });
+    let html='';
+    Object.keys(byMonth).sort().reverse().forEach(mKey=>{
+      const {label,docs:mdocs}=byMonth[mKey];
+      html+=`<div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">${label}</div>`;
+      mdocs.forEach(({dateStr,doc})=>{
+        const monday=new Date(dateStr);
+        const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+        const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+        const hData=_fromFirestore(doc);
+        let bacs=0,thon=0;
+        for(let di=0;di<7;di++){
+          const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+          SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+          ['dsm','mgt','paita','ville'].forEach(s=>{
+            const riz=hData[dStr+'__'+s]||0;
+            const fd=getFish(s,riz);
+            const fk=dStr+'__f__'+s+'__t';
+            thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
+          });
+        }
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;" onclick="loadWeekFromHistory('${dateStr}')">
+          <div>
+            <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+          </div>
+          <span style="font-size:18px;color:var(--muted);">›</span>
+        </div>`;
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  } catch(e){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur: ${e.message}</div>`;}
+}
+
+async function loadWeekFromHistory(dateStr) {
+  const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
+  if(!res.ok) return;
+  const hData=_fromFirestore(await res.json());
+  const monday=new Date(dateStr);
+  const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+  const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+  let rows='';
+  for(let di=0;di<7;di++){
+    const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+    const v={};SHOPS.forEach(s=>{v[s]=hData[dStr+'__'+s]||0;});
+    const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s]);});
+    const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return hData[mk]!==undefined?hData[mk]:(fd[s]?fd[s][f]:0);};
+    const isDim=di===6;
+    rows+=`<tr style="border-bottom:1px solid var(--border);${isDim?'background:var(--bg);':''}">
+      <td style="padding:8px 10px;font-weight:500;font-size:12px;">${DAYS[di]}<span style="font-size:10px;color:var(--muted);display:block">${fmtS(d)}</span></td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.dsm||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('dsm','t')||'—'}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.mgt||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('mgt','t')||'—'}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.paita||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('paita','t')||'—'}</td>
+    </tr>`;
+  }
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML=`<div style="background:var(--bg);border-radius:12px;padding:20px;max-width:580px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;">×</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="font-size:10px;font-weight:600;text-align:center;background:var(--surface);">
+        <th style="padding:6px 10px;text-align:left;">Jour</th>
+        <th>DSM riz</th><th style="color:var(--dsm)">Thon</th>
+        <th>MGT riz</th><th style="color:var(--dsm)">Thon</th>
+        <th>Paita riz</th><th style="color:var(--dsm)">Thon</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--muted);">Lecture seule · semaine archivée</div>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
 
 document.getElementById('weekLabel').textContent=fmtWeek(0);
 subscribeWeek();
