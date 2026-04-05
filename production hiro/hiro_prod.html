@@ -858,10 +858,10 @@ async function loadHistorique() {
   const el=document.getElementById('historique-content');
   el.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement…</div>`;
 
-  // Génère les IDs des 26 dernières semaines (6 mois)
+  // Génère les IDs des 12 dernières semaines (3 mois)
   const curMonday=mondayOf(0);
   const weekIds=[];
-  for(let i=1;i<=26;i++){
+  for(let i=1;i<=12;i++){
     const m=new Date(curMonday);m.setDate(m.getDate()-i*7);
     weekIds.push(ds(m));
   }

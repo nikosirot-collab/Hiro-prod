@@ -170,7 +170,7 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 <div class="main">
 
   <!-- METRICS -->
-  <div class="metrics">
+  <div class="metrics" style="display:none">
     <div class="mc"><div class="lbl">Bacs bleus</div><div class="val" style="color:var(--dsm)" id="m-bacs">—</div><div class="sub">semaine</div></div>
     <div class="mc"><div class="lbl">Marmites</div><div class="val" id="m-marmites">—</div><div class="sub">semaine</div></div>
     <div class="mc"><div class="lbl">Temps prod</div><div class="val" style="color:#5b4bb5" id="m-temps">—</div><div class="sub">moy. <span id="m-avg" style="font-weight:600;color:#5b4bb5">—</span> min/j</div></div>
@@ -819,7 +819,7 @@ async function loadHistorique() {
   el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement…</div>`;
   const curMonday=mondayOf(0);
   const weekIds=[];
-  for(let i=1;i<=26;i++){
+  for(let i=1;i<=12;i++){
     const m=new Date(curMonday);m.setDate(m.getDate()-i*7);
     weekIds.push(ds(m));
   }
