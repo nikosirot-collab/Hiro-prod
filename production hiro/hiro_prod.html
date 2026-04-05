@@ -537,23 +537,33 @@ function _setStatus(ok) {
   if (el) { el.textContent = ok ? '● Sync' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
 }
 
-let _saving = false;
+let _saving=false;
+let _saveTimeout=null;
 
-async function _fbSave(docId, key, val) {
-  _saving = true;
+async function _fbSaveAll(docId) {
+  _saving=true;
   try {
-    const encodedKey = encodeURIComponent(key);
-    const url = `${_API}/${docId}?updateMask.fieldPaths=${encodedKey}&key=${_KEY}`;
-    const field = typeof val === 'number' ? {integerValue: val} : {stringValue: String(val)};
-    const body = { fields: { [key]: field } };
-    const res = await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    const url=`${_API}/${docId}?key=${_KEY}`;
+    const fields={};
+    Object.entries(data).forEach(([k,v])=>{
+      if(typeof v==='number') fields[k]={integerValue:v};
+      else fields[k]={stringValue:String(v)};
+    });
+    fields['init']={stringValue:'true'};
+    const res=await fetch(url,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields})
     });
     _setStatus(res.ok);
-  } catch(e) { _setStatus(false); }
-  finally { setTimeout(()=>{ _saving=false; }, 2000); }
+    if(!res.ok){ const t=await res.text(); console.error('SAVE ERR',res.status,t); }
+  } catch(e){ _setStatus(false); console.error(e); }
+  finally{ setTimeout(()=>{ _saving=false; },3000); }
+}
+
+function _scheduleSave(docId){
+  if(_saveTimeout) clearTimeout(_saveTimeout);
+  _saveTimeout=setTimeout(()=>_fbSaveAll(docId), 500);
 }
 
 async function _fbGet(docId) {
@@ -568,10 +578,10 @@ async function _fbGet(docId) {
 
 // Polling toutes les 10 secondes pour Hiro Access
 let _pollInterval = null;
-function _fbPoll(docId, onData, interval=10000) {
+function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
-  _fbGet(docId).then(d => { if(!_saving){ onData(d); } });
-  _pollInterval = setInterval(() => {
+  _fbGet(docId).then(d=>{if(!_saving)onData(d);});
+  _pollInterval = setInterval(()=>{
     if(!_saving) _fbGet(docId).then(onData);
   }, interval);
 }
@@ -661,8 +671,8 @@ const PREFILL = {
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
 function getR(d,s){return data[d+'__r__'+s]||0;}
-function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
-function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
+function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
 
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
