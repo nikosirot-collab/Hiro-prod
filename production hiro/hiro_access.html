@@ -317,10 +317,11 @@ function _fromFirestore(doc) {
   if (!doc || !doc.fields) return {};
   const out = {};
   for (const [k, v] of Object.entries(doc.fields)) {
-    if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue);
-    else if (v.doubleValue !== undefined) out[k] = parseFloat(v.doubleValue);
-    else if (v.stringValue !== undefined) out[k] = v.stringValue;
-    else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+    const dk = k.replace(/--/g,'__');
+    if (v.integerValue !== undefined) out[dk] = parseInt(v.integerValue);
+    else if (v.doubleValue !== undefined) out[dk] = parseFloat(v.doubleValue);
+    else if (v.stringValue !== undefined) out[dk] = v.stringValue;
+    else if (v.booleanValue !== undefined) out[dk] = v.booleanValue;
   }
   return out;
 }
