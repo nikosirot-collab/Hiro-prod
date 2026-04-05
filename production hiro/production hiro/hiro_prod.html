@@ -539,7 +539,8 @@ function _setStatus(ok) {
 
 async function _fbSave(docId, key, val) {
   try {
-    const url = `${_API}/${docId}?key=${_KEY}`;
+    const encodedKey = encodeURIComponent(key);
+    const url = `${_API}/${docId}?updateMask.fieldPaths=${encodedKey}&key=${_KEY}`;
     const field = typeof val === 'number' ? {integerValue: val} : {stringValue: String(val)};
     const body = { fields: { [key]: field } };
     const res = await fetch(url, {
