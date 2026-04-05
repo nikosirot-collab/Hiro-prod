@@ -304,6 +304,7 @@ th {
   <div class="nav-tab" onclick="showPage('poisson')">Découpe Poisson</div>
   <div class="nav-tab" onclick="showPage('rolls')">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon')">Commande Thon</div>
+  <div class="nav-tab" onclick="showPage('recap')">Récap</div>
   <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
   <div class="nav-tab" onclick="showPage('historique')">Historique</div>
 </nav>
@@ -332,7 +333,7 @@ th {
     </div>
   </div>
 
-  <div class="metrics">
+  <div class="metrics" style="display:none">
     <div class="metric-card"><div class="lbl">Total bacs bleus</div><div class="val c-dsm" id="m-bacs">—</div><div class="sub">semaine</div></div>
     <div class="metric-card"><div class="lbl">Total marmites</div><div class="val" id="m-marmites">—</div><div class="sub">semaine</div></div>
     <div class="metric-card"><div class="lbl">Temps de production</div><div class="val c-purple" id="m-temps">—</div><div class="sub">total · moy. <span id="m-temps-avg" style="font-weight:600;color:#5b4bb5">—</span> min/jour</div></div>
@@ -465,6 +466,14 @@ th {
   </div>
 
   <!-- PAGE TOTAUX -->
+  <!-- PAGE RÉCAP -->
+  <div id="page-recap" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Récapitulatif de la semaine</span></div>
+      <div id="recap-content" style="padding:8px 0;"></div>
+    </div>
+  </div>
+
   <div id="page-totaux" class="page">
     <div class="section">
       <div class="section-header"><span class="section-title">Total thon / saumon / aburi par jour</span></div>
@@ -725,6 +734,7 @@ function showPage(p) {
   document.getElementById('page-'+p).classList.add('active');
   event.target.classList.add('active');
   if(p==='historique') loadHistorique();
+  if(p==='recap') renderRecap();
 }
 
 function changeWeek(d){
@@ -737,69 +747,176 @@ function changeWeek(d){
   subscribeWeek();
 }
 
+// ─── RÉCAP ───
+function renderRecap() {
+  const el=document.getElementById('recap-content');
+  if(!el) return;
+
+  const nbJours=7;
+  let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totMarmites=0, totTemps=0, totThon=0, joursActifs=0;
+
+  for(let di=0;di<7;di++){
+    const d=dayOf(weekOff,di),dStr=ds(d),isDim=(di===6);
+    const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const bacs=SHOPS.reduce((a,s)=>a+(v[s]>0?v[s]/250:0),0);
+    const marmites=bacs>0?Math.round(bacs/2+(isDim?0:2)):0;
+    const temps=Math.round(bacs*5*10)/10;
+    SHOPS.forEach(s=>{totRiz[s]+=v[s];});
+    totMarmites+=marmites;
+    totTemps+=temps;
+    if(bacs>0) joursActifs++;
+
+    // Thon
+    ['dsm','mgt','paita','ville'].forEach(s=>{
+      const fd=getFish(s,v[s],isFete);
+      const fk=dStr+'__f__'+s+'__t';
+      totThon+=data[fk]!==undefined?data[fk]:(fd?fd.t:0);
+    });
+  }
+
+  const j=joursActifs||1;
+  const avgRiz={};SHOPS.forEach(s=>{avgRiz[s]=Math.round(totRiz[s]/nbJours);});
+  const avgKg=Math.round((totMarmites/j)*6*10)/10;
+  const avgTemps=Math.round(totTemps/j*10)/10;
+  const avgThon=Math.round(totThon/j*10)/10;
+
+  const card=(lbl,val,unit,color='var(--text)')=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">${lbl}</div>
+      <div style="font-size:24px;font-weight:500;font-family:'DM Mono',monospace;color:${color};">${val}</div>
+      <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">${unit}</div>
+    </div>`;
+
+  const shopRow=(s,label,color)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;font-weight:500;color:${color};">${label}</span>
+      <span style="font-size:14px;font-family:'DM Mono',monospace;font-weight:500;">${avgRiz[s]||'—'} <span style="font-size:11px;color:var(--text-muted);">boules/j</span></span>
+    </div>`;
+
+  el.innerHTML=`
+    <div style="margin-bottom:20px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Moyennes / jour — ${fmtWeek(weekOff)}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+        ${card('Moy. kg de riz / jour',avgKg,'kg · (marmites × 6 kg)','var(--dsm)')}
+        ${card('Moy. temps de prod / jour',avgTemps,'min / jour','#5b4bb5')}
+        ${card('Moy. tranches thon / jour',avgThon,'tranches / jour','var(--dsm)')}
+      </div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Moyenne boules de riz / jour par magasin</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        ${shopRow('dsm','DSM','var(--dsm)')}
+        ${shopRow('mgt','MGT','var(--mgt)')}
+        ${shopRow('paita','Paita','var(--paita)')}
+        ${shopRow('ville','Ville','var(--text)')}
+        ${shopRow('asia','Asia','var(--text)')}
+      </div>
+    </div>`;
+}
+
 // ─── HISTORIQUE ───
+// Retourne le mois majoritaire d'une semaine (lundi → dimanche)
+function majorityMonth(mondayDate) {
+  const counts={};
+  for(let i=0;i<7;i++){
+    const d=new Date(mondayDate); d.setDate(d.getDate()+i);
+    const mk=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+    counts[mk]=(counts[mk]||0)+1;
+  }
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+
+function mKeyLabel(mKey){
+  const [y,m]=mKey.split('-');
+  return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+}
+
+let _histDocs=null; // cache
+
 async function loadHistorique() {
   const el=document.getElementById('historique-content');
   el.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement…</div>`;
   try {
     const listUrl=`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production?key=${_KEY}&pageSize=52`;
     const res=await fetch(listUrl);
-    if(!res.ok){ el.innerHTML=`<div style="color:red;padding:1rem;">Erreur ${res.status}</div>`; return; }
+    if(!res.ok){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur ${res.status}</div>`;return;}
     const json=await res.json();
     const curMonday=ds(mondayOf(0));
     const nextMonday=ds(mondayOf(1));
     const docs=(json.documents||[]).filter(d=>{
-      const id=d.name.split('/').pop();
-      const dateStr=id.replace('week_','');
+      const dateStr=d.name.split('/').pop().replace('week_','');
       return dateStr!==curMonday&&dateStr!==nextMonday&&dateStr<curMonday;
     });
+    _histDocs=docs;
     if(docs.length===0){
       el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
       return;
     }
-    docs.sort((a,b)=>b.name.localeCompare(a.name));
+
+    // Grouper par mois majoritaire
     const byMonth={};
     docs.forEach(doc=>{
       const dateStr=doc.name.split('/').pop().replace('week_','');
-      const d=new Date(dateStr);
-      const mKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
-      const mLabel=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
-      if(!byMonth[mKey]){byMonth[mKey]={label:mLabel,docs:[]};}
-      byMonth[mKey].docs.push({dateStr,doc});
+      const monday=new Date(dateStr);
+      const mKey=majorityMonth(monday);
+      if(!byMonth[mKey]) byMonth[mKey]=[];
+      byMonth[mKey].push({dateStr,doc});
     });
+
+    // Trier semaines par date desc dans chaque mois
+    Object.values(byMonth).forEach(arr=>arr.sort((a,b)=>b.dateStr.localeCompare(a.dateStr)));
+
+    // Afficher les mois comme accordéons cliquables
     let html='';
     Object.keys(byMonth).sort().reverse().forEach(mKey=>{
-      const {label,docs:mdocs}=byMonth[mKey];
-      html+=`<div style="margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">${label}</div>`;
-      mdocs.forEach(({dateStr,doc})=>{
-        const monday=new Date(dateStr);
-        const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
-        const wLabel=fmtS(monday)+' – '+fmtS(sunday);
-        const hData=_fromFirestore(doc);
-        let bacs=0,thon=0;
-        for(let di=0;di<7;di++){
-          const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-          SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
-          ['dsm','mgt','paita','ville'].forEach(s=>{
-            const riz=hData[dStr+'__'+s]||0;
-            const fd=getFish(s,riz,false);
-            const fk=dStr+'__f__'+s+'__t';
-            thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
-          });
-        }
-        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;" onclick="loadWeekFromHistory('${dateStr}')">
+      const weeks=byMonth[mKey];
+      const label=mKeyLabel(mKey);
+      html+=`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div onclick="toggleHistMonth('${mKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--surface);">
           <div>
-            <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+            <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${label}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${weeks.length} semaine${weeks.length>1?'s':''}</div>
           </div>
-          <span style="font-size:18px;color:var(--text-hint);">›</span>
-        </div>`;
-      });
-      html+='</div>';
+          <span id="chev-${mKey}" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">›</span>
+        </div>
+        <div id="month-${mKey}" style="display:none;border-top:1px solid var(--border);">
+          ${weeks.map(({dateStr,doc})=>{
+            const monday=new Date(dateStr);
+            const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+            const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+            const hData=_fromFirestore(doc);
+            let bacs=0,thon=0;
+            for(let di=0;di<7;di++){
+              const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+              SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+              ['dsm','mgt','paita','ville'].forEach(s=>{
+                const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz,false);
+                const fk=dStr+'__f__'+s+'__t';
+                thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
+              });
+            }
+            return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+              </div>
+              <span style="font-size:16px;color:var(--text-hint);">›</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
     });
     el.innerHTML=html;
   } catch(e){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur: ${e.message}</div>`;}
+}
+
+function toggleHistMonth(mKey){
+  const panel=document.getElementById('month-'+mKey);
+  const chev=document.getElementById('chev-'+mKey);
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  chev.style.transform=open?'rotate(90deg)':'';
 }
 
 async function loadWeekFromHistory(dateStr) {

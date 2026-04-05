@@ -781,6 +781,21 @@ function updateClock(){
 setInterval(updateClock,1000);updateClock();
 
 // ─── HISTORIQUE ───
+// Retourne le mois majoritaire d'une semaine
+function majorityMonth(mondayDate) {
+  const counts={};
+  for(let i=0;i<7;i++){
+    const d=new Date(mondayDate);d.setDate(d.getDate()+i);
+    const mk=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+    counts[mk]=(counts[mk]||0)+1;
+  }
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+}
+function mKeyLabel(mKey){
+  const [y,m]=mKey.split('-');
+  return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+}
+
 async function loadHistorique() {
   const el=document.getElementById('historique-content');
   el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement…</div>`;
@@ -799,49 +814,63 @@ async function loadHistorique() {
       el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
       return;
     }
-    docs.sort((a,b)=>b.name.localeCompare(a.name));
     const byMonth={};
     docs.forEach(doc=>{
       const dateStr=doc.name.split('/').pop().replace('week_','');
-      const d=new Date(dateStr);
-      const mKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
-      const mLabel=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
-      if(!byMonth[mKey]){byMonth[mKey]={label:mLabel,docs:[]};}
-      byMonth[mKey].docs.push({dateStr,doc});
+      const mKey=majorityMonth(new Date(dateStr));
+      if(!byMonth[mKey]) byMonth[mKey]=[];
+      byMonth[mKey].push({dateStr,doc});
     });
+    Object.values(byMonth).forEach(arr=>arr.sort((a,b)=>b.dateStr.localeCompare(a.dateStr)));
     let html='';
     Object.keys(byMonth).sort().reverse().forEach(mKey=>{
-      const {label,docs:mdocs}=byMonth[mKey];
-      html+=`<div style="margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">${label}</div>`;
-      mdocs.forEach(({dateStr,doc})=>{
-        const monday=new Date(dateStr);
-        const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
-        const wLabel=fmtS(monday)+' – '+fmtS(sunday);
-        const hData=_fromFirestore(doc);
-        let bacs=0,thon=0;
-        for(let di=0;di<7;di++){
-          const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-          SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
-          ['dsm','mgt','paita','ville'].forEach(s=>{
-            const riz=hData[dStr+'__'+s]||0;
-            const fd=getFish(s,riz);
-            const fk=dStr+'__f__'+s+'__t';
-            thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
-          });
-        }
-        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;" onclick="loadWeekFromHistory('${dateStr}')">
+      const weeks=byMonth[mKey];
+      const label=mKeyLabel(mKey);
+      html+=`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div onclick="toggleHistMonth('${mKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--bg);">
           <div>
-            <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+            <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${label}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${weeks.length} semaine${weeks.length>1?'s':''}</div>
           </div>
-          <span style="font-size:18px;color:var(--muted);">›</span>
-        </div>`;
-      });
-      html+='</div>';
+          <span id="chev-${mKey}" style="font-size:18px;color:var(--muted);transition:transform .2s;">›</span>
+        </div>
+        <div id="month-${mKey}" style="display:none;border-top:1px solid var(--border);">
+          ${weeks.map(({dateStr,doc})=>{
+            const monday=new Date(dateStr);
+            const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+            const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+            const hData=_fromFirestore(doc);
+            let bacs=0,thon=0;
+            for(let di=0;di<7;di++){
+              const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+              SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+              ['dsm','mgt','paita','ville'].forEach(s=>{
+                const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz);
+                const fk=dStr+'__f__'+s+'__t';
+                thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
+              });
+            }
+            return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+              </div>
+              <span style="font-size:16px;color:var(--muted);">›</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
     });
     el.innerHTML=html;
   } catch(e){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur: ${e.message}</div>`;}
+}
+
+function toggleHistMonth(mKey){
+  const panel=document.getElementById('month-'+mKey);
+  const chev=document.getElementById('chev-'+mKey);
+  const open=panel.style.display==='none';
+  panel.style.display=open?'block':'none';
+  chev.style.transform=open?'rotate(90deg)':'';
 }
 
 async function loadWeekFromHistory(dateStr) {
