@@ -543,13 +543,16 @@ async function _fbSave(docId, key, val) {
     const url = `${_API}/${docId}?updateMask.fieldPaths=${encodedKey}&key=${_KEY}`;
     const field = typeof val === 'number' ? {integerValue: val} : {stringValue: String(val)};
     const body = { fields: { [key]: field } };
+    console.log('SAVE', url, JSON.stringify(body));
     const res = await fetch(url, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
+    const json = await res.json();
+    console.log('RESPONSE', res.status, JSON.stringify(json));
     _setStatus(res.ok);
-  } catch(e) { _setStatus(false); }
+  } catch(e) { console.error('SAVE ERROR', e); _setStatus(false); }
 }
 
 async function _fbGet(docId) {
@@ -712,11 +715,11 @@ function render() {
     // RIZ
     rizR+=`<tr>
       <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.dsm||''}" placeholder="0" onchange="setV('${dStr}','dsm',this.value)"></td><td class="${dc2}">${bacs.dsm||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.mgt||''}" placeholder="0" onchange="setV('${dStr}','mgt',this.value)">${isFete&&v.mgt?`<span class="tag tag-fete">f</span>`:''}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.dsm||''}" placeholder="0" onchange="setV('${dStr}','dsm',this.value)"></td><td class="${dc2}">${bacs.dsm||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.mgt||''}" placeholder="0" onchange="setV('${dStr}','mgt',this.value)">${isFete&&v.mgt?`<span class="tag tag-fete">f</span>`:''}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites):'—'}</td>
