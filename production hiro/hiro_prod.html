@@ -214,6 +214,8 @@ th {
 }
 .inp:focus { outline: none; border-color: var(--accent); background: #fff; }
 .inp-sm { width: 54px; }
+.inp-fish { width:52px !important; font-size:11px !important; text-align:center; padding:2px 4px; }
+.inp-override { color:#c0392b !important; font-weight:600 !important; background:#fff5f5 !important; }
 
 .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
 .tag-today { background: var(--mgt-light); color: var(--mgt); font-weight: 600; }
@@ -678,6 +680,17 @@ function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[
 function getR(d,s){return data[d+'__r__'+s]||0;}
 function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+function setFishV(d,s,f,v,auto){
+  const k=d+'__f__'+s+'__'+f;
+  if(v===''||v===null){
+    delete data[k]; // champ vide → retour au calcul auto
+  } else {
+    const val=parseInt(v);
+    if(isNaN(val)) return;
+    data[k]=val; // 0 est une valeur valide
+  }
+  _scheduleSave(weekDocId());render();
+}
 
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
@@ -743,24 +756,58 @@ function render() {
       <td class="${dc2}">${totBacs>0?fb(marmites):'—'}</td>
     </tr>`;
 
-    // FISH
+    // FISH — valeurs manuelles ou calculées automatiquement
     const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
       fd[s]=getFish(s,v[s],isFete);
-      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
     });
-    const cv=(s,f,cls)=>fd[s]?`<span class="${cls}">${fd[s][f]}</span>`:'—';
-    const dayT=(fd.dsm?.t||0)+(fd.mgt?.t||0)+(fd.paita?.t||0)+(fd.ville?.t||0);
-    const dayS=(fd.dsm?.s||0)+(fd.mgt?.s||0)+(fd.paita?.s||0)+(fd.ville?.s||0);
-    const dayA=(fd.dsm?.a||0)+(fd.mgt?.a||0)+(fd.paita?.a||0)+(fd.ville?.a||0);
+
+    // getFishVal : retourne la valeur manuelle si saisie, sinon le calcul auto
+    const gfv=(s,f)=>{
+      const mk=dStr+'__f__'+s+'__'+f;
+      return data[mk]!==undefined ? data[mk] : (fd[s]?fd[s][f]:0);
+    };
+
+    // Accumulation pour totaux (utilise valeurs effectives)
+    ['dsm','mgt','paita','ville'].forEach(s=>{
+      const t=gfv(s,'t'), sa=gfv(s,'s'), a=gfv(s,'a');
+      totFS[s].t+=t; totFS[s].s+=sa; totFS[s].a+=a;
+    });
+    const dayT=gfv('dsm','t')+gfv('mgt','t')+gfv('paita','t')+gfv('ville','t');
+    const dayS=gfv('dsm','s')+gfv('mgt','s')+gfv('paita','s')+gfv('ville','s');
+    const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
     totFish.t+=dayT; totFish.s+=dayS; totFish.a+=dayA;
     wThon+=dayT;
 
+    // Input poisson : pré-rempli avec valeur auto, modifiable manuellement
+    const fishInp=(s,f,cls)=>{
+      const auto=fd[s]?fd[s][f]:0;
+      const mk=dStr+'__f__'+s+'__'+f;
+      const val=data[mk]!==undefined?data[mk]:auto;
+      const isOverride=data[mk]!==undefined&&data[mk]!==auto;
+      return `<input class="inp inp-fish${isOverride?' inp-override':''}" type="number" min="0" step="1"
+        value="${val||''}" placeholder="${auto||'0'}"
+        style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}"
+        onchange="setFishV('${dStr}','${s}','${f}',this.value,'${auto}')"
+        title="Auto: ${auto}">`;
+    };
+
     fishR+=`<tr>
       <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2}">${cv('dsm','t','val-thon')}</td><td class="${dc2}">${cv('dsm','s','val-saumon')}</td><td class="${dc2}">${cv('dsm','a','val-aburi')}</td>
-      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2}">${cv('mgt','t','val-thon')}</td><td class="${dc2}">${cv('mgt','s','val-saumon')}</td><td class="${dc2}">${cv('mgt','a','val-aburi')}</td>
-      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2}">${cv('paita','t','val-thon')}</td><td class="${dc2}">${cv('paita','s','val-saumon')}</td><td class="${dc2}">${cv('paita','a','val-aburi')}</td>
-      <td class="${dc2} col-sep">${cv('ville','t','val-thon')}</td><td class="${dc2}">${cv('ville','s','val-saumon')}</td><td class="${dc2}">${cv('ville','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td>
+      <td class="${dc2}">${fishInp('dsm','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('dsm','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('dsm','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td>
+      <td class="${dc2}">${fishInp('mgt','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('mgt','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('mgt','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td>
+      <td class="${dc2}">${fishInp('paita','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('paita','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('paita','a','val-aburi')}</td>
+      <td class="${dc2} col-sep">${fishInp('ville','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('ville','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('ville','a','val-aburi')}</td>
     </tr>`;
 
     // ROLLS
