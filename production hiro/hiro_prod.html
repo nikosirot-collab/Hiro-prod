@@ -1231,7 +1231,7 @@ function _printCombined(type) {
 
   const SEP='border-left:3px solid #000;';
   const th=(txt,extra='')=>`<th style="background:#ccc;border:1.5px solid #555;padding:5px 2px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;${extra}">${txt}</th>`;
-  const td=(txt,extra='')=>`<td style="border:1.5px solid #555;text-align:center;font-size:13px;vertical-align:middle;height:26mm;${extra}">${txt||''}</td>`;
+  const td=(txt,cls='')=>`<td class="${cls}">${txt||''}</td>`;
   const tdL=(txt,extra='')=>`<td style="border:1.5px solid #555;text-align:left;font-weight:700;padding-left:10px;background:#e0e0e0;font-size:13px;vertical-align:middle;height:26mm;${extra}">${txt}</td>`;
 
   let html='';
@@ -1244,13 +1244,12 @@ function _printCombined(type) {
       const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
       const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],isFete);});
       const cv=(s,f)=>fd[s]?fd[s][f]:'';
-      const bg=isDim?'background:#f0f0f0;':'';
       rows+=`<tr>
-        ${tdL(DAYS[di],bg)}
-        ${td(cv('dsm','t'),SEP)}${td(cv('dsm','s'))}${td(cv('dsm','a'))}
-        ${td(cv('mgt','t'),SEP)}${td(cv('mgt','s'))}${td(cv('mgt','a'))}
-        ${td(cv('paita','t'),SEP)}${td(cv('paita','s'))}${td(cv('paita','a'))}
-        ${td(cv('ville','t'),SEP)}${td(cv('ville','s'))}${td(cv('ville','a'))}
+        ${tdL(DAYS[di],isDim)}
+        ${td(cv('dsm','t'),'sep')}${td(cv('dsm','s'))}${td(cv('dsm','a'))}
+        ${td(cv('mgt','t'),'sep')}${td(cv('mgt','s'))}${td(cv('mgt','a'))}
+        ${td(cv('paita','t'),'sep')}${td(cv('paita','s'))}${td(cv('paita','a'))}
+        ${td(cv('ville','t'),'sep')}${td(cv('ville','s'))}${td(cv('ville','a'))}
       </tr>`;
     }
     html=`
@@ -1291,13 +1290,12 @@ function _printCombined(type) {
       const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
       const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
       const villeR=getR(dStr,'ville')||0;
-      const bg=isDim?'background:#f0f0f0;':'';
       rows+=`<tr>
-        ${tdL(DAYS[di]+' '+short,bg)}
-        ${td(v.dsm||'',SEP)}${td(ar.dsm||'')}
-        ${td(v.mgt||'',SEP)}${td(ar.mgt||'')}
-        ${td(v.paita||'',SEP)}${td(ar.paita||'')}
-        ${td(v.ville||'',SEP)}${td(villeR||'')}
+        ${tdL(DAYS[di]+' '+short,isDim)}
+        ${td(v.dsm||'','sep')}${td(ar.dsm||'')}
+        ${td(v.mgt||'','sep')}${td(ar.mgt||'')}
+        ${td(v.paita||'','sep')}${td(ar.paita||'')}
+        ${td(v.ville||'','sep')}${td(villeR||'')}
       </tr>`;
     }
     html=`
@@ -1334,15 +1332,17 @@ function _printCombined(type) {
   win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
   <title>${type==='poisson'?'Poisson':'Rolls'} — ${weekShort}</title>
   <style>
-    @page{size:A4 landscape;margin:10mm 10mm;}
+    @page{size:A4 landscape;margin:0;}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;width:277mm;}
-    p.titre{text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;}
-    table{width:277mm;border-collapse:collapse;table-layout:fixed;}
-    thead th{background:#ccc;border:1.5px solid #555;padding:4px 2px;text-align:center;font-weight:700;font-size:9px;white-space:nowrap;}
-    tbody td{border:1.5px solid #555;text-align:center;font-size:13px;vertical-align:middle;height:26mm;}
-    tbody td.day{text-align:left;font-weight:700;padding-left:8px;background:#e0e0e0;}
-    tbody td.dim{background:#f0f0f0;}
+    html,body{width:297mm;height:210mm;overflow:hidden;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;padding:8mm;display:flex;flex-direction:column;}
+    p.titre{text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:5px;flex-shrink:0;}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+    th{background:#ccc;border:1.5px solid #555;padding:4px 2px;text-align:center;font-weight:700;font-size:9px;white-space:nowrap;}
+    td{border:1.5px solid #555;text-align:center;font-size:12px;vertical-align:middle;}
+    tbody tr{height:calc(100% / 7);}
+    td.day{text-align:left;font-weight:700;padding-left:8px;background:#e0e0e0;}
+    td.dim{background:#f0f0f0;}
     .sep{border-left:3px solid #000!important;}
   </style>
   </head><body>
