@@ -550,13 +550,22 @@ async function _fbSaveAll(docId) {
       else fields[k]={stringValue:String(v)};
     });
     fields['init']={stringValue:'true'};
+    // D'abord on vérifie si le document existe, sinon on le crée
+    const checkRes=await fetch(`${_API}/${docId}?key=${_KEY}`);
+    if(!checkRes.ok){
+      // Créer le document avec juste init
+      await fetch(url,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:{init:{stringValue:'true'}}})
+      });
+    }
     const res=await fetch(url,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields})
     });
     _setStatus(res.ok);
-    if(!res.ok){ const t=await res.text(); console.error('SAVE ERR',res.status,t); }
   } catch(e){ _setStatus(false); console.error(e); }
   finally{ setTimeout(()=>{ _saving=false; },3000); }
 }
