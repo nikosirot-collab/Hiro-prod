@@ -214,6 +214,8 @@ th {
 }
 .inp:focus { outline: none; border-color: var(--accent); background: #fff; }
 .inp-sm { width: 54px; }
+.inp-fish { width:52px !important; font-size:11px !important; text-align:center; padding:2px 4px; }
+.inp-override { color:#c0392b !important; font-weight:600 !important; background:#fff5f5 !important; }
 
 .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 20px; margin-left: 4px; vertical-align: middle; }
 .tag-today { background: var(--mgt-light); color: var(--mgt); font-weight: 600; }
@@ -303,6 +305,7 @@ th {
   <div class="nav-tab" onclick="showPage('rolls')">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon')">Commande Thon</div>
   <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
+  <div class="nav-tab" onclick="showPage('historique')">Historique</div>
 </nav>
 
 <div class="main">
@@ -482,6 +485,16 @@ th {
       </div>
     </div>
   </div>
+
+  <!-- PAGE HISTORIQUE -->
+  <div id="page-historique" class="page">
+    <div class="section">
+      <div class="section-header"><span class="section-title">Historique des semaines</span></div>
+      <div id="historique-content" style="padding:8px 0;">
+        <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement de l'historique…</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PRINT ZONE POISSON -->
@@ -524,10 +537,11 @@ function _fromFirestore(doc) {
   if (!doc || !doc.fields) return {};
   const out = {};
   for (const [k, v] of Object.entries(doc.fields)) {
-    if (v.integerValue !== undefined) out[k] = parseInt(v.integerValue);
-    else if (v.doubleValue !== undefined) out[k] = parseFloat(v.doubleValue);
-    else if (v.stringValue !== undefined) out[k] = v.stringValue;
-    else if (v.booleanValue !== undefined) out[k] = v.booleanValue;
+    const dk = k.replace(/--/g,'__');
+    if (v.integerValue !== undefined) out[dk] = parseInt(v.integerValue);
+    else if (v.doubleValue !== undefined) out[dk] = parseFloat(v.doubleValue);
+    else if (v.stringValue !== undefined) out[dk] = v.stringValue;
+    else if (v.booleanValue !== undefined) out[dk] = v.booleanValue;
   }
   return out;
 }
@@ -537,19 +551,37 @@ function _setStatus(ok) {
   if (el) { el.textContent = ok ? '● Sync' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
 }
 
-async function _fbSave(docId, key, val) {
+let _saving=false;
+let _saveTimeout=null;
+
+// Encode/decode keys pour Firestore (__ pose problème comme séparateur de champs)
+function _encKey(k){ return k.replace(/__/g,'--'); }
+function _decKey(k){ return k.replace(/--/g,'__'); }
+
+async function _fbSaveAll(docId) {
+  _saving=true;
   try {
-    const encodedKey = encodeURIComponent(key);
-    const url = `${_API}/${docId}?updateMask.fieldPaths=${encodedKey}&key=${_KEY}`;
-    const field = typeof val === 'number' ? {integerValue: val} : {stringValue: String(val)};
-    const body = { fields: { [key]: field } };
-    const res = await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+    const url=`${_API}/${docId}?key=${_KEY}`;
+    const fields={};
+    Object.entries(data).forEach(([k,v])=>{
+      const ek=_encKey(k);
+      if(typeof v==='number') fields[ek]={integerValue:v};
+      else fields[ek]={stringValue:String(v)};
     });
+    fields['init']={stringValue:'true'};
+    const checkRes=await fetch(`${_API}/${docId}?key=${_KEY}`);
+    if(!checkRes.ok){
+      await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{init:{stringValue:'true'}}})});
+    }
+    const res=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
     _setStatus(res.ok);
-  } catch(e) { _setStatus(false); }
+  } catch(e){ _setStatus(false); }
+  finally{ setTimeout(()=>{ _saving=false; },3000); }
+}
+
+function _scheduleSave(docId){
+  if(_saveTimeout) clearTimeout(_saveTimeout);
+  _saveTimeout=setTimeout(()=>_fbSaveAll(docId), 500);
 }
 
 async function _fbGet(docId) {
@@ -564,10 +596,12 @@ async function _fbGet(docId) {
 
 // Polling toutes les 10 secondes pour Hiro Access
 let _pollInterval = null;
-function _fbPoll(docId, onData, interval=10000) {
+function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
-  _fbGet(docId).then(onData);
-  _pollInterval = setInterval(() => _fbGet(docId).then(onData), interval);
+  _fbGet(docId).then(d=>{if(!_saving)onData(d);});
+  _pollInterval = setInterval(()=>{
+    if(!_saving) _fbGet(docId).then(onData);
+  }, interval);
 }
 </script>
 
@@ -655,8 +689,19 @@ const PREFILL = {
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
 function getR(d,s){return data[d+'__r__'+s]||0;}
-function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
-function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_fbSave(weekDocId(),k,val);render();}
+function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+function setFishV(d,s,f,v,auto){
+  const k=d+'__f__'+s+'__'+f;
+  if(v===''||v===null){
+    delete data[k]; // champ vide → retour au calcul auto
+  } else {
+    const val=parseInt(v);
+    if(isNaN(val)) return;
+    data[k]=val; // 0 est une valeur valide
+  }
+  _scheduleSave(weekDocId());render();
+}
 
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
@@ -679,9 +724,127 @@ function showPage(p) {
   document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('page-'+p).classList.add('active');
   event.target.classList.add('active');
+  if(p==='historique') loadHistorique();
 }
 
-function changeWeek(d){weekOff+=d;data={};document.getElementById('weekLabel').textContent=fmtWeek(weekOff);subscribeWeek();}
+function changeWeek(d){
+  const newOff=weekOff+d;
+  if(newOff>1) return;
+  weekOff=newOff;
+  data={};
+  document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
+  document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
+  subscribeWeek();
+}
+
+// ─── HISTORIQUE ───
+async function loadHistorique() {
+  const el=document.getElementById('historique-content');
+  el.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement…</div>`;
+  try {
+    const listUrl=`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production?key=${_KEY}&pageSize=52`;
+    const res=await fetch(listUrl);
+    if(!res.ok){ el.innerHTML=`<div style="color:red;padding:1rem;">Erreur ${res.status}</div>`; return; }
+    const json=await res.json();
+    const curMonday=ds(mondayOf(0));
+    const nextMonday=ds(mondayOf(1));
+    const docs=(json.documents||[]).filter(d=>{
+      const id=d.name.split('/').pop();
+      const dateStr=id.replace('week_','');
+      return dateStr!==curMonday&&dateStr!==nextMonday&&dateStr<curMonday;
+    });
+    if(docs.length===0){
+      el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
+      return;
+    }
+    docs.sort((a,b)=>b.name.localeCompare(a.name));
+    const byMonth={};
+    docs.forEach(doc=>{
+      const dateStr=doc.name.split('/').pop().replace('week_','');
+      const d=new Date(dateStr);
+      const mKey=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+      const mLabel=d.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      if(!byMonth[mKey]){byMonth[mKey]={label:mLabel,docs:[]};}
+      byMonth[mKey].docs.push({dateStr,doc});
+    });
+    let html='';
+    Object.keys(byMonth).sort().reverse().forEach(mKey=>{
+      const {label,docs:mdocs}=byMonth[mKey];
+      html+=`<div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:8px 0 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">${label}</div>`;
+      mdocs.forEach(({dateStr,doc})=>{
+        const monday=new Date(dateStr);
+        const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+        const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+        const hData=_fromFirestore(doc);
+        let bacs=0,thon=0;
+        for(let di=0;di<7;di++){
+          const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+          SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+          ['dsm','mgt','paita','ville'].forEach(s=>{
+            const riz=hData[dStr+'__'+s]||0;
+            const fd=getFish(s,riz,false);
+            const fk=dStr+'__f__'+s+'__t';
+            thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
+          });
+        }
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;margin-bottom:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;" onclick="loadWeekFromHistory('${dateStr}')">
+          <div>
+            <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
+          </div>
+          <span style="font-size:18px;color:var(--text-hint);">›</span>
+        </div>`;
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  } catch(e){el.innerHTML=`<div style="color:red;padding:1rem;">Erreur: ${e.message}</div>`;}
+}
+
+async function loadWeekFromHistory(dateStr) {
+  const docId='week_'+dateStr;
+  const res=await fetch(`${_API}/${docId}?key=${_KEY}`);
+  if(!res.ok) return;
+  const hData=_fromFirestore(await res.json());
+  const monday=new Date(dateStr);
+  const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
+  const wLabel=fmtS(monday)+' – '+fmtS(sunday);
+  let rows='';
+  for(let di=0;di<7;di++){
+    const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
+    const v={};SHOPS.forEach(s=>{v[s]=hData[dStr+'__'+s]||0;});
+    const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],false);});
+    const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return hData[mk]!==undefined?hData[mk]:(fd[s]?fd[s][f]:0);};
+    const isDim=di===6;
+    rows+=`<tr style="border-bottom:1px solid var(--border);${isDim?'background:var(--bg);':''}">
+      <td style="padding:8px 10px;font-weight:500;font-size:12px;">${DAYS[di]}<span style="font-size:10px;color:var(--text-muted);display:block">${fmtS(d)}</span></td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.dsm||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('dsm','t')||'—'}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.mgt||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('mgt','t')||'—'}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;">${v.paita||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('paita','t')||'—'}</td>
+    </tr>`;
+  }
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+  overlay.innerHTML=`<div style="background:var(--surface);border-radius:12px;padding:20px;max-width:580px;width:100%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);line-height:1;">×</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:var(--bg);font-size:10px;font-weight:600;text-align:center;">
+        <th style="padding:6px 10px;text-align:left;">Jour</th>
+        <th>DSM riz</th><th style="color:var(--dsm)">Thon</th>
+        <th>MGT riz</th><th style="color:var(--dsm)">Thon</th>
+        <th>Paita riz</th><th style="color:var(--dsm)">Thon</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--text-muted);">Lecture seule · semaine archivée</div>
+  </div>`;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  document.body.appendChild(overlay);
+}
 
 function render() {
   const todayDs = ds(TODAY_NC);
@@ -712,34 +875,68 @@ function render() {
     // RIZ
     rizR+=`<tr>
       <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.dsm||''}" placeholder="0" onchange="setV('${dStr}','dsm',this.value)"></td><td class="${dc2}">${bacs.dsm||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.mgt||''}" placeholder="0" onchange="setV('${dStr}','mgt',this.value)">${isFete&&v.mgt?`<span class="tag tag-fete">f</span>`:''}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.dsm||''}" placeholder="0" onchange="setV('${dStr}','dsm',this.value)"></td><td class="${dc2}">${bacs.dsm||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.mgt||''}" placeholder="0" onchange="setV('${dStr}','mgt',this.value)">${isFete&&v.mgt?`<span class="tag tag-fete">f</span>`:''}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites):'—'}</td>
     </tr>`;
 
-    // FISH
+    // FISH — valeurs manuelles ou calculées automatiquement
     const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
       fd[s]=getFish(s,v[s],isFete);
-      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
     });
-    const cv=(s,f,cls)=>fd[s]?`<span class="${cls}">${fd[s][f]}</span>`:'—';
-    const dayT=(fd.dsm?.t||0)+(fd.mgt?.t||0)+(fd.paita?.t||0)+(fd.ville?.t||0);
-    const dayS=(fd.dsm?.s||0)+(fd.mgt?.s||0)+(fd.paita?.s||0)+(fd.ville?.s||0);
-    const dayA=(fd.dsm?.a||0)+(fd.mgt?.a||0)+(fd.paita?.a||0)+(fd.ville?.a||0);
+
+    // getFishVal : retourne la valeur manuelle si saisie, sinon le calcul auto
+    const gfv=(s,f)=>{
+      const mk=dStr+'__f__'+s+'__'+f;
+      return data[mk]!==undefined ? data[mk] : (fd[s]?fd[s][f]:0);
+    };
+
+    // Accumulation pour totaux (utilise valeurs effectives)
+    ['dsm','mgt','paita','ville'].forEach(s=>{
+      const t=gfv(s,'t'), sa=gfv(s,'s'), a=gfv(s,'a');
+      totFS[s].t+=t; totFS[s].s+=sa; totFS[s].a+=a;
+    });
+    const dayT=gfv('dsm','t')+gfv('mgt','t')+gfv('paita','t')+gfv('ville','t');
+    const dayS=gfv('dsm','s')+gfv('mgt','s')+gfv('paita','s')+gfv('ville','s');
+    const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
     totFish.t+=dayT; totFish.s+=dayS; totFish.a+=dayA;
     wThon+=dayT;
 
+    // Input poisson : pré-rempli avec valeur auto, modifiable manuellement
+    const fishInp=(s,f,cls)=>{
+      const auto=fd[s]?fd[s][f]:0;
+      const mk=dStr+'__f__'+s+'__'+f;
+      const val=data[mk]!==undefined?data[mk]:auto;
+      const isOverride=data[mk]!==undefined&&data[mk]!==auto;
+      return `<input class="inp inp-fish${isOverride?' inp-override':''}" type="number" min="0" step="1"
+        value="${val||''}" placeholder="${auto||'0'}"
+        style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}"
+        onchange="setFishV('${dStr}','${s}','${f}',this.value,'${auto}')"
+        title="Auto: ${auto}">`;
+    };
+
     fishR+=`<tr>
       <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2}">${cv('dsm','t','val-thon')}</td><td class="${dc2}">${cv('dsm','s','val-saumon')}</td><td class="${dc2}">${cv('dsm','a','val-aburi')}</td>
-      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2}">${cv('mgt','t','val-thon')}</td><td class="${dc2}">${cv('mgt','s','val-saumon')}</td><td class="${dc2}">${cv('mgt','a','val-aburi')}</td>
-      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2}">${cv('paita','t','val-thon')}</td><td class="${dc2}">${cv('paita','s','val-saumon')}</td><td class="${dc2}">${cv('paita','a','val-aburi')}</td>
-      <td class="${dc2} col-sep">${cv('ville','t','val-thon')}</td><td class="${dc2}">${cv('ville','s','val-saumon')}</td><td class="${dc2}">${cv('ville','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td>
+      <td class="${dc2}">${fishInp('dsm','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('dsm','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('dsm','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td>
+      <td class="${dc2}">${fishInp('mgt','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('mgt','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('mgt','a','val-aburi')}</td>
+      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td>
+      <td class="${dc2}">${fishInp('paita','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('paita','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('paita','a','val-aburi')}</td>
+      <td class="${dc2} col-sep">${fishInp('ville','t','val-thon')}</td>
+      <td class="${dc2}">${fishInp('ville','s','val-saumon')}</td>
+      <td class="${dc2}">${fishInp('ville','a','val-aburi')}</td>
     </tr>`;
 
     // ROLLS
@@ -884,161 +1081,279 @@ function render() {
   document.getElementById('m-thon').textContent=wThon;
 }
 
-function buildPrintTable(type) {
-  const week = fmtWeek(weekOff);
-  const todayDs = ds(TODAY_NC);
-  let html = '<table style="width:100%;border-collapse:collapse;font-size:10px;">';
-  
-  if (type==='poisson') {
-    html += `<thead>
-      <tr style="background:#f0efe9">
-        <th rowspan="2" style="text-align:left;padding:5px 8px;border:1px solid #ccc;min-width:80px">Date</th>
-        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#1a5fa8">DSM</th>
-        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#0d7a52">MGT</th>
-        <th colspan="4" style="padding:4px;border:1px solid #ccc;color:#b84a1a">Paita</th>
-        <th colspan="3" style="padding:4px;border:1px solid #ccc">Ville</th>
-      </tr>
-      <tr style="background:#f0efe9">
-        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
-        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
-        <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
-        <th style="padding:4px;border:1px solid #ccc;color:#1a5fa8">Thon</th><th style="padding:4px;border:1px solid #ccc;color:#0d7a52">Saumon</th><th style="padding:4px;border:1px solid #ccc;color:#b84a1a">Aburi</th>
-      </tr></thead><tbody>`;
-    let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
-    for (let di=0;di<7;di++) {
-      const d=dayOf(weekOff,di), dStr=ds(d), short=fmtS(d);
-      const isDim=(di===6), isToday=(dStr===todayDs);
-      const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
-      const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
-        fd[s]=getFish(s,v[s],isFete);
-        if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
-      });
-      const bg=isToday?'background:#e4f5ee;':'background:#fff;';
-      const cv=(s,f)=>fd[s]?fd[s][f]:'—';
-      html+=`<tr style="${bg}">
-        <td style="padding:5px 8px;border:1px solid #ccc;font-weight:500">${DAYS[di]}${isDim?' (dim)':''}<br><span style="font-size:9px;color:#888">${short}</span></td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.dsm||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('dsm','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('dsm','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('dsm','a')}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.mgt||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('mgt','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('mgt','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('mgt','a')}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.paita||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('paita','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('paita','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('paita','a')}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8;font-weight:500">${cv('ville','t')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52;font-weight:500">${cv('ville','s')}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a;font-weight:500">${cv('ville','a')}</td>
+function printPoisson() { _printCombined('poisson'); }
+function printRolls() { _printCombined('rolls'); }
+
+function _printCombined(type) {
+  const m=mondayOf(weekOff), e=new Date(m); e.setDate(e.getDate()+6);
+  const weekShort = fmtS(m)+' au '+fmtS(e)+'/'+e.getFullYear();
+
+  const th=(txt,extra='')=>`<th style="border:1.5px solid #555;padding:5px 2px;text-align:center;background:#ccc;font-weight:700;font-size:9px;white-space:nowrap;${extra}">${txt}</th>`;
+  const td=(txt,extra='')=>`<td style="border:1.5px solid #555;text-align:center;font-size:12px;height:52px;vertical-align:middle;${extra}">${txt||''}</td>`;
+  const tdL=(txt,extra='')=>`<td style="border:1.5px solid #555;text-align:left;font-weight:700;padding-left:8px;background:#e0e0e0;font-size:12px;height:52px;vertical-align:middle;${extra}">${txt}</td>`;
+
+  const SEP='border-left:3px solid #000!important;';
+
+  let html='';
+
+  if(type==='poisson'){
+    let rows='';
+    for(let di=0;di<7;di++){
+      const d=dayOf(weekOff,di),dStr=ds(d);
+      const isDim=(di===6);
+      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],isFete);});
+      const cv=(s,f)=>fd[s]?fd[s][f]:'';
+      const bg=isDim?'background:#f0f0f0;':'';
+      rows+=`<tr>
+        ${tdL(DAYS[di],bg)}
+        ${td(cv('dsm','t'),SEP)}${td(cv('dsm','s'))}${td(cv('dsm','a'))}
+        ${td(cv('mgt','t'),SEP)}${td(cv('mgt','s'))}${td(cv('mgt','a'))}
+        ${td(cv('paita','t'),SEP)}${td(cv('paita','s'))}${td(cv('paita','a'))}
+        ${td(cv('ville','t'),SEP)}${td(cv('ville','s'))}${td(cv('ville','a'))}
       </tr>`;
     }
-    html+=`<tr style="background:#e8f1fb;font-weight:600">
-      <td style="padding:5px 8px;border:1px solid #ccc">Total</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.dsm.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.dsm.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.dsm.a}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.mgt.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.mgt.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.mgt.a}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.paita.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.paita.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.paita.a}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totFS.ville.t}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#0d7a52">${totFS.ville.s}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;color:#b84a1a">${totFS.ville.a}</td>
-    </tr>`;
-    html+='</tbody></table>';
-    return {html, week};
+    html=`
+    <p style="text-align:center;font-size:13px;font-weight:700;letter-spacing:.06em;margin-bottom:10px;">QUANTITÉ POISSON HIRO — ${weekShort}</p>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:11%">
+        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
+      </colgroup>
+      <thead>
+        <tr>
+          ${th('DATE<br><span style="font-weight:400;font-size:8px;">'+fmtS(m)+'-'+fmtS(e)+'</span>','text-align:left;padding-left:6px;')}
+          ${th('DSM',SEP+'colspan:3')}${th('')}${th('')}
+          ${th('MGT',SEP)}${th('')}${th('')}
+          ${th('PAITA',SEP)}${th('')}${th('')}
+          ${th('VILLE',SEP)}${th('')}${th('')}
+        </tr>
+        <tr>
+          ${th('')}
+          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
+          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
+          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
+          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
 
-  if (type==='rolls') {
-    html+=`<thead><tr style="background:#f0efe9">
-      <th style="text-align:left;padding:5px 8px;border:1px solid #ccc;min-width:80px">Date</th>
-      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#1a5fa8">DSM</th>
-      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#0d7a52">MGT</th>
-      <th colspan="2" style="padding:4px;border:1px solid #ccc;color:#b84a1a">Paita</th>
-      <th colspan="2" style="padding:4px;border:1px solid #ccc">Ville</th>
-      <th colspan="2" style="padding:4px;border:1px solid #ccc">Asia</th>
-      <th style="padding:4px;border:1px solid #ccc">Total rolls</th>
-    </tr>
-    <tr style="background:#f0efe9">
-      <th style="padding:4px;border:1px solid #ccc"></th>
-      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
-      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
-      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
-      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
-      <th style="padding:4px;border:1px solid #ccc">Riz</th><th style="padding:4px;border:1px solid #ccc">Rolls</th>
-      <th style="padding:4px;border:1px solid #ccc"></th>
-    </tr></thead><tbody>`;
-    let totR={dsm:0,mgt:0,paita:0,ville:0,asia:0};
-    for (let di=0;di<7;di++) {
-      const d=dayOf(weekOff,di), dStr=ds(d), short=fmtS(d);
-      const isDim=(di===6), isToday=(dStr===todayDs);
-      const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+  if(type==='rolls'){
+    let rows='';
+    for(let di=0;di<7;di++){
+      const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
+      const isDim=(di===6);
+      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
       const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
-      const vR=getR(dStr,'ville')||0, aR=getR(dStr,'asia')||0;
-      totR.dsm+=ar.dsm;totR.mgt+=ar.mgt;totR.paita+=ar.paita;totR.ville+=vR;totR.asia+=aR;
-      const tot=ar.dsm+ar.mgt+ar.paita+vR+aR;
-      const bg=isToday?'background:#e4f5ee;':'background:#fff;';
-      html+=`<tr style="${bg}">
-        <td style="padding:5px 8px;border:1px solid #ccc;font-weight:500">${DAYS[di]}${isDim?' (dim)':''}<br><span style="font-size:9px;color:#888">${short}</span></td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.dsm||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.dsm||'—'}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.mgt||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.mgt||'—'}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.paita||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${ar.paita||'—'}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.ville||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${vR||'—'}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center">${v.asia||'—'}</td><td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:600">${aR||'—'}</td>
-        <td style="padding:4px;border:1px solid #ccc;text-align:center;font-weight:700;color:#1a5fa8">${tot||'—'}</td>
+      const villeR=getR(dStr,'ville')||0;
+      const bg=isDim?'background:#f0f0f0;':'';
+      rows+=`<tr>
+        ${tdL(DAYS[di]+' '+short,bg)}
+        ${td(v.dsm||'',SEP)}${td(ar.dsm||'')}
+        ${td(v.mgt||'',SEP)}${td(ar.mgt||'')}
+        ${td(v.paita||'',SEP)}${td(ar.paita||'')}
+        ${td(v.ville||'',SEP)}${td(villeR||'')}
       </tr>`;
     }
-    const totAll=totR.dsm+totR.mgt+totR.paita+totR.ville+totR.asia;
-    html+=`<tr style="background:#e8f1fb;font-weight:600">
-      <td style="padding:5px 8px;border:1px solid #ccc">Total</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.dsm}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.mgt}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.paita}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.ville}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center">—</td><td style="padding:4px;border:1px solid #ccc;text-align:center">${totR.asia}</td>
-      <td style="padding:4px;border:1px solid #ccc;text-align:center;color:#1a5fa8">${totAll}</td>
-    </tr>`;
-    html+='</tbody></table>';
-    return {html, week};
+    html=`
+    <p style="text-align:center;font-size:13px;font-weight:700;letter-spacing:.06em;margin-bottom:10px;">QUANTITÉ ROLL — ${weekShort}</p>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:20%">
+        <col style="width:10%"><col style="width:10%">
+        <col style="width:10%"><col style="width:10%">
+        <col style="width:10%"><col style="width:10%">
+        <col style="width:10%"><col style="width:10%">
+      </colgroup>
+      <thead>
+        <tr>
+          ${th('DATE<br><span style="font-weight:400;font-size:8px;">'+fmtS(m)+'-'+fmtS(e)+'</span>','text-align:left;padding-left:8px;')}
+          ${th('DSM',SEP)}${th('')}
+          ${th('MGT',SEP)}${th('')}
+          ${th('PAITA',SEP)}${th('')}
+          ${th('VILLE',SEP)}${th('')}
+        </tr>
+        <tr>
+          ${th('')}
+          ${th('RIZ',SEP)}${th('ROLL')}
+          ${th('RIZ',SEP)}${th('ROLL')}
+          ${th('RIZ',SEP)}${th('ROLL')}
+          ${th('RIZ',SEP)}${th('ROLL')}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
   }
-}
 
-function printPoisson() {
-  const {html, week} = buildPrintTable('poisson');
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Découpe Poisson — ${week}</title>
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+  <title>${type==='poisson'?'Poisson':'Rolls'} — ${weekShort}</title>
   <style>
-    @page{size:A4 landscape;margin:12mm 10mm;}
+    @page{size:A4 portrait;margin:15mm 12mm;}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'DM Sans',sans-serif;font-size:11px;color:#1a1916;}
-    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1a1916;}
-    .title{font-size:14px;font-weight:600;}
-    .sub{font-size:10px;color:#666;margin-top:2px;}
-    .badge{font-size:9px;padding:2px 8px;border-radius:20px;background:#f0efe9;color:#666;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#000;}
+    table{page-break-inside:avoid;}
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   </head><body>
-  <div class="header">
-    <div><div class="title">Quantité Poisson Hiro — Découpe par magasin</div><div class="sub">Semaine du ${week} · Cuisine centrale Hiro Sushi · Nouméa</div></div>
-    <div class="badge">${isFete?'Mode fêtes (décembre)':'Production standard'}</div>
-  </div>
   ${html}
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
 }
 
-function printRolls() {
-  const {html, week} = buildPrintTable('rolls');
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Rolls — ${week}</title>
+function _printCombined() {
+  const week = fmtWeek(weekOff);
+  const weekShort = (() => {
+    const m=mondayOf(weekOff), e=new Date(m); e.setDate(e.getDate()+6);
+    return fmtS(m)+' - '+fmtS(e);
+  })();
+
+  const th = (txt, extra='') => `<th style="border:1px solid #999;padding:4px 6px;text-align:center;background:#e8e8e8;font-size:9px;font-weight:600;${extra}">${txt}</th>`;
+  const td = (txt, extra='') => `<td style="border:1px solid #999;padding:4px 6px;text-align:center;font-size:10px;${extra}">${txt||'—'}</td>`;
+  const tdL = (txt, extra='') => `<td style="border:1px solid #999;padding:4px 8px;text-align:left;font-size:10px;font-weight:500;${extra}">${txt}</td>`;
+
+  // ── TABLEAU 1 : POISSON ──
+  let pRows = '';
+  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  for(let di=0;di<7;di++){
+    const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
+    const isDim=(di===6);
+    const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const fd={}; ['dsm','mgt','paita','ville'].forEach(s=>{
+      fd[s]=getFish(s,v[s],isFete);
+      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
+    });
+    const cv=(s,f)=>fd[s]?fd[s][f]:'';
+    const bg=isDim?'background:#f5f5f5;':'';
+    pRows+=`<tr style="${bg}">
+      ${tdL(DAYS[di])}
+      ${td(cv('dsm','t'),'color:#1a5fa8;font-weight:500')}${td(cv('dsm','s'),'color:#0d7a52;font-weight:500')}${td(cv('dsm','a'),'color:#b84a1a;font-weight:500')}
+      ${td(cv('mgt','t'),'color:#1a5fa8;font-weight:500')}${td(cv('mgt','s'),'color:#0d7a52;font-weight:500')}${td(cv('mgt','a'),'color:#b84a1a;font-weight:500')}
+      ${td(cv('paita','t'),'color:#1a5fa8;font-weight:500')}${td(cv('paita','s'),'color:#0d7a52;font-weight:500')}${td(cv('paita','a'),'color:#b84a1a;font-weight:500')}
+      ${td(cv('ville','t'),'color:#1a5fa8;font-weight:500')}${td(cv('ville','s'),'color:#0d7a52;font-weight:500')}${td(cv('ville','a'),'color:#b84a1a;font-weight:500')}
+    </tr>`;
+  }
+  // Total poisson
+  pRows+=`<tr style="background:#e8f1fb;font-weight:600">
+    ${tdL('Total','font-weight:600')}
+    ${td(totFS.dsm.t,'color:#1a5fa8;font-weight:600')}${td(totFS.dsm.s,'color:#0d7a52;font-weight:600')}${td(totFS.dsm.a,'color:#b84a1a;font-weight:600')}
+    ${td(totFS.mgt.t,'color:#1a5fa8;font-weight:600')}${td(totFS.mgt.s,'color:#0d7a52;font-weight:600')}${td(totFS.mgt.a,'color:#b84a1a;font-weight:600')}
+    ${td(totFS.paita.t,'color:#1a5fa8;font-weight:600')}${td(totFS.paita.s,'color:#0d7a52;font-weight:600')}${td(totFS.paita.a,'color:#b84a1a;font-weight:600')}
+    ${td(totFS.ville.t,'color:#1a5fa8;font-weight:600')}${td(totFS.ville.s,'color:#0d7a52;font-weight:600')}${td(totFS.ville.a,'color:#b84a1a;font-weight:600')}
+  </tr>`;
+
+  const poissonTable=`
+  <p style="text-align:center;font-size:11px;font-weight:600;margin-bottom:6px;letter-spacing:0.05em;">QUANTITÉ POISSON HIRO</p>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        ${th('DATE','text-align:left;padding-left:8px;')}
+        ${th('DSM','color:#1a5fa8;border-left:2px solid #1a5fa8')} ${th('')} ${th('')}
+        ${th('MGT','color:#0d7a52;border-left:2px solid #0d7a52')} ${th('')} ${th('')}
+        ${th('PAITA','color:#b84a1a;border-left:2px solid #b84a1a')} ${th('')} ${th('')}
+        ${th('VILLE','border-left:2px solid #666')} ${th('')} ${th('')}
+      </tr>
+      <tr>
+        ${th(weekShort,'text-align:left;padding-left:8px;font-size:8px;')}
+        ${th('THON','color:#1a5fa8;border-left:2px solid #1a5fa8')}${th('SAUMON','color:#0d7a52')}${th('ABURI','color:#b84a1a')}
+        ${th('THON','color:#1a5fa8;border-left:2px solid #0d7a52')}${th('SAUMON','color:#0d7a52')}${th('ABURI','color:#b84a1a')}
+        ${th('THON','color:#1a5fa8;border-left:2px solid #b84a1a')}${th('SAUMON','color:#0d7a52')}${th('ABURI','color:#b84a1a')}
+        ${th('THON','color:#1a5fa8;border-left:2px solid #666')}${th('SAUMON','color:#0d7a52')}${th('ABURI','color:#b84a1a')}
+      </tr>
+    </thead>
+    <tbody>${pRows}</tbody>
+  </table>`;
+
+  // ── TABLEAU 2 : ROLLS ──
+  let rRows = '';
+  let totRolls={dsm:0,mgt:0,paita:0,ville:0};
+  for(let di=0;di<7;di++){
+    const d=dayOf(weekOff,di),dStr=ds(d);
+    const isDim=(di===6);
+    const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const ar={
+      dsm:getRolls(v.dsm,isDim,isFete),
+      mgt:getRolls(v.mgt,isDim,isFete),
+      paita:getRolls(v.paita,isDim,isFete)
+    };
+    const villeR=getR(dStr,'ville')||0;
+    totRolls.dsm+=ar.dsm; totRolls.mgt+=ar.mgt; totRolls.paita+=ar.paita; totRolls.ville+=villeR;
+    const bg=isDim?'background:#f5f5f5;':'';
+    rRows+=`<tr style="${bg}">
+      ${tdL(DAYS[di])}
+      ${td(v.dsm||'')}${td(ar.dsm||'')}
+      ${td(v.mgt||'')}${td(ar.mgt||'')}
+      ${td(v.paita||'')}${td(ar.paita||'')}
+      ${td(v.ville||'')}${td(villeR||'')}
+    </tr>`;
+  }
+  rRows+=`<tr style="background:#e8f1fb;font-weight:600">
+    ${tdL('Total','font-weight:600')}
+    ${td('')}${td(totRolls.dsm,'font-weight:600')}
+    ${td('')}${td(totRolls.mgt,'font-weight:600')}
+    ${td('')}${td(totRolls.paita,'font-weight:600')}
+    ${td('')}${td(totRolls.ville,'font-weight:600')}
+  </tr>`;
+
+  const rollsTable=`
+  <p style="text-align:center;font-size:11px;font-weight:600;margin-bottom:6px;letter-spacing:0.05em;">Quantité roll</p>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        ${th('Date','text-align:left;padding-left:8px;')}
+        ${th('DSM','color:#1a5fa8;border-left:2px solid #1a5fa8')} ${th('')}
+        ${th('MGT','color:#0d7a52;border-left:2px solid #0d7a52')} ${th('')}
+        ${th('PAITA','color:#b84a1a;border-left:2px solid #b84a1a')} ${th('')}
+        ${th('VILLE','border-left:2px solid #666')} ${th('')}
+      </tr>
+      <tr>
+        ${th(weekShort,'text-align:left;padding-left:8px;font-size:8px;')}
+        ${th('RIZ','border-left:2px solid #1a5fa8')}${th('ROLL')}
+        ${th('RIZ','border-left:2px solid #0d7a52')}${th('ROLL')}
+        ${th('RIZ','border-left:2px solid #b84a1a')}${th('ROLL')}
+        ${th('RIZ','border-left:2px solid #666')}${th('ROLL')}
+      </tr>
+    </thead>
+    <tbody>${rRows}</tbody>
+  </table>`;
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+  <title>Production ${weekShort}</title>
   <style>
-    @page{size:A4 landscape;margin:12mm 10mm;}
+    @page{size:A4 portrait;margin:15mm 12mm;}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    body{font-family:'DM Sans',sans-serif;font-size:11px;color:#1a1916;}
-    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #1a1916;}
-    .title{font-size:14px;font-weight:600;}
-    .sub{font-size:10px;color:#666;margin-top:2px;}
-    .badge{font-size:9px;padding:2px 8px;border-radius:20px;background:#f0efe9;color:#666;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;color:#1a1916;}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #1a1916;}
+    .logo{width:40px;height:40px;border-radius:50%;object-fit:cover;}
+    .title{font-size:13px;font-weight:700;letter-spacing:0.02em;}
+    .sub{font-size:9px;color:#666;margin-top:2px;}
+    .section{margin-bottom:18px;}
+    table{page-break-inside:avoid;}
   </style>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   </head><body>
   <div class="header">
-    <div><div class="title">Quantité Rolls par magasin</div><div class="sub">Semaine du ${week} · Cuisine centrale Hiro Sushi · Nouméa</div></div>
-    <div class="badge">${isFete?'Mode fêtes (décembre)':'Production standard'}</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <img class="logo" src="${document.querySelector('header img')?.src||''}" alt="Hiro Sushi">
+      <div>
+        <div class="title">Production Hiro Sushi</div>
+        <div class="sub">Semaine du ${weekShort} · Cuisine centrale · Nouméa</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:#666;">${isFete?'Mode fêtes (décembre)':'Production standard'}</div>
   </div>
-  ${html}
+  <div class="section">${poissonTable}</div>
+  <div class="section">${rollsTable}</div>
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
 }
-
-
+  
 
 function updateClock(){
   const now=new Date();
