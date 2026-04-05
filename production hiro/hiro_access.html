@@ -497,7 +497,8 @@ function render(){
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={dsm:getRolls(v.dsm,isDim),mgt:getRolls(v.mgt,isDim),paita:getRolls(v.paita,isDim)};
-    const totDayRolls=ar.dsm+ar.mgt+ar.paita;
+    const villeR=getR(dStr,'ville')||0;
+    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR;
     totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;
 
     const tags=(isToday?`<span class="tag tag-today">Aujourd'hui</span>`:'')+(isDim?`<span class="tag tag-dim">Dim</span>`:'');
@@ -590,6 +591,7 @@ function render(){
         <div class="data-row"><span class="data-label">DSM (${v.dsm||'—'} bls)</span><span class="data-val">${ar.dsm||'—'} rolls</span></div>
         <div class="data-row"><span class="data-label">MGT (${v.mgt||'—'} bls)</span><span class="data-val">${ar.mgt||'—'} rolls</span></div>
         <div class="data-row"><span class="data-label">Paita (${v.paita||'—'} bls)</span><span class="data-val">${ar.paita||'—'} rolls</span></div>
+        ${villeR>0?`<div class="data-row"><span class="data-label">Ville</span><span class="data-val">${villeR} rolls</span></div>`:''}
         ${isDim?`<div style="font-size:12px;color:var(--muted);margin-top:6px;">Dimanche — pas de rolls</div>`:''}
       </div>
     </div>`;
