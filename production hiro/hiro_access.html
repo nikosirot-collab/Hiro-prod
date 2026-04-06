@@ -442,7 +442,7 @@ const PREFILL={
   '2026-04-12':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
 };
 
-let weekOff=0, data={};
+let weekOff=0, data={}, _prevData={};
 const viewState={riz:'cards',poisson:'cards',rolls:'cards'};
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
@@ -450,8 +450,58 @@ function getR(d,s){return data[d+'__r__'+s]||0;}
 
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
+// ─── BANNIÈRE NOTIFICATION ───
+let _bannerTimeout=null;
+function showBanner(msg){
+  let banner=document.getElementById('notif-banner');
+  if(!banner){
+    banner=document.createElement('div');
+    banner.id='notif-banner';
+    banner.style.cssText='position:fixed;top:56px;left:0;right:0;z-index:999;background:#1a1916;color:#fff;padding:10px 16px;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:12px;transform:translateY(-100%);transition:transform .3s ease;box-shadow:0 2px 8px rgba(0,0,0,.3);';
+    banner.innerHTML=`<span id="notif-text" style="flex:1"></span><button onclick="document.getElementById('notif-banner').style.transform='translateY(-100%)'" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;line-height:1;">×</button>`;
+    document.body.appendChild(banner);
+  }
+  document.getElementById('notif-text').innerHTML=msg;
+  banner.style.transform='translateY(0)';
+  if(_bannerTimeout) clearTimeout(_bannerTimeout);
+  _bannerTimeout=setTimeout(()=>{banner.style.transform='translateY(-100%)';},6000);
+}
+
+function detectChanges(newData){
+  if(Object.keys(_prevData).length===0){_prevData={...newData};return;}
+  const SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
+  const changes=[];
+  for(const [k,v] of Object.entries(newData)){
+    if(k==='init') continue;
+    const prev=_prevData[k];
+    if(prev!==undefined && prev!==v){
+      // Décode la clé ex: 2026-04-07__dsm ou 2026-04-07__f__dsm__t
+      const parts=k.split('__');
+      const dateStr=parts[0];
+      const d=new Date(dateStr);
+      const dayLabel=DAYS[d.getDay()===0?6:d.getDay()-1];
+      if(parts[1]==='f'){
+        const shop=SHOP_LABELS[parts[2]]||parts[2];
+        const f=parts[3]==='t'?'Thon':parts[3]==='s'?'Saumon':'Aburi';
+        changes.push(`${dayLabel} · ${shop} ${f} : ${prev}→<strong>${v}</strong>`);
+      } else if(parts[1]==='r'){
+        const shop=SHOP_LABELS[parts[2]]||parts[2];
+        changes.push(`${dayLabel} · ${shop} Rolls : ${prev}→<strong>${v}</strong>`);
+      } else {
+        const shop=SHOP_LABELS[parts[1]]||parts[1];
+        changes.push(`${dayLabel} · ${shop} Riz : ${prev}→<strong>${v}</strong>`);
+      }
+    }
+  }
+  _prevData={...newData};
+  if(changes.length>0){
+    showBanner('🔔 '+(changes.length===1?changes[0]:changes.length+' modifications'));
+  }
+}
+
 function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
+    detectChanges(remote);
     data={};Object.assign(data,remote);
     renderWithState();
   }, 3000);
