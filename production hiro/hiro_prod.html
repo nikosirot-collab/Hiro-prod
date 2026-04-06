@@ -1009,7 +1009,7 @@ async function loadWeekFromHistory(dateStr) {
   const wLabel=fmtS(monday)+' – '+fmtS(sunday);
 
   // Helpers
-  const hv=(d,s)=>hData[d+'__'+s]||0;
+  const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:(PREFILL[d]?PREFILL[d][s]||0:0);};
   const hr=(d,s)=>hData[d+'__r__'+s]||0;
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s),false);return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
