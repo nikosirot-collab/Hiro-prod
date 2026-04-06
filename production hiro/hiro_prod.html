@@ -891,7 +891,7 @@ function renderRecap() {
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-bar" height="120"></canvas></div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:16px;">
       <div>
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Temps de production / jour</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-line" height="140"></canvas></div>
