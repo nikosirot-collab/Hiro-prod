@@ -824,13 +824,20 @@ function changeWeek(d){
 }
 
 // ─── RÉCAP ───
+let _recapCharts=[];
 function renderRecap() {
   const el=document.getElementById('recap-content');
   if(!el) return;
 
-  const nbJours=7;
+  // Détruit les anciens graphiques
+  _recapCharts.forEach(c=>c.destroy());
+  _recapCharts=[];
+
+  const labels=[];
+  const rizByDay={dsm:[],mgt:[],paita:[],ville:[],asia:[]};
+  const tempsByDay=[];
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
-  let totMarmites=0, totTemps=0, totThon=0, joursActifs=0;
+  let totMarmites=0,totTemps=0,totThon=0,joursActifs=0;
 
   for(let di=0;di<7;di++){
     const d=dayOf(weekOff,di),dStr=ds(d),isDim=(di===6);
@@ -838,21 +845,24 @@ function renderRecap() {
     const bacs=SHOPS.reduce((a,s)=>a+(v[s]>0?v[s]/250:0),0);
     const marmites=bacs>0?Math.round(bacs/2+(isDim?0:2)):0;
     const temps=Math.round(bacs*5*10)/10;
-    SHOPS.forEach(s=>{totRiz[s]+=v[s];});
-    totMarmites+=marmites;
-    totTemps+=temps;
-    if(bacs>0) joursActifs++;
-
-    // Thon
+    SHOPS.forEach(s=>{totRiz[s]+=v[s];rizByDay[s].push(v[s]||0);});
+    totMarmites+=marmites;totTemps+=temps;
+    if(bacs>0)joursActifs++;
+    tempsByDay.push(temps);
+    labels.push(DAYS[di].substring(0,3));
     ['dsm','mgt','paita','ville'].forEach(s=>{
       const fd=getFish(s,v[s],isFete);
-      const fk=dStr+'__f__'+s+'__t';
-      totThon+=data[fk]!==undefined?data[fk]:(fd?fd.t:0);
+      const fk_t=dStr+'__f__'+s+'__t';
+      const fk_s=dStr+'__f__'+s+'__s';
+      const fk_a=dStr+'__f__'+s+'__a';
+      totThon+=(data[fk_t]!==undefined?data[fk_t]:(fd?fd.t:0))
+              +(data[fk_s]!==undefined?data[fk_s]:(fd?fd.s:0))
+              +(data[fk_a]!==undefined?data[fk_a]:(fd?fd.a:0));
     });
   }
 
   const j=joursActifs||1;
-  const avgRiz={};SHOPS.forEach(s=>{avgRiz[s]=Math.round(totRiz[s]/nbJours);});
+  const avgRiz={};SHOPS.forEach(s=>{avgRiz[s]=Math.round(totRiz[s]/7);});
   const avgKg=Math.round((totMarmites/j)*6*10)/10;
   const avgTemps=Math.round(totTemps/j*10)/10;
   const avgThon=Math.round(totThon/j*10)/10;
@@ -864,31 +874,110 @@ function renderRecap() {
       <div style="font-size:11px;color:var(--text-hint);margin-top:3px;">${unit}</div>
     </div>`;
 
-  const shopRow=(s,label,color)=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);">
-      <span style="font-size:13px;font-weight:500;color:${color};">${label}</span>
-      <span style="font-size:14px;font-family:'DM Mono',monospace;font-weight:500;">${avgRiz[s]||'—'} <span style="font-size:11px;color:var(--text-muted);">boules/j</span></span>
-    </div>`;
-
   el.innerHTML=`
-    <div style="margin-bottom:20px;">
+    <div style="margin-bottom:16px;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Moyennes / jour — ${fmtWeek(weekOff)}</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
         ${card('Moy. kg de riz / jour',avgKg,'kg · (marmites × 6 kg)','var(--dsm)')}
         ${card('Moy. temps de prod / jour',avgTemps,'min / jour','#5b4bb5')}
-        ${card('Moy. tranches thon / jour',avgThon,'tranches / jour','var(--dsm)')}
+        ${card('Moy. découpe totale / jour',avgThon,'tranches (thon+saumon+aburi)','var(--dsm)')}
       </div>
     </div>
-    <div>
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Moyenne boules de riz / jour par magasin</div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
-        ${shopRow('dsm','DSM','var(--dsm)')}
-        ${shopRow('mgt','MGT','var(--mgt)')}
-        ${shopRow('paita','Paita','var(--paita)')}
-        ${shopRow('ville','Ville','var(--text)')}
-        ${shopRow('asia','Asia','var(--text)')}
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Boules de riz par magasin / jour</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-bar" height="120"></canvas></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Temps de production / jour</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-line" height="140"></canvas></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Répartition riz par magasin</div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-pie" height="140"></canvas></div>
       </div>
     </div>`;
+
+  // Charge Chart.js puis dessine
+  if(window.Chart){
+    _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz);
+  } else {
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload=()=>_drawRecapCharts(labels,rizByDay,tempsByDay,totRiz);
+    document.head.appendChild(s);
+  }
+}
+
+function _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz){
+  const SHOP_COLORS={
+    dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#888',asia:'#5b4bb5'
+  };
+  const SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
+
+  // 1. Barres — riz par magasin par jour
+  const bar=new Chart(document.getElementById('chart-bar'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:SHOPS.map(s=>({
+        label:SHOP_LABELS[s],
+        data:rizByDay[s],
+        backgroundColor:SHOP_COLORS[s]+'cc',
+        borderColor:SHOP_COLORS[s],
+        borderWidth:1,
+        borderRadius:3
+      }))
+    },
+    options:{
+      responsive:true,plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+      scales:{x:{stacked:false,ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+  _recapCharts.push(bar);
+
+  // 2. Courbe — temps de production par jour
+  const line=new Chart(document.getElementById('chart-line'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'min',
+        data:tempsByDay,
+        borderColor:'#5b4bb5',
+        backgroundColor:'#5b4bb520',
+        fill:true,
+        tension:0.3,
+        pointBackgroundColor:'#5b4bb5',
+        pointRadius:4
+      }]
+    },
+    options:{
+      responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+  _recapCharts.push(line);
+
+  // 3. Camembert — répartition riz par magasin
+  const pieData=SHOPS.map(s=>totRiz[s]).filter((_,i)=>totRiz[SHOPS[i]]>0);
+  const pieLabels=SHOPS.filter(s=>totRiz[s]>0).map(s=>SHOP_LABELS[s]);
+  const pieColors=SHOPS.filter(s=>totRiz[s]>0).map(s=>SHOP_COLORS[s]);
+  const pie=new Chart(document.getElementById('chart-pie'),{
+    type:'doughnut',
+    data:{
+      labels:pieLabels,
+      datasets:[{data:pieData,backgroundColor:pieColors,borderWidth:2}]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}}
+    }
+  });
+  _recapCharts.push(pie);
+}
 }
 
 // ─── HISTORIQUE ───
