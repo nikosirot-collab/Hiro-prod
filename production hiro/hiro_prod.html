@@ -637,7 +637,9 @@ function _fbPoll(docId, onData, interval=8000) {
 <script>
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS = ['dsm','mgt','paita','ville','asia'];
-const TODAY_NC = new Date(2026, 3, 5);
+// Date dynamique Nouméa GMT+11
+const _nowNC = new Date(new Date().getTime() + (11 * 3600000) + new Date().getTimezoneOffset() * 60000);
+const TODAY_NC = new Date(_nowNC.getFullYear(), _nowNC.getMonth(), _nowNC.getDate());
 
 function mondayOf(off) {
   const d = new Date(TODAY_NC);
@@ -718,16 +720,43 @@ const PREFILL = {
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
 function getR(d,s){return data[d+'__r__'+s]||0;}
-function setV(d,s,v){const val=parseInt(v)||0;const k=d+'__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+
+// Vérifie si le poisson du jour dStr est verrouillé (lendemain + après 11h Nouméa)
+function isFishLocked(dStr){
+  const now=new Date();
+  const ncHour=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000).getHours();
+  const tomorrow=new Date(TODAY_NC);tomorrow.setDate(tomorrow.getDate()+1);
+  return ncHour>=11 && dStr===ds(tomorrow);
+}
+
+function setV(d,s,v){
+  const val=parseInt(v)||0;
+  const k=d+'__'+s;
+  data[k]=val;
+  // Si on modifie le riz du lendemain après 11h → verrouille le poisson automatiquement
+  if(isFishLocked(d)){
+    ['dsm','mgt','paita','ville'].forEach(shop=>{
+      const riz=getV(d,shop);
+      const fd=getFish(shop,riz,isFete);
+      if(fd){
+        ['t','s','a'].forEach(f=>{
+          const fk=d+'__f__'+shop+'__'+f;
+          if(data[fk]===undefined) data[fk]=fd[f]; // verrouille si pas déjà overridé
+        });
+      }
+    });
+  }
+  _scheduleSave(weekDocId());render();
+}
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
 function setFishV(d,s,f,v,auto){
   const k=d+'__f__'+s+'__'+f;
   if(v===''||v===null){
-    delete data[k]; // champ vide → retour au calcul auto
+    delete data[k];
   } else {
     const val=parseInt(v);
     if(isNaN(val)) return;
-    data[k]=val; // 0 est une valeur valide
+    data[k]=val;
   }
   _scheduleSave(weekDocId());render();
 }
@@ -1049,16 +1078,18 @@ function render() {
     wThon+=dayT;
 
     // Input poisson : pré-rempli avec valeur auto, modifiable manuellement
+    const isLocked = isFishLocked(dStr);
     const fishInp=(s,f,cls)=>{
       const auto=fd[s]?fd[s][f]:0;
       const mk=dStr+'__f__'+s+'__'+f;
       const val=data[mk]!==undefined?data[mk]:auto;
       const isOverride=data[mk]!==undefined&&data[mk]!==auto;
+      const lockStyle=isLocked&&!isOverride?'background:#fff8e1;':'';
       return `<input class="inp inp-fish${isOverride?' inp-override':''}" type="number" min="0" step="1"
         value="${val||''}" placeholder="${auto||'0'}"
-        style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}"
+        style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}${lockStyle}"
         onchange="setFishV('${dStr}','${s}','${f}',this.value,'${auto}')"
-        title="Auto: ${auto}">`;
+        title="${isLocked?'🔒 Verrouillé (après 11h) — modifiable manuellement':'Auto: '+auto}">`;
     };
 
     fishR+=`<tr>
