@@ -790,8 +790,13 @@ function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
 function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
-    Object.assign(data, remote);
-    _setStatus(true);
+    if(remote && Object.keys(remote).length>0){
+      Object.assign(data, remote);
+      _setStatus(true);
+    } else {
+      // Document n'existe pas encore — on affiche quand même avec PREFILL
+      _setStatus(false);
+    }
     render();
   }, 8000);
 }
