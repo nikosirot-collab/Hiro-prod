@@ -1007,40 +1007,123 @@ async function loadWeekFromHistory(dateStr) {
   const monday=new Date(dateStr);
   const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
   const wLabel=fmtS(monday)+' – '+fmtS(sunday);
-  let rows='';
+
+  // Helpers
+  const hv=(d,s)=>hData[d+'__'+s]||0;
+  const hr=(d,s)=>hData[d+'__r__'+s]||0;
+  const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s),false);return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
+  const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
+  const v=(x)=>x||'—';
+
+  // Totaux semaine
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  let totRolls={dsm:0,mgt:0,paita:0,ville:0};
+
+  // Génère les lignes pour chaque onglet
+  let rizRows='',fishRows='',rollRows='',thonRows='',totRows='';
+
   for(let di=0;di<7;di++){
     const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-    const v={};SHOPS.forEach(s=>{v[s]=hData[dStr+'__'+s]||0;});
-    const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],false);});
-    const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return hData[mk]!==undefined?hData[mk]:(fd[s]?fd[s][f]:0);};
     const isDim=di===6;
-    rows+=`<tr style="border-bottom:1px solid var(--border);${isDim?'background:var(--bg);':''}">
-      <td style="padding:8px 10px;font-weight:500;font-size:12px;">${DAYS[di]}<span style="font-size:10px;color:var(--text-muted);display:block">${fmtS(d)}</span></td>
-      <td style="padding:8px;text-align:center;font-size:12px;">${v.dsm||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('dsm','t')||'—'}</td>
-      <td style="padding:8px;text-align:center;font-size:12px;">${v.mgt||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('mgt','t')||'—'}</td>
-      <td style="padding:8px;text-align:center;font-size:12px;">${v.paita||'—'}</td><td style="padding:8px;text-align:center;font-size:12px;color:var(--dsm)">${gfv('paita','t')||'—'}</td>
-    </tr>`;
+    const label=DAYS[di];const short=fmtS(d);
+    const riz={};SHOPS.forEach(s=>{riz[s]=hv(dStr,s);});
+    const bacs={};SHOPS.forEach(s=>{bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
+    const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
+    const marmites=totB>0?Math.round(totB/2+(isDim?0:2)):0;
+    const temps=Math.round(totB*5*10)/10;
+    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
+    SHOPS.forEach(s=>{totRiz[s]+=riz[s];});
+    const bg=isDim?'background:var(--bg);':'';
+    const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
+    const dayS=hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s');
+    const dayA=hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a');
+    ['dsm','mgt','paita','ville'].forEach(s=>{totFS[s].t+=hfv(dStr,s,'t');totFS[s].s+=hfv(dStr,s,'s');totFS[s].a+=hfv(dStr,s,'a');});
+    wThon+=dayT;
+    const ar={dsm:getRolls(riz.dsm,isDim,false),mgt:getRolls(riz.mgt,isDim,false),paita:getRolls(riz.paita,isDim,false)};
+    const villeR=hr(dStr,'ville');
+    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;totRolls.ville+=villeR;
+
+    const tr=(content,extra='')=>`<tr style="border-bottom:1px solid var(--border);font-size:12px;${bg}${extra}">${content}</tr>`;
+    const td=(val,cls='')=>`<td style="padding:5px 6px;text-align:center;${cls}">${val||'—'}</td>`;
+    const tdL=(val)=>`<td style="padding:5px 8px;font-weight:500;">${label}<span style="font-size:10px;color:var(--text-muted);display:block">${short}</span></td>`;
+
+    rizRows+=tr(`${tdL()}
+      ${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(fb2(bacs.dsm))}
+      ${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(fb2(bacs.mgt))}
+      ${td(riz.paita,'border-left:2px solid var(--paita)')}${td(fb2(bacs.paita))}
+      ${td(riz.ville,'border-left:1px solid var(--border)')}${td(riz.asia,'border-left:1px solid var(--border)')}
+      ${td(totB>0?fb2(marmites):'—','border-left:2px solid var(--border);color:var(--dsm);font-weight:500')}
+      ${td(totB>0?fb2(temps)+'min':'—','color:#5b4bb5;font-weight:500')}`);
+
+    fishRows+=tr(`${tdL()}
+      ${td(hfv(dStr,'dsm','t'),'color:var(--dsm);border-left:2px solid var(--dsm)')}${td(hfv(dStr,'dsm','s'),'color:var(--mgt)')}${td(hfv(dStr,'dsm','a'),'color:var(--paita)')}
+      ${td(hfv(dStr,'mgt','t'),'color:var(--dsm);border-left:2px solid var(--mgt)')}${td(hfv(dStr,'mgt','s'),'color:var(--mgt)')}${td(hfv(dStr,'mgt','a'),'color:var(--paita)')}
+      ${td(hfv(dStr,'paita','t'),'color:var(--dsm);border-left:2px solid var(--paita)')}${td(hfv(dStr,'paita','s'),'color:var(--mgt)')}${td(hfv(dStr,'paita','a'),'color:var(--paita)')}
+      ${td(hfv(dStr,'ville','t'),'color:var(--dsm);border-left:1px solid var(--border)')}${td(hfv(dStr,'ville','s'),'color:var(--mgt)')}${td(hfv(dStr,'ville','a'),'color:var(--paita)')}`);
+
+    rollRows+=tr(`${tdL()}
+      ${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(ar.dsm,'font-weight:500')}
+      ${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(ar.mgt,'font-weight:500')}
+      ${td(riz.paita,'border-left:2px solid var(--paita)')}${td(ar.paita,'font-weight:500')}
+      ${td(riz.ville,'border-left:1px solid var(--border)')}${td(villeR,'font-weight:500')}`);
+
+    thonRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm);font-weight:500')}${td(dayS,'color:var(--mgt);font-weight:500')}${td(dayA,'color:var(--paita);font-weight:500')}${td(dayT+dayS+dayA,'font-weight:600')}`);
+    totRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm)')}${td(dayS,'color:var(--mgt)')}${td(dayA,'color:var(--paita)')}${td(dayT+dayS+dayA,'font-weight:600')}`);
   }
+
+  const thS=(t,cls='')=>`<th style="padding:5px 6px;text-align:center;font-size:10px;font-weight:600;background:var(--bg);${cls}">${t}</th>`;
+  const thL=(t)=>`<th style="padding:5px 8px;text-align:left;font-size:10px;font-weight:600;background:var(--bg);">${t}</th>`;
+
+  const tabs=[
+    {id:'h-riz',label:'Riz',content:`<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${thL('Jour')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Bacs')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Bacs')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Bacs')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Asia','border-left:1px solid var(--border)')}${thS('Marmites','border-left:2px solid var(--border);color:var(--dsm)')}${thS('Temps')}</tr></thead>
+      <tbody>${rizRows}</tbody></table>`},
+    {id:'h-fish',label:'Poisson',content:`<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${thL('Jour')}${thS('T','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--mgt);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--paita);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:1px solid var(--border);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}</tr>
+      <tr>${thL('')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('')}${thS('')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('')}${thS('')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('')}${thS('')}${thS('Ville','border-left:1px solid var(--border)')}${thS('')}${thS('')}</tr></thead>
+      <tbody>${fishRows}</tbody></table>`},
+    {id:'h-rolls',label:'Rolls',content:`<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${thL('Jour')}${thS('DSM riz','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Rolls')}${thS('MGT riz','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Rolls')}${thS('Paita riz','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Rolls')}${thS('Ville riz','border-left:1px solid var(--border)')}${thS('Rolls')}</tr></thead>
+      <tbody>${rollRows}</tbody></table>`},
+    {id:'h-thon',label:'Thon',content:`<table style="width:100%;border-collapse:collapse;">
+      <thead><tr>${thL('Jour')}${thS('Thon','color:var(--dsm)')}${thS('Saumon','color:var(--mgt)')}${thS('Aburi','color:var(--paita)')}${thS('Total','font-weight:700')}</tr></thead>
+      <tbody>${thonRows}</tbody></table>`},
+  ];
+
   const overlay=document.createElement('div');
   overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-  overlay.innerHTML=`<div style="background:var(--surface);border-radius:12px;padding:20px;max-width:580px;width:100%;max-height:80vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
+  overlay.innerHTML=`
+  <div style="background:var(--surface);border-radius:12px;width:100%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div>
+        <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(wBacs)} bacs · ${wThon} tranches thon · ${Math.round(wMarmites*6)} kg riz</div>
+      </div>
       <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);line-height:1;">×</button>
     </div>
-    <table style="width:100%;border-collapse:collapse;">
-      <thead><tr style="background:var(--bg);font-size:10px;font-weight:600;text-align:center;">
-        <th style="padding:6px 10px;text-align:left;">Jour</th>
-        <th>DSM riz</th><th style="color:var(--dsm)">Thon</th>
-        <th>MGT riz</th><th style="color:var(--dsm)">Thon</th>
-        <th>Paita riz</th><th style="color:var(--dsm)">Thon</th>
-      </tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div style="margin-top:14px;text-align:center;font-size:11px;color:var(--text-muted);">Lecture seule · semaine archivée</div>
+    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
+      ${tabs.map((t,i)=>`<div onclick="switchHistTab('${t.id}')" id="htab-${t.id}" style="padding:8px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid ${i===0?'var(--text)':'transparent'};color:${i===0?'var(--text)':'var(--text-muted)'};">${t.label}</div>`).join('')}
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      ${tabs.map((t,i)=>`<div id="hpanel-${t.id}" style="display:${i===0?'block':'none'}">${t.content}</div>`).join('')}
+    </div>
+    <div style="padding:8px 16px;text-align:center;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);flex-shrink:0;">Lecture seule · semaine archivée</div>
   </div>`;
   overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
   document.body.appendChild(overlay);
+}
+
+function switchHistTab(id){
+  document.querySelectorAll('[id^="htab-"]').forEach(t=>{
+    const active=t.id==='htab-'+id;
+    t.style.borderBottomColor=active?'var(--text)':'transparent';
+    t.style.color=active?'var(--text)':'var(--text-muted)';
+  });
+  document.querySelectorAll('[id^="hpanel-"]').forEach(p=>{
+    p.style.display=p.id==='hpanel-'+id?'block':'none';
+  });
 }
 
 function render() {
