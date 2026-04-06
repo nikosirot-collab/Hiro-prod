@@ -1424,5 +1424,97 @@ document.getElementById('weekLabel').textContent=fmtWeek(0);
 document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
 </script>
+
+<script>
+// ─── SERVICE WORKER & MODE HORS LIGNE ───
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/sw.js').catch(e=>console.log('SW:',e));
+}
+
+// File d'attente pour les sauvegardes hors ligne
+let _offlineQueue = JSON.parse(localStorage.getItem('hiro-offline-queue') || '[]');
+
+function _saveOfflineQueue(){
+  localStorage.setItem('hiro-offline-queue', JSON.stringify(_offlineQueue));
+}
+
+// Surcharge _fbSaveAll pour gérer le mode hors ligne
+const _fbSaveAll_orig = _fbSaveAll;
+window._fbSaveAll = async function(docId) {
+  if(!navigator.onLine){
+    // Hors ligne — stocker dans la file
+    _offlineQueue.push({docId, data: {...data}, ts: Date.now()});
+    _saveOfflineQueue();
+    _setStatus(false);
+    showOfflineBanner();
+    return;
+  }
+  await _fbSaveAll_orig(docId);
+};
+
+function showOfflineBanner(){
+  let b = document.getElementById('offline-banner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'offline-banner';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;';
+    b.textContent = '⚠️ Hors ligne — modifications sauvegardées localement, synchronisation dès le retour de la connexion';
+    document.body.appendChild(b);
+  }
+  b.style.display = 'block';
+}
+
+function hideOfflineBanner(){
+  const b = document.getElementById('offline-banner');
+  if(b) b.style.display = 'none';
+}
+
+// Synchronisation au retour de la connexion
+async function _syncOfflineQueue(){
+  if(_offlineQueue.length === 0) return;
+  console.log('Syncing', _offlineQueue.length, 'offline saves...');
+  const queue = [..._offlineQueue];
+  _offlineQueue = [];
+  _saveOfflineQueue();
+  for(const item of queue){
+    try {
+      const url = `${_API}/${item.docId}?key=${_KEY}`;
+      const fields = {};
+      Object.entries(item.data).forEach(([k,v]) => {
+        if(typeof v === 'number') fields[_encKey(k)] = {integerValue: v};
+        else fields[_encKey(k)] = {stringValue: String(v)};
+      });
+      fields['init'] = {stringValue: 'true'};
+      await fetch(url, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({fields})});
+    } catch(e) {
+      _offlineQueue.push(item); // remet en file si échec
+      _saveOfflineQueue();
+    }
+  }
+  if(_offlineQueue.length === 0){
+    hideOfflineBanner();
+    _setStatus(true);
+    console.log('Sync complete');
+  }
+}
+
+window.addEventListener('online', () => {
+  hideOfflineBanner();
+  _syncOfflineQueue();
+});
+
+window.addEventListener('offline', () => {
+  showOfflineBanner();
+  _setStatus(false);
+});
+
+// Vérifie au démarrage si des données sont en attente
+if(!navigator.onLine){
+  showOfflineBanner();
+} else if(_offlineQueue.length > 0){
+  _syncOfflineQueue();
+}
+</script>
+
 </body>
 </html>

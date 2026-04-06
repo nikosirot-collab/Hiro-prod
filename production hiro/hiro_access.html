@@ -1022,5 +1022,36 @@ document.getElementById('weekLabel').textContent=fmtWeek(0);
 document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
 </script>
+
+<script>
+// ─── SERVICE WORKER & MODE HORS LIGNE ───
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/sw.js').catch(e=>console.log('SW:',e));
+}
+
+window.addEventListener('online', () => {
+  const b = document.getElementById('offline-banner');
+  if(b) b.style.display = 'none';
+  _setStatus(true);
+});
+
+window.addEventListener('offline', () => {
+  let b = document.getElementById('offline-banner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'offline-banner';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;';
+    b.textContent = '⚠️ Hors ligne — les données affichées peuvent ne pas être à jour';
+    document.body.appendChild(b);
+  }
+  b.style.display = 'block';
+  _setStatus(false);
+});
+
+if(!navigator.onLine){
+  window.dispatchEvent(new Event('offline'));
+}
+</script>
+
 </body>
 </html>
