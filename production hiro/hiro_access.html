@@ -380,7 +380,9 @@ function _fbPoll(docId, onData, interval=5000) {
 <script>
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS=['dsm','mgt','paita','ville','asia'];
-const TODAY_NC=new Date(2026,3,5);
+// Date dynamique Nouméa GMT+11
+const _nowNC=new Date(new Date().getTime()+(11*3600000)+new Date().getTimezoneOffset()*60000);
+const TODAY_NC=new Date(_nowNC.getFullYear(),_nowNC.getMonth(),_nowNC.getDate());
 const isFete=false;
 
 function mondayOf(off){
@@ -488,10 +490,12 @@ function setView(page,mode,el){
 function changeWeek(d){
   const newOff=weekOff+d;
   if(newOff>1) return;
+  if(newOff<0) return;
   weekOff=newOff;
   data={};
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.wbtn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
+  document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
   subscribeWeek();
 }
 
@@ -939,6 +943,7 @@ async function loadWeekFromHistory(dateStr) {
 }
 
 document.getElementById('weekLabel').textContent=fmtWeek(0);
+document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
 </script>
 </body>

@@ -789,10 +789,12 @@ function showPage(p) {
 function changeWeek(d){
   const newOff=weekOff+d;
   if(newOff>1) return;
+  if(newOff<0) return;
   weekOff=newOff;
   data={};
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
+  document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
   subscribeWeek();
 }
 
@@ -1394,6 +1396,7 @@ function updateClock(){
 setInterval(updateClock,1000); updateClock();
 
 document.getElementById('weekLabel').textContent=fmtWeek(0);
+document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
 </script>
 </body>
