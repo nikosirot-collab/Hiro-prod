@@ -790,12 +790,9 @@ function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
 function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
-    if(remote && Object.keys(remote).length>0){
+    if(remote){
       Object.assign(data, remote);
       _setStatus(true);
-    } else {
-      // Document n'existe pas encore — on affiche quand même avec PREFILL
-      _setStatus(false);
     }
     render();
   }, 8000);
@@ -982,7 +979,6 @@ function _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz){
     }
   });
   _recapCharts.push(pie);
-}
 }
 
 // ─── HISTORIQUE ───
