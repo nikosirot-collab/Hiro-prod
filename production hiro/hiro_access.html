@@ -133,6 +133,32 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 </style>
 </head>
 <body>
+<div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1916;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#222;border:1px solid #333;border-radius:14px;padding:32px 28px;max-width:300px;width:90%;text-align:center;">
+    <div style="font-size:17px;font-weight:600;color:#fff;margin-bottom:4px;">Hiro Access</div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px;">Consultation</div>
+    <input id="pwd-input" type="password" placeholder="Mot de passe" style="width:100%;padding:10px 14px;border:1px solid #444;border-radius:8px;font-size:15px;margin-bottom:12px;background:#333;color:#fff;outline:none;" onkeydown="if(event.key==='Enter')checkPwd()">
+    <button onclick="checkPwd()" style="width:100%;padding:10px;background:#e74c3c;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Connexion</button>
+    <div id="pwd-error" style="color:#e74c3c;font-size:12px;margin-top:10px;display:none;">Mot de passe incorrect</div>
+  </div>
+</div>
+<script>
+function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+const _PWD='d52ffe25'; // hiro2026
+function checkPwd(){
+  const v=document.getElementById('pwd-input').value;
+  if(_h(v)===_PWD){
+    sessionStorage.setItem('hiro-ok','1');
+    document.getElementById('login-screen').style.display='none';
+  } else {
+    document.getElementById('pwd-error').style.display='block';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
+</script>
+
 
 <header class="hdr">
   <div class="hdr-left">
