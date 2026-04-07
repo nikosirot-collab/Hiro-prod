@@ -248,16 +248,16 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <thead>
           <tr>
             <th rowspan="2" style="text-align:left;padding-left:12px;min-width:90px">Date</th>
-            <th colspan="4" class="th-dsm col-sep">DSM</th>
-            <th colspan="4" class="th-mgt col-sep">MGT</th>
-            <th colspan="4" class="th-paita col-sep">Paita</th>
-            <th colspan="3" class="col-sep">Ville</th>
+            <th colspan="5" class="th-dsm col-sep">DSM</th>
+            <th colspan="5" class="th-mgt col-sep">MGT</th>
+            <th colspan="5" class="th-paita col-sep">Paita</th>
+            <th colspan="4" class="col-sep">Ville</th>
           </tr>
           <tr>
-            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
-            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
-            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
-            <th class="col-sep th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th><th style="color:#c8a000">Tamago</th>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th><th style="color:#c8a000">Tamago</th>
+            <th class="col-sep">Riz</th><th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th><th style="color:#c8a000">Tamago</th>
+            <th class="col-sep th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th><th style="color:#c8a000">Tamago</th>
           </tr>
         </thead>
         <tbody id="body-fish"></tbody>
@@ -430,6 +430,12 @@ function getRolls(riz,isDim){
   if(isDim&&!isFete)return 0;
   if(!riz||riz<=0)return 0;
   let v=0;for(const row of RTBL){if(riz>=row.r)v=row.v;else break;}return v;
+}
+function getTamago(shop,di){
+  const isDim=di===6;
+  if(shop==='dsm'||shop==='paita') return isDim?0:1;
+  if(shop==='mgt') return [0,2,4,5].includes(di)?1:0;
+  return 0;
 }
 function thonKg(t){
   if(!t||t<=0)return'—';
@@ -627,6 +633,7 @@ function render(){
     });
     // gfv : valeur manuelle si override, sinon calcul auto
     const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+    const gtv=(s)=>{const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
       totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');
     });
@@ -677,7 +684,8 @@ function render(){
         <td style="text-align:left;font-weight:500;padding:6px 8px;background:#faf9f6;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:13px">${name}<span style="font-size:10px;color:var(--hint);display:block;font-weight:400">${riz} boules</span></td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--dsm);font-size:14px">${gfv(shop,'t')}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--mgt);font-size:14px">${gfv(shop,'s')}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--paita);font-size:14px">${gfv(shop,'a')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:var(--paita);font-size:14px">${gfv(shop,'a')}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:500;color:#c8a000;font-size:14px">${gtv(shop)}</td>
       </tr>`;'';
     const totalRow=`
       <tr style="background:var(--dsm-l)">
@@ -753,10 +761,10 @@ function render(){
     const fcv=(s,f,cls)=>{const val=gfv(s,f);return val!==undefined?`<span class="${cls}">${val}</span>`:'—';};
     fishTbl+=`<tr>
       <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
-      <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${fcv('dsm','t','vt2')}</td><td class="${dc2}">${fcv('dsm','s','vs2')}</td><td class="${dc2}">${fcv('dsm','a','va2')}</td>
-      <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2}">${fcv('mgt','t','vt2')}</td><td class="${dc2}">${fcv('mgt','s','vs2')}</td><td class="${dc2}">${fcv('mgt','a','va2')}</td>
-      <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${fcv('paita','t','vt2')}</td><td class="${dc2}">${fcv('paita','s','vs2')}</td><td class="${dc2}">${fcv('paita','a','va2')}</td>
-      <td class="${dc2} col-sep">${fcv('ville','t','vt2')}</td><td class="${dc2}">${fcv('ville','s','vs2')}</td><td class="${dc2}">${fcv('ville','a','va2')}</td>
+      <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${fcv('dsm','t','vt2')}</td><td class="${dc2}">${fcv('dsm','s','vs2')}</td><td class="${dc2}">${fcv('dsm','a','va2')}</td><td class="${dc2}" style="color:#c8a000;font-weight:500">${gtv('dsm')}</td>
+      <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2}">${fcv('mgt','t','vt2')}</td><td class="${dc2}">${fcv('mgt','s','vs2')}</td><td class="${dc2}">${fcv('mgt','a','va2')}</td><td class="${dc2}" style="color:#c8a000;font-weight:500">${gtv('mgt')}</td>
+      <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${fcv('paita','t','vt2')}</td><td class="${dc2}">${fcv('paita','s','vs2')}</td><td class="${dc2}">${fcv('paita','a','va2')}</td><td class="${dc2}" style="color:#c8a000;font-weight:500">${gtv('paita')}</td>
+      <td class="${dc2} col-sep">${fcv('ville','t','vt2')}</td><td class="${dc2}">${fcv('ville','s','vs2')}</td><td class="${dc2}">${fcv('ville','a','va2')}</td><td class="${dc2}" style="color:#c8a000;font-weight:500">${gtv('ville')}</td>
     </tr>`;
 
     rollTbl+=`<tr>
