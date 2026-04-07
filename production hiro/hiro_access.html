@@ -526,12 +526,15 @@ function renderWithState(){
   const openIds=new Set();
   document.querySelectorAll('.day-body.open').forEach(el=>openIds.add(el.id));
   render();
-  openIds.forEach(id=>{
-    const body=document.getElementById(id);
-    const chevId=id.replace('body-','chev-');
-    const chev=document.getElementById(chevId);
-    if(body){body.classList.add('open');}
-    if(chev){chev.classList.add('open');}
+  // Restaure après que le DOM soit mis à jour
+  requestAnimationFrame(()=>{
+    openIds.forEach(id=>{
+      const body=document.getElementById(id);
+      const chevId=id.replace('body-','chev-');
+      const chev=document.getElementById(chevId);
+      if(body){body.classList.add('open');}
+      if(chev){chev.classList.add('open');}
+    });
   });
 }
 
