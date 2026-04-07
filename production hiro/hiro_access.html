@@ -513,28 +513,36 @@ function detectChanges(newData){
   }
 }
 
+let _lastDataStr='';
+
 function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
-    detectChanges(remote);
-    data={};Object.assign(data,remote);
-    renderWithState();
+    const r=remote||{};
+    const newStr=Object.keys(r).sort().map(k=>k+'='+r[k]).join('|');
+    const changed=newStr!==_lastDataStr;
+    if(changed){
+      _lastDataStr=newStr;
+      detectChanges(r);
+      data={};Object.assign(data,r);
+      renderWithState();
+    }
   }, 3000);
-}
+}}
 
-// Sauvegarde l'état ouvert/fermé des cartes avant render, le restaure après
 function renderWithState(){
+  // Sauvegarde les IDs ouverts
   const openIds=new Set();
   document.querySelectorAll('.day-body.open').forEach(el=>openIds.add(el.id));
+  
   render();
-  // Restaure après que le DOM soit mis à jour
-  requestAnimationFrame(()=>{
-    openIds.forEach(id=>{
-      const body=document.getElementById(id);
-      const chevId=id.replace('body-','chev-');
-      const chev=document.getElementById(chevId);
-      if(body){body.classList.add('open');}
-      if(chev){chev.classList.add('open');}
-    });
+  
+  // Restaure immédiatement après le render
+  openIds.forEach(id=>{
+    const body=document.getElementById(id);
+    const chevId=id.replace('body-','chev-');
+    const chev=document.getElementById(chevId);
+    if(body) body.classList.add('open');
+    if(chev) chev.classList.add('open');
   });
 }
 
@@ -559,7 +567,7 @@ function changeWeek(d){
   if(newOff>1) return;
   if(newOff<0) return;
   weekOff=newOff;
-  data={};
+  data={};_lastDataStr='';
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.wbtn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
   document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
