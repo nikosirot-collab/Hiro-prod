@@ -456,7 +456,7 @@ const PREFILL={
   '2026-04-12':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
 };
 
-let weekOff=0, data={}, _prevData={};
+let weekOff=0, data={};
 const viewState={riz:'cards',poisson:'cards',rolls:'cards'};
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
@@ -481,15 +481,24 @@ function showBanner(msg){
   _bannerTimeout=setTimeout(()=>{banner.style.transform='translateY(-100%)';},6000);
 }
 
+// Snapshot au moment de l'ouverture de l'interface
+let _openSnapshot={};
+let _snapshotLoaded=false;
+
 function detectChanges(newData){
-  if(Object.keys(_prevData).length===0){_prevData={...newData};return;}
+  // Au premier chargement, on sauvegarde le snapshot sans notifier
+  if(!_snapshotLoaded){
+    _openSnapshot={...newData};
+    _snapshotLoaded=true;
+    return;
+  }
   const SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
   const changes=[];
   for(const [k,v] of Object.entries(newData)){
     if(k==='init') continue;
-    const prev=_prevData[k];
+    const prev=_openSnapshot[k];
+    // Notifie uniquement si la valeur a changé depuis l'ouverture
     if(prev!==undefined && prev!==v){
-      // Décode la clé ex: 2026-04-07__dsm ou 2026-04-07__f__dsm__t
       const parts=k.split('__');
       const dateStr=parts[0];
       const d=new Date(dateStr);
@@ -506,8 +515,9 @@ function detectChanges(newData){
         changes.push(`${dayLabel} · ${shop} Riz : ${prev}→<strong>${v}</strong>`);
       }
     }
+    // Met à jour le snapshot au fil du temps
+    _openSnapshot[k]=v;
   }
-  _prevData={...newData};
   if(changes.length>0){
     showBanner('🔔 '+(changes.length===1?changes[0]:changes.length+' modifications'));
   }
@@ -516,6 +526,10 @@ function detectChanges(newData){
 let _lastDataStr='';
 
 function subscribeWeek(){
+  // Réinitialise le snapshot quand on change de semaine
+  _snapshotLoaded=false;
+  _openSnapshot={};
+  _lastDataStr='';
   _fbPoll(weekDocId(), remote=>{
     const r=remote||{};
     const newStr=Object.keys(r).sort().map(k=>k+'='+r[k]).join('|');
