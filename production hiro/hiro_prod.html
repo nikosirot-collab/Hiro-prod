@@ -1286,7 +1286,7 @@ function render() {
       const isOverride=data[mk]!==undefined&&data[mk]!==auto;
       const lockStyle=isLocked&&!isOverride?'background:#fff8e1;':'';
       return `<input class="inp inp-fish${isOverride?' inp-override':''}" type="number" min="0" step="1"
-        value="${val||''}" placeholder="${auto||'0'}"
+        value="${val===0?'0':(val||'')}" placeholder="${auto||'0'}"
         style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}${lockStyle}"
         onchange="setFishV('${dStr}','${s}','${f}',this.value,'${auto}')"
         title="${isLocked?'🔒 Verrouillé (après 11h) — modifiable manuellement':'Auto: '+auto}">`;

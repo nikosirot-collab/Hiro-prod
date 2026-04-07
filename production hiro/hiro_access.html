@@ -180,7 +180,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('poisson',this)">Poisson</div>
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
-  <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
@@ -320,17 +319,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 
   <!-- PAGE TOTAUX -->
-  <div id="page-totaux" class="page">
-    <div class="tbl-wrap"><table>
-      <thead><tr>
-        <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
-        <th class="th-dsm">Thon</th><th class="th-mgt">Saumon</th><th class="th-paita">Aburi</th>
-        <th>Total</th>
-      </tr></thead>
-      <tbody id="body-total"></tbody>
-      <tfoot id="foot-total"></tfoot>
-    </table></div>
-  </div>
 
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
@@ -606,11 +594,15 @@ function render(){
 
     const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
       fd[s]=getFish(s,v[s]);
-      if(fd[s]){totFS[s].t+=fd[s].t;totFS[s].s+=fd[s].s;totFS[s].a+=fd[s].a;}
     });
-    const dayT=(fd.dsm?.t||0)+(fd.mgt?.t||0)+(fd.paita?.t||0)+(fd.ville?.t||0);
-    const dayS=(fd.dsm?.s||0)+(fd.mgt?.s||0)+(fd.paita?.s||0)+(fd.ville?.s||0);
-    const dayA=(fd.dsm?.a||0)+(fd.mgt?.a||0)+(fd.paita?.a||0)+(fd.ville?.a||0);
+    // gfv : valeur manuelle si override, sinon calcul auto
+    const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+    ['dsm','mgt','paita','ville'].forEach(s=>{
+      totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');
+    });
+    const dayT=gfv('dsm','t')+gfv('mgt','t')+gfv('paita','t')+gfv('ville','t');
+    const dayS=gfv('dsm','s')+gfv('mgt','s')+gfv('paita','s')+gfv('ville','s');
+    const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={dsm:getRolls(v.dsm,isDim),mgt:getRolls(v.mgt,isDim),paita:getRolls(v.paita,isDim)};
@@ -728,7 +720,7 @@ function render(){
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
     </tr>`;
 
-    const fcv=(s,f,cls)=>fd[s]?`<span class="${cls}">${fd[s][f]}</span>`:'—';
+    const fcv=(s,f,cls)=>{const val=gfv(s,f);return val!==undefined?`<span class="${cls}">${val}</span>`:'—';};
     fishTbl+=`<tr>
       <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
       <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${fcv('dsm','t','vt2')}</td><td class="${dc2}">${fcv('dsm','s','vs2')}</td><td class="${dc2}">${fcv('dsm','a','va2')}</td>
