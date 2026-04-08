@@ -1561,26 +1561,42 @@ function _printCombined(type) {
       <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
     </tr>`;
 
-  const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-  <title>${titre} — ${weekShort}</title>
-  <style>
+  const cssRolls = `
     @page{size:A4 landscape;margin:0;}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
     html,body{width:270.7mm;height:189.6mm;overflow:hidden;}
     body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;display:flex;flex-direction:column;margin:6mm 13.15mm;}
-    h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:4px;flex-shrink:0;}
+    h1{text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:3px;flex-shrink:0;}
     table{width:270.7mm;border-collapse:collapse;table-layout:fixed;flex:1;}
-    th{background:#d0d0d0;border:2px solid #000;padding:3px 2px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;}
-    th.th-date{text-align:left;padding-left:8px;}
-    td{border:1.5px solid #000;text-align:center;font-size:14px;font-weight:500;vertical-align:middle;}
-    tbody tr{height:calc((189.6mm - 42px) / 7);}
-    td.day{text-align:left;font-weight:700;font-size:12px;padding-left:10px;background:#e8e8e8;border:2px solid #000;}
+    th{background:#d0d0d0;border:1.5px solid #000;padding:2px 1px;text-align:center;font-weight:700;font-size:9px;white-space:nowrap;}
+    th.th-date{text-align:left;padding-left:6px;}
+    td{border:1px solid #000;text-align:center;font-size:13px;font-weight:500;vertical-align:middle;}
+    tbody tr{height:calc((189.6mm - 38px) / 7);}
+    td.day{text-align:left;font-weight:700;font-size:11px;padding-left:6px;background:#e8e8e8;border:1.5px solid #000;}
     td.dim{background:#f5f5f5;}
-    th.sep,td.sep{border-left:3px solid #000!important;}
-  </style>
+    th.sep,td.sep{border-left:2.5px solid #000!important;}`;
+
+  const cssPoisson = `
+    @page{size:A4 landscape;margin:0;}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    html,body{width:270.7mm;height:189.6mm;overflow:hidden;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;display:flex;flex-direction:column;margin:6mm 13.15mm;}
+    h1{text-align:center;font-size:11px;font-weight:700;letter-spacing:.05em;margin-bottom:3px;flex-shrink:0;}
+    table{width:270.7mm;border-collapse:collapse;table-layout:fixed;flex:1;}
+    th{background:#d0d0d0;border:1px solid #000;padding:2px 0px;text-align:center;font-weight:700;font-size:7.5px;white-space:nowrap;}
+    th.th-date{text-align:left;padding-left:4px;}
+    td{border:1px solid #000;text-align:center;font-size:11px;font-weight:500;vertical-align:middle;}
+    tbody tr{height:calc((189.6mm - 38px) / 7);}
+    td.day{text-align:left;font-weight:700;font-size:10px;padding-left:4px;background:#e8e8e8;border:1px solid #000;}
+    td.dim{background:#f5f5f5;}
+    th.sep,td.sep{border-left:2px solid #000!important;}`;
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+  <title>${type==='poisson'?'Poisson':'Rolls'} — ${weekShort}</title>
+  <style>${type==='rolls'?cssRolls:cssPoisson}</style>
   </head><body>
-  <h1>${titre} HIRO — ${weekShort}</h1>
+  <h1>${type==='poisson'?'QUANTITÉ POISSON':'QUANTITÉ ROLL'} HIRO — ${weekShort}</h1>
   <table>
     <thead>${thead}</thead>
     <tbody>${rows}</tbody>
