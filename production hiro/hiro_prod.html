@@ -1491,131 +1491,104 @@ function printRolls() { _printCombined('rolls'); }
 
 function _printCombined(type) {
   const m=mondayOf(weekOff), e=new Date(m); e.setDate(e.getDate()+6);
-  const weekShort = fmtS(m)+' au '+fmtS(e)+'/'+e.getFullYear();
+  const weekShort = fmtS(m)+' – '+fmtS(e)+'/'+e.getFullYear();
 
-  const SEP='border-left:3px solid #000;';
-  const th=(txt,extra='')=>`<th style="background:#ccc;border:1.5px solid #555;padding:5px 2px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;${extra}">${txt}</th>`;
-  const td=(txt,cls='')=>`<td class="${cls}">${txt||''}</td>`;
-  const tdL=(txt,extra='')=>`<td style="border:1.5px solid #555;text-align:left;font-weight:700;padding-left:10px;background:#e0e0e0;font-size:13px;vertical-align:middle;height:26mm;${extra}">${txt}</td>`;
-
-  let html='';
-
-  if(type==='poisson'){
-    let rows='';
-    for(let di=0;di<7;di++){
-      const d=dayOf(weekOff,di),dStr=ds(d);
-      const isDim=(di===6);
-      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
-      const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],isFete);});
-      const cv=(s,f)=>fd[s]?fd[s][f]:'';
-      rows+=`<tr>
-        ${tdL(DAYS[di],isDim)}
-        ${td(cv('dsm','t'),'sep')}${td(cv('dsm','s'))}${td(cv('dsm','a'))}
-        ${td(cv('mgt','t'),'sep')}${td(cv('mgt','s'))}${td(cv('mgt','a'))}
-        ${td(cv('paita','t'),'sep')}${td(cv('paita','s'))}${td(cv('paita','a'))}
-        ${td(cv('ville','t'),'sep')}${td(cv('ville','s'))}${td(cv('ville','a'))}
-      </tr>`;
-    }
-    html=`
-    <p style="text-align:center;font-size:13px;font-weight:700;letter-spacing:.06em;margin-bottom:10px;">QUANTITÉ POISSON HIRO — ${weekShort}</p>
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <colgroup>
-        <col style="width:11%">
-        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
-        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
-        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
-        <col style="width:7.5%"><col style="width:7.5%"><col style="width:7.5%">
-      </colgroup>
-      <thead>
-        <tr>
-          ${th('DATE<br><span style="font-weight:400;font-size:8px;">'+fmtS(m)+'-'+fmtS(e)+'</span>','text-align:left;padding-left:6px;')}
-          ${th('DSM',SEP+'colspan:3')}${th('')}${th('')}
-          ${th('MGT',SEP)}${th('')}${th('')}
-          ${th('PAITA',SEP)}${th('')}${th('')}
-          ${th('VILLE',SEP)}${th('')}${th('')}
-        </tr>
-        <tr>
-          ${th('')}
-          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
-          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
-          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
-          ${th('THON',SEP)}${th('SAU.')}${th('ABURI')}
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-  }
+  let rows='';
 
   if(type==='rolls'){
-    let rows='';
     for(let di=0;di<7;di++){
       const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
       const isDim=(di===6);
       const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
       const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
       const villeR=getR(dStr,'ville')||0;
+      const bg=isDim?'background:#f0f0f0;':'';
       rows+=`<tr>
-        ${tdL(DAYS[di]+' '+short,isDim)}
-        ${td(v.dsm||'','sep')}${td(ar.dsm||'')}
-        ${td(v.mgt||'','sep')}${td(ar.mgt||'')}
-        ${td(v.paita||'','sep')}${td(ar.paita||'')}
-        ${td(v.ville||'','sep')}${td(villeR||'')}
+        <td class="day${isDim?' dim':''}">${DAYS[di]}<br><span style="font-weight:400;font-size:10px">${short}</span></td>
+        <td class="sep">${v.dsm||''}</td><td>${ar.dsm||''}</td>
+        <td class="sep">${v.mgt||''}</td><td>${ar.mgt||''}</td>
+        <td class="sep">${v.paita||''}</td><td>${ar.paita||''}</td>
+        <td class="sep">${v.ville||''}</td><td>${villeR||''}</td>
       </tr>`;
     }
-    html=`
-    <p style="text-align:center;font-size:13px;font-weight:700;letter-spacing:.06em;margin-bottom:10px;">QUANTITÉ ROLL — ${weekShort}</p>
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <colgroup>
-        <col style="width:20%">
-        <col style="width:10%"><col style="width:10%">
-        <col style="width:10%"><col style="width:10%">
-        <col style="width:10%"><col style="width:10%">
-        <col style="width:10%"><col style="width:10%">
-      </colgroup>
-      <thead>
-        <tr>
-          ${th('DATE<br><span style="font-weight:400;font-size:8px;">'+fmtS(m)+'-'+fmtS(e)+'</span>','text-align:left;padding-left:8px;')}
-          ${th('DSM',SEP)}${th('')}
-          ${th('MGT',SEP)}${th('')}
-          ${th('PAITA',SEP)}${th('')}
-          ${th('VILLE',SEP)}${th('')}
-        </tr>
-        <tr>
-          ${th('')}
-          ${th('RIZ',SEP)}${th('ROLL')}
-          ${th('RIZ',SEP)}${th('ROLL')}
-          ${th('RIZ',SEP)}${th('ROLL')}
-          ${th('RIZ',SEP)}${th('ROLL')}
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
   }
+
+  if(type==='poisson'){
+    for(let di=0;di<7;di++){
+      const d=dayOf(weekOff,di),dStr=ds(d);
+      const isDim=(di===6);
+      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],isFete);});
+      const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:'');};
+      rows+=`<tr>
+        <td class="day${isDim?' dim':''}">${DAYS[di]}</td>
+        <td class="sep">${gfv('dsm','t')}</td><td>${gfv('dsm','s')}</td><td>${gfv('dsm','a')}</td>
+        <td class="sep">${gfv('mgt','t')}</td><td>${gfv('mgt','s')}</td><td>${gfv('mgt','a')}</td>
+        <td class="sep">${gfv('paita','t')}</td><td>${gfv('paita','s')}</td><td>${gfv('paita','a')}</td>
+        <td class="sep">${gfv('ville','t')}</td><td>${gfv('ville','s')}</td><td>${gfv('ville','a')}</td>
+      </tr>`;
+    }
+  }
+
+  const isRolls = type==='rolls';
+  const titre = isRolls ? 'QUANTITÉ ROLL' : 'QUANTITÉ POISSON';
+
+  const thead = isRolls ? `
+    <tr>
+      <th rowspan="2" class="th-date">DATE<br><span style="font-weight:400;font-size:9px">${fmtS(m)}–${fmtS(e)}</span></th>
+      <th colspan="2" class="sep">DSM</th>
+      <th colspan="2" class="sep">MGT</th>
+      <th colspan="2" class="sep">PAITA</th>
+      <th colspan="2" class="sep">VILLE</th>
+    </tr>
+    <tr>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+    </tr>` : `
+    <tr>
+      <th rowspan="2" class="th-date">DATE<br><span style="font-weight:400;font-size:9px">${fmtS(m)}–${fmtS(e)}</span></th>
+      <th colspan="3" class="sep">DSM</th>
+      <th colspan="3" class="sep">MGT</th>
+      <th colspan="3" class="sep">PAITA</th>
+      <th colspan="3" class="sep">VILLE</th>
+    </tr>
+    <tr>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+    </tr>`;
 
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-  <title>${type==='poisson'?'Poisson':'Rolls'} — ${weekShort}</title>
+  <title>${titre} — ${weekShort}</title>
   <style>
     @page{size:A4 landscape;margin:0;}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    html,body{width:297mm;height:210mm;overflow:hidden;}
-    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;padding:8mm;display:flex;flex-direction:column;}
-    p.titre{text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:5px;flex-shrink:0;}
-    table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
-    th{background:#ccc;border:1.5px solid #555;padding:4px 2px;text-align:center;font-weight:700;font-size:9px;white-space:nowrap;}
-    td{border:1.5px solid #555;text-align:center;font-size:12px;vertical-align:middle;}
-    tbody tr{height:calc(100% / 7);}
-    td.day{text-align:left;font-weight:700;padding-left:8px;background:#e0e0e0;}
-    td.dim{background:#f0f0f0;}
-    .sep{border-left:3px solid #000!important;}
+    html,body{width:270.7mm;height:189.6mm;overflow:hidden;}
+    body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;display:flex;flex-direction:column;margin:10mm 13.15mm;}
+    h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:4px;flex-shrink:0;}
+    table{width:270.7mm;border-collapse:collapse;table-layout:fixed;flex:1;}
+    th{background:#d0d0d0;border:2px solid #000;padding:3px 2px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;}
+    th.th-date{text-align:left;padding-left:8px;}
+    td{border:1.5px solid #000;text-align:center;font-size:14px;font-weight:500;vertical-align:middle;}
+    tbody tr{height:calc((189.6mm - 42px) / 7);}
+    td.day{text-align:left;font-weight:700;font-size:12px;padding-left:10px;background:#e8e8e8;border:2px solid #000;}
+    td.dim{background:#f5f5f5;}
+    th.sep,td.sep{border-left:3px solid #000!important;}
   </style>
   </head><body>
-  ${html}
+  <h1>${titre} HIRO — ${weekShort}</h1>
+  <table>
+    <thead>${thead}</thead>
+    <tbody>${rows}</tbody>
+  </table>
   <script>window.onload=()=>{window.print();}<\/script>
   </body></html>`);
   win.document.close();
 }
-
 
 
 function updateClock(){
