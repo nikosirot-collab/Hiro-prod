@@ -1190,17 +1190,17 @@ function laboPRow(name,val){
 }
 
 function laboGetFish(shop,field){
-  // Utilise directement 'data' déjà chargé dans hiro_access
   var key=laboDs(laboDate)+'__f__'+shop+'__'+field;
-  return data[key]||0;
+  var fd=getFish(shop,getV(laboDs(laboDate),shop));
+  return data[key]!==undefined?data[key]:(fd?fd[field]||0:0);
 }
 function laboGetRiz(shop){
-  var key=laboDs(laboDate)+'__'+shop;
-  return data[key]||0;
+  return getV(laboDs(laboDate),shop)||0;
 }
 function laboGetRoll(shop){
-  var key=laboDs(laboDate)+'__r__'+shop;
-  return data[key]||0;
+  var dStr=laboDs(laboDate);
+  var isDim=laboDate.getDay()===0;
+  return getRolls(getV(dStr,shop),isDim)||0;
 }
 
 function laboRenderFiche(shop,order){
