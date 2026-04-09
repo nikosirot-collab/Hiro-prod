@@ -876,7 +876,7 @@ function render(){
   document.getElementById('body-fish').innerHTML=fishTbl;
   document.getElementById('body-rolls').innerHTML=rollTbl;
   document.getElementById('body-thon').innerHTML=thonTbl;
-  document.getElementById('body-total').innerHTML=totTbl;
+  if(document.getElementById('body-total')) document.getElementById('body-total').innerHTML=totTbl;
 
   // Footers
   document.getElementById('foot-riz').innerHTML=`<tr>
@@ -1273,24 +1273,25 @@ function laboRender(){
 
 async function laboFetchFish(){
   try{
-    // Utilise mondayOf qui est déjà correctement calculé dans hiro_access
-    var monday=mondayOf(weekOff);
-    // Calcul du bon lundi pour laboDate
-    var ld=laboDate;
-    var ldStr=laboDs(ld);
+    // Calcule le lundi de la semaine de laboDate en utilisant ds() de hiro_access
+    var ldStr=laboDs(laboDate);
     var parts=ldStr.split('-');
-    var tmp=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-    var dow=tmp.getDay();var diff=dow===0?-6:1-dow;
-    var mon=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])+diff);
+    var y=parseInt(parts[0]),m=parseInt(parts[1])-1,d=parseInt(parts[2]);
+    // Crée date locale sans UTC shift
+    var dow=(new Date(y,m,d)).getDay();
+    var diff=dow===0?-6:1-dow;
+    var mon=new Date(y,m,d+diff);
     var monStr=laboDs(mon);
-    var res=await fetch(_API.replace('/hiro-production','/hiro-production')+'/week_'+monStr+'?key='+_KEY);
+    console.log('laboDate:',ldStr,'monday:',monStr);
+    var res=await fetch(_API+'/week_'+monStr+'?key='+_KEY);
     if(res.ok){
       var json=await res.json();
       if(json.fields) Object.entries(json.fields).forEach(function(e){
         if(e[1].integerValue!==undefined) laboFishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
       });
+      console.log('riz mgt:', laboFishData[ldStr+'__mgt'], 'roll mgt:', laboFishData[ldStr+'__r__mgt']);
     }
-  }catch(e){}
+  }catch(e){console.log('laboFetchFish error:',e);}
 }
 
 async function laboFetch(){
