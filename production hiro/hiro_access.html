@@ -1273,15 +1273,23 @@ function laboRender(){
 
 async function laboFetchFish(){
   try{
-    // Calcule le lundi de la semaine de laboDate en utilisant ds() de hiro_access
+    // Utilise ds() qui formate correctement depuis TODAY_NC
     var ldStr=laboDs(laboDate);
-    var parts=ldStr.split('-');
-    var y=parseInt(parts[0]),m=parseInt(parts[1])-1,d=parseInt(parts[2]);
-    // Crée date locale sans UTC shift
-    var dow=(new Date(y,m,d)).getDay();
-    var diff=dow===0?-6:1-dow;
-    var mon=new Date(y,m,d+diff);
-    var monStr=laboDs(mon);
+    // Calcule le lundi en utilisant la même logique que mondayOf() dans hiro_access
+    // TODAY_NC est déjà correctement en heure Nouméa
+    var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+    var ncDate=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+    // Calcule le décalage en jours entre laboDate et TODAY_NC
+    var laboParts=ldStr.split('-');
+    var laboLocal=new Date(parseInt(laboParts[0]),parseInt(laboParts[1])-1,parseInt(laboParts[2]));
+    var diffDays=Math.round((laboLocal-ncDate)/(1000*60*60*24));
+    // Utilise mondayOf avec le bon offset
+    var approxWeekOff=Math.floor(diffDays/7);
+    // Cherche le bon lundi en testant weekOff et weekOff+1
+    var mon0=mondayOf(approxWeekOff);
+    var mon1=mondayOf(approxWeekOff+1);
+    var mon=laboLocal>=mon1?mon1:mon0;
+    var monStr=ds(mon);
     console.log('laboDate:',ldStr,'monday:',monStr);
     var res=await fetch(_API+'/week_'+monStr+'?key='+_KEY);
     if(res.ok){
@@ -1289,7 +1297,7 @@ async function laboFetchFish(){
       if(json.fields) Object.entries(json.fields).forEach(function(e){
         if(e[1].integerValue!==undefined) laboFishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
       });
-      console.log('riz mgt:', laboFishData[ldStr+'__mgt'], 'roll mgt:', laboFishData[ldStr+'__r__mgt']);
+      console.log('riz mgt:',laboFishData[ldStr+'__mgt'],'roll mgt:',laboFishData[ldStr+'__r__mgt']);
     }
   }catch(e){console.log('laboFetchFish error:',e);}
 }
