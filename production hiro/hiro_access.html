@@ -789,22 +789,42 @@ function render(){
       const dDim=dayOf(weekOff,6),dsDim=ds(dDim);
       const vDim={};['dsm','mgt','paita','ville'].forEach(s=>{vDim[s]=getV(dsDim,s);});
       const fdDim={};['dsm','mgt','paita','ville'].forEach(s=>{fdDim[s]=getFish(s,vDim[s]);});
-      const tDim=(fdDim.dsm?.t||0)+(fdDim.mgt?.t||0)+(fdDim.paita?.t||0)+(fdDim.ville?.t||0);
+      const tDim=['dsm','mgt','paita','ville'].reduce((sum,s)=>{
+        const mk=dsDim+'__f__'+s+'__t';
+        return sum+(data[mk]!==undefined?data[mk]:(fdDim[s]?fdDim[s].t:0));
+      },0);
       const dLun=dayOf(weekOff+1,0),dsLun=ds(dLun);
-      const vLun={};['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=getV(dsLun,s);});
-      const fdLun={};['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s]);});
-      const tLun=(fdLun.dsm?.t||0)+(fdLun.mgt?.t||0)+(fdLun.paita?.t||0)+(fdLun.ville?.t||0);
-      const hasLun=SHOPS.some(s=>vLun[s]>0);
-      const totSam=tDim+tLun;
+      const nextDocId='week_'+ds(mondayOf(weekOff+1));
+
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
-        <td colspan="4" style="font-size:12px;color:var(--muted);">
+        <td colspan="4" style="font-size:12px;color:var(--muted);" id="thon-sat-detail">
           Dim : <span class="vt2">${tDim||'—'}</span>
-          + Lun S+1 : ${hasLun?`<span class="vt2">${tLun}</span>`:`<em style="color:var(--hint)">en attente</em>`}
+          + Lun S+1 : <em style="color:var(--hint)">chargement…</em>
         </td>
-        <td class="vmono" style="font-weight:600">${totSam||'—'}</td>
-        <td style="font-weight:600;color:var(--dsm)">${thonKg(totSam)}</td>
+        <td class="vmono" style="font-weight:600" id="thon-sat-total">—</td>
+        <td style="font-weight:600;color:var(--dsm)" id="thon-sat-kg">—</td>
       </tr>`;
+
+      // Charge les données semaine suivante depuis Firebase
+      _fbGet(nextDocId).then(nextData=>{
+        const nd=nextData||{};
+        const vLun={};['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=nd[dsLun+'__'+s]||0;});
+        const fdLun={};['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s]);});
+        const tLun=['dsm','mgt','paita','ville'].reduce((sum,s)=>{
+          const mk=dsLun+'__f__'+s+'__t';
+          return sum+(nd[mk]!==undefined?nd[mk]:(fdLun[s]?fdLun[s].t:0));
+        },0);
+        const hasLun=['dsm','mgt','paita','ville'].some(s=>vLun[s]>0);
+        const totSam=tDim+tLun;
+        const el=document.getElementById('thon-sat-detail');
+        if(el) el.innerHTML=`Dim : <span class="vt2">${tDim||'—'}</span>
+          + Lun S+1 : ${hasLun?`<span class="vt2">${tLun}</span>`:`<em style="color:var(--hint)">en attente</em>`}`;
+        const elTot=document.getElementById('thon-sat-total');
+        if(elTot) elTot.textContent=totSam||'—';
+        const elKg=document.getElementById('thon-sat-kg');
+        if(elKg) elKg.textContent=thonKg(totSam);
+      });
     } else {
       const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
       const vNext={};['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
