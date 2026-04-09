@@ -1,7 +1,13 @@
-const CACHE_NAME = 'hiro-v1';
+const CACHE_NAME = 'hiro-v2';
+const BASE = 'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/';
 const ASSETS = [
-  'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/hiro_prod.html',
-  'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/hiro_access.html'
+  BASE + 'hiro_prod.html',
+  BASE + 'hiro_access.html',
+  BASE + 'hiro_order_dsm.html',
+  BASE + 'hiro_order_mgt.html',
+  BASE + 'hiro_order_paita.html',
+  BASE + 'hiro_order_ville.html',
+  BASE + 'hiro_labo.html',
 ];
 
 self.addEventListener('install', e => {
@@ -20,7 +26,9 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if(e.request.url.includes('firestore.googleapis.com') ||
-     e.request.url.includes('firebase')) return;
+     e.request.url.includes('firebase') ||
+     e.request.url.includes('fonts.googleapis.com') ||
+     e.request.url.includes('fonts.gstatic.com')) return;
   e.respondWith(
     fetch(e.request)
       .then(res => {
