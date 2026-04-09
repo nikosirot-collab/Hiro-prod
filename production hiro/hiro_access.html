@@ -1190,13 +1190,17 @@ function laboPRow(name,val){
 }
 
 function laboGetFish(shop,field){
-  return laboFishData[laboDs(laboDate)+'__f__'+shop+'__'+field]||0;
+  // Utilise directement 'data' déjà chargé dans hiro_access
+  var key=laboDs(laboDate)+'__f__'+shop+'__'+field;
+  return data[key]||0;
 }
 function laboGetRiz(shop){
-  return laboFishData[laboDs(laboDate)+'__'+shop]||0;
+  var key=laboDs(laboDate)+'__'+shop;
+  return data[key]||0;
 }
 function laboGetRoll(shop){
-  return laboFishData[laboDs(laboDate)+'__r__'+shop]||0;
+  var key=laboDs(laboDate)+'__r__'+shop;
+  return data[key]||0;
 }
 
 function laboRenderFiche(shop,order){
@@ -1304,18 +1308,17 @@ async function laboFetchFish(){
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  await laboFetchFish();
   await Promise.all(LABO_SHOPS.map(async function(s){
     try{
       var res=await fetch(_ORDERS_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
       if(res.ok){
-        var json=await res.json();var d={};
+        var json=await res.json();var d2={};
         if(json.fields) Object.entries(json.fields).forEach(function(e){
           var k=e[0],v=e[1];
-          if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
-          else if(v.stringValue!==undefined) d[k]=v.stringValue;
+          if(v.integerValue!==undefined) d2[k]=parseInt(v.integerValue);
+          else if(v.stringValue!==undefined) d2[k]=v.stringValue;
         });
-        laboOrders[s]=d;
+        laboOrders[s]=d2;
       }
     }catch(e){}
   }));
