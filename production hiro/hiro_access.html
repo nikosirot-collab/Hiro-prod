@@ -1227,7 +1227,7 @@ function laboRenderFiche(shop,order){
     {name:'Aburi',val:laboGetFish(shop,'a')},{name:'Tamago',val:laboGetFish(shop,'tamago')},
     {name:'Riz',val:laboGetRiz(shop)},{name:'Poke thon',val:order.pokethon||0},
     {name:'Poke saumon',val:order.pokesaumon||0},{name:'Roll',val:laboGetRoll(shop)},
-    {name:'Gyoza',val:order.gyoza||0}
+    {name:'Gyoza',val:shop==='ville'?0:order.gyoza||0}
   ];
   var rightRows=rightItems.map(function(p){return laboPRow(p.name,p.val);}).join('');
   var dessertRows=LABO_DESSERT.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
@@ -1239,7 +1239,14 @@ function laboRenderFiche(shop,order){
   if(order.libre){try{
     var lib=JSON.parse(order.libre);
     if(lib.chr){var ci=lib.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}
-    if(lib.plats){var pi=lib.plats.filter(function(i){return i.name&&i.qty>0;});if(pi.length>0)platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+pi.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';}
+    if(shop==='ville'){
+      var fixedPlats=[];
+      if(order.gyoza) fixedPlats.push({qty:order.gyoza,name:'Gyoza'});
+      if(order.siumai) fixedPlats.push({qty:order.siumai,name:'Siu Mai'});
+      var extraPlats=lib.plats?lib.plats.filter(function(i){return i.name&&i.qty>0;}):[];
+      var allPlats=fixedPlats.concat(extraPlats);
+      if(allPlats.length>0) platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+allPlats.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';
+    } else if(lib.plats){var pi=lib.plats.filter(function(i){return i.name&&i.qty>0;});if(pi.length>0)platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+pi.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';}
   }catch(e){}}
 
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
