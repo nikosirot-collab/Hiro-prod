@@ -383,29 +383,38 @@ function showRecap(d){
       +'</div>';
   }
 
-  // Salade col gauche
+  // Salade
   var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rRow(SALADE_RECAP_NAMES[k],d[k]||0);}).join('');
 
-  // Col droite : poke + riz
-  var rightRows=rRow('Riz',d.rizprod||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
+  // Col milieu : riz + poke
+  var middleRows=rRow('Riz',d.rizprod||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
+
+  // Plats chauds : gyoza + siumai + libres
+  var platsRows='';
+  if(d.gyoza) platsRows+='<div class="recap-libre-row"><div class="recap-qty" style="color:'+ACCENT+'">'+d.gyoza+'</div><div class="recap-name">Gyoza</div></div>';
+  if(d.siumai) platsRows+='<div class="recap-libre-row"><div class="recap-qty" style="color:'+ACCENT+'">'+d.siumai+'</div><div class="recap-name">Siu Mai</div></div>';
+  if(d.libre){try{var lp2=JSON.parse(d.libre);if(lp2.plats){lp2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="recap-libre-row"><div class="recap-qty" style="color:'+ACCENT+'">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
+  if(!platsRows) platsRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
 
   // Dessert
   var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
-  // Tartes libres dans dessert
   if(d.libre){try{var lp=JSON.parse(d.libre);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
 
-  // Tapas
+  // Tapas (sans gyoza pour ville)
   var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rRow(TAPAS_RECAP_NAMES[k],d[k]||0);}).join('');
 
-  // CHR libre
+  // CHR
   var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
   if(d.libre){try{var lc=JSON.parse(d.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
 
   el.innerHTML='<div class="recap-fiche">'
-    +'<div class="recap-top">'
-    +'<div class="recap-col recap-col-left"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
-    +'<div class="recap-col"><div class="recap-col-title">Riz / Poke</div>'+rightRows+'</div>'
+    // TOP : 3 colonnes
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border-strong);">'
+    +'<div style="border-right:1px solid var(--border);"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
+    +'<div style="border-right:1px solid var(--border);"><div class="recap-col-title">Riz / Poke</div>'+middleRows+'</div>'
+    +'<div><div class="recap-col-title">Plats chauds</div>'+platsRows+'</div>'
     +'</div>'
+    // BOTTOM : 3 colonnes
     +'<div class="recap-bottom">'
     +'<div class="recap-bottom-col"><div class="recap-col-title">Dessert</div>'+dessertRows+'</div>'
     +'<div class="recap-bottom-col"><div class="recap-col-title">Tapas</div>'+tapasRows+'</div>'

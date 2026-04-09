@@ -1251,22 +1251,46 @@ function laboRenderFiche(shop,order){
 
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
 
-  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
+  var header='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
     +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
     +'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Reçu à '+laboFmtTime(order.ts)+'</div>'
     +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;">✓ Reçue</span></div>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
-    +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-    +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
-    +'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+    +'</div>';
+
+  var topSection, bottomSection;
+
+  if(shop==='ville'){
+    // Plats chauds : gyoza + siumai fixes + libres
+    var fixedPlats=[];
+    if(order.gyoza) fixedPlats.push({qty:order.gyoza,name:'Gyoza'});
+    if(order.siumai) fixedPlats.push({qty:order.siumai,name:'Siu Mai'});
+    var extraPlats=[];
+    try{if(order.libre){var lp=JSON.parse(order.libre);if(lp.plats)extraPlats=lp.plats.filter(function(i){return i.name&&i.qty>0;});}}catch(e){}
+    var allPlats=fixedPlats.concat(extraPlats);
+    var platsColRows=allPlats.length>0
+      ?allPlats.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';}).join('')
+      :'<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
+
+    topSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
+      +'<div>'+colTitle('Plats chauds')+platsColRows+'</div>'
+      +'</div>';
+  } else {
+    topSection='<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
+      +'</div>';
+  }
+
+  bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Tapas')+tapasRows+'</div>'
     +'<div>'+colTitle('CHR')+chrRows+'</div>'
-    +'</div>'
-    +platsRows+'</div>';
+    +'</div>';
+
+  return header+topSection+bottomSection+'</div>';
 }
 
 function laboRender(){
