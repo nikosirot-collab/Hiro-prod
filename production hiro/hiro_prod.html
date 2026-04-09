@@ -1374,23 +1374,47 @@ function render() {
       const dDim = dayOf(weekOff, 6); const dsDim = ds(dDim);
       const vDim = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vDim[s]=getV(dsDim,s);});
       const fdDim = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdDim[s]=getFish(s,vDim[s],isFete);});
-      const tDim = (fdDim.dsm?.t||0)+(fdDim.mgt?.t||0)+(fdDim.paita?.t||0)+(fdDim.ville?.t||0);
+      // Utilise les overrides manuels pour dimanche aussi
+      const tDim = ['dsm','mgt','paita','ville'].reduce((sum,s)=>{
+        const mk=dsDim+'__f__'+s+'__t';
+        return sum+(data[mk]!==undefined?data[mk]:(fdDim[s]?fdDim[s].t:0));
+      },0);
 
       const dLun = dayOf(weekOff+1, 0); const dsLun = ds(dLun);
-      const vLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=getV(dsLun,s);});
-      const fdLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s],isFete);});
-      const tLun = (fdLun.dsm?.t||0)+(fdLun.mgt?.t||0)+(fdLun.paita?.t||0)+(fdLun.ville?.t||0);
-      const hasLun = SHOPS.some(s=>vLun[s]>0);
-      const totalSam = tDim + tLun;
-      const kgSam = totalSam > 0 ? thonKg(totalSam) : '—';
+      // Cherche dans data (si semaine suivante déjà chargée) ou dans Firebase
+      const nextDocId = 'week_'+ds(mondayOf(weekOff+1));
+      const vLun = {}; const fdLun = {};
+      
+      // Charge les données semaine suivante si pas déjà disponibles
+      _fbGet(nextDocId).then(nextData => {
+        const nd = nextData || {};
+        ['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=nd[dsLun+'__'+s]||0;});
+        ['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s],isFete);});
+        const tLun = ['dsm','mgt','paita','ville'].reduce((sum,s)=>{
+          const mk=dsLun+'__f__'+s+'__t';
+          return sum+(nd[mk]!==undefined?nd[mk]:(fdLun[s]?fdLun[s].t:0));
+        },0);
+        const hasLun = ['dsm','mgt','paita','ville'].some(s=>vLun[s]>0);
+        const totalSam = tDim + tLun;
+        const kgSam = totalSam > 0 ? thonKg(totalSam) : '—';
+        // Met à jour la ligne samedi
+        const el = document.getElementById('thon-sat-detail');
+        if(el) el.innerHTML = `Dim : <span class="val-thon">${tDim||'—'}</span> tranches
+          &nbsp;+&nbsp; Lun S+1 : <span class="val-thon">${hasLun?tLun:'<em style="color:var(--text-hint)">en attente</em>'}</span> tranches`;
+        const elTot = document.getElementById('thon-sat-total');
+        if(elTot) elTot.textContent = totalSam||'—';
+        const elKg = document.getElementById('thon-sat-kg');
+        if(elKg) elKg.textContent = kgSam;
+      });
+
       thonRow = `<tr>
         <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-        <td colspan="4" style="font-size:12px;color:var(--text-muted);">
+        <td colspan="4" style="font-size:12px;color:var(--text-muted);" id="thon-sat-detail">
           Dim : <span class="val-thon">${tDim||'—'}</span> tranches
-          &nbsp;+&nbsp; Lun S+1 : <span class="val-thon">${hasLun?tLun:'<em style="color:var(--text-hint)">en attente</em>'}</span> tranches
+          &nbsp;+&nbsp; Lun S+1 : <em style="color:var(--text-hint)">chargement…</em>
         </td>
-        <td class="${dc2} val-mono" style="font-weight:600">${totalSam||'—'}</td>
-        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${kgSam}</td>
+        <td class="${dc2} val-mono" style="font-weight:600" id="thon-sat-total">—</td>
+        <td class="${dc2}" style="font-weight:600;color:var(--dsm)" id="thon-sat-kg">—</td>
       </tr>`;
     } else {
       // Lundi→Vendredi → tranches du lendemain

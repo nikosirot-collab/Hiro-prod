@@ -508,22 +508,22 @@ function detectChanges(newData){
   for(const [k,v] of Object.entries(newData)){
     if(k==='init') continue;
     const prev=_openSnapshot[k];
-    // Notifie uniquement si la valeur a changé depuis l'ouverture
-    if(prev!==undefined && prev!==v){
+    // Notifie si valeur changée OU nouvelle valeur ajoutée
+    if(prev!==v){
       const parts=k.split('__');
       const dateStr=parts[0];
       const d=new Date(dateStr);
       const dayLabel=DAYS[d.getDay()===0?6:d.getDay()-1];
       if(parts[1]==='f'){
         const shop=SHOP_LABELS[parts[2]]||parts[2];
-        const f=parts[3]==='t'?'Thon':parts[3]==='s'?'Saumon':'Aburi';
-        changes.push(`${dayLabel} · ${shop} ${f} : ${prev}→<strong>${v}</strong>`);
+        const f=parts[3]==='t'?'Thon':parts[3]==='s'?'Saumon':parts[3]==='a'?'Aburi':'Tamago';
+        changes.push(`${dayLabel} · ${shop} ${f} : ${prev!==undefined?prev+'→':''}  <strong>${v}</strong>`);
       } else if(parts[1]==='r'){
         const shop=SHOP_LABELS[parts[2]]||parts[2];
-        changes.push(`${dayLabel} · ${shop} Rolls : ${prev}→<strong>${v}</strong>`);
+        changes.push(`${dayLabel} · ${shop} Rolls : ${prev!==undefined?prev+'→':''}<strong>${v}</strong>`);
       } else {
         const shop=SHOP_LABELS[parts[1]]||parts[1];
-        changes.push(`${dayLabel} · ${shop} Riz : ${prev}→<strong>${v}</strong>`);
+        if(shop) changes.push(`${dayLabel} · ${shop} Riz : ${prev!==undefined?prev+'→':''}<strong>${v}</strong>`);
       }
     }
     // Met à jour le snapshot au fil du temps
