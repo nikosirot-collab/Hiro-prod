@@ -1190,8 +1190,15 @@ function laboPRow(name,val){
 }
 
 function laboGetFish(shop,field){
-  var key=laboDs(laboDate)+'__f__'+shop+'__'+field;
-  var fd=getFish(shop,getV(laboDs(laboDate),shop));
+  var dStr=laboDs(laboDate);
+  var key=dStr+'__f__'+shop+'__'+field;
+  if(field==='tamago'){
+    // getDay(): 0=dim,1=lun...6=sam → di: 0=lun,...,5=sam,6=dim
+    var dow=laboDate.getDay();
+    var di=dow===0?6:dow-1;
+    return data[key]!==undefined?data[key]:getTamago(shop,di);
+  }
+  var fd=getFish(shop,getV(dStr,shop));
   return data[key]!==undefined?data[key]:(fd?fd[field]||0:0);
 }
 function laboGetRiz(shop){
