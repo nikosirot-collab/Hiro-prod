@@ -378,6 +378,12 @@ async function fetchFishData(){
         if(json.fields) Object.entries(json.fields).forEach(function(e){
           if(e[1].integerValue!==undefined) fishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
         });
+        // Debug
+        var dStr=ds(currentDate);
+        console.log('FishData for '+dStr+' mgt riz:', fishData[dStr+'__mgt']);
+        console.log('FishData for '+dStr+' mgt roll:', fishData[dStr+'__r__mgt']);
+        console.log('FishData for '+dStr+' mgt tamago:', fishData[dStr+'__f__mgt__tamago']);
+        console.log('All keys sample:', Object.keys(fishData).slice(0,5));
       }
     }
   }catch(e){console.log('fetchFishData error:',e);}
