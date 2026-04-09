@@ -180,6 +180,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('poisson',this)">Poisson</div>
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
+  <div class="nav-tab" onclick="showPage('labo',this)">Labo</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
@@ -319,6 +320,26 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 
   <!-- PAGE TOTAUX -->
+
+  <!-- PAGE LABO -->
+  <div id="page-labo" class="page">
+    <div style="padding:8px 0;">
+      <div style="display:flex;align-items:center;gap:12px;padding:4px 0 12px;">
+        <button onclick="laboChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">←</button>
+        <div id="labo-date-label" style="flex:1;text-align:center;font-size:14px;font-weight:600;text-transform:capitalize;"></div>
+        <button onclick="laboChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
+      </div>
+      <!-- Sous-onglets magasins -->
+      <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto;">
+        <div class="labo-tab active" onclick="laboShowShop('resume',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Résumé</div>
+        <div class="labo-tab" onclick="laboShowShop('dsm',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">DSM</div>
+        <div class="labo-tab" onclick="laboShowShop('mgt',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">MGT</div>
+        <div class="labo-tab" onclick="laboShowShop('paita',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Paita</div>
+        <div class="labo-tab" onclick="laboShowShop('ville',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Ville</div>
+      </div>
+      <div id="labo-content"></div>
+    </div>
+  </div>
 
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
@@ -571,13 +592,7 @@ function renderWithState(){
   });
 }
 
-function showPage(p,el){
-  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
-  document.getElementById('page-'+p).classList.add('active');
-  el.classList.add('active');
-  if(p==='historique') loadHistorique();
-}
+
 
 function setView(page,mode,el){
   viewState[page]=mode;
@@ -1116,6 +1131,197 @@ function switchHistTabA(id){
 document.getElementById('weekLabel').textContent=fmtWeek(0);
 document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
+</script>
+
+<script>
+// ─── LABO ───
+var _ORDERS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
+var laboDate=new Date(TODAY_NC);laboDate.setDate(laboDate.getDate()+1);
+var laboOrders={};
+var laboFishData={};
+var laboPollInterval=null;
+var laboCurrentShop='resume';
+
+var LABO_SHOPS=['dsm','mgt','paita','ville'];
+var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
+
+var LABO_SALADE=[
+  {key:'bo',name:'Bun Bo'},{key:'sin',name:'Singapour'},{key:'thon',name:'Thon marine'},
+  {key:'thai',name:'Thai'},{key:'plp',name:'Poulpe'},{key:'rouleaux',name:'Rouleau'},
+  {key:'tataki',name:'Tataki'}
+];
+var LABO_DESSERT=[
+  {key:'tiramisu',name:'Tiramisu'},{key:'ananas',name:'Ananas'},
+  {key:'poebanane',name:'Poe banane'},{key:'poecitrouille',name:'Poe citrouille'},
+  {key:'cheesemangue',name:'Cheese mangue'},{key:'cheeseframboise',name:'Cheese framboise'}
+];
+var LABO_TAPAS=[
+  {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'}
+];
+
+function laboDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function laboFmt(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+function laboFmtTime(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+document.getElementById('labo-date-label').textContent=laboFmt(laboDate);
+
+function laboChangeDate(d){
+  laboDate.setDate(laboDate.getDate()+d);
+  document.getElementById('labo-date-label').textContent=laboFmt(laboDate);
+  laboOrders={};laboFishData={};
+  laboFetch();
+}
+
+function laboShowShop(shop,el){
+  laboCurrentShop=shop;
+  document.querySelectorAll('.labo-tab').forEach(function(t){t.style.borderBottomColor='transparent';t.style.color='var(--muted)';});
+  el.style.borderBottomColor='var(--text)';el.style.color='var(--text)';el.style.fontWeight='500';
+  laboRender();
+}
+
+function laboPRow(name,val){
+  var zero=!val||val===0;
+  return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
+    +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
+    +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--hint)':'var(--text)')+';">'+name+'</div>'
+    +'</div>';
+}
+
+function laboGetFish(shop,field){
+  return laboFishData[laboDs(laboDate)+'__f__'+shop+'__'+field]||0;
+}
+function laboGetRiz(shop){
+  return laboFishData[laboDs(laboDate)+'__'+shop]||0;
+}
+function laboGetRoll(shop){
+  return laboFishData[laboDs(laboDate)+'__r__'+shop]||0;
+}
+
+function laboRenderFiche(shop,order){
+  var color=LABO_COLORS[shop];
+  var label=LABO_LABELS[shop];
+  if(!order||!order.ts){
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;">En attente</span>'
+      +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non reçue</div></div>';
+  }
+
+  var saladeRows=LABO_SALADE.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
+  var rightItems=[
+    {name:'Thon',val:laboGetFish(shop,'t')},{name:'Saumon',val:laboGetFish(shop,'s')},
+    {name:'Aburi',val:laboGetFish(shop,'a')},{name:'Tamago',val:laboGetFish(shop,'tamago')},
+    {name:'Riz',val:laboGetRiz(shop)},{name:'Poke thon',val:order.pokethon||0},
+    {name:'Poke saumon',val:order.pokesaumon||0},{name:'Roll',val:laboGetRoll(shop)},
+    {name:'Gyoza',val:order.gyoza||0}
+  ];
+  var rightRows=rightItems.map(function(p){return laboPRow(p.name,p.val);}).join('');
+  var dessertRows=LABO_DESSERT.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
+  if(order.libre){try{var lt=JSON.parse(order.libre);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  var tapasRows=LABO_TAPAS.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
+
+  var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
+  var platsRows='';
+  if(order.libre){try{
+    var lib=JSON.parse(order.libre);
+    if(lib.chr){var ci=lib.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}
+    if(lib.plats){var pi=lib.plats.filter(function(i){return i.name&&i.qty>0;});if(pi.length>0)platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+pi.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';}
+  }catch(e){}}
+
+  var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
+
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+    +'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Reçu à '+laboFmtTime(order.ts)+'</div>'
+    +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;">✓ Reçue</span></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
+    +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
+    +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+    +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
+    +'<div style="border-right:1px solid var(--border);">'+colTitle('Tapas')+tapasRows+'</div>'
+    +'<div>'+colTitle('CHR')+chrRows+'</div>'
+    +'</div>'
+    +platsRows+'</div>';
+}
+
+function laboRender(){
+  var el=document.getElementById('labo-content');
+  if(!el) return;
+  if(laboCurrentShop==='resume'){
+    var cards='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">';
+    LABO_SHOPS.forEach(function(s){
+      var o=laboOrders[s];var ok=o&&o.ts;
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;">'
+        +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
+        +'<div><div style="font-size:13px;font-weight:600;">'+LABO_LABELS[s]+'</div>'
+        +'<div style="font-size:11px;color:var(--muted);">'+(ok?'Reçu à '+laboFmtTime(o.ts):'En attente')+'</div></div>'
+        +'<div style="margin-left:auto;font-size:18px;">'+(ok?'✅':'⏳')+'</div></div>';
+    });
+    cards+='</div>';
+    el.innerHTML=cards;
+  } else {
+    el.innerHTML=laboRenderFiche(laboCurrentShop,laboOrders[laboCurrentShop]);
+  }
+}
+
+async function laboFetchFish(){
+  try{
+    // Utilise mondayOf qui est déjà correctement calculé dans hiro_access
+    var monday=mondayOf(weekOff);
+    // Calcul du bon lundi pour laboDate
+    var ld=laboDate;
+    var ldStr=laboDs(ld);
+    var parts=ldStr.split('-');
+    var tmp=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+    var dow=tmp.getDay();var diff=dow===0?-6:1-dow;
+    var mon=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])+diff);
+    var monStr=laboDs(mon);
+    var res=await fetch(_API.replace('/hiro-production','/hiro-production')+'/week_'+monStr+'?key='+_KEY);
+    if(res.ok){
+      var json=await res.json();
+      if(json.fields) Object.entries(json.fields).forEach(function(e){
+        if(e[1].integerValue!==undefined) laboFishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
+      });
+    }
+  }catch(e){}
+}
+
+async function laboFetch(){
+  var dStr=laboDs(laboDate);
+  await laboFetchFish();
+  await Promise.all(LABO_SHOPS.map(async function(s){
+    try{
+      var res=await fetch(_ORDERS_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
+      if(res.ok){
+        var json=await res.json();var d={};
+        if(json.fields) Object.entries(json.fields).forEach(function(e){
+          var k=e[0],v=e[1];
+          if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
+          else if(v.stringValue!==undefined) d[k]=v.stringValue;
+        });
+        laboOrders[s]=d;
+      }
+    }catch(e){}
+  }));
+  laboRender();
+}
+
+function showPage(p,el){
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.nav-tab').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('page-'+p).classList.add('active');
+  el.classList.add('active');
+  if(p==='historique') loadHistorique();
+  if(p==='labo'){laboFetch();if(!laboPollInterval)laboPollInterval=setInterval(laboFetch,5000);}
+  else{if(laboPollInterval){clearInterval(laboPollInterval);laboPollInterval=null;}}
+}
 </script>
 
 <script>
