@@ -57,7 +57,24 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 .qty-count span{font-weight:600;}
 .success-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;}
 .success-icon{font-size:56px;}.success-title{font-size:22px;font-weight:700;}.success-sub{font-size:14px;color:var(--text-muted);}
-.btn-new{margin-top:8px;padding:13px 32px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}</style>
+.btn-new{margin-top:8px;padding:13px 32px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.recap-fiche{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;text-align:left;}
+.recap-top{display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border-strong);}
+.recap-col{padding:0;}
+.recap-col-left{border-right:1px solid var(--border);}
+.recap-col-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);}
+.recap-row{display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);}
+.recap-row:last-child{border-bottom:none;}
+.recap-qty{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;min-width:36px;text-align:right;flex-shrink:0;}
+.recap-qty.zero{font-size:13px;color:var(--text-hint);font-weight:400;}
+.recap-name{font-size:13px;font-weight:500;}
+.recap-name.zero{color:var(--text-hint);font-weight:400;}
+.recap-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.recap-bottom-col{border-right:1px solid var(--border);}
+.recap-bottom-col:last-child{border-right:none;}
+.recap-libre-row{display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;}
+.recap-libre-row:last-child{border-bottom:none;}
+</style>
 </head>
 <body>
 <header class="app-header">
@@ -204,6 +221,13 @@ async function sendOrder(){
   }catch(e){alert('Pas de connexion. Reessayez.');}
   btn.disabled=false;btn.textContent='Envoyer →';
 }
+var SALADE_RECAP_KEYS=["bo", "sin", "thon", "thai", "plp", "rouleaux", "tataki"];
+var SALADE_RECAP_NAMES={"bo": "Bun Bo", "sin": "Singapour", "thon": "Thon marine", "thai": "Thai", "plp": "Poulpe", "rouleaux": "Rouleau", "tataki": "Tataki"};
+var DESSERT_RECAP_KEYS=["tiramisu", "ananas", "poebanane", "poecitrouille", "cheesemangue", "cheeseframboise"];
+var DESSERT_RECAP_NAMES={"tiramisu": "Tiramisu", "ananas": "Ananas", "poebanane": "Poe banane", "poecitrouille": "Poe citrouille", "cheesemangue": "Cheese mangue", "cheeseframboise": "Cheese framboise"};
+var TAPAS_RECAP_KEYS=["gyoza", "gnem", "pnem", "sesame", "banhbao"];
+var TAPAS_RECAP_NAMES={"gyoza": "Gyoza", "gnem": "Grand nem", "pnem": "Petit nem", "sesame": "Sesame", "banhbao": "Banh Bao"};
+
 loadRiz();
 loadExistingOrder();
 
@@ -269,36 +293,6 @@ const PRODUCT_NAMES={
   cheeseframboise:'Cheesecake framboise',gyoza:'Gyoza',gnem:'Grand nem',
   pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
 };
-
-function showRecap(d){
-  const el=document.getElementById('recap-content');
-  if(!el) return;
-  let rows='';
-  ALL_KEYS.forEach(k=>{
-    const v=d[k]||0;
-    if(v>0){
-      rows+='<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:12px;">'
-        +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;">'+v+'</div>'
-        +'<div style="font-size:13px;font-weight:500;">'+(PRODUCT_NAMES[k]||k)+'</div>'
-        +'</div>';
-    }
-  });
-  // Libres
-  if(d.libre){try{
-    const libre=JSON.parse(d.libre);
-    Object.entries(libre).forEach(([pageId,items])=>{
-      items.filter(i=>i.name&&i.qty>0).forEach(i=>{
-        rows+='<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:12px;background:#fef9f0;">'
-          +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;">'+i.qty+'</div>'
-          +'<div style="font-size:13px;font-weight:500;">'+i.name+'</div>'
-          +'</div>';
-      });
-    });
-  }catch(e){}}
-  if(!rows) rows='<div style="padding:16px;text-align:center;color:var(--text-hint);font-size:13px;">Aucune quantite saisie</div>';
-  el.innerHTML=rows;
-}
-
 function editOrder(){
   document.getElementById('success-overlay').style.display='none';
   document.querySelector('.nav-tab').click();
@@ -377,3 +371,47 @@ window.sendOrder=async function(){
 
 </body>
 </html>
+<script>
+function showRecap(d){
+  var el=document.getElementById('recap-content');
+  if(!el) return;
+
+  function rRow(name,val){
+    var zero=!val||val===0;
+    return '<div class="recap-row">'
+      +'<div class="recap-qty'+(zero?' zero':'')+'">'+( zero?'—':val)+'</div>'
+      +'<div class="recap-name'+(zero?' zero':'')+'">'+name+'</div>'
+      +'</div>';
+  }
+
+  // Salade col gauche
+  var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rRow(SALADE_RECAP_NAMES[k],d[k]||0);}).join('');
+
+  // Col droite : poke + riz
+  var rightRows=rRow('Riz',d.rizprod||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
+
+  // Dessert
+  var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
+  // Tartes libres dans dessert
+  if(d.libre){try{var lp=JSON.parse(d.libre);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
+
+  // Tapas
+  var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rRow(TAPAS_RECAP_NAMES[k],d[k]||0);}).join('');
+
+  // CHR libre
+  var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
+  if(d.libre){try{var lc=JSON.parse(d.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
+
+  el.innerHTML='<div class="recap-fiche">'
+    +'<div class="recap-top">'
+    +'<div class="recap-col recap-col-left"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
+    +'<div class="recap-col"><div class="recap-col-title">Riz / Poke</div>'+rightRows+'</div>'
+    +'</div>'
+    +'<div class="recap-bottom">'
+    +'<div class="recap-bottom-col"><div class="recap-col-title">Dessert</div>'+dessertRows+'</div>'
+    +'<div class="recap-bottom-col"><div class="recap-col-title">Tapas</div>'+tapasRows+'</div>'
+    +'<div class="recap-bottom-col"><div class="recap-col-title">CHR</div>'+chrRows+'</div>'
+    +'</div>'
+    +'</div>';
+}
+</script>

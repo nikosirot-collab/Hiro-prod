@@ -179,17 +179,17 @@ function pRow(name,val,small){
 }
 
 function getFishVal(shop,field){
-  // Check manual override in order
-  var order=ordersData[shop]||{};
-  var overrideKey=ds(currentDate)+'__f__'+shop+'__'+field;
-  if(fishData[overrideKey]!==undefined) return fishData[overrideKey];
-  // Auto calculated from hiro-prod fish table
-  var autoKey=ds(currentDate)+'__f__'+shop+'__'+field;
-  return fishData[autoKey]||0;
+  // Keys stored as dStr__f__shop__field in fishData (already decoded)
+  var key=ds(currentDate)+'__f__'+shop+'__'+field;
+  return fishData[key]||0;
 }
 function getRollVal(shop){
-  var dStr=ds(currentDate);
-  return fishData[dStr+'__r__'+shop]||0;
+  // Roll stored as dStr__r__shop
+  return fishData[ds(currentDate)+'__r__'+shop]||0;
+}
+function getRizVal(shop){
+  // Riz stored as dStr__shop
+  return fishData[ds(currentDate)+'__'+shop]||0;
 }
 
 function renderFiche(shop,order){
@@ -208,8 +208,7 @@ function renderFiche(shop,order){
   var leftRows=COL_LEFT.map(function(p){return pRow(p.name,order[p.key]||0,false);}).join('');
 
   // Colonne droite : poisson depuis hiro-prod + poke/riz/roll depuis commande
-  var dStr=ds(currentDate);
-  var rizVal=fishData[dStr+'__'+shop]||order.rizprod||0;
+  var rizVal=getRizVal(shop)||order.rizprod||0;
   var rightItems=[
     {name:'Thon',val:getFishVal(shop,'t')},
     {name:'Saumon',val:getFishVal(shop,'s')},
