@@ -366,11 +366,11 @@ async function fetchFishData(){
     var dow=d.getDay();
     var diff=dow===0?-6:1-dow;
     var monday=new Date(d);monday.setDate(monday.getDate()+diff);
-    var mondayStr=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
-    // Fetch both current week and next week to cover all cases
-    var weeks=[mondayStr];
+    // Use ds() which formats local date correctly
+    var mondayStr=ds(monday);
     var nextMonday=new Date(monday);nextMonday.setDate(nextMonday.getDate()+7);
-    weeks.push(nextMonday.getFullYear()+'-'+String(nextMonday.getMonth()+1).padStart(2,'0')+'-'+String(nextMonday.getDate()).padStart(2,'0'));
+    var nextMondayStr=ds(nextMonday);
+    var weeks=[mondayStr,nextMondayStr];
     for(var i=0;i<weeks.length;i++){
       var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production/week_'+weeks[i]+'?key='+_KEY);
       if(res.ok){
@@ -378,12 +378,7 @@ async function fetchFishData(){
         if(json.fields) Object.entries(json.fields).forEach(function(e){
           if(e[1].integerValue!==undefined) fishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
         });
-        // Debug
-        var dStr=ds(currentDate);
-        console.log('FishData for '+dStr+' mgt riz:', fishData[dStr+'__mgt']);
-        console.log('FishData for '+dStr+' mgt roll:', fishData[dStr+'__r__mgt']);
-        console.log('FishData for '+dStr+' mgt tamago:', fishData[dStr+'__f__mgt__tamago']);
-        console.log('All keys sample:', Object.keys(fishData).slice(0,5));
+        console.log('Loaded week '+weeks[i]+', mgt riz:', fishData[ds(currentDate)+'__mgt']);
       }
     }
   }catch(e){console.log('fetchFishData error:',e);}
