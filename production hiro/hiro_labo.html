@@ -126,10 +126,9 @@ var COL_LEFT=[
 ];
 // Colonne droite : poisson + riz + poke + roll
 var COL_RIGHT=[
-  {key:'f_dsm_t',name:'Thon',fish:true},{key:'f_dsm_s',name:'Saumon',fish:true},
-  {key:'f_dsm_a',name:'Aburi',fish:true},{key:'f_dsm_tamago',name:'Tamago',fish:true},
-  {key:'rizprod',name:'Riz'},{key:'pokethon',name:'Poke thon'},
-  {key:'pokesaumon',name:'Poke saumon'},{key:'roll',name:'Roll'},{key:'gyoza',name:'Gyoza'}
+  {key:'f_t',name:'Thon',fish:true},{key:'f_s',name:'Saumon',fish:true},
+  {key:'f_a',name:'Aburi',fish:true},{key:'f_tamago',name:'Tamago',fish:true},
+  {key:'roll',name:'Roll',prod:true},{key:'gyoza',name:'Gyoza'}
 ];
 // Dessert
 var DESSERT=[
@@ -140,7 +139,7 @@ var DESSERT=[
 ];
 // Tapas
 var TAPAS=[
-  {key:'gyoza',name:'Gyoza'},{key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
   {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'}
 ];
 
@@ -179,13 +178,18 @@ function pRow(name,val,small){
     +'</div>';
 }
 
-function getFishVal(order,shop,field){
-  // Try override first, then auto
-  var k='f_'+shop+'_'+field;
-  if(order[k]!==undefined) return order[k];
-  // From fish data
-  var fk=ds(currentDate)+'--f--'+shop+'--'+field;
-  return fishData[fk]||0;
+function getFishVal(shop,field){
+  // Check manual override in order
+  var order=ordersData[shop]||{};
+  var overrideKey=ds(currentDate)+'__f__'+shop+'__'+field;
+  if(fishData[overrideKey]!==undefined) return fishData[overrideKey];
+  // Auto calculated from hiro-prod fish table
+  var autoKey=ds(currentDate)+'__f__'+shop+'__'+field;
+  return fishData[autoKey]||0;
+}
+function getRollVal(shop){
+  var dStr=ds(currentDate);
+  return fishData[dStr+'__r__'+shop]||0;
 }
 
 function renderFiche(shop,order){
@@ -204,21 +208,26 @@ function renderFiche(shop,order){
   var leftRows=COL_LEFT.map(function(p){return pRow(p.name,order[p.key]||0,false);}).join('');
 
   // Colonne droite : poisson depuis hiro-prod + poke/riz/roll depuis commande
+  var dStr=ds(currentDate);
+  var rizVal=fishData[dStr+'__'+shop]||order.rizprod||0;
   var rightItems=[
-    {name:'Thon',val:getFishVal(order,shop,'t')},
-    {name:'Saumon',val:getFishVal(order,shop,'s')},
-    {name:'Aburi',val:getFishVal(order,shop,'a')},
-    {name:'Tamago',val:getFishVal(order,shop,'tamago')},
-    {name:'Riz',val:order.rizprod||0},
+    {name:'Thon',val:getFishVal(shop,'t')},
+    {name:'Saumon',val:getFishVal(shop,'s')},
+    {name:'Aburi',val:getFishVal(shop,'a')},
+    {name:'Tamago',val:getFishVal(shop,'tamago')},
+    {name:'Riz',val:rizVal},
     {name:'Poke thon',val:order.pokethon||0},
     {name:'Poke saumon',val:order.pokesaumon||0},
-    {name:'Roll',val:fishData['roll_'+shop]||0},
+    {name:'Roll',val:getRollVal(shop)},
+    {name:'Gyoza',val:order.gyoza||0},
   ];
   if(isDSM) rightItems.push({name:'Poulet citron',val:order.pouletcitron||0});
   var rightRows=rightItems.map(function(p){return pRow(p.name,p.val,false);}).join('');
 
   // Dessert
   var dessertRows=DESSERT.map(function(p){return pRow(p.name,order[p.key]||0,true);}).join('');
+  // Tartes libres
+  if(order.libre){try{var libreP=JSON.parse(order.libre);if(libreP.tarte){var tarteItems=libreP.tarte.filter(function(i){return i.name&&i.qty>0;});if(tarteItems.length>0){dessertRows+=tarteItems.map(function(i){return '<div class="bottom-row"><div class="bottom-qty">'+i.qty+'</div><div class="bottom-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
 
   // Tapas
   var tapasRows=TAPAS.map(function(p){return pRow(p.name,order[p.key]||0,true);}).join('');

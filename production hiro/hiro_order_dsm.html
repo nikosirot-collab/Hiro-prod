@@ -93,7 +93,7 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 <tr><td class="td-product">Poe citrouille</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('poecitrouille',-1)">&#8722;</button><input class="qty-inp" id="q-poecitrouille" type="number" min="0" value="0" onchange="setQ('poecitrouille',this.value)"><button class="qty-btn" onclick="adj('poecitrouille',1)">+</button></div></td></tr>
 <tr><td class="td-product">Cheesecake mangue</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('cheesemangue',-1)">&#8722;</button><input class="qty-inp" id="q-cheesemangue" type="number" min="0" value="0" onchange="setQ('cheesemangue',this.value)"><button class="qty-btn" onclick="adj('cheesemangue',1)">+</button></div></td></tr>
 <tr><td class="td-product">Cheesecake framboise</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('cheeseframboise',-1)">&#8722;</button><input class="qty-inp" id="q-cheeseframboise" type="number" min="0" value="0" onchange="setQ('cheeseframboise',this.value)"><button class="qty-btn" onclick="adj('cheeseframboise',1)">+</button></div></td></tr>
-<tr><td class="td-product">Tarte</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('tarte',-1)">&#8722;</button><input class="qty-inp" id="q-tarte" type="number" min="0" value="0" onchange="setQ('tarte',this.value)"><button class="qty-btn" onclick="adj('tarte',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
+</tbody></table></div></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Tarte — préciser le type</span></div><div id="libre-lines-tarte" class="libre-lines"></div><button class="btn-add-line" data-page="tarte" onclick="addLine(this.dataset.page)">+ Ajouter une tarte</button></div></div></div>
 <div id="page-tapas" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Tapas</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Gyoza</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gyoza',-1)">&#8722;</button><input class="qty-inp" id="q-gyoza" type="number" min="0" value="0" onchange="setQ('gyoza',this.value)"><button class="qty-btn" onclick="adj('gyoza',1)">+</button></div></td></tr>
 <tr><td class="td-product">Grand nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gnem',-1)">&#8722;</button><input class="qty-inp" id="q-gnem" type="number" min="0" value="0" onchange="setQ('gnem',this.value)"><button class="qty-btn" onclick="adj('gnem',1)">+</button></div></td></tr>
 <tr><td class="td-product">Petit nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pnem',-1)">&#8722;</button><input class="qty-inp" id="q-pnem" type="number" min="0" value="0" onchange="setQ('pnem',this.value)"><button class="qty-btn" onclick="adj('pnem',1)">+</button></div></td></tr>
@@ -107,10 +107,16 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
   <button class="btn-send" id="btn-send" onclick="sendOrder()">Envoyer →</button>
 </div>
 <div class="success-overlay" id="success-overlay">
-  <div class="success-icon">✅</div>
-  <div class="success-title">Commande envoyée !</div>
-  <div class="success-sub">DSM — livraison <span id="success-date"></span></div>
-  <button class="btn-new" onclick="document.getElementById('success-overlay').style.display='none'">Modifier</button>
+  <div style="width:100%;max-width:480px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;">DSM — Commande envoyée ✅</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Livraison <span id="success-date"></span></div>
+      </div>
+      <button onclick="editOrder()" style="padding:10px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Modifier</button>
+    </div>
+    <div id="recap-content" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;"></div>
+  </div>
 </div>
 <script>
 const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
@@ -119,7 +125,7 @@ const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/data
 const SHOP='dsm';
 const SHOP_LABEL='DSM';
 const ACCENT='#1a5fa8';
-const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'tarte', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
+const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
 
 function getTomorrow(){const now=new Date();const nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);nc.setDate(nc.getDate()+1);return nc;}
 function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -182,7 +188,7 @@ function addLine(pageId){
 function updateLibre(pageId,idx,field,val){if(!libreItems[pageId]||!libreItems[pageId][idx])return;libreItems[pageId][idx][field]=field==='qty'?Math.max(0,parseInt(val)||0):val;updateCount();}
 function delLine(pageId,idx){const el=document.getElementById('libre-row-'+pageId+'-'+idx);if(el)el.remove();if(libreItems[pageId]&&libreItems[pageId][idx])libreItems[pageId][idx]={name:'',qty:0};updateCount();}
 function updateCount(){const fixed=ALL_KEYS.reduce((s,k)=>s+(qty[k]||0),0);let libre=0;Object.values(libreItems).forEach(items=>items.forEach(i=>{libre+=(i.qty||0);}));document.getElementById('total-count').textContent=fixed+libre;}
-function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','plats'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
+function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','plats','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
 async function sendOrder(){
   const btn=document.getElementById('btn-send');btn.disabled=true;btn.textContent='Envoi...';
   const docId='order_'+ds(tomorrow)+'_'+SHOP;
@@ -193,12 +199,111 @@ async function sendOrder(){
   fields['libre']={stringValue:JSON.stringify(libreItems)};
   try{
     const res=await fetch(_API+'/'+docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    if(res.ok){document.getElementById('success-overlay').style.display='flex';}
+    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);document.getElementById('success-overlay').style.display='flex';}
     else{alert('Erreur lors de l envoi. Reessayez.');}
   }catch(e){alert('Pas de connexion. Reessayez.');}
   btn.disabled=false;btn.textContent='Envoyer →';
 }
 loadRiz();
+loadExistingOrder();
+
+// Charge la commande existante au démarrage
+async function loadExistingOrder(){
+  try{
+    const docId='order_'+ds(tomorrow)+'_'+SHOP;
+    const res=await fetch(_API+'/'+docId+'?key='+_KEY);
+    if(!res.ok) return;
+    const json=await res.json();
+    if(!json.fields) return;
+    const d={};
+    Object.entries(json.fields).forEach(([k,v])=>{
+      if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
+      else if(v.stringValue!==undefined) d[k]=v.stringValue;
+    });
+    if(!d.ts) return;
+    // Rempli les quantités
+    ALL_KEYS.forEach(k=>{
+      if(d[k]!==undefined&&d[k]>0){
+        qty[k]=d[k];
+        const el=document.getElementById('q-'+k);
+        if(el){el.value=d[k];el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}
+      }
+    });
+    // Rempli les items libres
+    if(d.libre){
+      try{
+        const libre=JSON.parse(d.libre);
+        Object.entries(libre).forEach(([pageId,items])=>{
+          items.forEach(item=>{
+            if(item.name&&item.qty>0) addLineWithData(pageId,item.name,item.qty);
+          });
+        });
+      }catch(e){}
+    }
+    updateCount();
+    showRecap(d);
+    document.getElementById('success-overlay').style.display='flex';
+  }catch(e){}
+}
+
+function addLineWithData(pageId,name,qty){
+  if(!libreItems[pageId]) libreItems[pageId]=[];
+  if(!lineCount[pageId]) lineCount[pageId]=0;
+  const idx=lineCount[pageId]++;
+  const container=document.getElementById('libre-lines-'+pageId);
+  if(!container) return;
+  const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;
+  const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.placeholder='Article...';nameInp.value=name;nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};
+  const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value=qty;qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};
+  const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};
+  div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);
+  container.appendChild(div);
+  libreItems[pageId].push({name:name,qty:qty});
+}
+
+const PRODUCT_NAMES={
+  bo:'Bun Bo',sin:'Singapour',thai:'Thai',thon:'Thon marine',plp:'Poulpe',
+  rouleaux:'Rouleaux',rizprod:'Riz',pokethon:'Poke thon',pokesaumon:'Poke saumon',
+  tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',
+  poecitrouille:'Poe citrouille',cheesemangue:'Cheesecake mangue',
+  cheeseframboise:'Cheesecake framboise',gyoza:'Gyoza',gnem:'Grand nem',
+  pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
+};
+
+function showRecap(d){
+  const el=document.getElementById('recap-content');
+  if(!el) return;
+  let rows='';
+  ALL_KEYS.forEach(k=>{
+    const v=d[k]||0;
+    if(v>0){
+      rows+='<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:12px;">'
+        +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;">'+v+'</div>'
+        +'<div style="font-size:13px;font-weight:500;">'+(PRODUCT_NAMES[k]||k)+'</div>'
+        +'</div>';
+    }
+  });
+  // Libres
+  if(d.libre){try{
+    const libre=JSON.parse(d.libre);
+    Object.entries(libre).forEach(([pageId,items])=>{
+      items.filter(i=>i.name&&i.qty>0).forEach(i=>{
+        rows+='<div style="display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:12px;background:#fef9f0;">'
+          +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;">'+i.qty+'</div>'
+          +'<div style="font-size:13px;font-weight:500;">'+i.name+'</div>'
+          +'</div>';
+      });
+    });
+  }catch(e){}}
+  if(!rows) rows='<div style="padding:16px;text-align:center;color:var(--text-hint);font-size:13px;">Aucune quantite saisie</div>';
+  el.innerHTML=rows;
+}
+
+function editOrder(){
+  document.getElementById('success-overlay').style.display='none';
+  document.querySelector('.nav-tab').click();
+}
+
 </script>
 
 <script>
