@@ -150,7 +150,8 @@ function fmtTime(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{h
 
 var currentDate=getTomorrow();
 var ordersData={};
-var fishData={};
+
+
 var _pollInterval=null;
 
 document.getElementById('date-label').textContent=fmtFull(currentDate);
@@ -360,21 +361,25 @@ function renderAll(){
 
 async function fetchFishData(){
   try{
-    var tomorrow=currentDate;
-    var dow=tomorrow.getDay();
+    var d=currentDate;
+    var dow=d.getDay();
     var diff=dow===0?-6:1-dow;
-    var monday=new Date(tomorrow);monday.setDate(monday.getDate()+diff);
+    var monday=new Date(d);monday.setDate(monday.getDate()+diff);
     var mondayStr=monday.getFullYear()+'-'+String(monday.getMonth()+1).padStart(2,'0')+'-'+String(monday.getDate()).padStart(2,'0');
-    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production/week_'+mondayStr+'?key='+_KEY);
-    if(res.ok){
-      var json=await res.json();
-      var d={};
-      if(json.fields) Object.entries(json.fields).forEach(function(e){
-        if(e[1].integerValue!==undefined) d[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
-      });
-      fishData=d;
+    // Fetch both current week and next week to cover all cases
+    var weeks=[mondayStr];
+    var nextMonday=new Date(monday);nextMonday.setDate(nextMonday.getDate()+7);
+    weeks.push(nextMonday.getFullYear()+'-'+String(nextMonday.getMonth()+1).padStart(2,'0')+'-'+String(nextMonday.getDate()).padStart(2,'0'));
+    for(var i=0;i<weeks.length;i++){
+      var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production/week_'+weeks[i]+'?key='+_KEY);
+      if(res.ok){
+        var json=await res.json();
+        if(json.fields) Object.entries(json.fields).forEach(function(e){
+          if(e[1].integerValue!==undefined) fishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
+        });
+      }
     }
-  }catch(e){}
+  }catch(e){console.log('fetchFishData error:',e);}
 }
 
 async function fetchOrders(){
