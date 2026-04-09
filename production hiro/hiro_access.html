@@ -879,7 +879,7 @@ function render(){
   if(document.getElementById('body-total')) document.getElementById('body-total').innerHTML=totTbl;
 
   // Footers
-  document.getElementById('foot-riz').innerHTML=`<tr>
+  if(document.getElementById('foot-riz')) document.getElementById('foot-riz').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot col-sep">${totRiz.dsm||'—'}</td><td class="td-tot">${fb(totRiz.dsm/250)}</td>
     <td class="td-tot col-sep">${totRiz.mgt||'—'}</td><td class="td-tot">${fb(totRiz.mgt/250)}</td>
@@ -890,7 +890,7 @@ function render(){
     <td class="td-btot">${fb(wTemps)} min (~${fb(Math.round(wTemps/7*10)/10)}/j)</td>
   </tr>`;
 
-  document.getElementById('foot-fish').innerHTML=`<tr>
+  if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td>
     <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td>
@@ -899,7 +899,7 @@ function render(){
   </tr>`;
 
   const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita;
-  document.getElementById('foot-rolls').innerHTML=`<tr>
+  if(document.getElementById('foot-rolls')) document.getElementById('foot-rolls').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.dsm}</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.mgt}</td>
@@ -910,7 +910,7 @@ function render(){
   </tr>`;
 
   const totThon=totFS.dsm.t+totFS.mgt.t+totFS.paita.t+totFS.ville.t;
-  document.getElementById('foot-thon').innerHTML=`<tr>
+  if(document.getElementById('foot-thon')) document.getElementById('foot-thon').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot vt2">${totFS.dsm.t}</td>
     <td class="td-tot vt2">${totFS.mgt.t}</td>
@@ -920,7 +920,7 @@ function render(){
     <td class="td-btot">—</td>
   </tr>`;
 
-  document.getElementById('foot-total').innerHTML=`<tr>
+  if(document.getElementById('foot-total')) document.getElementById('foot-total').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-btot vt2">${totFish.t}</td>
     <td class="td-btot vs2">${totFish.s}</td>
