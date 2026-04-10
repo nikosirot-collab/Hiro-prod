@@ -335,6 +335,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('thon')">Commande Thon</div>
   <div class="nav-tab" onclick="showPage('recap')">Récap</div>
   <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
+  <div class="nav-tab" onclick="showPage('commandes')">Commandes</div>
   <div class="nav-tab" onclick="showPage('historique')">Historique</div>
 </nav>
 
@@ -520,6 +521,23 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
           <tbody id="body-total"></tbody>
           <tfoot id="foot-total"></tfoot>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE COMMANDES -->
+  <div id="page-commandes" class="page">
+    <div class="section">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="section-title">Commandes magasins</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="cmdChangeDate(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">←</button>
+          <span id="cmd-date-label" style="font-size:13px;font-weight:600;"></span>
+          <button onclick="cmdChangeDate(1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">→</button>
+        </div>
+      </div>
+      <div id="cmd-content" style="padding:4px 0;">
+        <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
       </div>
     </div>
   </div>
@@ -824,6 +842,7 @@ function showPage(p) {
   event.target.classList.add('active');
   if(p==='historique') loadHistorique();
   if(p==='recap') renderRecap();
+  if(p==='commandes') loadCommandes();
 }
 
 function changeWeek(d){
@@ -1736,6 +1755,147 @@ if(!navigator.onLine){
   showOfflineBanner();
 } else if(_offlineQueue.length > 0){
   _syncOfflineQueue();
+}
+</script>
+
+
+<script>
+// ── COMMANDES MAGASINS (lecture seule) ──
+var _CMD_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
+var _CMD_SHOPS=['dsm','mgt','paita','ville'];
+var _CMD_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+var _CMD_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+var _CMD_SALADE=[{key:'bo',name:'Bun Bo'},{key:'sin',name:'Singapour'},{key:'thon',name:'Thon marine'},{key:'thai',name:'Thai'},{key:'plp',name:'Poulpe'},{key:'rouleaux',name:'Rouleau'},{key:'tataki',name:'Tataki'}];
+var _CMD_DESSERT=[{key:'tiramisu',name:'Tiramisu'},{key:'ananas',name:'Ananas'},{key:'poebanane',name:'Poe banane'},{key:'poecitrouille',name:'Poe citrouille'},{key:'cheesemangue',name:'Cheese mangue'},{key:'cheeseframboise',name:'Cheese framboise'}];
+var _CMD_TAPAS=[{key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},{key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'}];
+var _CMD_CHR_KEYS=['chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
+var _CMD_CHR_NAMES={"chr_farce_wonton": "FARCE wonton", "chr_concombres": "Concombres", "chr_carottes": "Carottes", "chr_oignons_secs": "Oignons secs", "chr_oignons_verts": "Oignons verts", "chr_ail": "Ail", "chr_vinaigre_blanc": "Vinaigre blanc", "chr_nuoc_mam": "Nuoc mam", "chr_vetsin": "Vetsin", "chr_poivre": "Poivre", "chr_maggie": "Maggie", "chr_sel": "Sel", "chr_citron": "Citron", "chr_curry_japonais": "Curry japonais", "chr_curry": "Curry", "chr_soyou_poisson": "Soyou poisson", "chr_soyou_sachet_rouge": "Soyou sachet rouge", "chr_soyou_yamasa_bouteilles": "Soyou YAMASA bouteilles", "chr_wasabi": "WASABI", "chr_gingembre": "GINGEMBRE", "chr_navet": "Navet", "chr_panko": "Panko", "chr_nori": "Nori", "chr_sesames_grilles": "Sesames grilles", "chr_sauce_cacahuete": "Sauce cacahuete", "chr_sauce_huitres": "Sauce huitres", "chr_sauce_bbq": "Sauce BBQ", "chr_ketchup": "KETCHUP", "chr_sweet_chili": "SWEET CHILI", "chr_huile_sesames": "HUILE SESAMES", "chr_beurre": "Beurre", "chr_oeufs": "Oeufs", "chr_bull_dog_teriyaki": "Bull dog teriyaki", "chr_mirin": "Mirin", "chr_bombe_graisse": "BOMBE GRAISSE", "chr_ito_sugar_free_600_ml": "Ito sugar free 600ml", "chr_ito_sugar_free_300ml": "Ito sugar free 300ml", "chr_ito_lychee": "Ito lychee", "chr_ito_peach": "Ito peach", "chr_ito_citron": "Ito citron"};
+
+var cmdDate=(function(){
+  var d=new Date(TODAY_NC);
+  var dow=d.getDay();
+  if(dow===6){d.setDate(d.getDate()+2);}
+  else if(dow===0){d.setDate(d.getDate()+1);}
+  else{d.setDate(d.getDate()+1);}
+  return d;
+})();
+var cmdOrders={};
+var cmdPollTimer=null;
+
+function cmdDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function cmdFmt(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+function cmdFmtTime(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+function cmdChangeDate(d){
+  cmdDate.setDate(cmdDate.getDate()+d);
+  document.getElementById('cmd-date-label').textContent=cmdFmt(cmdDate);
+  cmdOrders={};
+  loadCommandes();
+}
+
+function cmdRow(name,val){
+  var zero=!val||val===0;
+  return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
+    +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
+    +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+name+'</div>'
+    +'</div>';
+}
+
+function cmdRenderFiche(shop, order){
+  var color=_CMD_COLORS[shop];
+  var label=_CMD_LABELS[shop];
+
+  if(!order||!order.ts){
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;">En attente</span>'
+      +'</div><div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">Commande non recue</div></div>';
+  }
+
+  var isVal=order.status==='validated';
+  var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
+
+  // Salade
+  var saladeRows=_CMD_SALADE.map(function(p){return cmdRow(p.name,order[p.key]||0);}).join('');
+  // Riz/Poke
+  var midRows=cmdRow('Riz',order.rizprod||0)+cmdRow('Poke thon',order.pokethon||0)+cmdRow('Poke saumon',order.pokesaumon||0);
+  // Dessert
+  var dessertRows=_CMD_DESSERT.map(function(p){return cmdRow(p.name,order[p.key]||0);}).join('');
+  if(order.libre){try{var lt=JSON.parse(order.libre);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  // Tapas
+  var tapasKeys=shop==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
+  var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
+  var tapasRows=tapasKeys.map(function(k){return cmdRow(tapasNames[k],order[k]||0);}).join('');
+  // CHR
+  var chrContent='';
+  if(shop==='ville'){
+    _CMD_CHR_KEYS.forEach(function(k){var v=order[k]||0;if(v>0)chrContent+=cmdRow(_CMD_CHR_NAMES[k],v);});
+    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  }else{
+    if(order.libre){try{var lc2=JSON.parse(order.libre);if(lc2.chr){lc2.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  }
+  var chrRows=chrContent||'<div style="padding:10px 12px;color:var(--text-muted);font-size:12px;">—</div>';
+  // Plats chauds Ville
+  var platsRows='';
+  if(shop==='ville'){
+    var allPlats=[];
+    if(order.gyoza)allPlats.push({name:'Gyoza',qty:order.gyoza});
+    if(order.siumai)allPlats.push({name:'Siu Mai',qty:order.siumai});
+    if(order.libre){try{var lp=JSON.parse(order.libre);if(lp.plats)lp.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({name:i.name,qty:i.qty});});}catch(e){}}
+    platsRows=allPlats.length>0?allPlats.map(function(p){return cmdRow(p.name,p.qty);}).join(''):'<div style="padding:10px 12px;color:var(--text-muted);font-size:12px;">Aucun plat</div>';
+  }
+
+  var statusBadge=isVal
+    ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Recu '+cmdFmtTime(order.ts)+' · Valide '+cmdFmtTime(order.validatedAt)+'</div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;">Validee</span></div>'
+    :'<div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Recu a '+cmdFmtTime(order.ts)+'</div><span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;">En attente validation</span></div>';
+
+  var topSection=shop==='ville'
+    ?'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Riz / Poke')+midRows+'</div>'
+      +'<div>'+colTitle('Plats chauds')+platsRows+'</div>'+'</div>'
+    :'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div>'+colTitle('Riz / Poke')+midRows+'</div>'+'</div>';
+
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'+statusBadge+'</div>'
+    +topSection
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+    +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
+    +'<div style="border-right:1px solid var(--border);">'+colTitle('Tapas')+tapasRows+'</div>'
+    +'<div>'+colTitle('CHR')+chrRows+'</div>'
+    +'</div></div>';
+}
+
+async function loadCommandes(){
+  var el=document.getElementById('cmd-content');
+  if(!el)return;
+  document.getElementById('cmd-date-label').textContent=cmdFmt(cmdDate);
+  el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
+  var dStr=cmdDs(cmdDate);
+  await Promise.all(_CMD_SHOPS.map(async function(s){
+    try{
+      var res=await fetch(_CMD_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
+      if(res.ok){
+        var json=await res.json();var d={};
+        if(json.fields)Object.entries(json.fields).forEach(function(e){
+          var k=e[0],v=e[1];
+          if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
+          else if(v.stringValue!==undefined)d[k]=v.stringValue;
+          else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
+        });
+        cmdOrders[s]=d;
+      }else{cmdOrders[s]=null;}
+    }catch(e){cmdOrders[s]=null;}
+  }));
+  var html=_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
+  el.innerHTML=html;
+  // Poll toutes les 15s
+  if(cmdPollTimer)clearInterval(cmdPollTimer);
+  cmdPollTimer=setInterval(loadCommandes,15000);
 }
 </script>
 
