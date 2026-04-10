@@ -336,6 +336,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('recap')">Récap</div>
   <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
   <div class="nav-tab" onclick="showPage('commandes')">Commandes</div>
+  <div class="nav-tab" onclick="showPage('securite')">Sécurité</div>
   <div class="nav-tab" onclick="showPage('historique')">Historique</div>
 </nav>
 
@@ -538,6 +539,27 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
       </div>
       <div id="cmd-content" style="padding:4px 0;">
         <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE SECURITE -->
+  <div id="page-securite" class="page">
+    <div class="section">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span class="section-title">Appareils connectés</span>
+        <button onclick="loadSecurite()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
+      </div>
+      <div id="sec-devices" style="margin-bottom:24px;">
+        <div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe interfaces magasin</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="new-pwd-input" type="password" placeholder="Nouveau mot de passe" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;">
+          <button onclick="changeOrderPwd()" style="padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
+        </div>
+        <div id="pwd-change-msg" style="font-size:12px;margin-top:8px;display:none;"></div>
       </div>
     </div>
   </div>
@@ -843,6 +865,8 @@ function showPage(p) {
   if(p==='historique') loadHistorique();
   if(p==='recap') renderRecap();
   if(p==='commandes') loadCommandes();
+  if(p==='securite'){loadSecurite();secPollStart();}
+  else secPollStop();
 }
 
 function changeWeek(d){
@@ -1649,7 +1673,114 @@ function _printCombined(type) {
     <tbody>${rows}</tbody>
   </table>
   <script>window.onload=()=>{window.print();}<\/script>
-  </body></html>`);
+  
+<script>
+// ── PRESENCE / PING ──
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  // Identifiant unique appareil (persistant)
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){
+    var n=localStorage.getItem('hiro-user-name')||'';
+    return n;
+  }
+
+  async function _sendPing(){
+    try{
+      var now=new Date();
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      // Check if disabled
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          // Force logout
+          sessionStorage.clear();
+          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;">⛔ Accès désactivé<br><span style="font-size:13px;color:#888;margin-top:8px;display:block;">Contactez l\\'administrateur</span></div>';
+          return;
+        }
+      }
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+  window.addEventListener('beforeunload',function(){
+    try{
+      fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',keepalive:true,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:{iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},ts:{integerValue:0}}})
+      });
+    }catch(e){}
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
+
+  async function _sendPing(){
+    try{
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          sessionStorage.clear();
+          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;"><div>Acces desactive<br><span style=\"font-size:13px;color:#888;\">Contactez l\'administrateur</span></div></div>';
+          return;
+        }
+      }
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+})();
+</script>
+
+</body></html>`);
   win.document.close();
 }
 
@@ -1772,7 +1903,9 @@ var _CMD_CHR_KEYS=['chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oi
 var _CMD_CHR_NAMES={"chr_farce_wonton": "FARCE wonton", "chr_concombres": "Concombres", "chr_carottes": "Carottes", "chr_oignons_secs": "Oignons secs", "chr_oignons_verts": "Oignons verts", "chr_ail": "Ail", "chr_vinaigre_blanc": "Vinaigre blanc", "chr_nuoc_mam": "Nuoc mam", "chr_vetsin": "Vetsin", "chr_poivre": "Poivre", "chr_maggie": "Maggie", "chr_sel": "Sel", "chr_citron": "Citron", "chr_curry_japonais": "Curry japonais", "chr_curry": "Curry", "chr_soyou_poisson": "Soyou poisson", "chr_soyou_sachet_rouge": "Soyou sachet rouge", "chr_soyou_yamasa_bouteilles": "Soyou YAMASA bouteilles", "chr_wasabi": "WASABI", "chr_gingembre": "GINGEMBRE", "chr_navet": "Navet", "chr_panko": "Panko", "chr_nori": "Nori", "chr_sesames_grilles": "Sesames grilles", "chr_sauce_cacahuete": "Sauce cacahuete", "chr_sauce_huitres": "Sauce huitres", "chr_sauce_bbq": "Sauce BBQ", "chr_ketchup": "KETCHUP", "chr_sweet_chili": "SWEET CHILI", "chr_huile_sesames": "HUILE SESAMES", "chr_beurre": "Beurre", "chr_oeufs": "Oeufs", "chr_bull_dog_teriyaki": "Bull dog teriyaki", "chr_mirin": "Mirin", "chr_bombe_graisse": "BOMBE GRAISSE", "chr_ito_sugar_free_600_ml": "Ito sugar free 600ml", "chr_ito_sugar_free_300ml": "Ito sugar free 300ml", "chr_ito_lychee": "Ito lychee", "chr_ito_peach": "Ito peach", "chr_ito_citron": "Ito citron"};
 
 var cmdDate=(function(){
-  var d=new Date(TODAY_NC);
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var d=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate());
   var dow=d.getDay();
   if(dow===6){d.setDate(d.getDate()+2);}
   else if(dow===0){d.setDate(d.getDate()+1);}
@@ -1897,6 +2030,243 @@ async function loadCommandes(){
   if(cmdPollTimer)clearInterval(cmdPollTimer);
   cmdPollTimer=setInterval(loadCommandes,15000);
 }
+</script>
+
+
+<script>
+// ── PRESENCE / PING ──
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  // Identifiant unique appareil (persistant)
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){
+    var n=localStorage.getItem('hiro-user-name')||'';
+    return n;
+  }
+
+  async function _sendPing(){
+    try{
+      var now=new Date();
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      // Check if disabled
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          // Force logout
+          sessionStorage.clear();
+          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;">⛔ Accès désactivé<br><span style="font-size:13px;color:#888;margin-top:8px;display:block;">Contactez l\\'administrateur</span></div>';
+          return;
+        }
+      }
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+  window.addEventListener('beforeunload',function(){
+    try{
+      fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',keepalive:true,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:{iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},ts:{integerValue:0}}})
+      });
+    }catch(e){}
+  });
+})();
+</script>
+
+
+<script>
+// ── SÉCURITÉ ──
+var _PRESENCE_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+var _CONFIG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
+var _SEC_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+var _secPollTimer=null;
+var _NOW_ONLINE_MS=90000; // 90s = considéré en ligne
+
+var IFACE_LABELS={
+  'Hiro Access':'👁 Hiro Access',
+  'Hiro Prod':'🍱 Hiro Prod',
+  'Commande':'📦 Commande',
+  'Hiro Labo':'🏭 Hiro Labo'
+};
+var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8',access:'#888',prod:'#1a1916',labo:'#555'};
+
+function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+
+async function loadSecurite(){
+  var el=document.getElementById('sec-devices');
+  if(!el) return;
+  try{
+    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur de chargement</div>';return;}
+    var json=await res.json();
+    var docs=(json.documents||[]);
+    var now=Date.now();
+    var online=[];
+    var offline=[];
+    docs.forEach(function(doc){
+      if(!doc.fields)return;
+      var f=doc.fields;
+      var ts=f.ts?parseInt(f.ts.integerValue):0;
+      var devId=doc.name.split('/').pop();
+      var entry={
+        devId:devId,
+        iface:f.iface?f.iface.stringValue:'?',
+        shop:f.shop?f.shop.stringValue:'',
+        userName:f.userName?f.userName.stringValue:'',
+        ts:ts,
+        disabled:f.disabled&&f.disabled.booleanValue===true,
+        ua:f.ua?f.ua.stringValue:''
+      };
+      if(ts>0&&(now-ts)<_NOW_ONLINE_MS) online.push(entry);
+      else if(ts>0) offline.push(entry);
+    });
+
+    // Sort by ts desc
+    online.sort(function(a,b){return b.ts-a.ts;});
+    offline.sort(function(a,b){return b.ts-a.ts;});
+
+    var html='';
+    // Online
+    if(online.length>0){
+      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">🟢 En ligne ('+online.length+')</div>';
+      online.forEach(function(e){html+=secDevCard(e,true);});
+    }
+    // Offline recent
+    var recentOffline=offline.filter(function(e){return (now-e.ts)<3600000;}); // last hour
+    if(recentOffline.length>0){
+      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:16px 0 8px;">⚫ Récemment déconnectés</div>';
+      recentOffline.forEach(function(e){html+=secDevCard(e,false);});
+    }
+    if(!html) html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
+}
+
+function secDevCard(e, isOnline){
+  var color=SHOP_COLORS[e.shop]||'#888';
+  var ago=Math.round((Date.now()-e.ts)/60000);
+  var agoStr=isOnline?(ago<1?'a l instant':'il y a '+ago+' min'):'il y a '+ago+' min';
+  var name=e.userName?(e.userName+' — '):'';
+  var iface=(IFACE_LABELS[e.iface]||e.iface)+(e.shop&&e.shop!=='prod'&&e.shop!=='access'&&e.shop!=='labo'?' ('+e.shop.toUpperCase()+')':'');
+  var disabledStyle=e.disabled?'opacity:.5;':'';
+  var btnLabel=e.disabled?'Réactiver':'Désactiver';
+  var btnColor=e.disabled?'#0d7a52':'#e74c3c';
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+disabledStyle+'">'
+    +'<div style="width:10px;height:10px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>'
+    +'<div style="flex:1;">'
+    +'<div style="font-size:13px;font-weight:600;">'+name+iface+'</div>'
+    +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+agoStr+(e.disabled?' · <span style=\"color:#e74c3c;font-weight:600;\">Désactivé</span>':'')+'</div>'
+    +'</div>'
+    +'<button onclick=\"secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')\" style=\"padding:5px 12px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:11px;font-weight:600;cursor:pointer;\">'+btnLabel+'</button>'
+    +'</div>';
+}
+
+async function secToggleDevice(devId, disable){
+  try{
+    var fields={disabled:{booleanValue:disable}};
+    await fetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    loadSecurite();
+  }catch(e){alert('Erreur');}
+}
+
+async function changeOrderPwd(){
+  var inp=document.getElementById('new-pwd-input');
+  var msg=document.getElementById('pwd-change-msg');
+  var pwd=inp.value.trim();
+  if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
+  try{
+    var hash=_h(pwd);
+    var res=await fetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{hash:{stringValue:hash}}})
+    });
+    if(res.ok){
+      msg.style.display='block';msg.style.color='#0d7a52';
+      msg.textContent='✓ Mot de passe mis à jour';
+      inp.value='';
+      setTimeout(function(){msg.style.display='none';},3000);
+    }
+  }catch(e){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur lors de la mise à jour';}
+}
+
+function secPollStart(){
+  secPollStop();
+  _secPollTimer=setInterval(loadSecurite,15000);
+}
+function secPollStop(){
+  if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
+}
+</script>
+
+
+<script>
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
+
+  async function _sendPing(){
+    try{
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          sessionStorage.clear();
+          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;"><div>Acces desactive<br><span style=\"font-size:13px;color:#888;\">Contactez l\'administrateur</span></div></div>';
+          return;
+        }
+      }
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+})();
 </script>
 
 </body>
