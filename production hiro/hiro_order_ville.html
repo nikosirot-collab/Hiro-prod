@@ -814,3 +814,60 @@ checkValidationStatus();
 setTimeout(startValidationPolling,2000);
 
 </script>
+<script>
+// ── NOTIFICATIONS PUSH ──
+async function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+
+async function startSWPolling(){
+  if(!navigator.serviceWorker) return;
+  const granted = await requestNotifPermission();
+  if(!granted) return;
+  const reg = await navigator.serviceWorker.ready;
+  if(!reg.active) return;
+  const dStr = ds(tomorrow);
+  const docId = 'order_' + dStr + '_' + SHOP;
+  reg.active.postMessage({
+    type: 'START_POLL',
+    shop: SHOP,
+    dateStr: dStr,
+    docId: docId
+  });
+}
+
+function stopSWPolling(){
+  if(!navigator.serviceWorker) return;
+  navigator.serviceWorker.ready.then(reg => {
+    if(reg.active) reg.active.postMessage({type:'STOP_POLL'});
+  });
+}
+
+// Démarre le polling après envoi de commande
+var _origSendForNotif = window.sendOrder;
+window.sendOrder = async function(){
+  if(_origSendForNotif) await _origSendForNotif.apply(this, arguments);
+  startSWPolling();
+};
+
+// Demande permission au chargement si commande déjà envoyée
+window.addEventListener('load', function(){
+  setTimeout(async function(){
+    var docId = 'order_' + ds(tomorrow) + '_' + SHOP;
+    try{
+      var res = await fetch(_API + '/' + docId + '?key=' + _KEY);
+      if(res.ok){
+        var json = await res.json();
+        if(json.fields && json.fields.ts && (!json.fields.status || json.fields.status.stringValue !== 'validated')){
+          startSWPolling();
+        }
+      }
+    }catch(e){}
+  }, 2000);
+});
+
+</script>

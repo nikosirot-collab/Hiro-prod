@@ -1156,6 +1156,45 @@ subscribeWeek();
 </script>
 
 <script>
+// ── NOTIFICATIONS ACCESS ──
+async function accessRequestNotif(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission==='granted') return true;
+  if(Notification.permission==='denied') return false;
+  const p=await Notification.requestPermission();
+  return p==='granted';
+}
+
+async function accessStartWatching(){
+  if(!navigator.serviceWorker) return;
+  const granted=await accessRequestNotif();
+  if(!granted) return;
+  const reg=await navigator.serviceWorker.ready;
+  if(!reg.active) return;
+
+  // Surveille les commandes du jour de livraison
+  const now=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  const dow=now.getDay();
+  const tomorrow=new Date(now);
+  if(dow===6) tomorrow.setDate(tomorrow.getDate()+2);
+  else if(dow===0) tomorrow.setDate(tomorrow.getDate()+1);
+  else tomorrow.setDate(tomorrow.getDate()+1);
+  const dateStr=ds(tomorrow);
+
+  reg.active.postMessage({type:'WATCH_ORDERS', dateStr:dateStr});
+
+  // Surveille riz & poisson de la semaine courante
+  const weekDoc=weekDocId();
+  reg.active.postMessage({type:'WATCH_PROD', weekDocId:weekDoc});
+}
+
+// Démarre au chargement
+window.addEventListener('load', function(){
+  setTimeout(accessStartWatching, 2000);
+});
+
+
+<script>
 // ─── LABO ───
 var _ORDERS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
 var laboDate=(function(){
