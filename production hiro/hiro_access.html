@@ -1154,7 +1154,14 @@ subscribeWeek();
 <script>
 // ─── LABO ───
 var _ORDERS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
-var laboDate=new Date(TODAY_NC);laboDate.setDate(laboDate.getDate()+1);
+var laboDate=(function(){
+  var d=new Date(TODAY_NC);
+  var dow=d.getDay();
+  if(dow===6){d.setDate(d.getDate()+2);}      // sam -> lundi
+  else if(dow===0){d.setDate(d.getDate()+1);}  // dim -> lundi
+  else{d.setDate(d.getDate()+1);}              // lun-ven -> lendemain
+  return d;
+})();
 var laboOrders={};
 var laboFishData={};
 var laboPollInterval=null;

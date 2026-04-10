@@ -214,7 +214,15 @@ const SHOP_LABEL='DSM';
 const ACCENT='#1a5fa8';
 const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
 
-function getTomorrow(){const now=new Date();const nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);nc.setDate(nc.getDate()+1);return nc;}
+function getTomorrow(){
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var dow=nc.getDay(); // 0=dim, 6=sam
+  if(dow===6){nc.setDate(nc.getDate()+2);} // sam -> lundi
+  else if(dow===0){nc.setDate(nc.getDate()+1);} // dim -> lundi
+  else{nc.setDate(nc.getDate()+1);} // lun-ven -> lendemain
+  return nc;
+}
 function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
 function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
@@ -286,7 +294,7 @@ async function sendOrder(){
   fields['libre']={stringValue:JSON.stringify(libreItems)};
   try{
     const res=await fetch(_API+'/'+docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);document.getElementById('success-overlay').style.display='flex';}
+    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);updateStatusBanner(true);document.querySelector('.nav-tab').click();}
     else{alert('Erreur lors de l envoi. Reessayez.');}
   }catch(e){alert('Pas de connexion. Reessayez.');}
   btn.disabled=false;btn.textContent='Envoyer →';
@@ -432,7 +440,7 @@ window.sendOrder=async function(){
     _offlineQueue.push({url,fields});
     _saveQueue();
     showOfflineBanner();
-    document.getElementById('success-overlay').style.display='flex';
+    updateStatusBanner(true);document.querySelector('.nav-tab').click();
     return;
   }
   return _sendOrder_orig();
