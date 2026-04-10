@@ -343,7 +343,7 @@ async function loadExistingOrder(){
     }
     updateCount();
     showRecap(d);
-    document.getElementById('success-overlay').style.display='flex';
+    
   }catch(e){}
 }
 
@@ -371,7 +371,7 @@ const PRODUCT_NAMES={
   gyoza:'Gyoza',siumai:'Siu Mai',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
 };
 function editOrder(){
-  document.getElementById('success-overlay').style.display='none';
+  
   document.querySelector('.nav-tab').click();
 }
 
