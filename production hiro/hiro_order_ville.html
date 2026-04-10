@@ -74,6 +74,45 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 .recap-bottom-col:last-child{border-right:none;}
 .recap-libre-row{display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;}
 .recap-libre-row:last-child{border-bottom:none;}
+
+/* RECAP & HISTORIQUE */
+.rh-day-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.rh-day-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--surface);}
+.rh-day-header.received{background:#f0faf5;}
+.rh-day-header.pending{background:#fef9f0;}
+.rh-day-name{font-size:14px;font-weight:600;}
+.rh-day-date{font-size:12px;color:var(--text-muted);}
+.rh-day-status{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+.rh-status-ok{background:#e4f5ee;color:#0d7a52;}
+.rh-status-wait{background:#fef3e2;color:#b07000;}
+.rh-day-body{display:none;border-top:1px solid var(--border);}
+.rh-day-body.open{display:block;}
+.rh-top{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--border);}
+.rh-top-3{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:2px solid var(--border);}
+.rh-col{border-right:1px solid var(--border);}
+.rh-col:last-child{border-right:none;}
+.rh-col-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);padding:6px 10px;background:#faf9f6;border-bottom:1px solid var(--border);}
+.rh-row{display:flex;align-items:baseline;padding:5px 10px;gap:8px;border-bottom:1px solid var(--border);}
+.rh-row:last-child{border-bottom:none;}
+.rh-qty{font-size:18px;font-weight:700;font-family:'DM Mono',monospace;min-width:32px;text-align:right;flex-shrink:0;}
+.rh-qty.zero{font-size:12px;color:var(--text-hint);font-weight:400;}
+.rh-name{font-size:12px;font-weight:500;}
+.rh-name.zero{color:var(--text-hint);font-weight:400;}
+.rh-libre-row{display:flex;align-items:baseline;padding:5px 10px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;}
+.rh-libre-row:last-child{border-bottom:none;}
+.rh-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;}
+.histo-week{margin-bottom:8px;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.histo-week-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:#faf9f6;font-size:13px;font-weight:600;}
+.histo-week-body{display:none;}
+.histo-week-body.open{display:block;}
+.histo-loading{padding:16px;text-align:center;color:var(--text-hint);font-size:13px;}
+
+.status-banner{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);}
+.status-banner.sent{background:#e4f5ee;color:#0d7a52;}
+.status-banner.pending{background:#fde8e8;color:#c0392b;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.status-banner.sent .status-dot{background:#0d7a52;}
+.status-banner.pending .status-dot{background:#c0392b;}
 </style>
 </head>
 <body>
@@ -87,12 +126,18 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
     <div class="shop-badge" style="color:#7a3db8;border:1px solid #7a3db844">Ville</div>
   </div>
 </header>
+<div id="status-banner" class="status-banner pending">
+  <div class="status-dot"></div>
+  <span id="status-text">Vérification...</span>
+</div>
 <nav class="nav-tabs">
   <div class="nav-tab active" onclick="showPage('salade',this)">Salade</div>
   <div class="nav-tab" onclick="showPage('dessert',this)">Dessert</div>
   <div class="nav-tab" onclick="showPage('tapas',this)">Tapas</div>
   <div class="nav-tab" onclick="showPage('chr',this)">CHR</div>
   <div class="nav-tab" onclick="showPage('plats',this)">Plats chauds</div>
+  <div class="nav-tab" onclick="showPage('recap',this);loadRecap()">Récap</div>
+  <div class="nav-tab" onclick="showPage('histo',this);loadHistorique()">Historique</div>
 </nav>
 <div id="page-salade" class="page active"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Salade</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Bun Bò</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('bo',-1)">&#8722;</button><input class="qty-inp" id="q-bo" type="number" min="0" value="0" onchange="setQ('bo',this.value)"><button class="qty-btn" onclick="adj('bo',1)">+</button></div></td></tr>
 <tr><td class="td-product">Singapour</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('sin',-1)">&#8722;</button><input class="qty-inp" id="q-sin" type="number" min="0" value="0" onchange="setQ('sin',this.value)"><button class="qty-btn" onclick="adj('sin',1)">+</button></div></td></tr>
@@ -117,6 +162,14 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 <tr><td class="td-product">Banh Bao</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('banhbao',-1)">&#8722;</button><input class="qty-inp" id="q-banhbao" type="number" min="0" value="0" onchange="setQ('banhbao',this.value)"><button class="qty-btn" onclick="adj('banhbao',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
 <div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
 <div id="page-plats" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Plats chauds</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Gyoza</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gyoza',-1)">&#8722;</button><input class="qty-inp" id="q-gyoza" type="number" min="0" value="0" onchange="setQ('gyoza',this.value)"><button class="qty-btn" onclick="adj('gyoza',1)">+</button></div></td></tr><tr><td class="td-product">Siu Mai</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('siumai',-1)">&#8722;</button><input class="qty-inp" id="q-siumai" type="number" min="0" value="0" onchange="setQ('siumai',this.value)"><button class="qty-btn" onclick="adj('siumai',1)">+</button></div></td></tr></tbody></table></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Autres plats</span></div><div id="libre-lines-plats" class="libre-lines"></div><button class="btn-add-line" data-page="plats" onclick="addLine(this.dataset.page)">+ Ajouter un plat</button></div></div></div></div>
+<div id="page-recap" class="page"><div class="main" style="padding-top:12px;">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">Semaine en cours</div>
+  <div id="recap-week-content"><div class="histo-loading">Cliquez sur cet onglet pour charger</div></div>
+</div></div>
+<div id="page-histo" class="page"><div class="main" style="padding-top:12px;">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">Historique par semaine</div>
+  <div id="histo-content"><div class="histo-loading">Cliquez sur cet onglet pour charger</div></div>
+</div></div>
 <div class="bottom-bar">
   <button class="btn-reset" onclick="resetAll()">Effacer</button>
   <div class="qty-count">Total : <span id="total-count" style="color:#7a3db8">0</span></div>
@@ -422,4 +475,206 @@ function showRecap(d){
     +'</div>'
     +'</div>';
 }
+</script>
+<script>
+// ── RÉCAP & HISTORIQUE ──
+var _recapData = {};
+var _recapLoaded = false;
+var _histoWeeks = [];
+
+function getTodayNC(){
+  var now=new Date();
+  return new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+}
+function getMondayNC(d){
+  var day=d.getDay();
+  var diff=day===0?-6:1-day;
+  var m=new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);
+  return m;
+}
+function dsLocal(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function rRow(name,val){
+  var z=!val||val===0;
+  return '<div class="rh-row"><div class="rh-qty'+(z?' zero':'')+'">'+( z?'—':val)+'</div><div class="rh-name'+(z?' zero':'')+'">'+name+'</div></div>';
+}
+
+function renderDayOrder(order, dateStr, dayName, isVille){
+  var hasOrder=order&&order.ts;
+  var statusHtml=hasOrder
+    ?'<span class="rh-day-status rh-status-ok">✓ Reçue</span>'
+    :'<span class="rh-day-status rh-status-wait">En attente</span>';
+  var headerClass=hasOrder?'received':'pending';
+  var id='day-'+dateStr;
+
+  var body='';
+  if(hasOrder){
+    var saladeRows=['bo','sin','thon','thai','plp','rouleaux','tataki']
+      .map(function(k){return rRow({bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleaux',tataki:'Tataki'}[k],order[k]||0);}).join('');
+    var midRows=rRow('Riz',order.rizprod||0)+rRow('Poke thon',order.pokethon||0)+rRow('Poke saumon',order.pokesaumon||0);
+    var dessertRows=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise']
+      .map(function(k){return rRow({tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'}[k],order[k]||0);}).join('');
+    // Tartes libres
+    if(order.libre){try{var lp=JSON.parse(order.libre);if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+
+    var tapasKeys={'dsm':['gyoza','gnem','pnem','sesame','banhbao'],'mgt':['gyoza','gnem','pnem','sesame','banhbao'],'paita':['gyoza','gnem','pnem','sesame','banhbao'],'ville':['gnem','pnem','sesame','banhbao']};
+    var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
+    var tapasRows=(tapasKeys['ville']||[]).map(function(k){return rRow(tapasNames[k],order[k]||0);}).join('');
+
+    var chrRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
+    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';}).join('');}}catch(e){}}
+
+    var topSection;
+    if('ville'==='ville'){
+      var platsRows='';
+      if(order.gyoza) platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#7a3db8">'+order.gyoza+'</div><div class="rh-name">Gyoza</div></div>';
+      if(order.siumai) platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#7a3db8">'+order.siumai+'</div><div class="rh-name">Siu Mai</div></div>';
+      if(order.libre){try{var lpl=JSON.parse(order.libre);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#7a3db8">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+      if(!platsRows) platsRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
+      topSection='<div class="rh-top-3">'
+        +'<div class="rh-col"><div class="rh-col-title">Salade</div>'+saladeRows+'</div>'
+        +'<div class="rh-col"><div class="rh-col-title">Riz / Poke</div>'+midRows+'</div>'
+        +'<div class="rh-col"><div class="rh-col-title">Plats chauds</div>'+platsRows+'</div>'
+        +'</div>';
+    } else {
+      topSection='<div class="rh-top">'
+        +'<div class="rh-col"><div class="rh-col-title">Salade</div>'+saladeRows+'</div>'
+        +'<div class="rh-col"><div class="rh-col-title">Riz / Poke</div>'+midRows+'</div>'
+        +'</div>';
+    }
+
+    body='<div class="rh-day-body open" id="body-'+id+'">'
+      +topSection
+      +'<div class="rh-bottom">'
+      +'<div class="rh-col"><div class="rh-col-title">Dessert</div>'+dessertRows+'</div>'
+      +'<div class="rh-col"><div class="rh-col-title">Tapas</div>'+tapasRows+'</div>'
+      +'<div class="rh-col"><div class="rh-col-title">CHR</div>'+chrRows+'</div>'
+      +'</div></div>';
+  } else {
+    body='<div class="rh-day-body" id="body-'+id+'"><div style="padding:16px;text-align:center;color:var(--text-hint);font-size:13px;">Commande non reçue</div></div>';
+  }
+
+  return '<div class="rh-day-card">'
+    +'<div class="rh-day-header '+headerClass+'" onclick="toggleDay(\''+id+'\'">'
+    +'<div><div class="rh-day-name">'+dayName+'</div><div class="rh-day-date">'+dateStr+'</div></div>'
+    +statusHtml
+    +'</div>'+body+'</div>';
+}
+
+function toggleDay(id){
+  var b=document.getElementById('body-'+id);
+  if(b)b.classList.toggle('open');
+}
+
+async function loadRecap(){
+  var today=getTodayNC();
+  var monday=getMondayNC(today);
+  var el=document.getElementById('recap-week-content');
+  if(!el)return;
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
+  var html='';
+  for(var i=0;i<6;i++){
+    var d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
+    var dStr=dsLocal(d);
+    var dayName=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i];
+    var order=null;
+    try{
+      var res=await fetch(_API+'/order_'+dStr+'_ville?key='+_KEY);
+      if(res.ok){var json=await res.json();if(json.fields){var od={};Object.entries(json.fields).forEach(function(e){var k=e[0],v=e[1];if(v.integerValue!==undefined)od[k]=parseInt(v.integerValue);else if(v.stringValue!==undefined)od[k]=v.stringValue;});order=od;}}
+    }catch(e){}
+    html+=renderDayOrder(order,dStr,dayName,'ville'==='ville');
+  }
+  el.innerHTML=html||'<div class="histo-loading">Aucune commande cette semaine</div>';
+}
+
+// HISTORIQUE
+async function loadHistorique(){
+  var el=document.getElementById('histo-content');
+  if(!el)return;
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
+  // Génère les 8 dernières semaines
+  var today=getTodayNC();
+  var monday=getMondayNC(today);
+  var weeks=[];
+  for(var w=1;w<=8;w++){
+    var m=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-w*7);
+    weeks.push(m);
+  }
+  var html='';
+  for(var wi=0;wi<weeks.length;wi++){
+    var wMon=weeks[wi];
+    var wSat=new Date(wMon.getFullYear(),wMon.getMonth(),wMon.getDate()+5);
+    var wLabel=wMon.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+wSat.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    var wId='week-'+dsLocal(wMon);
+    html+='<div class="histo-week">'
+      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+dsLocal(wMon)+'\'">'
+      +'<span>'+wLabel+'</span><span>▸</span>'
+      +'</div>'
+      +'<div class="histo-week-body" id="'+wId+'"></div>'
+      +'</div>';
+  }
+  el.innerHTML=html;
+}
+
+async function toggleHistoWeek(wId,mondayStr){
+  var el=document.getElementById(wId);
+  if(!el)return;
+  if(el.classList.contains('open')){el.classList.remove('open');return;}
+  el.classList.add('open');
+  if(el.dataset.loaded)return;
+  el.dataset.loaded='1';
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
+  var parts=mondayStr.split('-');
+  var mon=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  var html='';
+  for(var i=0;i<6;i++){
+    var d=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);
+    var dStr=dsLocal(d);
+    var dayName=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i];
+    var order=null;
+    try{
+      var res=await fetch(_API+'/order_'+dStr+'_ville?key='+_KEY);
+      if(res.ok){var json=await res.json();if(json.fields){var od={};Object.entries(json.fields).forEach(function(e){var k=e[0],v=e[1];if(v.integerValue!==undefined)od[k]=parseInt(v.integerValue);else if(v.stringValue!==undefined)od[k]=v.stringValue;});order=od;}}
+    }catch(e){}
+    html+=renderDayOrder(order,dStr,dayName,'ville'==='ville');
+  }
+  el.innerHTML=html||'<div class="histo-loading">Aucune commande</div>';
+}
+
+</script>
+
+<script>
+function updateStatusBanner(hasOrder){
+  var banner=document.getElementById('status-banner');
+  var text=document.getElementById('status-text');
+  if(!banner||!text)return;
+  if(hasOrder){
+    banner.className='status-banner sent';
+    text.textContent='✓ Commande envoyée pour le '+fmtDate(tomorrow);
+  }else{
+    banner.className='status-banner pending';
+    text.textContent='⚠ Commande non envoyée pour le '+fmtDate(tomorrow);
+  }
+}
+
+// Vérifie le statut au démarrage (déjà fait par loadExistingOrder)
+var _origLoadExisting=window.loadExistingOrder;
+window.loadExistingOrder=async function(){
+  var hasOrder=false;
+  try{
+    var docId='order_'+ds(tomorrow)+'_ville';
+    var res=await fetch(_API+'/'+docId+'?key='+_KEY);
+    if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts)hasOrder=true;}
+  }catch(e){}
+  updateStatusBanner(hasOrder);
+  if(hasOrder&&_origLoadExisting)return _origLoadExisting();
+};
+
+// Met à jour la bannière après envoi
+var _origSendOrder=window.sendOrder;
+window.sendOrder=async function(){
+  if(_origSendOrder)await _origSendOrder.apply(this,arguments);
+  updateStatusBanner(true);
+};
+
 </script>
