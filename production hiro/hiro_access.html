@@ -130,6 +130,24 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 /* NOTE */
 .note{background:var(--fete);border:1px solid var(--fete-b);border-radius:var(--r);padding:10px 14px;font-size:12px;color:#5a3c00;line-height:1.7;margin-bottom:10px;}
 .note b{font-weight:600;}
+
+/* VALIDATION LABO */
+.valid-row{display:flex;align-items:center;padding:5px 10px;gap:8px;border-bottom:1px solid var(--border);min-height:38px;}
+.valid-row:last-child{border-bottom:none;}
+.valid-row.rupture{background:#fde8e8;}
+.valid-qty-orig{font-size:11px;color:var(--muted);min-width:28px;text-align:right;flex-shrink:0;}
+.valid-qty-inp{width:48px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-weight:700;text-align:center;font-family:"DM Mono",monospace;background:var(--bg);color:var(--text);}
+.valid-qty-inp:focus{outline:none;background:#fff;border-color:#1a5fa8;}
+.valid-qty-inp.changed{border-color:#e67e22;color:#e67e22;}
+.valid-qty-inp.rupture{border-color:#c0392b;color:#c0392b;background:#fde8e8;}
+.valid-name{font-size:12px;font-weight:500;flex:1;}
+.valid-btn-rupt{padding:3px 7px;border-radius:5px;border:1px solid #e0b0b0;background:#fde8e8;color:#c0392b;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.valid-btn-rupt.active{background:#c0392b;color:#fff;border-color:#c0392b;}
+.valid-btn-validate{width:100%;padding:12px;border-radius:8px;border:none;background:#0d7a52;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:"DM Sans",sans-serif;margin-top:12px;}
+.valid-btn-validate:active{opacity:.8;}
+.valid-btn-validate:disabled{opacity:.4;}
+.valid-status-validated{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;}
+.valid-status-pending{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;}
 </style>
 </head>
 <body>
@@ -1210,6 +1228,124 @@ function laboGetRoll(shop){
   return getRolls(getV(dStr,shop),isDim)||0;
 }
 
+function laboValidState(shop){
+  if(!window._laboValid) window._laboValid={};
+  if(!window._laboValid[shop]){
+    var order=laboOrders[shop]||{};
+    var state={};
+    // All fixed products
+    ['bo','sin','thon','thai','plp','rouleaux','rizprod','pokethon','pokesaumon','tataki',
+     'tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise',
+     'gyoza','siumai','gnem','pnem','sesame','banhbao'].forEach(function(k){
+      if(order[k]!==undefined) state[k]={qty:order[k],rupture:false};
+    });
+    window._laboValid[shop]=state;
+  }
+  return window._laboValid[shop];
+}
+
+function laboResetValid(shop){
+  if(window._laboValid) delete window._laboValid[shop];
+}
+
+function laboMakeValidRow(shop,key,name,origQty){
+  if(!origQty||origQty===0){
+    return '<div class="valid-row"><div class="valid-qty-orig">—</div>'
+      +'<div class="valid-name" style="color:var(--hint);">'+name+'</div></div>';
+  }
+  var state=laboValidState(shop);
+  if(!state[key]) state[key]={qty:origQty,rupture:false};
+  var s=state[key];
+  var ruptClass=s.rupture?' active':'';
+  var inpClass=s.rupture?' rupture':(s.qty!==origQty?' changed':'');
+  var onch='laboSetQty("'+shop+'","'+key+'",this.value)';
+  var onclk='laboToggleRupt("'+shop+'","'+key+'",'+origQty+')';
+  return '<div class="valid-row'+(s.rupture?' rupture':'')+'" id="vrow-'+shop+'-'+key+'">'
+    +'<div class="valid-qty-orig">'+origQty+'</div>'
+    +'<input class="valid-qty-inp'+inpClass+'" id="vinp-'+shop+'-'+key+'" type="number" min="0" max="'+origQty+'" value="'+(s.rupture?0:s.qty)+'" onchange="'+onch+'">'
+    +'<div class="valid-name">'+name+'</div>'
+    +'<button class="valid-btn-rupt'+ruptClass+'" onclick="'+onclk+'">Stock insuff.</button>'
+    +'</div>';
+}
+
+function laboSetQty(shop,key,val){
+  var state=laboValidState(shop);
+  var order=laboOrders[shop]||{};
+  var orig=order[key]||0;
+  var v=Math.max(0,Math.min(parseInt(val)||0,orig));
+  if(!state[key]) state[key]={qty:orig,rupture:false};
+  state[key].qty=v;
+  state[key].rupture=false;
+  var inp=document.getElementById('vinp-'+shop+'-'+key);
+  var row=document.getElementById('vrow-'+shop+'-'+key);
+  if(inp){inp.value=v;inp.className='valid-qty-inp'+(v!==orig?' changed':'');}
+  if(row) row.className='valid-row';
+}
+
+function laboToggleRupt(shop,key,origQty){
+  var state=laboValidState(shop);
+  if(!state[key]) state[key]={qty:origQty,rupture:false};
+  state[key].rupture=!state[key].rupture;
+  var inp=document.getElementById('vinp-'+shop+'-'+key);
+  var row=document.getElementById('vrow-'+shop+'-'+key);
+  var btn=document.querySelector('#vrow-'+shop+'-'+key+' .valid-btn-rupt');
+  if(state[key].rupture){
+    state[key].qty=0;
+    if(inp){inp.value=0;inp.className='valid-qty-inp rupture';}
+    if(row) row.className='valid-row rupture';
+    if(btn) btn.className='valid-btn-rupt active';
+  } else {
+    state[key].qty=origQty;
+    if(inp){inp.value=origQty;inp.className='valid-qty-inp';}
+    if(row) row.className='valid-row';
+    if(btn) btn.className='valid-btn-rupt';
+  }
+}
+
+async function laboValidate(shop){
+  var order=laboOrders[shop];
+  if(!order||!order.ts) return;
+  var state=laboValidState(shop);
+  var btn=document.getElementById('vbtn-'+shop);
+  if(btn){btn.disabled=true;btn.textContent='Validation...';}
+  
+  var fields={};
+  fields['status']={stringValue:'validated'};
+  fields['validatedAt']={integerValue:Date.now()};
+  // Save validated quantities
+  Object.entries(state).forEach(function(e){
+    var k=e[0],s=e[1];
+    fields['vqty_'+k]={integerValue:s.qty};
+    if(s.rupture) fields['rupt_'+k]={booleanValue:true};
+  });
+  // Also save libre validated (keep as-is for now)
+  if(order.libre) fields['vlibre']={stringValue:order.libre};
+
+  try{
+    var dStr=laboDs(laboDate);
+    var docId='order_'+dStr+'_'+shop;
+    var res=await fetch(_ORDERS_API+'/'+docId+'?key='+_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    if(res.ok){
+      laboOrders[shop].status='validated';
+      laboOrders[shop].validatedAt=Date.now();
+      Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
+      laboRender();
+    }
+  }catch(e){alert('Erreur lors de la validation');}
+  if(btn){btn.disabled=false;btn.textContent='✓ Valider la commande';}
+}
+
+function laboMakeValidSection(shop,title,items){
+  var rows=items.map(function(p){return laboMakeValidRow(shop,p.key,p.name,p.val);}).join('');
+  return '<div style="border-right:1px solid var(--border);">'
+    +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+title+'</div>'
+    +rows+'</div>';
+}
+
 function laboRenderFiche(shop,order){
   var color=LABO_COLORS[shop];
   var label=LABO_LABELS[shop];
@@ -1217,81 +1353,105 @@ function laboRenderFiche(shop,order){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
       +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
-      +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;">En attente</span>'
+      +'<span class="valid-status-pending">⏳ En attente</span>'
       +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non reçue</div></div>';
   }
 
-  var saladeRows=LABO_SALADE.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
-  var rightItems=[
-    {name:'Thon',val:laboGetFish(shop,'t')},{name:'Saumon',val:laboGetFish(shop,'s')},
-    {name:'Aburi',val:laboGetFish(shop,'a')},{name:'Tamago',val:laboGetFish(shop,'tamago')},
-    {name:'Riz',val:laboGetRiz(shop)},{name:'Poke thon',val:order.pokethon||0},
-    {name:'Poke saumon',val:order.pokesaumon||0},{name:'Roll',val:laboGetRoll(shop)},
-    {name:'Gyoza',val:shop==='ville'?0:order.gyoza||0}
-  ];
-  var rightRows=rightItems.map(function(p){return laboPRow(p.name,p.val);}).join('');
-  var dessertRows=LABO_DESSERT.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
-  if(order.libre){try{var lt=JSON.parse(order.libre);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
-  var tapasRows=LABO_TAPAS.map(function(p){return laboPRow(p.name,order[p.key]||0);}).join('');
+  var isValidated=order.status==='validated';
+  var fmtTime=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
-  var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
-  var platsRows='';
-  if(order.libre){try{
-    var lib=JSON.parse(order.libre);
-    if(lib.chr){var ci=lib.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}
-    if(shop==='ville'){
-      var fixedPlats=[];
-      if(order.gyoza) fixedPlats.push({qty:order.gyoza,name:'Gyoza'});
-      if(order.siumai) fixedPlats.push({qty:order.siumai,name:'Siu Mai'});
-      var extraPlats=lib.plats?lib.plats.filter(function(i){return i.name&&i.qty>0;}):[];
-      var allPlats=fixedPlats.concat(extraPlats);
-      if(allPlats.length>0) platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+allPlats.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';
-    } else if(lib.plats){var pi=lib.plats.filter(function(i){return i.name&&i.qty>0;});if(pi.length>0)platsRows='<div style="border-top:2px solid var(--border);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">Plats chauds</div>'+pi.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('')+'</div>';}
-  }catch(e){}}
+  // Build items
+  var saladeItems=LABO_SALADE.map(function(p){return {key:p.key,name:p.name,val:order[p.key]||0};});
+  var rightItems=[
+    {key:'f_t',name:'Thon',val:laboGetFish(shop,'t')},
+    {key:'f_s',name:'Saumon',val:laboGetFish(shop,'s')},
+    {key:'f_a',name:'Aburi',val:laboGetFish(shop,'a')},
+    {key:'f_tamago',name:'Tamago',val:laboGetFish(shop,'tamago')},
+    {key:'rizprod',name:'Riz',val:laboGetRiz(shop)},
+    {key:'pokethon',name:'Poke thon',val:order.pokethon||0},
+    {key:'pokesaumon',name:'Poke saumon',val:order.pokesaumon||0},
+    {key:'roll',name:'Roll',val:laboGetRoll(shop)},
+    {key:'gyoza',name:'Gyoza',val:shop==='ville'?0:order.gyoza||0}
+  ];
+  var dessertItems=LABO_DESSERT.map(function(p){return {key:p.key,name:p.name,val:order[p.key]||0};});
+  var tapasItems=LABO_TAPAS.map(function(p){return {key:p.key,name:p.name,val:order[p.key]||0};});
 
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
 
-  var header='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
-    +'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Reçu à '+laboFmtTime(order.ts)+'</div>'
-    +'<span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;">✓ Reçue</span></div>'
-    +'</div>';
+  function makeRow(key,name,val){
+    if(isValidated){
+      // Show validated qty
+      var vqty=order['vqty_'+key];
+      var isRupt=order['rupt_'+key];
+      var display=vqty!==undefined?vqty:val;
+      var changed=vqty!==undefined&&vqty!==val;
+      var zero=!display||display===0;
+      return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
+        +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
+        +'<div style="font-size:13px;font-weight:500;color:'+(isRupt?'#c0392b':zero?'var(--hint)':'var(--text)')+';">'+name+(isRupt?' ⚠ Stock insuff.':changed?' (dem. '+val+')':'')+'</div>'
+        +'</div>';
+    } else {
+      return laboMakeValidRow(shop,key,name,val);
+    }
+  }
 
-  var topSection, bottomSection;
+  var saladeRows=saladeItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
+  var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
+  var dessertRows=dessertItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
+  var tapasRows=tapasItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
 
+  // CHR
+  var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
+  if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}}catch(e){}}
+
+  // Plats chauds Ville
+  var platsColRows='';
   if(shop==='ville'){
-    // Plats chauds : gyoza + siumai fixes + libres
-    var fixedPlats=[];
-    if(order.gyoza) fixedPlats.push({qty:order.gyoza,name:'Gyoza'});
-    if(order.siumai) fixedPlats.push({qty:order.siumai,name:'Siu Mai'});
-    var extraPlats=[];
-    try{if(order.libre){var lp=JSON.parse(order.libre);if(lp.plats)extraPlats=lp.plats.filter(function(i){return i.name&&i.qty>0;});}}catch(e){}
-    var allPlats=fixedPlats.concat(extraPlats);
-    var platsColRows=allPlats.length>0
-      ?allPlats.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;color:#7a3db8;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';}).join('')
+    var allPlats=[];
+    if(order.gyoza) allPlats.push({key:'gyoza',name:'Gyoza',val:order.gyoza});
+    if(order.siumai) allPlats.push({key:'siumai',name:'Siu Mai',val:order.siumai});
+    try{if(order.libre){var lpl=JSON.parse(order.libre);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty});});}}catch(e){}
+    platsColRows=allPlats.length>0
+      ?allPlats.map(function(p){return makeRow(p.key,p.name,p.val);}).join('')
       :'<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
+  }
 
-    topSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border);">'
+  // Status badge
+  var statusBadge=isValidated
+    ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Reçu '+fmtTime(order.ts)+' · Validé '+fmtTime(order.validatedAt)+'</div><span class="valid-status-validated">✓ Validée</span></div>'
+    :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Reçu à '+fmtTime(order.ts)+'</div><span class="valid-status-pending">⏳ À valider</span></div>';
+
+  var topSection=shop==='ville'
+    ?'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
       +'<div>'+colTitle('Plats chauds')+platsColRows+'</div>'
-      +'</div>';
-  } else {
-    topSection='<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
+      +'</div>'
+    :'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
       +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
       +'</div>';
-  }
 
-  bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+  var bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Tapas')+tapasRows+'</div>'
     +'<div>'+colTitle('CHR')+chrRows+'</div>'
     +'</div>';
 
-  return header+topSection+bottomSection+'</div>';
+  var validateBtn=!isValidated
+    ?'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
+      +'<button class="valid-btn-validate" id="vbtn-'+shop+'" onclick="laboValidate(\"'+shop+'\")">✓ Valider la commande</button>'
+      +'</div>'
+    :'';
+
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+    +statusBadge
+    +'</div>'
+    +topSection+bottomSection+validateBtn+'</div>';
 }
+
 
 function laboRender(){
   var el=document.getElementById('labo-content');

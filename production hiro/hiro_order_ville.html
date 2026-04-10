@@ -113,6 +113,23 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .status-banner.sent .status-dot{background:#0d7a52;}
 .status-banner.pending .status-dot{background:#c0392b;}
+
+.valid-notif{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:300;overflow-y:auto;padding-bottom:40px;}
+.valid-notif.show{display:block;}
+.valid-notif-header{background:#0d7a52;color:#fff;padding:16px;text-align:center;}
+.valid-notif-title{font-size:18px;font-weight:700;margin-bottom:4px;}
+.valid-notif-times{font-size:12px;opacity:.85;}
+.valid-notif-body{padding:16px;max-width:600px;margin:0 auto;}
+.valid-notif-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.valid-notif-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);}
+.valid-notif-row{display:flex;align-items:baseline;padding:7px 12px;gap:10px;border-bottom:1px solid var(--border);}
+.valid-notif-row:last-child{border-bottom:none;}
+.valid-notif-row.changed{background:#fff8e8;}
+.valid-notif-row.rupture{background:#fde8e8;}
+.valid-notif-qty{font-size:20px;font-weight:700;font-family:"DM Mono",monospace;min-width:36px;text-align:right;flex-shrink:0;}
+.valid-notif-name{font-size:13px;font-weight:500;flex:1;}
+.valid-notif-orig{font-size:11px;color:var(--text-hint);}
+.valid-notif-back{display:block;width:calc(100% - 32px);margin:0 16px;padding:13px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;text-align:center;}
 </style>
 </head>
 <body>
@@ -421,6 +438,7 @@ window.sendOrder=async function(){
 };
 </script>
 
+<div id="valid-notif" class="valid-notif"></div>
 </body>
 </html>
 <script>
@@ -676,5 +694,111 @@ window.sendOrder=async function(){
   if(_origSendOrder)await _origSendOrder.apply(this,arguments);
   updateStatusBanner(true);
 };
+
+</script>
+<script>
+// Polling validation status
+var _validPollInterval=null;
+
+async function checkValidationStatus(){
+  try{
+    var docId='order_'+ds(tomorrow)+'_'+SHOP;
+    var res=await fetch(_API+'/'+docId+'?key='+_KEY);
+    if(!res.ok) return;
+    var json=await res.json();
+    if(!json.fields) return;
+    var d={};
+    Object.entries(json.fields).forEach(function(e){
+      var k=e[0],v=e[1];
+      if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
+      else if(v.stringValue!==undefined) d[k]=v.stringValue;
+      else if(v.booleanValue!==undefined) d[k]=v.booleanValue;
+    });
+    if(d.status==='validated'&&d.validatedAt){
+      showValidationNotif(d);
+    } else if(d.ts){
+      updateStatusBanner(true);
+    }
+  }catch(e){}
+}
+
+var PROD_NAMES={
+  bo:'Bun Bò',sin:'Singapour',thai:'Thaï',thon:'Thon mariné',plp:'Poulpe',
+  rouleaux:'Rouleaux',rizprod:'Riz',pokethon:'Poke thon',pokesaumon:'Poke saumon',
+  tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',
+  poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',
+  cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',
+  gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'
+};
+
+function fmtTs(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+function showValidationNotif(d){
+  // Update status banner
+  var banner=document.getElementById('status-banner');
+  var text=document.getElementById('status-text');
+  if(banner){banner.className='status-banner sent';text.textContent='✓ Commande validée à '+fmtTs(d.validatedAt);}
+
+  // Build recap
+  var el=document.getElementById('valid-notif');
+  if(!el) return;
+
+  var rows='';
+  ALL_KEYS.forEach(function(k){
+    var orig=d[k]||0;
+    if(!orig) return;
+    var vqty=d['vqty_'+k];
+    var isRupt=d['rupt_'+k];
+    var display=vqty!==undefined?vqty:orig;
+    var changed=vqty!==undefined&&vqty!==orig;
+    var rowClass=isRupt?'rupture':changed?'changed':'';
+    rows+='<div class="valid-notif-row'+( rowClass?' '+rowClass:'')+'">'
+      +'<div class="valid-notif-qty" style="color:'+(isRupt?'#c0392b':changed?'#e67e22':'var(--text)')+';">'+(display||'—')+'</div>'
+      +'<div class="valid-notif-name">'+(PROD_NAMES[k]||k)+(isRupt?' — ⚠ Stock insuffisant':changed?' — <span class=\'valid-notif-orig\'>Demandé: '+orig+'</span>':'')+'</div>'
+      +'</div>';
+  });
+
+  // Libres
+  if(d.libre){try{
+    var lib=JSON.parse(d.libre);
+    Object.values(lib).forEach(function(items){
+      if(!Array.isArray(items)) return;
+      items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+        rows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+i.name+'</div></div>';
+      });
+    });
+  }catch(e){}}
+
+  el.innerHTML='<div class="valid-notif-header">'
+    +'<div class="valid-notif-title">✅ Commande validée</div>'
+    +'<div class="valid-notif-times">'+SHOP_LABEL+' · Livraison '+fmtDate(tomorrow)+'<br>'
+    +'Envoyée à '+fmtTs(d.ts)+' · Validée à '+fmtTs(d.validatedAt)+'</div>'
+    +'</div>'
+    +'<div class="valid-notif-body">'
+    +'<div class="valid-notif-section"><div class="valid-notif-section-title">Récap commande validée</div>'+rows+'</div>'
+    +'<button class="valid-notif-back" onclick="document.getElementById(\'valid-notif\').classList.remove(\'show\')">← Retour</button>'
+    +'</div>';
+
+  el.classList.add('show');
+
+  // Stop polling
+  if(_validPollInterval){clearInterval(_validPollInterval);_validPollInterval=null;}
+}
+
+// Start polling when order is sent
+var _origSendOrderOld=window.sendOrder;
+window.sendOrder=async function(){
+  if(_origSendOrderOld) await _origSendOrderOld.apply(this,arguments);
+  startValidationPolling();
+};
+
+function startValidationPolling(){
+  if(_validPollInterval) clearInterval(_validPollInterval);
+  _validPollInterval=setInterval(checkValidationStatus,8000);
+}
+
+// Check on load too
+checkValidationStatus();
+setTimeout(startValidationPolling,2000);
 
 </script>
