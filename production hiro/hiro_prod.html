@@ -329,15 +329,15 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
 </header>
 
 <nav class="nav-tabs">
-  <div class="nav-tab active" onclick="showPage('riz')">Riz & Production</div>
-  <div class="nav-tab" onclick="showPage('poisson')">Découpe Poisson</div>
-  <div class="nav-tab" onclick="showPage('rolls')">Rolls</div>
-  <div class="nav-tab" onclick="showPage('thon')">Commande Thon</div>
-  <div class="nav-tab" onclick="showPage('recap')">Récap</div>
-  <div class="nav-tab" onclick="showPage('totaux')">Totaux</div>
-  <div class="nav-tab" onclick="showPage('commandes')">Commandes</div>
-  <div class="nav-tab" onclick="showPage('securite')">Sécurité</div>
-  <div class="nav-tab" onclick="showPage('historique')">Historique</div>
+  <div class="nav-tab active" onclick="showPage('riz',this)">Riz & Production</div>
+  <div class="nav-tab" onclick="showPage('poisson',this)">Découpe Poisson</div>
+  <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
+  <div class="nav-tab" onclick="showPage('thon',this)">Commande Thon</div>
+  <div class="nav-tab" onclick="showPage('recap',this)">Récap</div>
+  <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
+  <div class="nav-tab" onclick="showPage('commandes',this)">Commandes</div>
+  <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
+  <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
 <div class="main">
@@ -857,11 +857,12 @@ function toggleFete(){
   render();
 }
 
-function showPage(p) {
-  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(el=>el.classList.remove('active'));
+function showPage(p, el) {
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.nav-tab').forEach(function(x){x.classList.remove('active');});
   document.getElementById('page-'+p).classList.add('active');
-  event.target.classList.add('active');
+  if(el) el.classList.add('active');
+  else if(event&&event.target) event.target.classList.add('active');
   if(p==='historique') loadHistorique();
   if(p==='recap') renderRecap();
   if(p==='commandes') loadCommandes();
@@ -1673,9 +1674,13 @@ function _printCombined(type) {
     <tbody>${rows}</tbody>
   </table>
   <script>window.onload=()=>{window.print();}<\/script>
-  
+  `);
+  win.document.close();
+}
+</script>
+
+
 <script>
-// ── PRESENCE / PING ──
 (function(){
   var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
   var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
@@ -1709,7 +1714,7 @@ function _printCombined(type) {
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
           // Force logout
           sessionStorage.clear();
-          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;">⛔ Accès désactivé<br><span style="font-size:13px;color:#888;margin-top:8px;display:block;">Contactez l\\'administrateur</span></div>';
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
           return;
         }
       }
@@ -1755,7 +1760,7 @@ function _printCombined(type) {
         var chkJson=await chkRes.json();
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
           sessionStorage.clear();
-          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;"><div>Acces desactive<br><span style=\"font-size:13px;color:#888;\">Contactez l\'administrateur</span></div></div>';
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
           return;
         }
       }
@@ -1779,7 +1784,6 @@ function _printCombined(type) {
   setInterval(_sendPing,30000);
 })();
 </script>
-
 </body></html>`);
   win.document.close();
 }
@@ -2068,7 +2072,7 @@ async function loadCommandes(){
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
           // Force logout
           sessionStorage.clear();
-          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;">⛔ Accès désactivé<br><span style="font-size:13px;color:#888;margin-top:8px;display:block;">Contactez l\\'administrateur</span></div>';
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
           return;
         }
       }
@@ -2244,7 +2248,7 @@ function secPollStop(){
         var chkJson=await chkRes.json();
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
           sessionStorage.clear();
-          document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;"><div>Acces desactive<br><span style=\"font-size:13px;color:#888;\">Contactez l\'administrateur</span></div></div>';
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
           return;
         }
       }
@@ -2269,5 +2273,110 @@ function secPollStop(){
 })();
 </script>
 
+
+<script>
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  // Identifiant unique appareil (persistant)
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){
+    var n=localStorage.getItem('hiro-user-name')||'';
+    return n;
+  }
+
+  async function _sendPing(){
+    try{
+      var now=new Date();
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      // Check if disabled
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          // Force logout
+          sessionStorage.clear();
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
+          return;
+        }
+      }
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+  window.addEventListener('beforeunload',function(){
+    try{
+      fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',keepalive:true,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:{iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},ts:{integerValue:0}}})
+      });
+    }catch(e){}
+  });
+})();
+</script>
+
+
+<script>
+(function(){
+  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _IFACE='Hiro Prod';
+  var _SHOP='prod';
+
+  var _devId=localStorage.getItem('hiro-dev-id');
+  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+
+  function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
+
+  async function _sendPing(){
+    try{
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+      if(chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          sessionStorage.clear();
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
+          return;
+        }
+      }
+      var fields={
+        iface:{stringValue:_IFACE},
+        shop:{stringValue:_SHOP},
+        devId:{stringValue:_devId},
+        userName:{stringValue:_pingName()},
+        ts:{integerValue:Date.now()},
+        ua:{stringValue:navigator.userAgent.substr(0,80)}
+      };
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){}
+  }
+
+  _sendPing();
+  setInterval(_sendPing,30000);
+})();
+</script>
 </body>
 </html>
