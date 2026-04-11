@@ -2009,20 +2009,45 @@ async function loadSecurite(){
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
+function parseUA(ua){
+  if(!ua) return 'Appareil inconnu';
+  var device='', browser='', os='';
+  // Device
+  if(/iPad/.test(ua)) device='iPad';
+  else if(/iPhone/.test(ua)) device='iPhone';
+  else if(/Android/.test(ua)&&/Mobile/.test(ua)) device='Android Phone';
+  else if(/Android/.test(ua)) device='Android Tablet';
+  else if(/Macintosh/.test(ua)) device='Mac';
+  else if(/Windows/.test(ua)) device='PC Windows';
+  else if(/Linux/.test(ua)) device='Linux';
+  else device='Appareil inconnu';
+  // Browser
+  if(/CriOS/.test(ua)) browser='Chrome';
+  else if(/FxiOS/.test(ua)) browser='Firefox';
+  else if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) browser='Edge';
+  else if(/OPR\//.test(ua)||/Opera/.test(ua)) browser='Opera';
+  else if(/Chrome/.test(ua)) browser='Chrome';
+  else if(/Firefox/.test(ua)) browser='Firefox';
+  else if(/Safari/.test(ua)) browser='Safari';
+  else browser='';
+  return device+(browser?' · '+browser:'');
+}
+
 function secDevCard(e){
   var now=Date.now();
   var ago=Math.round((now-e.ts)/60000);
   var agoStr=e.isOnline?(ago<1?'à l\'instant':'il y a '+ago+' min'):'il y a '+ago+' min';
   var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop.toUpperCase();
-  var nameStr=e.userName||'Appareil inconnu';
-  if(shopLabel)nameStr+=' — '+shopLabel;
+  var nameStr=e.userName||(shopLabel||'');
+  var deviceStr=parseUA(e.ua||'');
   var disabledStyle=e.disabled?'opacity:.5;':'';
   var btnLabel=e.disabled?'Réactiver':'Désactiver';
   var btnColor=e.disabled?'#0d7a52':'#e74c3c';
   return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;'+disabledStyle+'">'
     +'<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':'#bbb')+';"></div>'
     +'<div style="flex:1;min-width:0;">'
-    +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nameStr+'</div>'
+    +'<div style="font-size:13px;font-weight:600;">'+(nameStr?nameStr:'—')+(shopLabel&&nameStr!==shopLabel?' <span style="font-weight:400;color:#888;">'+shopLabel+'</span>':'')+'</div>'
+    +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+deviceStr+'</div>'
     +'<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">'+agoStr+(e.disabled?' · <span style="color:#e74c3c;font-weight:600;">Désactivé</span>':'')+'</div>'
     +'</div>'
     +'<button onclick="secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')" style="padding:5px 12px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
