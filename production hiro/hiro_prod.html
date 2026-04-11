@@ -583,6 +583,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
           <button onclick="cmdChangeDate(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">←</button>
           <span id="cmd-date-label" style="font-size:13px;font-weight:600;"></span>
           <button onclick="cmdChangeDate(1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">→</button>
+          <button onclick="exportCmdPDF()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;font-weight:600;">🖨 PDF</button>
         </div>
       </div>
       <div id="cmd-content"><div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
@@ -1909,13 +1910,39 @@ async function loadCommandes(){
           else if(v.stringValue!==undefined)d[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
-        cmdOrders[s]=d;
+        cmdOrders[s]=d.ts?d:null;
       }else{cmdOrders[s]=null;}
     }catch(e){cmdOrders[s]=null;}
   }));
-  var html=_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
+
+  // ── Alertes commandes manquantes ──
+  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var isToday=cmdDs(cmdDate)===cmdDs(new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate()));
+  var ncHour=ncNow.getHours()+ncNow.getMinutes()/60;
+  var missing=_CMD_SHOPS.filter(function(s){return !cmdOrders[s];});
+  var alertHtml='';
+  if(isToday&&missing.length>0&&ncHour>=13){
+    var urgency=ncHour>=14?'#c0392b':'#e67e22';
+    var urgencyBg=ncHour>=14?'#fde8e8':'#fef3e2';
+    alertHtml='<div style="background:'+urgencyBg+';border:1px solid '+urgency+'33;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;">'
+      +'<div style="font-size:18px;">'+(ncHour>=11?'🔴':'🟠')+'</div>'
+      +'<div><div style="font-size:13px;font-weight:700;color:'+urgency+';">Commande(s) manquante(s)</div>'
+      +'<div style="font-size:12px;color:'+urgency+';opacity:.8;">'+missing.map(function(s){return _CMD_LABELS[s];}).join(', ')+'</div></div>'
+      +'</div>';
+  }
+
+  // Badge sur le nav-tab Commandes
+  var tabEl=document.querySelector('.nav-tab[onclick*="commandes"]');
+  if(tabEl){
+    var badge=tabEl.querySelector('.cmd-badge');
+    if(missing.length>0&&isToday&&ncHour>=13){
+      if(!badge){badge=document.createElement('span');badge.className='cmd-badge';badge.style.cssText='display:inline-block;background:#e74c3c;color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;margin-left:4px;vertical-align:middle;';tabEl.appendChild(badge);}
+      badge.textContent=missing.length;
+    }else{if(badge)badge.remove();}
+  }
+
+  var html=alertHtml+_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
   el.innerHTML=html;
-  // Poll toutes les 15s
   if(cmdPollTimer)clearInterval(cmdPollTimer);
   cmdPollTimer=setInterval(loadCommandes,15000);
 }
