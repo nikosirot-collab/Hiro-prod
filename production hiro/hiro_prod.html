@@ -597,6 +597,16 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <button onclick="loadSecurite()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
       </div>
       <div id="sec-devices" style="margin-bottom:24px;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
+
+      <!-- Log connexions -->
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;">Historique des connexions</div>
+          <span style="font-size:11px;color:var(--text-muted);">7 derniers jours</span>
+        </div>
+        <div id="sec-log"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div></div>
+      </div>
+
       <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;">
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe interfaces magasin</div>
         <div style="display:flex;gap:8px;align-items:center;">
@@ -1000,20 +1010,34 @@ function renderRecap() {
         <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Répartition riz par magasin</div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-pie" height="140"></canvas></div>
       </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Comparaison semaine N vs N−1 (total riz / jour)</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;"><canvas id="chart-compare" height="120"></canvas></div>
     </div>`;
+
+  // Calcul semaine N-1
+  const rizTotalByDay=labels.map((_,di)=>SHOPS.reduce((a,s)=>a+(rizByDay[s][di]||0),0));
+  const prevRizByDay=[];
+  for(let di=0;di<7;di++){
+    const d=dayOf(weekOff-1,di),dStr=ds(d);
+    const tot=SHOPS.reduce((a,s)=>a+(getV(dStr,s)||0),0);
+    prevRizByDay.push(tot);
+  }
 
   // Charge Chart.js puis dessine
   if(window.Chart){
-    _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz);
+    _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz,rizTotalByDay,prevRizByDay);
   } else {
     const s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
-    s.onload=()=>_drawRecapCharts(labels,rizByDay,tempsByDay,totRiz);
+    s.onload=()=>_drawRecapCharts(labels,rizByDay,tempsByDay,totRiz,rizTotalByDay,prevRizByDay);
     document.head.appendChild(s);
   }
 }
 
-function _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz){
+function _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz,rizTotalByDay,prevRizByDay){
   const SHOP_COLORS={
     dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#888',asia:'#5b4bb5'
   };
@@ -1079,6 +1103,24 @@ function _drawRecapCharts(labels,rizByDay,tempsByDay,totRiz){
     }
   });
   _recapCharts.push(pie);
+
+  // 4. Comparaison N vs N-1
+  const compare=new Chart(document.getElementById('chart-compare'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Semaine N',data:rizTotalByDay,borderColor:'#1a5fa8',backgroundColor:'#1a5fa820',fill:true,tension:0.3,pointBackgroundColor:'#1a5fa8',pointRadius:4,borderWidth:2},
+        {label:'Semaine N−1',data:prevRizByDay,borderColor:'#aaa',backgroundColor:'transparent',fill:false,tension:0.3,pointBackgroundColor:'#aaa',pointRadius:3,borderWidth:1.5,borderDash:[4,3]}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+      scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+  _recapCharts.push(compare);
 }
 
 // ─── HISTORIQUE ───
@@ -1803,6 +1845,18 @@ var cmdDate=(function(){
   return d;
 })();
 var cmdOrders={};
+var _prevCmdTs={}; // Timestamp des commandes déjà vues
+
+function _showNewOrderNotif(shop){
+  var label=_CMD_LABELS[shop]||shop;
+  var n=document.createElement('div');
+  n.style.cssText='position:fixed;top:16px;right:16px;z-index:9999;background:#0d7a52;color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.2);animation:slideIn .3s ease;';
+  n.innerHTML='🛒 Nouvelle commande — '+label;
+  document.body.appendChild(n);
+  setTimeout(function(){n.style.opacity='0';n.style.transition='opacity .4s';setTimeout(function(){n.remove();},400);},4000);
+  // Bip sonore
+  try{var ctx=new(window.AudioContext||window.webkitAudioContext)();var o=ctx.createOscillator();var g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);o.start();o.stop(ctx.currentTime+0.4);}catch(e){}
+}
 var cmdPollTimer=null;
 
 function cmdDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -1893,6 +1947,69 @@ function cmdRenderFiche(shop, order){
     +'</div></div>';
 }
 
+
+function exportCmdPDF(){
+  var dStr=cmdDs(cmdDate);
+  var dateLabel=cmdFmt(cmdDate);
+  var win=window.open('','_blank');
+
+  function pdfRow(name,val){
+    if(!val||val===0)return '';
+    return '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;">'+name+'</td><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:right;width:40px;">'+val+'</td></tr>';
+  }
+
+  function pdfSection(title,rows){
+    if(!rows)return '';
+    return '<div style="break-inside:avoid;margin-bottom:8px;">'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;padding:4px 8px;background:#f5f5f5;border-bottom:1px solid #ddd;">'+title+'</div>'
+      +'<table style="width:100%;border-collapse:collapse;">'+rows+'</table></div>';
+  }
+
+  var shopCards=_CMD_SHOPS.map(function(s){
+    var o=cmdOrders[s];
+    var label=_CMD_LABELS[s];
+    var color=_CMD_COLORS[s];
+    if(!o||!o.ts) return '<div style="border:1px solid #ddd;border-radius:6px;padding:12px;break-inside:avoid;"><div style="font-size:14px;font-weight:700;color:'+color+';margin-bottom:8px;">'+label+'</div><div style="color:#aaa;font-size:11px;">Commande non reçue</div></div>';
+
+    var saladeRows=_CMD_SALADE.map(function(p){return pdfRow(p.name,o[p.key]||0);}).join('');
+    var midRows=pdfRow('Riz',o.rizprod||0)+pdfRow('Poke thon',o.pokethon||0)+pdfRow('Poke saumon',o.pokesaumon||0);
+    var dessertRows=_CMD_DESSERT.map(function(p){return pdfRow(p.name,o[p.key]||0);}).join('');
+    if(o.libre){try{var lt=JSON.parse(o.libre);if(lt.tarte)lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+=pdfRow(i.name,i.qty);});}catch(e){}}
+    var tapasKeys=s==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
+    var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
+    var tapasRows=tapasKeys.map(function(k){return pdfRow(tapasNames[k],o[k]||0);}).join('');
+    var chrRows='';
+    if(s==='ville'){_CMD_CHR_KEYS.forEach(function(k){var v=o[k]||0;if(v>0)chrRows+=pdfRow(_CMD_CHR_NAMES[k],v);});}
+    if(o.libre){try{var lc=JSON.parse(o.libre);if(lc.chr)lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+=pdfRow(i.name,i.qty);});}catch(e){}}
+
+    var isVal=o.status==='validated';
+    return '<div style="border:1px solid #ddd;border-radius:6px;overflow:hidden;break-inside:avoid;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:2px solid #ddd;">'
+      +'<div style="font-size:14px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<div style="font-size:10px;color:#888;">'+(isVal?'✓ Validée':'Reçue')+' '+new Date(parseInt(o.ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'</div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;">'
+      +'<div style="border-right:1px solid #eee;">'+pdfSection('Salade',saladeRows)+pdfSection('Riz / Poke',midRows)+'</div>'
+      +'<div>'+pdfSection('Dessert',dessertRows)+pdfSection('Tapas',tapasRows)+(chrRows?pdfSection('CHR',chrRows):'')+'</div>'
+      +'</div></div>';
+  }).join('<div style="height:8px;"></div>');
+
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<title>Commandes '+dateLabel+'</title>'
+    +'<style>@page{size:A4;margin:10mm;}body{font-family:Helvetica,Arial,sans-serif;color:#000;margin:0;}@media print{button{display:none;}}</style>'
+    +'</head><body>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #000;">'
+    +'<div style="font-size:16px;font-weight:700;">COMMANDES HIRO SUSHI</div>'
+    +'<div style="font-size:13px;font-weight:600;text-transform:capitalize;">'+dateLabel+'</div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+shopCards+'</div>'
+    +'<div style="margin-top:12px;text-align:right;font-size:9px;color:#aaa;">Imprimé le '+new Date().toLocaleString('fr-FR')+'</div>'
+    +'<div style="margin-top:8px;text-align:center;"><button onclick="window.print()" style="padding:8px 24px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">🖨 Imprimer / Enregistrer PDF</button></div>'
+    +'</body></html>');
+  win.document.close();
+  win.focus();
+}
+
 async function loadCommandes(){
   var el=document.getElementById('cmd-content');
   if(!el)return;
@@ -1911,6 +2028,11 @@ async function loadCommandes(){
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
         cmdOrders[s]=d.ts?d:null;
+        // Détecter nouvelle commande
+        if(d.ts&&d.ts!==_prevCmdTs[s]){
+          if(_prevCmdTs[s]!==undefined) _showNewOrderNotif(s);
+          _prevCmdTs[s]=d.ts;
+        }
       }else{cmdOrders[s]=null;}
     }catch(e){cmdOrders[s]=null;}
   }));
@@ -1949,6 +2071,73 @@ async function loadCommandes(){
 </script>
 <script>
 // ── SÉCURITÉ ──
+var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+
+async function loadSecLog(){
+  var el=document.getElementById('sec-log');
+  if(!el)return;
+  try{
+    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
+    var json=await res.json();
+    var docs=(json.documents||[]);
+    var now=Date.now();
+    var sevenDays=7*24*3600*1000;
+    // Récupérer tous les appareils vus dans les 7 derniers jours
+    var entries=[];
+    docs.forEach(function(doc){
+      if(!doc.fields)return;
+      var f=doc.fields;
+      var ts=f.ts?parseInt(f.ts.integerValue):0;
+      if(!ts||now-ts>sevenDays)return;
+      entries.push({
+        devId:doc.name.split('/').pop(),
+        iface:f.iface?f.iface.stringValue:'?',
+        shop:f.shop?f.shop.stringValue:'',
+        userName:f.userName?f.userName.stringValue:'',
+        ts:ts,
+        device:f.device?f.device.stringValue:'',
+        browser:f.browser?f.browser.stringValue:'',
+        disabled:f.disabled&&f.disabled.booleanValue===true
+      });
+    });
+    entries.sort(function(a,b){return b.ts-a.ts;});
+    if(entries.length===0){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Aucune connexion récente</div>';return;}
+
+    // Grouper par jour
+    var byDay={};
+    entries.forEach(function(e){
+      var d=new Date(e.ts);
+      var dk=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+      if(!byDay[dk])byDay[dk]=[];
+      byDay[dk].push(e);
+    });
+
+    var html='';
+    Object.entries(byDay).forEach(function(kv){
+      var day=kv[0],list=kv[1];
+      html+='<div style="margin-bottom:12px;">'
+        +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px;">'+day+'</div>';
+      list.forEach(function(e){
+        var ifaceLabel={Commande:'📦','Hiro Prod':'🍱','Hiro Access':'👁','Hiro Labo':'🏭'}[e.iface]||e.iface;
+        var shopLabel=e.shop&&e.shop!=='prod'&&e.shop!=='access'&&e.shop!=='labo'?(' — '+e.shop.toUpperCase()):'';
+        var deviceStr=e.device?(e.device+(e.browser?' · '+e.browser:'')):'';
+        var timeStr=new Date(e.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+        html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:#fff;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;">'
+          +'<div style="font-size:12px;color:var(--text-muted);min-width:36px;">'+timeStr+'</div>'
+          +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:12px;font-weight:600;">'+(e.userName||'—')+shopLabel+' <span style="font-weight:400;color:var(--text-muted);">'+ifaceLabel+'</span></div>'
+          +(deviceStr?'<div style="font-size:10px;color:var(--text-muted);">'+deviceStr+'</div>':'')
+          +'</div>'
+          +(e.disabled?'<span style="font-size:9px;color:#e74c3c;font-weight:600;padding:2px 6px;background:#fde8e8;border-radius:10px;">Désactivé</span>':'')
+          +'</div>';
+      });
+      html+='</div>';
+    });
+    el.innerHTML=html;
+  }catch(e){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur: '+e.message+'</div>';}
+}
+
 var _PRESENCE_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
 var _CONFIG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
 var _SEC_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
@@ -2035,6 +2224,7 @@ async function loadSecurite(){
 
     if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
     el.innerHTML=html;
+    loadSecLog();
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 

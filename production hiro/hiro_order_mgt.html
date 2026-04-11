@@ -303,6 +303,19 @@ function delLine(pageId,idx){const el=document.getElementById('libre-row-'+pageI
 function updateCount(){const fixed=ALL_KEYS.reduce((s,k)=>s+(qty[k]||0),0);let libre=0;Object.values(libreItems).forEach(items=>items.forEach(i=>{libre+=(i.qty||0);}));document.getElementById('total-count').textContent=fixed+libre;}
 function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','plats','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
 async function sendOrder(){
+  // Vérifier limite horaire 19h30 NC
+  var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
+  if(_ncH>=19.5){
+    var _msg=document.createElement('div');
+    _msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
+    _msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div>'
+      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div>'
+      +'<div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div>'
+      +'<button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
+    document.body.appendChild(_msg);
+    return;
+  }
   const btn=document.getElementById('btn-send');btn.disabled=true;btn.textContent='Envoi...';
   const docId='order_'+ds(tomorrow)+'_'+SHOP;
   const fields={};
@@ -390,7 +403,19 @@ const PRODUCT_NAMES={
   pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
 };
 function editOrder(){
-  
+  // Vérifier limite horaire 19h30 heure NC (GMT+11)
+  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var ncHour=ncNow.getHours()+ncNow.getMinutes()/60;
+  if(ncHour>=19.5){
+    var msg=document.createElement('div');
+    msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
+    msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div>'
+      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px;">Modification impossible</div>'
+      +'<div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être modifiées après 19h30</div>'
+      +'<button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
+    document.body.appendChild(msg);
+    return;
+  }
   document.querySelector('.nav-tab').click();
 }
 
@@ -411,11 +436,23 @@ function showOfflineBanner(){
   if(!b){
     b=document.createElement('div');
     b.id='offline-banner';
-    b.style.cssText='position:fixed;bottom:80px;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;';
-    b.textContent='⚠️ Hors ligne — la commande sera envoyée dès le retour de la connexion';
+    b.style.cssText='position:fixed;bottom:80px;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;display:flex;align-items:center;justify-content:center;gap:8px;';
     document.body.appendChild(b);
   }
-  b.style.display='block';
+  var pending=_offlineQueue.length;
+  b.innerHTML='<span style="font-size:16px;">📵</span><span>Hors ligne'+(pending>0?' — commande en attente d\'envoi':' — les modifications seront sauvegardées')+'</span>';
+  b.style.background='#e67e22';
+  b.style.display='flex';
+}
+
+function showOnlineBanner(){
+  let b=document.getElementById('offline-banner');
+  if(!b){b=document.createElement('div');b.id='offline-banner';b.style.cssText='position:fixed;bottom:80px;left:0;right:0;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;display:flex;align-items:center;justify-content:center;gap:8px;';document.body.appendChild(b);}
+  b.innerHTML='<span style="font-size:16px;">✅</span><span>Connexion rétablie — commande envoyée !</span>';
+  b.style.background='#0d7a52';
+  b.style.color='#fff';
+  b.style.display='flex';
+  setTimeout(function(){b.style.display='none';},3000);
 }
 
 function hideOfflineBanner(){
@@ -427,17 +464,21 @@ async function syncQueue(){
   if(_offlineQueue.length===0) return;
   const queue=[..._offlineQueue];
   _offlineQueue=[];_saveQueue();
+  var allOk=true;
   for(const item of queue){
     try{
-      await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
+      const res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
+      if(!res.ok) throw new Error('HTTP '+res.status);
     }catch(e){
       _offlineQueue.push(item);_saveQueue();
+      allOk=false;
     }
   }
-  if(_offlineQueue.length===0) hideOfflineBanner();
+  if(allOk&&_offlineQueue.length===0) showOnlineBanner();
+  else showOfflineBanner();
 }
 
-window.addEventListener('online',()=>{hideOfflineBanner();syncQueue();});
+window.addEventListener('online',()=>{syncQueue();});
 window.addEventListener('offline',()=>showOfflineBanner());
 if(!navigator.onLine) showOfflineBanner();
 else if(_offlineQueue.length>0) syncQueue();
@@ -650,6 +691,19 @@ else {
   setInterval(_sendPing,30000);
 })();
 </script>
+
+
+// Verrouillage visuel après 19h30
+(function(){
+  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
+  if(ncH>=19.5){
+    var btn=document.getElementById('btn-send');
+    if(btn){btn.style.opacity='.4';btn.title='Commandes fermées après 19h30';}
+    var editBtn=document.querySelector('[onclick*="editOrder"]');
+    if(editBtn){editBtn.style.opacity='.4';editBtn.title='Modifications fermées après 19h30';}
+  }
+})();
 
 </body>
 </html>
@@ -937,54 +991,64 @@ var PROD_NAMES={
 function fmtTs(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
 
 function showValidationNotif(d){
-  // Update status banner
   var banner=document.getElementById('status-banner');
   var text=document.getElementById('status-text');
   if(banner){banner.className='status-banner sent';text.textContent='✓ Commande validée à '+fmtTs(d.validatedAt);}
 
-  // Build recap
   var el=document.getElementById('valid-notif');
   if(!el) return;
 
-  var rows='';
-  ALL_KEYS.forEach(function(k){
-    var orig=d[k]||0;
-    if(!orig) return;
-    var vqty=d['vqty_'+k];
-    var isRupt=d['rupt_'+k];
-    var display=vqty!==undefined?vqty:orig;
-    var changed=vqty!==undefined&&vqty!==orig;
-    var rowClass=isRupt?'rupture':changed?'changed':'';
-    rows+='<div class="valid-notif-row'+( rowClass?' '+rowClass:'')+'">'
-      +'<div class="valid-notif-qty" style="color:'+(isRupt?'#c0392b':changed?'#e67e22':'var(--text)')+';">'+(display||'—')+'</div>'
-      +'<div class="valid-notif-name">'+(PROD_NAMES[k]||k)+(isRupt?' — ⚠ Stock insuffisant':changed?' — <span class=\'valid-notif-orig\'>Demandé: '+orig+'</span>':'')+'</div>'
-      +'</div>';
+  var SECTIONS=[
+    {title:'Salade',keys:['bo','sin','thai','thon','plp','rouleaux','tataki']},
+    {title:'Riz & Poke',keys:['rizprod','pokethon','pokesaumon']},
+    {title:'Dessert',keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise']},
+    {title:'Tapas',keys:['gyoza','gnem','pnem','sesame','banhbao']}
+  ];
+
+  var hasRupture=ALL_KEYS.some(function(k){return d['rupt_'+k];});
+  var hasChanged=ALL_KEYS.some(function(k){var v=d['vqty_'+k];return v!==undefined&&v!==d[k];});
+
+  var sectionsHtml='';
+  SECTIONS.forEach(function(sec){
+    var rows='';
+    sec.keys.forEach(function(k){
+      var orig=d[k]||0;
+      if(!orig)return;
+      var vqty=d['vqty_'+k];
+      var isRupt=d['rupt_'+k];
+      var display=vqty!==undefined?vqty:orig;
+      var changed=vqty!==undefined&&vqty!==orig;
+      var rowClass=isRupt?'rupture':changed?'changed':'';
+      rows+='<div class="valid-notif-row'+(rowClass?' '+rowClass:'')+'">'
+        +'<div class="valid-notif-qty" style="color:'+(isRupt?'#c0392b':changed?'#e67e22':'var(--text)')+';">'+(display===0?'—':display)+'</div>'
+        +'<div class="valid-notif-name">'+(PROD_NAMES[k]||k)
+        +(isRupt?' <span style="color:#c0392b;font-size:11px;">⚠ Stock insuff.</span>'
+          :changed?' <span style="color:#e67e22;font-size:11px;">dem. '+orig+'</span>':'')
+        +'</div></div>';
+    });
+    if(rows) sectionsHtml+='<div class="valid-notif-section"><div class="valid-notif-section-title">'+sec.title+'</div>'+rows+'</div>';
   });
 
   // Libres
-  if(d.libre){try{
-    var lib=JSON.parse(d.libre);
-    Object.values(lib).forEach(function(items){
-      if(!Array.isArray(items)) return;
-      items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
-        rows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+i.name+'</div></div>';
-      });
-    });
-  }catch(e){}}
+  var libreRows='';
+  if(d.libre){try{var lib=JSON.parse(d.libre);Object.values(lib).forEach(function(items){if(!Array.isArray(items))return;items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+i.name+'</div></div>';});});}catch(e){}}
+  if(libreRows) sectionsHtml+='<div class="valid-notif-section"><div class="valid-notif-section-title">Autres</div>'+libreRows+'</div>';
 
-  el.innerHTML='<div class="valid-notif-header">'
-    +'<div class="valid-notif-title">✅ Commande validée</div>'
+  var alertBanner='';
+  if(hasRupture) alertBanner='<div style="background:#fde8e8;border:1px solid #e74c3c33;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:#c0392b;">⚠ Certains articles sont en rupture de stock</div>';
+  else if(hasChanged) alertBanner='<div style="background:#fef3e2;border:1px solid #e67e2233;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;color:#b07000;">ℹ Certaines quantités ont été ajustées</div>';
+
+  el.innerHTML='<div class="valid-notif-header" style="position:relative;">'
+    +'<div style="font-size:40px;margin-bottom:8px;">✅</div>'
+    +'<div class="valid-notif-title">Commande validée !</div>'
     +'<div class="valid-notif-times">'+SHOP_LABEL+' · Livraison '+fmtDate(tomorrow)+'<br>'
     +'Envoyée à '+fmtTs(d.ts)+' · Validée à '+fmtTs(d.validatedAt)+'</div>'
     +'</div>'
-    +'<div class="valid-notif-body">'
-    +'<div class="valid-notif-section"><div class="valid-notif-section-title">Récap commande validée</div>'+rows+'</div>'
-    +'<button class="valid-notif-back" onclick="document.getElementById(\'valid-notif\').classList.remove(\'show\')">← Retour</button>'
+    +'<div class="valid-notif-body">'+alertBanner+sectionsHtml
+    +'<button class="valid-notif-back" onclick="document.getElementById(\'valid-notif\').classList.remove(\'show\')">← Retour à la commande</button>'
     +'</div>';
 
   el.classList.add('show');
-
-  // Stop polling
   if(_validPollInterval){clearInterval(_validPollInterval);_validPollInterval=null;}
 }
 
