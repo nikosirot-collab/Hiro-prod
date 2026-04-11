@@ -1938,72 +1938,94 @@ var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8',acc
 
 function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
 
+var SEC_IFACE_ORDER=[
+  {key:'Hiro Prod',  label:'🍱 Hiro Prod',   color:'#1a1916'},
+  {key:'Hiro Access',label:'👁 Hiro Access',  color:'#555'},
+  {key:'Hiro Labo',  label:'🏭 Hiro Labo',   color:'#555'},
+  {key:'Commande',   label:'📦 Commandes',    color:'#1a5fa8'},
+];
+var SEC_SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',prod:'',access:'',labo:''};
+
 async function loadSecurite(){
   var el=document.getElementById('sec-devices');
-  if(!el) return;
+  if(!el)return;
   try{
     var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
     if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur de chargement</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
     var now=Date.now();
-    var online=[];
-    var offline=[];
+    var entries=[];
     docs.forEach(function(doc){
       if(!doc.fields)return;
       var f=doc.fields;
       var ts=f.ts?parseInt(f.ts.integerValue):0;
-      var devId=doc.name.split('/').pop();
-      var entry={
-        devId:devId,
+      if(!ts)return;
+      entries.push({
+        devId:doc.name.split('/').pop(),
         iface:f.iface?f.iface.stringValue:'?',
         shop:f.shop?f.shop.stringValue:'',
         userName:f.userName?f.userName.stringValue:'',
         ts:ts,
         disabled:f.disabled&&f.disabled.booleanValue===true,
-        ua:f.ua?f.ua.stringValue:''
-      };
-      if(ts>0&&(now-ts)<_NOW_ONLINE_MS) online.push(entry);
-      else if(ts>0) offline.push(entry);
+        isOnline:(now-ts)<_NOW_ONLINE_MS
+      });
     });
 
-    // Sort by ts desc
-    online.sort(function(a,b){return b.ts-a.ts;});
-    offline.sort(function(a,b){return b.ts-a.ts;});
+    // Grouper par interface
+    var groups={};
+    SEC_IFACE_ORDER.forEach(function(g){groups[g.key]=[];});
+    entries.forEach(function(e){
+      var k=e.iface;
+      if(!groups[k])groups[k]=[];
+      groups[k].push(e);
+    });
 
     var html='';
-    // Online
-    if(online.length>0){
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">🟢 En ligne ('+online.length+')</div>';
-      online.forEach(function(e){html+=secDevCard(e,true);});
-    }
-    // Offline recent
-    var recentOffline=offline.filter(function(e){return (now-e.ts)<3600000;}); // last hour
-    if(recentOffline.length>0){
-      html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:16px 0 8px;">⚫ Récemment déconnectés</div>';
-      recentOffline.forEach(function(e){html+=secDevCard(e,false);});
-    }
-    if(!html) html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
+    SEC_IFACE_ORDER.forEach(function(g){
+      var list=groups[g.key]||[];
+      // Trier : en ligne d'abord, puis par ts desc
+      list.sort(function(a,b){return (b.isOnline-a.isOnline)||b.ts-a.ts;});
+      var onlineCount=list.filter(function(e){return e.isOnline;}).length;
+
+      html+='<div style="margin-bottom:20px;">';
+      // Header groupe
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--border);">'
+        +'<span style="font-size:13px;font-weight:700;color:var(--text);">'+g.label+'</span>'
+        +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+(onlineCount>0?'#e4f5ee':'#f0f0f0')+';color:'+(onlineCount>0?'#0d7a52':'#999')+';font-weight:600;">'
+        +(onlineCount>0?onlineCount+' en ligne':'hors ligne')+'</span>'
+        +'</div>';
+
+      if(list.length===0){
+        html+='<div style="font-size:12px;color:var(--text-muted);padding:8px 4px;">Aucun appareil</div>';
+      } else {
+        list.forEach(function(e){html+=secDevCard(e);});
+      }
+      html+='</div>';
+    });
+
+    if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
     el.innerHTML=html;
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
-function secDevCard(e, isOnline){
-  var color=SHOP_COLORS[e.shop]||'#888';
-  var ago=Math.round((Date.now()-e.ts)/60000);
-  var agoStr=isOnline?(ago<1?'a l instant':'il y a '+ago+' min'):'il y a '+ago+' min';
-  var name=e.userName?(e.userName+' — '):'';
-  var iface=(IFACE_LABELS[e.iface]||e.iface)+(e.shop&&e.shop!=='prod'&&e.shop!=='access'&&e.shop!=='labo'?' ('+e.shop.toUpperCase()+')':'');
+function secDevCard(e){
+  var now=Date.now();
+  var ago=Math.round((now-e.ts)/60000);
+  var agoStr=e.isOnline?(ago<1?'à l\'instant':'il y a '+ago+' min'):'il y a '+ago+' min';
+  var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop.toUpperCase();
+  var nameStr=e.userName||'Appareil inconnu';
+  if(shopLabel)nameStr+=' — '+shopLabel;
   var disabledStyle=e.disabled?'opacity:.5;':'';
   var btnLabel=e.disabled?'Réactiver':'Désactiver';
   var btnColor=e.disabled?'#0d7a52':'#e74c3c';
-  return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;'+disabledStyle+'">'
-    +'<div style="width:10px;height:10px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>'
-    +'<div style="flex:1;">'
-    +'<div style="font-size:13px;font-weight:600;">'+name+iface+'</div>'
-    +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+agoStr+(e.disabled?' · <span style=\"color:#e74c3c;font-weight:600;\">Désactivé</span>':'')+'</div>'
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;'+disabledStyle+'">'
+    +'<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':'#bbb')+';"></div>'
+    +'<div style="flex:1;min-width:0;">'
+    +'<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+nameStr+'</div>'
+    +'<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">'+agoStr+(e.disabled?' · <span style="color:#e74c3c;font-weight:600;">Désactivé</span>':'')+'</div>'
     +'</div>'
-    +'<button onclick=\"secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')\" style=\"padding:5px 12px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:11px;font-weight:600;cursor:pointer;\">'+btnLabel+'</button>'
+    +'<button onclick="secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')" style="padding:5px 12px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
     +'</div>';
 }
 
