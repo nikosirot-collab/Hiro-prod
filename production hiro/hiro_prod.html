@@ -446,7 +446,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
     <div class="section">
       <div class="section-header"><span class="section-title">Quantité rolls</span></div>
       <div class="note-box no-print">
-        Dimanche = 0 rolls sauf mode fêtes · Rolls auto pour DSM/MGT/Paita (palier inférieur) · Saisie manuelle pour Ville et Asia
+        Dimanche = 0 rolls sauf mode fêtes · Rolls auto calculés (palier inférieur) · Modifiable manuellement pour tous les magasins · Valeur en orange = override manuel
       </div>
       <div class="tbl-wrap">
         <table>
@@ -1477,18 +1477,22 @@ function render() {
       <td class="${dc2}">${tamagoInp('ville')}</td>
     </tr>`;
 
-    // ROLLS
-    const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
+    // ROLLS — override manuel possible pour DSM/MGT/Paita
+    const getRollVal=(s)=>{const mk=dStr+'__r__'+s;return data[mk]!==undefined?data[mk]:getRolls(v[s],isDim,isFete);};
+    const arDsm=getRollVal('dsm'), arMgt=getRollVal('mgt'), arPaita=getRollVal('paita');
     const vR=getR(dStr,'ville'); const aR=getR(dStr,'asia');
     const villeR=vR!==undefined?vR:0; const asiaR=aR!==undefined?aR:0;
-    totRolls.dsm+=ar.dsm; totRolls.mgt+=ar.mgt; totRolls.paita+=ar.paita; totRolls.ville+=villeR; totRolls.asia+=asiaR;
-    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR+asiaR;
+    totRolls.dsm+=arDsm; totRolls.mgt+=arMgt; totRolls.paita+=arPaita; totRolls.ville+=villeR; totRolls.asia+=asiaR;
+    const totDayRolls=arDsm+arMgt+arPaita+villeR+asiaR;
+    // Style override : si valeur manuelle différente du calcul auto → orange
+    const autoDs=getRolls(v.dsm,isDim,isFete), autoMgt=getRolls(v.mgt,isDim,isFete), autoPaita=getRolls(v.paita,isDim,isFete);
+    const ovDs=data[dStr+'__r__dsm']!==undefined&&arDsm!==autoDs, ovMgt=data[dStr+'__r__mgt']!==undefined&&arMgt!==autoMgt, ovPaita=data[dStr+'__r__paita']!==undefined&&arPaita!==autoPaita;
 
     rollR+=`<tr>
       <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.dsm||'—'}</td>
-      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.mgt||'—'}</td>
-      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2} val-mono" style="font-weight:500">${ar.paita||'—'}</td>
+      <td class="${dc2} col-sep val-mono">${v.dsm||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${arDsm||''}" placeholder="${autoDs||0}" onchange="setR('${dStr}','dsm',this.value)" style="${ovDs?'color:#e67e22;border-color:#e67e22;':''}" title="Auto: ${autoDs}"></td>
+      <td class="${dc2} col-sep val-mono">${v.mgt||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${arMgt||''}" placeholder="${autoMgt||0}" onchange="setR('${dStr}','mgt',this.value)" style="${ovMgt?'color:#e67e22;border-color:#e67e22;':''}" title="Auto: ${autoMgt}"></td>
+      <td class="${dc2} col-sep val-mono">${v.paita||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${arPaita||''}" placeholder="${autoPaita||0}" onchange="setR('${dStr}','paita',this.value)" style="${ovPaita?'color:#e67e22;border-color:#e67e22;':''}" title="Auto: ${autoPaita}"></td>
       <td class="${dc2} col-sep val-mono">${v.ville||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${villeR||''}" placeholder="0" onchange="setR('${dStr}','ville',this.value)"></td>
       <td class="${dc2} col-sep val-mono">${v.asia||'—'}</td><td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="5" value="${asiaR||''}" placeholder="0" onchange="setR('${dStr}','asia',this.value)"></td>
       <td class="${dc2} col-sep val-mono" style="font-weight:600">${totDayRolls||'—'}</td>
