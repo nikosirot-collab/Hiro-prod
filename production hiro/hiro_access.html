@@ -1582,7 +1582,30 @@ if(!navigator.onLine){
         devId:{stringValue:_devId},
         userName:{stringValue:_pingName()},
         ts:{integerValue:Date.now()},
-        ua:{stringValue:navigator.userAgent.substr(0,80)}
+        ua:{stringValue:navigator.userAgent.substr(0,80)},
+        device:{stringValue:(function(){
+          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
+          var ua=navigator.userAgent;
+          if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
+          if(/iPhone/.test(ua)) return 'iPhone';
+          if(/Android/.test(ua)&&t&&w<768) return 'Android Phone';
+          if(/Android/.test(ua)&&t) return 'Android Tablet';
+          if(/Macintosh/.test(ua)) return 'Mac';
+          if(/Windows/.test(ua)) return 'PC Windows';
+          if(/Linux/.test(ua)) return 'Linux';
+          return 'Inconnu';
+        })()},
+        browser:{stringValue:(function(){
+          var ua=navigator.userAgent;
+          if(/CriOS/.test(ua)) return 'Chrome';
+          if(/FxiOS/.test(ua)) return 'Firefox';
+          if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) return 'Edge';
+          if(/OPR\//.test(ua)) return 'Opera';
+          if(/Chrome/.test(ua)) return 'Chrome';
+          if(/Firefox/.test(ua)) return 'Firefox';
+          if(/Safari/.test(ua)) return 'Safari';
+          return '';
+        })()}
       };
       // Check if disabled
       var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
@@ -1647,7 +1670,30 @@ if(!navigator.onLine){
         devId:{stringValue:_devId},
         userName:{stringValue:_pingName()},
         ts:{integerValue:Date.now()},
-        ua:{stringValue:navigator.userAgent.substr(0,80)}
+        ua:{stringValue:navigator.userAgent.substr(0,80)},
+        device:{stringValue:(function(){
+          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
+          var ua=navigator.userAgent;
+          if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
+          if(/iPhone/.test(ua)) return 'iPhone';
+          if(/Android/.test(ua)&&t&&w<768) return 'Android Phone';
+          if(/Android/.test(ua)&&t) return 'Android Tablet';
+          if(/Macintosh/.test(ua)) return 'Mac';
+          if(/Windows/.test(ua)) return 'PC Windows';
+          if(/Linux/.test(ua)) return 'Linux';
+          return 'Inconnu';
+        })()},
+        browser:{stringValue:(function(){
+          var ua=navigator.userAgent;
+          if(/CriOS/.test(ua)) return 'Chrome';
+          if(/FxiOS/.test(ua)) return 'Firefox';
+          if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) return 'Edge';
+          if(/OPR\//.test(ua)) return 'Opera';
+          if(/Chrome/.test(ua)) return 'Chrome';
+          if(/Firefox/.test(ua)) return 'Firefox';
+          if(/Safari/.test(ua)) return 'Safari';
+          return '';
+        })()}
       };
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
         method:'PATCH',

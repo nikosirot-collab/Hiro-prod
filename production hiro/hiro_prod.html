@@ -1968,7 +1968,9 @@ async function loadSecurite(){
         userName:f.userName?f.userName.stringValue:'',
         ts:ts,
         disabled:f.disabled&&f.disabled.booleanValue===true,
-        isOnline:(now-ts)<_NOW_ONLINE_MS
+        isOnline:(now-ts)<_NOW_ONLINE_MS,
+        device:f.device?f.device.stringValue:'',
+        browser:f.browser?f.browser.stringValue:''
       });
     });
 
@@ -2011,8 +2013,7 @@ async function loadSecurite(){
 
 function parseUA(ua){
   if(!ua) return 'Appareil inconnu';
-  var device='', browser='', os='';
-  // Device
+  var device='', browser='';
   if(/iPad/.test(ua)) device='iPad';
   else if(/iPhone/.test(ua)) device='iPhone';
   else if(/Android/.test(ua)&&/Mobile/.test(ua)) device='Android Phone';
@@ -2021,15 +2022,13 @@ function parseUA(ua){
   else if(/Windows/.test(ua)) device='PC Windows';
   else if(/Linux/.test(ua)) device='Linux';
   else device='Appareil inconnu';
-  // Browser
   if(/CriOS/.test(ua)) browser='Chrome';
   else if(/FxiOS/.test(ua)) browser='Firefox';
   else if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) browser='Edge';
-  else if(/OPR\//.test(ua)||/Opera/.test(ua)) browser='Opera';
+  else if(/OPR\//.test(ua)) browser='Opera';
   else if(/Chrome/.test(ua)) browser='Chrome';
   else if(/Firefox/.test(ua)) browser='Firefox';
   else if(/Safari/.test(ua)) browser='Safari';
-  else browser='';
   return device+(browser?' · '+browser:'');
 }
 
@@ -2039,7 +2038,10 @@ function secDevCard(e){
   var agoStr=e.isOnline?(ago<1?'à l\'instant':'il y a '+ago+' min'):'il y a '+ago+' min';
   var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop.toUpperCase();
   var nameStr=e.userName||(shopLabel||'');
-  var deviceStr=parseUA(e.ua||'');
+  // Utiliser device+browser s'ils existent, sinon fallback sur parseUA
+  var deviceStr = (e.device&&e.browser) ? e.device+' · '+e.browser
+                : e.device ? e.device
+                : parseUA(e.ua||'');
   var disabledStyle=e.disabled?'opacity:.5;':'';
   var btnLabel=e.disabled?'Réactiver':'Désactiver';
   var btnColor=e.disabled?'#0d7a52':'#e74c3c';
@@ -2116,7 +2118,10 @@ function secPollStop(){
           return;
         }
       }
-      var fields={iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},userName:{stringValue:_pingName()},ts:{integerValue:Date.now()},ua:{stringValue:navigator.userAgent.substr(0,80)}};
+      var _ua=navigator.userAgent;
+      var _dev=(function(){var w=window.screen.width,t='ontouchstart' in window;if(/iPad/.test(_ua)||(t&&w>=768))return 'iPad';if(/iPhone/.test(_ua))return 'iPhone';if(/Android/.test(_ua)&&t&&w<768)return 'Android Phone';if(/Android/.test(_ua)&&t)return 'Android Tablet';if(/Macintosh/.test(_ua))return 'Mac';if(/Windows/.test(_ua))return 'PC Windows';if(/Linux/.test(_ua))return 'Linux';return 'Inconnu';})();
+      var _bro=(function(){if(/CriOS/.test(_ua))return 'Chrome';if(/FxiOS/.test(_ua))return 'Firefox';if(/EdgiOS/.test(_ua)||/Edg\//.test(_ua))return 'Edge';if(/OPR\//.test(_ua))return 'Opera';if(/Chrome/.test(_ua))return 'Chrome';if(/Firefox/.test(_ua))return 'Firefox';if(/Safari/.test(_ua))return 'Safari';return '';})();
+      var fields={iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},userName:{stringValue:_pingName()},ts:{integerValue:Date.now()},ua:{stringValue:_ua.substr(0,80)},device:{stringValue:_dev},browser:{stringValue:_bro}};
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
