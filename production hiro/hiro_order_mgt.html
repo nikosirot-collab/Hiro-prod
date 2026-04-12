@@ -483,27 +483,6 @@ window.addEventListener('offline',()=>showOfflineBanner());
 if(!navigator.onLine) showOfflineBanner();
 else if(_offlineQueue.length>0) syncQueue();
 
-// Override sendOrder pour gérer le mode hors ligne
-const _sendOrder_orig=window.sendOrder;
-window.sendOrder=async function(){
-  if(!navigator.onLine){
-    const docId='order_'+ds(tomorrow)+'_'+SHOP;
-    const fields={};
-    fields['shop']={stringValue:SHOP};
-    fields['shopLabel']={stringValue:SHOP_LABEL};
-    fields['date']={stringValue:ds(tomorrow)};
-    fields['ts']={integerValue:Date.now()};
-    ALL_KEYS.forEach(k=>{fields[k]={integerValue:qty[k]||0};});
-    fields['libre']={stringValue:JSON.stringify(libreItems)};
-    const url=_API+'/'+docId+'?key='+_KEY;
-    _offlineQueue.push({url,fields});
-    _saveQueue();
-    showOfflineBanner();
-    updateStatusBanner(true);document.querySelector('.nav-tab').click();
-    return;
-  }
-  return _sendOrder_orig();
-};
 </script>
 
 <div id="valid-notif" class="valid-notif"></div>
@@ -692,17 +671,47 @@ else {
 })();
 </script>
 
-
 <script>
-// Verrouillage visuel après 19h30
+// ── SENDORDER CONSOLIDÉ ──
 (function(){
-  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-  var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
-  if(ncH>=19.5){
+  var _realSend = window.sendOrder; // fonction originale
+
+  window.sendOrder = async function(){
+    // 1. Vérif limite horaire 19h30
+    var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+    var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
+    if(ncH>=19.5){
+      var _msg=document.createElement('div');
+      _msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
+      _msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
+      document.body.appendChild(_msg);
+      return;
+    }
+
+    // 3. Mode hors ligne
+    if(!navigator.onLine){
+      var docId='order_'+ds(tomorrow)+'_'+SHOP;
+      var fields={};
+      fields['shop']={stringValue:SHOP};fields['shopLabel']={stringValue:SHOP_LABEL};
+      fields['date']={stringValue:ds(tomorrow)};fields['ts']={integerValue:Date.now()};
+      ALL_KEYS.forEach(function(k){fields[k]={integerValue:qty[k]||0};});
+      fields['libre']={stringValue:JSON.stringify(libreItems)};
+      var url=_API+'/'+docId+'?key='+_KEY;
+      _offlineQueue.push({url:url,fields:fields});_saveQueue();
+      showOfflineBanner();updateStatusBanner(true);document.querySelector('.nav-tab').click();
+      return;
+    }
+
+    // 4. Envoi normal
+    return _realSend();
+  };
+
+  // Verrouillage visuel
+  var ncNow2=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var ncH2=ncNow2.getHours()+ncNow2.getMinutes()/60;
+  if(ncH2>=19.5){
     var btn=document.getElementById('btn-send');
     if(btn){btn.style.opacity='.4';btn.title='Commandes fermées après 19h30';}
-    var editBtn=document.querySelector('[onclick*="editOrder"]');
-    if(editBtn){editBtn.style.opacity='.4';editBtn.title='Modifications fermées après 19h30';}
   }
 })();
 </script>
@@ -948,11 +957,6 @@ window.loadExistingOrder=async function(){
 };
 
 // Met à jour la bannière après envoi
-var _origSendOrder=window.sendOrder;
-window.sendOrder=async function(){
-  if(_origSendOrder)await _origSendOrder.apply(this,arguments);
-  updateStatusBanner(true);
-};
 
 </script>
 <script>
@@ -1054,19 +1058,12 @@ function showValidationNotif(d){
   if(_validPollInterval){clearInterval(_validPollInterval);_validPollInterval=null;}
 }
 
-// Start polling when order is sent
-var _origSendOrderOld=window.sendOrder;
-window.sendOrder=async function(){
-  if(_origSendOrderOld) await _origSendOrderOld.apply(this,arguments);
-  startValidationPolling();
-};
-
+// Start polling au démarrage
 function startValidationPolling(){
   if(_validPollInterval) clearInterval(_validPollInterval);
   _validPollInterval=setInterval(checkValidationStatus,8000);
 }
 
-// Check on load too
 checkValidationStatus();
 setTimeout(startValidationPolling,2000);
 

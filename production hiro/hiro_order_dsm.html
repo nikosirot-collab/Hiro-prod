@@ -223,523 +223,67 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
     <div id="recap-content" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;"></div>
   </div>
 </div>
-<script>
-const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
-const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production';
-const SHOP='dsm';
-const SHOP_LABEL='DSM';
-const ACCENT='#1a5fa8';
-const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
-
-function getTomorrow(){
-  var now=new Date();
-  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
-  var dow=nc.getDay(); // 0=dim, 6=sam
-  if(dow===6){nc.setDate(nc.getDate()+2);} // sam -> lundi
-  else if(dow===0){nc.setDate(nc.getDate()+1);} // dim -> lundi
-  else{nc.setDate(nc.getDate()+1);} // lun-ven -> lendemain
-  return nc;
-}
-function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
-function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
-
-const tomorrow=getTomorrow();
-document.getElementById('date-badge').textContent='Livraison '+fmtDate(tomorrow);
-document.getElementById('success-date').textContent=fmtDate(tomorrow);
-
-let qty={},libreItems={},lineCount={};
-
-// Charge le riz depuis Hiro Prod
-async function loadRiz(){
-  try{
-    const monday=mondayOf(tomorrow);
-    const docId='week_'+ds(monday);
-    const res=await fetch(_API_PROD+'/'+docId+'?key='+_KEY);
-    if(!res.ok)return;
-    const json=await res.json();
-    if(!json.fields)return;
-    // Décode les clés (-- -> __)
-    const data={};
-    Object.entries(json.fields).forEach(([k,v])=>{
-      const dk=k.replace(/--/g,'__');
-      if(v.integerValue!==undefined)data[dk]=parseInt(v.integerValue);
-    });
-    const dStr=ds(tomorrow);
-    const rizVal=data[dStr+'__'+SHOP]||0;
-    if(rizVal>0){
-      const el=document.getElementById('q-rizprod');
-      if(el){
-        el.value=rizVal;
-        el.placeholder=rizVal;
-        el.classList.add('active');
-        el.style.color=ACCENT;
-        el.style.borderColor=ACCENT;
-        qty['rizprod']=rizVal;
-        updateCount();
-      }
-    }
-  }catch(e){console.log('Riz load error:',e);}
-}
-
-function showPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');el.classList.add('active');}
-function adj(key,delta){const el=document.getElementById('q-'+key);const v=Math.max(0,(parseInt(el.value)||0)+delta);el.value=v;qty[key]=v;el.classList.toggle('active',v>0);el.style.color=v>0?ACCENT:'';el.style.borderColor=v>0?ACCENT:'';updateCount();}
-function setQ(key,val){const v=Math.max(0,parseInt(val)||0);qty[key]=v;const el=document.getElementById('q-'+key);if(el){el.classList.toggle('active',v>0);el.style.color=v>0?ACCENT:'';el.style.borderColor=v>0?ACCENT:''}updateCount();}
-function addLine(pageId){
-  if(!libreItems[pageId])libreItems[pageId]=[];
-  if(!lineCount[pageId])lineCount[pageId]=0;
-  const idx=lineCount[pageId]++;
-  const container=document.getElementById('libre-lines-'+pageId);
-  const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;
-  const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.placeholder='Article...';nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};
-  const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value='1';qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};
-  const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};
-  div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);
-  container.appendChild(div);libreItems[pageId].push({name:'',qty:1});nameInp.focus();updateCount();
-}
-function updateLibre(pageId,idx,field,val){if(!libreItems[pageId]||!libreItems[pageId][idx])return;libreItems[pageId][idx][field]=field==='qty'?Math.max(0,parseInt(val)||0):val;updateCount();}
-function delLine(pageId,idx){const el=document.getElementById('libre-row-'+pageId+'-'+idx);if(el)el.remove();if(libreItems[pageId]&&libreItems[pageId][idx])libreItems[pageId][idx]={name:'',qty:0};updateCount();}
-function updateCount(){const fixed=ALL_KEYS.reduce((s,k)=>s+(qty[k]||0),0);let libre=0;Object.values(libreItems).forEach(items=>items.forEach(i=>{libre+=(i.qty||0);}));document.getElementById('total-count').textContent=fixed+libre;}
-function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','plats','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
-async function sendOrder(){
-  // Vérifier limite horaire 19h30 NC
-  var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-  var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
-  if(_ncH>=19.5){
-    var _msg=document.createElement('div');
-    _msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
-    _msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div>'
-      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div>'
-      +'<div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div>'
-      +'<button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
-    document.body.appendChild(_msg);
-    return;
-  }
-  const btn=document.getElementById('btn-send');btn.disabled=true;btn.textContent='Envoi...';
-  const docId='order_'+ds(tomorrow)+'_'+SHOP;
-  const fields={};
-  fields['shop']={stringValue:SHOP};fields['shopLabel']={stringValue:SHOP_LABEL};
-  fields['date']={stringValue:ds(tomorrow)};fields['ts']={integerValue:Date.now()};
-  ALL_KEYS.forEach(k=>{fields[k]={integerValue:qty[k]||0};});
-  fields['libre']={stringValue:JSON.stringify(libreItems)};
-  try{
-    const res=await fetch(_API+'/'+docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);updateStatusBanner(true);document.querySelector('.nav-tab').click();}
-    else{alert('Erreur lors de l envoi. Reessayez.');}
-  }catch(e){alert('Pas de connexion. Reessayez.');}
-  btn.disabled=false;btn.textContent='Envoyer →';
-}
-var SALADE_RECAP_KEYS=["bo", "sin", "thon", "thai", "plp", "rouleaux", "tataki"];
-var SALADE_RECAP_NAMES={"bo": "Bun Bo", "sin": "Singapour", "thon": "Thon marine", "thai": "Thai", "plp": "Poulpe", "rouleaux": "Rouleau", "tataki": "Tataki"};
-var DESSERT_RECAP_KEYS=["tiramisu", "ananas", "poebanane", "poecitrouille", "cheesemangue", "cheeseframboise"];
-var DESSERT_RECAP_NAMES={"tiramisu": "Tiramisu", "ananas": "Ananas", "poebanane": "Poe banane", "poecitrouille": "Poe citrouille", "cheesemangue": "Cheese mangue", "cheeseframboise": "Cheese framboise"};
-var TAPAS_RECAP_KEYS=["gyoza", "gnem", "pnem", "sesame", "banhbao"];
-var TAPAS_RECAP_NAMES={"gyoza": "Gyoza", "gnem": "Grand nem", "pnem": "Petit nem", "sesame": "Sesame", "banhbao": "Banh Bao"};
-
-loadRiz();
-loadExistingOrder();
-
-// Charge la commande existante au démarrage
-async function loadExistingOrder(){
-  try{
-    const docId='order_'+ds(tomorrow)+'_'+SHOP;
-    const res=await fetch(_API+'/'+docId+'?key='+_KEY);
-    if(!res.ok) return;
-    const json=await res.json();
-    if(!json.fields) return;
-    const d={};
-    Object.entries(json.fields).forEach(([k,v])=>{
-      if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
-      else if(v.stringValue!==undefined) d[k]=v.stringValue;
-    });
-    if(!d.ts) return;
-    // Rempli les quantités
-    ALL_KEYS.forEach(k=>{
-      if(d[k]!==undefined&&d[k]>0){
-        qty[k]=d[k];
-        const el=document.getElementById('q-'+k);
-        if(el){el.value=d[k];el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}
-      }
-    });
-    // Rempli les items libres
-    if(d.libre){
-      try{
-        const libre=JSON.parse(d.libre);
-        Object.entries(libre).forEach(([pageId,items])=>{
-          items.forEach(item=>{
-            if(item.name&&item.qty>0) addLineWithData(pageId,item.name,item.qty);
-          });
-        });
-      }catch(e){}
-    }
-    updateCount();
-    showRecap(d);
-    
-  }catch(e){}
-}
-
-function addLineWithData(pageId,name,qty){
-  if(!libreItems[pageId]) libreItems[pageId]=[];
-  if(!lineCount[pageId]) lineCount[pageId]=0;
-  const idx=lineCount[pageId]++;
-  const container=document.getElementById('libre-lines-'+pageId);
-  if(!container) return;
-  const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;
-  const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.placeholder='Article...';nameInp.value=name;nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};
-  const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value=qty;qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};
-  const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};
-  div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);
-  container.appendChild(div);
-  libreItems[pageId].push({name:name,qty:qty});
-}
-
-const PRODUCT_NAMES={
-  bo:'Bun Bo',sin:'Singapour',thai:'Thai',thon:'Thon marine',plp:'Poulpe',
-  rouleaux:'Rouleaux',rizprod:'Riz',pokethon:'Poke thon',pokesaumon:'Poke saumon',
-  tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',
-  poecitrouille:'Poe citrouille',cheesemangue:'Cheesecake mangue',
-  cheeseframboise:'Cheesecake framboise',gyoza:'Gyoza',gnem:'Grand nem',
-  pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
-};
-function editOrder(){
-  // Vérifier limite horaire 19h30 heure NC (GMT+11)
-  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-  var ncHour=ncNow.getHours()+ncNow.getMinutes()/60;
-  if(ncHour>=19.5){
-    var msg=document.createElement('div');
-    msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
-    msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div>'
-      +'<div style="font-size:15px;font-weight:700;margin-bottom:6px;">Modification impossible</div>'
-      +'<div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être modifiées après 19h30</div>'
-      +'<button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:var(--text);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
-    document.body.appendChild(msg);
-    return;
-  }
-  document.querySelector('.nav-tab').click();
-}
-
-</script>
 
 <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js')
-    .catch(e=>console.log('SW:',e));
-}
-
-let _offlineQueue=JSON.parse(localStorage.getItem('hiro-order-queue')||'[]');
-
-function _saveQueue(){localStorage.setItem('hiro-order-queue',JSON.stringify(_offlineQueue));}
-
-function showOfflineBanner(){
-  let b=document.getElementById('offline-banner');
-  if(!b){
-    b=document.createElement('div');
-    b.id='offline-banner';
-    b.style.cssText='position:fixed;bottom:80px;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;display:flex;align-items:center;justify-content:center;gap:8px;';
-    document.body.appendChild(b);
-  }
-  var pending=_offlineQueue.length;
-  b.innerHTML='<span style="font-size:16px;">📵</span><span>Hors ligne'+(pending>0?' — commande en attente d\'envoi':' — les modifications seront sauvegardées')+'</span>';
-  b.style.background='#e67e22';
-  b.style.display='flex';
-}
-
-function showOnlineBanner(){
-  let b=document.getElementById('offline-banner');
-  if(!b){b=document.createElement('div');b.id='offline-banner';b.style.cssText='position:fixed;bottom:80px;left:0;right:0;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;display:flex;align-items:center;justify-content:center;gap:8px;';document.body.appendChild(b);}
-  b.innerHTML='<span style="font-size:16px;">✅</span><span>Connexion rétablie — commande envoyée !</span>';
-  b.style.background='#0d7a52';
-  b.style.color='#fff';
-  b.style.display='flex';
-  setTimeout(function(){b.style.display='none';},3000);
-}
-
-function hideOfflineBanner(){
-  const b=document.getElementById('offline-banner');
-  if(b) b.style.display='none';
-}
-
-async function syncQueue(){
-  if(_offlineQueue.length===0) return;
-  const queue=[..._offlineQueue];
-  _offlineQueue=[];_saveQueue();
-  var allOk=true;
-  for(const item of queue){
-    try{
-      const res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-    }catch(e){
-      _offlineQueue.push(item);_saveQueue();
-      allOk=false;
-    }
-  }
-  if(allOk&&_offlineQueue.length===0) showOnlineBanner();
-  else showOfflineBanner();
-}
-
-window.addEventListener('online',()=>{syncQueue();});
-window.addEventListener('offline',()=>showOfflineBanner());
-if(!navigator.onLine) showOfflineBanner();
-else if(_offlineQueue.length>0) syncQueue();
-
-// Override sendOrder pour gérer le mode hors ligne
-const _sendOrder_orig=window.sendOrder;
-window.sendOrder=async function(){
-  if(!navigator.onLine){
-    const docId='order_'+ds(tomorrow)+'_'+SHOP;
-    const fields={};
-    fields['shop']={stringValue:SHOP};
-    fields['shopLabel']={stringValue:SHOP_LABEL};
-    fields['date']={stringValue:ds(tomorrow)};
-    fields['ts']={integerValue:Date.now()};
-    ALL_KEYS.forEach(k=>{fields[k]={integerValue:qty[k]||0};});
-    fields['libre']={stringValue:JSON.stringify(libreItems)};
-    const url=_API+'/'+docId+'?key='+_KEY;
-    _offlineQueue.push({url,fields});
-    _saveQueue();
-    showOfflineBanner();
-    updateStatusBanner(true);document.querySelector('.nav-tab').click();
-    return;
-  }
-  return _sendOrder_orig();
-};
-</script>
-
-<div id="valid-notif" class="valid-notif"></div>
-
-<script>
-// ── PRESENCE / PING ──
+// ── SENDORDER CONSOLIDÉ ──
 (function(){
-  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
-  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-  var _IFACE='Commande';
-  var _SHOP='dsm';
+  var _realSend = window.sendOrder; // fonction originale
 
-  // Identifiant unique appareil (persistant)
-  var _devId=localStorage.getItem('hiro-dev-id');
-  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
+  window.sendOrder = async function(){
+    // 1. Vérif limite horaire 19h30
+    var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+    var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
+    if(ncH>=19.5){
+      var _msg=document.createElement('div');
+      _msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
+      _msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
+      document.body.appendChild(_msg);
+      return;
+    }
 
-  function _pingName(){
-    var n=localStorage.getItem('hiro-user-name')||'';
-    return n;
-  }
+    // 2. Vérif prénom (DSM/Paita)
+    var name=localStorage.getItem('hiro-user-name')||'';
+    if(!name.trim()){
+      var modal=document.getElementById('name-modal');
+      if(modal){modal.style.display='flex';document.getElementById('name-modal-input').focus();}
+      return;
+    }
 
-  async function _sendPing(){
-    try{
-      var now=new Date();
-      var fields={
-        iface:{stringValue:_IFACE},
-        shop:{stringValue:_SHOP},
-        devId:{stringValue:_devId},
-        userName:{stringValue:_pingName()},
-        ts:{integerValue:Date.now()},
-        ua:{stringValue:navigator.userAgent.substr(0,80)},
-        device:{stringValue:(function(){
-          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
-          var ua=navigator.userAgent;
-          if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
-          if(/iPhone/.test(ua)) return 'iPhone';
-          if(/Android/.test(ua)&&t&&w<768) return 'Android Phone';
-          if(/Android/.test(ua)&&t) return 'Android Tablet';
-          if(/Macintosh/.test(ua)) return 'Mac';
-          if(/Windows/.test(ua)) return 'PC Windows';
-          if(/Linux/.test(ua)) return 'Linux';
-          return 'Inconnu';
-        })()},
-        browser:{stringValue:(function(){
-          var ua=navigator.userAgent;
-          if(/CriOS/.test(ua)) return 'Chrome';
-          if(/FxiOS/.test(ua)) return 'Firefox';
-          if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) return 'Edge';
-          if(/OPR\//.test(ua)) return 'Opera';
-          if(/Chrome/.test(ua)) return 'Chrome';
-          if(/Firefox/.test(ua)) return 'Firefox';
-          if(/Safari/.test(ua)) return 'Safari';
-          return '';
-        })()}
-      };
-      // Check if disabled
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){
-        var chkJson=await chkRes.json();
-        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          // Force logout
-          sessionStorage.clear();
-          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
-          return;
-        }
-      }
-      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({fields:fields})
-      });
-    }catch(e){}
-  }
+    // 3. Mode hors ligne
+    if(!navigator.onLine){
+      var docId='order_'+ds(tomorrow)+'_'+SHOP;
+      var fields={};
+      fields['shop']={stringValue:SHOP};fields['shopLabel']={stringValue:SHOP_LABEL};
+      fields['date']={stringValue:ds(tomorrow)};fields['ts']={integerValue:Date.now()};
+      ALL_KEYS.forEach(function(k){fields[k]={integerValue:qty[k]||0};});
+      fields['libre']={stringValue:JSON.stringify(libreItems)};
+      var url=_API+'/'+docId+'?key='+_KEY;
+      _offlineQueue.push({url:url,fields:fields});_saveQueue();
+      showOfflineBanner();updateStatusBanner(true);document.querySelector('.nav-tab').click();
+      return;
+    }
 
-  _sendPing();
-  setInterval(_sendPing,30000);
-  window.addEventListener('beforeunload',function(){
-    try{
-      fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
-        method:'PATCH',keepalive:true,
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({fields:{iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},ts:{integerValue:0}}})
-      });
-    }catch(e){}
-  });
-})();
-</script>
+    // 4. Envoi normal
+    return _realSend();
+  };
 
-<script>
-function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+  // Confirmée depuis modale prénom
+  window.confirmNameAndSend=function(){
+    var inp=document.getElementById('name-modal-input');
+    var name=inp?inp.value.trim():'';
+    if(!name){var err=document.getElementById('name-modal-error');if(err)err.style.display='block';if(inp)inp.focus();return;}
+    var err=document.getElementById('name-modal-error');if(err)err.style.display='none';
+    localStorage.setItem('hiro-user-name',name);
+    var modal=document.getElementById('name-modal');if(modal)modal.style.display='none';
+    window.sendOrder();
+  };
 
-async function _getOrderPwd(){
-  try{
-    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');
-    if(res.ok){var j=await res.json();if(j.fields&&j.fields.hash)return j.fields.hash.stringValue;}
-  }catch(e){}
-  return '1af5a601'; // fallback
-}
-
-async function checkOrderPwd(){
-  var nm=document.getElementById('name-input');
-  var v=document.getElementById('pwd-input').value;
-  var hash=await _getOrderPwd();
-  if(_h(v)===hash){
-    sessionStorage.setItem('hiro-order-ok','1');
-    document.getElementById('login-screen').style.display='none';
-  }else{
-    document.getElementById('pwd-error').style.display='block';
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').focus();
-  }
-}
-
-if(sessionStorage.getItem('hiro-order-ok')==='1') document.getElementById('login-screen').style.display='none';
-else {
-  // Load async - fetch pwd in background
-  _getOrderPwd().then(function(){});
-}
-</script>
-
-<script>
-(function(){
-  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
-  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-  var _IFACE='Commande';
-  var _SHOP='dsm';
-
-  var _devId=localStorage.getItem('hiro-dev-id');
-  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
-
-  function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
-
-  async function _sendPing(){
-    try{
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){
-        var chkJson=await chkRes.json();
-        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          sessionStorage.clear();
-          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
-          return;
-        }
-      }
-      var fields={
-        iface:{stringValue:_IFACE},
-        shop:{stringValue:_SHOP},
-        devId:{stringValue:_devId},
-        userName:{stringValue:_pingName()},
-        ts:{integerValue:Date.now()},
-        ua:{stringValue:navigator.userAgent.substr(0,80)},
-        device:{stringValue:(function(){
-          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
-          var ua=navigator.userAgent;
-          if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
-          if(/iPhone/.test(ua)) return 'iPhone';
-          if(/Android/.test(ua)&&t&&w<768) return 'Android Phone';
-          if(/Android/.test(ua)&&t) return 'Android Tablet';
-          if(/Macintosh/.test(ua)) return 'Mac';
-          if(/Windows/.test(ua)) return 'PC Windows';
-          if(/Linux/.test(ua)) return 'Linux';
-          return 'Inconnu';
-        })()},
-        browser:{stringValue:(function(){
-          var ua=navigator.userAgent;
-          if(/CriOS/.test(ua)) return 'Chrome';
-          if(/FxiOS/.test(ua)) return 'Firefox';
-          if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) return 'Edge';
-          if(/OPR\//.test(ua)) return 'Opera';
-          if(/Chrome/.test(ua)) return 'Chrome';
-          if(/Firefox/.test(ua)) return 'Firefox';
-          if(/Safari/.test(ua)) return 'Safari';
-          return '';
-        })()}
-      };
-      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({fields:fields})
-      });
-    }catch(e){}
-  }
-
-  _sendPing();
-  setInterval(_sendPing,30000);
-})();
-</script>
-
-
-<!-- Modale prénom -->
-<div id="name-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:28px 24px;max-width:280px;width:90%;text-align:center;">
-    <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Votre prénom</div>
-    <div style="font-size:12px;color:#888;margin-bottom:16px;">Requis pour envoyer la commande</div>
-    <input id="name-modal-input" type="text" placeholder="Prénom" style="width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:15px;margin-bottom:12px;outline:none;" onkeydown="if(event.key==='Enter')confirmNameAndSend()">
-    <div id="name-modal-error" style="color:#e74c3c;font-size:12px;margin-bottom:8px;display:none;">Veuillez saisir votre prénom</div>
-    <button onclick="confirmNameAndSend()" style="width:100%;padding:10px;background:#1a5fa8;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Envoyer →</button>
-    <button onclick="document.getElementById('name-modal').style.display='none'" style="width:100%;padding:8px;background:none;border:none;color:#888;font-size:13px;cursor:pointer;margin-top:6px;">Annuler</button>
-  </div>
-</div>
-
-<script>
-// Intercepter sendOrder pour demander le prénom si absent
-var _sendOrder_base = window.sendOrder;
-window.sendOrder = async function(){
-  var name = localStorage.getItem('hiro-user-name')||'';
-  if(!name.trim()){
-    var modal = document.getElementById('name-modal');
-    modal.style.display = 'flex';
-    document.getElementById('name-modal-input').focus();
-    return;
-  }
-  return _sendOrder_base();
-};
-
-function confirmNameAndSend(){
-  var inp = document.getElementById('name-modal-input');
-  var name = inp.value.trim();
-  if(!name){document.getElementById('name-modal-error').style.display='block';inp.focus();return;}
-  document.getElementById('name-modal-error').style.display='none';
-  localStorage.setItem('hiro-user-name', name);
-  document.getElementById('name-modal').style.display='none';
-  _sendOrder_base();
-}
-</script>
-
-
-<script>
-// Verrouillage visuel après 19h30
-(function(){
-  var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-  var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
-  if(ncH>=19.5){
+  // Verrouillage visuel
+  var ncNow2=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var ncH2=ncNow2.getHours()+ncNow2.getMinutes()/60;
+  if(ncH2>=19.5){
     var btn=document.getElementById('btn-send');
     if(btn){btn.style.opacity='.4';btn.title='Commandes fermées après 19h30';}
-    var editBtn=document.querySelector('[onclick*="editOrder"]');
-    if(editBtn){editBtn.style.opacity='.4';editBtn.title='Modifications fermées après 19h30';}
   }
 })();
 </script>
@@ -985,11 +529,6 @@ window.loadExistingOrder=async function(){
 };
 
 // Met à jour la bannière après envoi
-var _origSendOrder=window.sendOrder;
-window.sendOrder=async function(){
-  if(_origSendOrder)await _origSendOrder.apply(this,arguments);
-  updateStatusBanner(true);
-};
 
 </script>
 <script>
@@ -1091,19 +630,12 @@ function showValidationNotif(d){
   if(_validPollInterval){clearInterval(_validPollInterval);_validPollInterval=null;}
 }
 
-// Start polling when order is sent
-var _origSendOrderOld=window.sendOrder;
-window.sendOrder=async function(){
-  if(_origSendOrderOld) await _origSendOrderOld.apply(this,arguments);
-  startValidationPolling();
-};
-
+// Start polling au démarrage
 function startValidationPolling(){
   if(_validPollInterval) clearInterval(_validPollInterval);
   _validPollInterval=setInterval(checkValidationStatus,8000);
 }
 
-// Check on load too
 checkValidationStatus();
 setTimeout(startValidationPolling,2000);
 
