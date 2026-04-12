@@ -1529,7 +1529,7 @@ async function laboFetch(){
           else if(v.stringValue!==undefined)d2[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d2[k]=v.booleanValue;
         });
-        if(d2.ts) laboOrders[docShop]=d2;
+        laboOrders[docShop]=d2;
       });
     }
   }catch(e){console.error('laboFetch',e);}

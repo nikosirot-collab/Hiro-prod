@@ -2044,7 +2044,7 @@ async function loadCommandes(){
           else if(v.stringValue!==undefined)d[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
-        if(d.ts) cmdOrders[docShop]=d;
+        cmdOrders[docShop]=d;
         // Détecter nouvelle commande
         if(d.ts&&d.ts!==_prevCmdTs[docShop]){
           if(_prevCmdTs[docShop]!==undefined) _showNewOrderNotif(docShop);
