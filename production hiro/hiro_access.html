@@ -1364,7 +1364,7 @@ function laboRenderFiche(shop,order){
   ensureValidCSS();
   var color=LABO_COLORS[shop];
   var label=LABO_LABELS[shop];
-  if(!order||!order.ts){
+  if(!order||((!order.ts)&&order.status!=='validated')){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
       +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
@@ -1392,12 +1392,13 @@ function laboRenderFiche(shop,order){
   }
 
   var saladeRows=LABO_SALADE.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var _v=function(k){return order[k]!==undefined?order[k]:(isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);};
   var rightItems=[
     {key:'f_t',name:'Thon',val:laboGetFish(shop,'t')},{key:'f_s',name:'Saumon',val:laboGetFish(shop,'s')},
     {key:'f_a',name:'Aburi',val:laboGetFish(shop,'a')},{key:'f_tamago',name:'Tamago',val:laboGetFish(shop,'tamago')},
-    {key:'rizprod',name:'Riz',val:laboGetRiz(shop)},{key:'pokethon',name:'Poke thon',val:order.pokethon||0},
-    {key:'pokesaumon',name:'Poke saumon',val:order.pokesaumon||0},{key:'roll',name:'Roll',val:laboGetRoll(shop)},
-    {key:'gyoza',name:'Gyoza',val:shop==='ville'?0:order.gyoza||0}
+    {key:'rizprod',name:'Riz',val:laboGetRiz(shop)},{key:'pokethon',name:'Poke thon',val:_v('pokethon')},
+    {key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')},{key:'roll',name:'Roll',val:laboGetRoll(shop)},
+    {key:'gyoza',name:'Gyoza',val:shop==='ville'?0:_v('gyoza')}
   ];
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
   var dessertRows=LABO_DESSERT.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
@@ -1433,7 +1434,7 @@ function laboRenderFiche(shop,order){
 
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
   var statusBadge=isValidated
-    ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu '+fmtT(order.ts)+' · Valide '+fmtT(order.validatedAt)+'</div><span class="valid-status-validated">Validee</span></div>'
+    ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">'+(order.ts?'Recu '+fmtT(order.ts)+' · ':'')+'Valide '+fmtT(order.validatedAt)+'</div><span class="valid-status-validated">Validee</span></div>'
     :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu a '+fmtT(order.ts)+'</div><span class="valid-status-pending">A valider</span></div>';
 
   var topSection=shop==='ville'
@@ -1467,7 +1468,7 @@ function laboRender(){
   if(laboCurrentShop==='resume'){
     var cards='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">';
     LABO_SHOPS.forEach(function(s){
-      var o=laboOrders[s];var ok=o&&o.ts;
+      var o=laboOrders[s];var ok=o&&(o.ts||o.status==='validated');
       var isVal=ok&&o.status==='validated';
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;">'
         +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
