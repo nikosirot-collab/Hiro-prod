@@ -1262,6 +1262,10 @@ function laboGetRiz(shop){
 function laboGetRoll(shop){
   var dStr=laboDs(laboDate);
   var isDim=laboDate.getDay()===0;
+  // Valeur manuelle override (clé __r__shop)
+  var manualKey=dStr+'__r__'+shop;
+  if(laboFishData[manualKey]!==undefined) return laboFishData[manualKey];
+  // Sinon calcul auto depuis le riz
   var riz=laboFishData[dStr+'__'+shop]||0;
   return getRolls(riz,isDim)||0;
 }
