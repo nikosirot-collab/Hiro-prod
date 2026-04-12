@@ -1,3 +1,17 @@
+
+function getTomorrow(){
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var dow=nc.getDay();
+  if(dow===6){nc.setDate(nc.getDate()+2);}
+  else if(dow===0){nc.setDate(nc.getDate()+1);}
+  else{nc.setDate(nc.getDate()+1);}
+  return nc;
+}
+function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
+const tomorrow=getTomorrow();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -199,8 +213,7 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 <div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
 
 <div id="page-recap" class="page"><div class="main" style="padding-top:12px;">
-  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">Semaine en cours</div>
-  <div id="recap-week-content"><div class="histo-loading">Cliquez sur cet onglet pour charger</div></div>
+  <div id="recap-order-content"><div class="histo-loading">Chargement...</div></div>
 </div></div>
 <div id="page-histo" class="page"><div class="main" style="padding-top:12px;">
   <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">Historique par semaine</div>
@@ -423,24 +436,38 @@ function toggleDay(id){
 }
 
 async function loadRecap(){
-  var today=getTodayNC();
-  var monday=getMondayNC(today);
-  var el=document.getElementById('recap-week-content');
+  var el=document.getElementById('recap-order-content');
   if(!el)return;
   el.innerHTML='<div class="histo-loading">Chargement...</div>';
-  var html='';
-  for(var i=0;i<6;i++){
-    var d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
-    var dStr=dsLocal(d);
-    var dayName=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i];
-    var order=null;
-    try{
-      var res=await fetch(_API+'/order_'+dStr+'_dsm?key='+_KEY);
-      if(res.ok){var json=await res.json();if(json.fields){var od={};Object.entries(json.fields).forEach(function(e){var k=e[0],v=e[1];if(v.integerValue!==undefined)od[k]=parseInt(v.integerValue);else if(v.stringValue!==undefined)od[k]=v.stringValue;});order=od;}}
-    }catch(e){}
-    html+=renderDayOrder(order,dStr,dayName,'dsm'==='ville');
-  }
-  el.innerHTML=html||'<div class="histo-loading">Aucune commande cette semaine</div>';
+  try{
+    var dStr=ds(tomorrow);
+    var res=await fetch(_API+'/order_'+dStr+'_'+SHOP+'?key='+_KEY);
+    if(!res.ok){el.innerHTML='<div class="histo-loading">Aucune commande pour le '+fmtDate(tomorrow)+'</div>';return;}
+    var json=await res.json();
+    if(!json.fields){el.innerHTML='<div class="histo-loading">Aucune commande pour le '+fmtDate(tomorrow)+'</div>';return;}
+    var d={};
+    Object.entries(json.fields).forEach(function(e){
+      var k=e[0],v=e[1];
+      if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
+      else if(v.stringValue!==undefined)d[k]=v.stringValue;
+      else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
+    });
+    // Afficher le recap de la commande
+    var isVal=d.status==='validated';
+    var statusBadge=isVal
+      ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
+      :'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#fef3e2;color:#b07000;font-size:12px;font-weight:600;">⏳ En attente de validation</span>';
+    var getVal=function(k){return d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:0);};
+    showRecap(d);
+    el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+      +'<div style="font-size:14px;font-weight:700;">Livraison '+fmtDate(tomorrow)+'</div>'
+      +statusBadge+'</div>'
+      +'<div id="recap-order-inner"></div>';
+    showRecap(d);
+    var inner=document.getElementById('recap-order-inner');
+    var rc=document.getElementById('recap-content');
+    if(inner&&rc)inner.innerHTML=rc.innerHTML;
+  }catch(e){el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';}
 }
 
 // HISTORIQUE
