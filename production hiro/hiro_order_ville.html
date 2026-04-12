@@ -239,6 +239,11 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 </tbody></table></div></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Autre article</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
 <div id="page-plats" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Plats chauds</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Gyoza</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gyoza',-1)">&#8722;</button><input class="qty-inp" id="q-gyoza" type="number" min="0" value="0" onchange="setQ('gyoza',this.value)"><button class="qty-btn" onclick="adj('gyoza',1)">+</button></div></td></tr><tr><td class="td-product">Siu Mai</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('siumai',-1)">&#8722;</button><input class="qty-inp" id="q-siumai" type="number" min="0" value="0" onchange="setQ('siumai',this.value)"><button class="qty-btn" onclick="adj('siumai',1)">+</button></div></td></tr></tbody></table></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Autres plats</span></div><div id="libre-lines-plats" class="libre-lines"></div><button class="btn-add-line" data-page="plats" onclick="addLine(this.dataset.page)">+ Ajouter un plat</button></div></div></div></div>
 <div id="page-recap" class="page"><div class="main" style="padding-top:12px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+    <button onclick="recapChangeDay(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">←</button>
+    <div id="recap-date-nav" style="flex:1;text-align:center;font-size:13px;font-weight:600;text-transform:capitalize;"></div>
+    <button onclick="recapChangeDay(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">→</button>
+  </div>
   <div id="recap-order-content"><div class="histo-loading">Chargement...</div></div>
 </div></div>
 <div id="page-histo" class="page"><div class="main" style="padding-top:12px;">
@@ -898,12 +903,41 @@ function toggleDay(id){
   if(b)b.classList.toggle('open');
 }
 
+
+// ── Navigation date récap ──
+var _recapDate = null;
+function _initRecapDate(){
+  if(!_recapDate) _recapDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+  return _recapDate;
+}
+function recapChangeDay(d){
+  _initRecapDate();
+  _recapDate.setDate(_recapDate.getDate()+d);
+  // Vérifier si c'est le jour de tomorrow
+  var isToday=_recapDs(_recapDate)===ds(tomorrow);
+  var btn=document.getElementById('btn-send');
+  if(btn){
+    if(isToday){
+      // Restaurer selon le statut réel (loadRecap va charger et mettre à jour)
+      btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+    }else{
+      btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+    }
+  }
+  loadRecap();
+}
+function _recapDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function _recapFmt(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+
 async function loadRecap(){
   var el=document.getElementById('recap-order-content');
   if(!el)return;
+  _initRecapDate();
+  var navEl=document.getElementById('recap-date-nav');
+  if(navEl) navEl.textContent=_recapFmt(_recapDate);
   el.innerHTML='<div class="histo-loading">Chargement...</div>';
   try{
-    var dStr=ds(tomorrow);
+    var dStr=_recapDs(_recapDate);
     var res=await fetch(_API+'/order_'+dStr+'_'+SHOP+'?key='+_KEY);
     if(!res.ok){el.innerHTML='<div class="histo-loading">Aucune commande pour le '+fmtDate(tomorrow)+'</div>';return;}
     var json=await res.json();
@@ -947,6 +981,16 @@ async function loadRecap(){
     var statusBadge=isVal
       ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
       :'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#fef3e2;color:#b07000;font-size:12px;font-weight:600;">⏳ En attente</span>';
+    // Mettre à jour le bouton selon le jour et le statut
+    var _isTomorrow=_recapDs(_recapDate)===ds(tomorrow);
+    var btn=document.getElementById('btn-send');
+    if(btn){
+      if(_isTomorrow&&(d.ts||d.status)){
+        btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};
+      }else{
+        btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+      }
+    }
 
     el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
       +'<div style="font-size:14px;font-weight:700;">Livraison '+fmtDate(tomorrow)+'</div>'
@@ -1026,12 +1070,15 @@ function updateStatusBanner(hasOrder){
   var banner=document.getElementById('status-banner');
   var text=document.getElementById('status-text');
   if(!banner||!text)return;
+  var btn=document.getElementById('btn-send');
   if(hasOrder){
     banner.className='status-banner sent';
     text.textContent='✓ Commande envoyée pour le '+fmtDate(tomorrow);
+    if(btn){btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};}
   }else{
     banner.className='status-banner pending';
     text.textContent='⚠ Commande non envoyée pour le '+fmtDate(tomorrow);
+    if(btn){btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};}
   }
 }
 
