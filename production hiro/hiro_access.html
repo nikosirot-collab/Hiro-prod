@@ -205,7 +205,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('poisson',this)">Poisson</div>
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
-  <div class="nav-tab" onclick="showPage('labo',this)">Labo</div>
+  <div class="nav-tab" onclick="showPage('labo',this)">Commande</div>
   <div class="nav-tab" onclick="showPage('recap',this)">Récap</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
@@ -1178,6 +1178,8 @@ var _ORDERS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/data
 var laboDate=(function(){
   var d=new Date(TODAY_NC);
   var dow=d.getDay();
+  // Lundi : afficher aujourd'hui (commandes du week-end pour lundi)
+  if(dow===1){return d;}
   if(dow===6){d.setDate(d.getDate()+2);}
   else if(dow===0){d.setDate(d.getDate()+1);}
   else{d.setDate(d.getDate()+1);}
@@ -1244,16 +1246,24 @@ function laboGetFish(shop,field){
   if(field==='tamago'){
     var dow=laboDate.getDay();
     var di=dow===0?6:dow-1;
-    return data[key]!==undefined?data[key]:getTamago(shop,di);
+    return laboFishData[key]!==undefined?laboFishData[key]:getTamago(shop,di);
   }
-  var fd=getFish(shop,getV(dStr,shop));
-  return data[key]!==undefined?data[key]:(fd?fd[field]||0:0);
+  // Chercher dans laboFishData d'abord, puis calculer depuis le riz
+  if(laboFishData[key]!==undefined) return laboFishData[key];
+  var rizKey=dStr+'__'+shop;
+  var riz=laboFishData[rizKey]||0;
+  var fd=getFish(shop,riz);
+  return fd?fd[field]||0:0;
 }
-function laboGetRiz(shop){return getV(laboDs(laboDate),shop)||0;}
+function laboGetRiz(shop){
+  var dStr=laboDs(laboDate);
+  return laboFishData[dStr+'__'+shop]||0;
+}
 function laboGetRoll(shop){
   var dStr=laboDs(laboDate);
   var isDim=laboDate.getDay()===0;
-  return getRolls(getV(dStr,shop),isDim)||0;
+  var riz=laboFishData[dStr+'__'+shop]||0;
+  return getRolls(riz,isDim)||0;
 }
 
 // ── VALIDATION ──
@@ -1506,7 +1516,8 @@ async function laboFetchFish(){
     if(res.ok){
       var json=await res.json();
       if(json.fields)Object.entries(json.fields).forEach(function(e){
-        if(e[1].integerValue!==undefined)laboFishData[e[0].replace(/--/g,'__')]=parseInt(e[1].integerValue);
+        var dk=e[0].replace(/--/g,'__');
+        if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
       });
     }
   }catch(e){}
@@ -1514,7 +1525,8 @@ async function laboFetchFish(){
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  // Lister tous les docs et filtrer par date
+  // Charger en parallèle : commandes + données prod (poisson/riz)
+  await Promise.all([laboFetchFish(), (async function(){
   try{
     var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
     if(listRes.ok){
@@ -1540,6 +1552,7 @@ async function laboFetch(){
       });
     }
   }catch(e){console.error('laboFetch',e);}
+  })()]);
   laboRender();
 }
 
