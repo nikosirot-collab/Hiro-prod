@@ -331,6 +331,16 @@ function showRecapOverlay(d){
 }
 
 async function sendOrder(){
+  // Vérif 19h30
+  var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
+  if(_ncH>=19.5){var _m=document.createElement('div');_m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';_m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(_m);return;}
+  // Vérif prénom
+  var _name=localStorage.getItem('hiro-user-name')||'';
+  if(!_name.trim()){var _modal=document.getElementById('name-modal');if(_modal){_modal.style.display='flex';document.getElementById('name-modal-input').focus();}return;}
+  // Mode hors ligne
+  if(!navigator.onLine){var _docId='order_'+ds(tomorrow)+'_'+SHOP;var _fields={};_fields['shop']={stringValue:SHOP};_fields['shopLabel']={stringValue:SHOP_LABEL};_fields['date']={stringValue:ds(tomorrow)};_fields['ts']={integerValue:Date.now()};ALL_KEYS.forEach(function(k){_fields[k]={integerValue:qty[k]||0};});_fields['libre']={stringValue:JSON.stringify(libreItems)};_offlineQueue.push({url:_API+'/'+_docId+'?key='+_KEY,fields:_fields});_saveQueue();showOfflineBanner();updateStatusBanner(true);document.querySelector('.nav-tab').click();return;}
+  // Envoi
   const btn=document.getElementById('btn-send');btn.disabled=true;btn.textContent='Envoi...';
   const docId='order_'+ds(tomorrow)+'_'+SHOP;
   const fields={};
@@ -344,6 +354,16 @@ async function sendOrder(){
     else{alert('Erreur lors de l envoi. Reessayez.');}
   }catch(e){alert('Pas de connexion. Reessayez.');}
   btn.disabled=false;btn.textContent='Envoyer →';
+}
+
+function confirmNameAndSend(){
+  var inp=document.getElementById('name-modal-input');
+  var name=inp?inp.value.trim():'';
+  if(!name){var err=document.getElementById('name-modal-error');if(err)err.style.display='block';if(inp)inp.focus();return;}
+  var err=document.getElementById('name-modal-error');if(err)err.style.display='none';
+  localStorage.setItem('hiro-user-name',name);
+  var modal=document.getElementById('name-modal');if(modal)modal.style.display='none';
+  sendOrder();
 }
 
 async function loadExistingOrder(){
@@ -371,70 +391,6 @@ async function loadExistingOrder(){
 
 loadRiz();
 loadExistingOrder();
-</script>
-
-<script>
-// ── SENDORDER CONSOLIDÉ ──
-(function(){
-  var _realSend = window.sendOrder; // fonction originale
-
-  window.sendOrder = async function(){
-    // 1. Vérif limite horaire 19h30
-    var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-    var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
-    if(ncH>=19.5){
-      var _msg=document.createElement('div');
-      _msg.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';
-      _msg.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 19h30</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';
-      document.body.appendChild(_msg);
-      return;
-    }
-
-    // 2. Vérif prénom (DSM/Paita)
-    var name=localStorage.getItem('hiro-user-name')||'';
-    if(!name.trim()){
-      var modal=document.getElementById('name-modal');
-      if(modal){modal.style.display='flex';document.getElementById('name-modal-input').focus();}
-      return;
-    }
-
-    // 3. Mode hors ligne
-    if(!navigator.onLine){
-      var docId='order_'+ds(tomorrow)+'_'+SHOP;
-      var fields={};
-      fields['shop']={stringValue:SHOP};fields['shopLabel']={stringValue:SHOP_LABEL};
-      fields['date']={stringValue:ds(tomorrow)};fields['ts']={integerValue:Date.now()};
-      ALL_KEYS.forEach(function(k){fields[k]={integerValue:qty[k]||0};});
-      fields['libre']={stringValue:JSON.stringify(libreItems)};
-      var url=_API+'/'+docId+'?key='+_KEY;
-      _offlineQueue.push({url:url,fields:fields});_saveQueue();
-      showOfflineBanner();updateStatusBanner(true);document.querySelector('.nav-tab').click();
-      return;
-    }
-
-    // 4. Envoi normal
-    return _realSend();
-  };
-
-  // Confirmée depuis modale prénom
-  window.confirmNameAndSend=function(){
-    var inp=document.getElementById('name-modal-input');
-    var name=inp?inp.value.trim():'';
-    if(!name){var err=document.getElementById('name-modal-error');if(err)err.style.display='block';if(inp)inp.focus();return;}
-    var err=document.getElementById('name-modal-error');if(err)err.style.display='none';
-    localStorage.setItem('hiro-user-name',name);
-    var modal=document.getElementById('name-modal');if(modal)modal.style.display='none';
-    window.sendOrder();
-  };
-
-  // Verrouillage visuel
-  var ncNow2=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
-  var ncH2=ncNow2.getHours()+ncNow2.getMinutes()/60;
-  if(ncH2>=19.5){
-    var btn=document.getElementById('btn-send');
-    if(btn){btn.style.opacity='.4';btn.title='Commandes fermées après 19h30';}
-  }
-})();
 </script>
 
 <script>
