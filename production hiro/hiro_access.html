@@ -1507,21 +1507,32 @@ async function laboFetchFish(){
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  await Promise.all(LABO_SHOPS.map(async function(s){
-    try{
-      var res=await fetch(_ORDERS_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
-      if(res.ok){
-        var json=await res.json();var d2={};
-        if(json.fields)Object.entries(json.fields).forEach(function(e){
+  // Lister tous les docs et filtrer par date
+  try{
+    var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
+    if(listRes.ok){
+      var listJson=await listRes.json();
+      var docs=listJson.documents||[];
+      LABO_SHOPS.forEach(function(s){laboOrders[s]=null;});
+      docs.forEach(function(doc){
+        var name=doc.name.split('/').pop();
+        var parts=name.split('_');
+        if(parts.length<3) return;
+        var docDate=parts[1];
+        var docShop=parts[2];
+        if(docDate!==dStr) return;
+        if(!LABO_SHOPS.includes(docShop)) return;
+        var d2={};
+        if(doc.fields)Object.entries(doc.fields).forEach(function(e){
           var k=e[0],v=e[1];
           if(v.integerValue!==undefined)d2[k]=parseInt(v.integerValue);
           else if(v.stringValue!==undefined)d2[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d2[k]=v.booleanValue;
         });
-        laboOrders[s]=d2;
-      }
-    }catch(e){}
-  }));
+        if(d2.ts) laboOrders[docShop]=d2;
+      });
+    }
+  }catch(e){console.error('laboFetch',e);}
   laboRender();
 }
 

@@ -2020,26 +2020,39 @@ async function loadCommandes(){
   document.getElementById('cmd-date-label').textContent=cmdFmt(cmdDate);
   el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
   var dStr=cmdDs(cmdDate);
-  await Promise.all(_CMD_SHOPS.map(async function(s){
-    try{
-      var res=await fetch(_CMD_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
-      if(res.ok){
-        var json=await res.json();var d={};
-        if(json.fields)Object.entries(json.fields).forEach(function(e){
+
+  // Lister tous les docs de hiro-orders et filtrer par date
+  try{
+    var listRes=await fetch(_CMD_API+'?key='+_KEY);
+    if(listRes.ok){
+      var listJson=await listRes.json();
+      var docs=listJson.documents||[];
+      // Réinitialiser
+      _CMD_SHOPS.forEach(function(s){cmdOrders[s]=null;});
+      docs.forEach(function(doc){
+        var name=doc.name.split('/').pop(); // ex: order_2026-04-13_mgt
+        var parts=name.split('_'); // ['order','2026-04-13','mgt']
+        if(parts.length<3) return;
+        var docDate=parts[1];
+        var docShop=parts[2];
+        if(docDate!==dStr) return;
+        if(!_CMD_SHOPS.includes(docShop)) return;
+        var d={};
+        if(doc.fields)Object.entries(doc.fields).forEach(function(e){
           var k=e[0],v=e[1];
           if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
           else if(v.stringValue!==undefined)d[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
-        cmdOrders[s]=d.ts?d:null;
+        if(d.ts) cmdOrders[docShop]=d;
         // Détecter nouvelle commande
-        if(d.ts&&d.ts!==_prevCmdTs[s]){
-          if(_prevCmdTs[s]!==undefined) _showNewOrderNotif(s);
-          _prevCmdTs[s]=d.ts;
+        if(d.ts&&d.ts!==_prevCmdTs[docShop]){
+          if(_prevCmdTs[docShop]!==undefined) _showNewOrderNotif(docShop);
+          _prevCmdTs[docShop]=d.ts;
         }
-      }else{cmdOrders[s]=null;}
-    }catch(e){cmdOrders[s]=null;}
-  }));
+      });
+    }
+  }catch(e){console.error('loadCommandes',e);}
 
   // ── Alertes commandes manquantes ──
   var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
