@@ -1,17 +1,3 @@
-
-function getTomorrow(){
-  var now=new Date();
-  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
-  var dow=nc.getDay();
-  if(dow===6){nc.setDate(nc.getDate()+2);}
-  else if(dow===0){nc.setDate(nc.getDate()+1);}
-  else{nc.setDate(nc.getDate()+1);}
-  return nc;
-}
-function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
-function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
-const tomorrow=getTomorrow();
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -176,6 +162,22 @@ async function checkOrderPwd(){
 }
 if(sessionStorage.getItem('hiro-order-ok')==='1') document.getElementById('login-screen').style.display='none';
 else{_getOrderPwd().then(function(){});}
+</script>
+
+<script>
+function getTomorrow(){
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var dow=nc.getDay();
+  if(dow===6){nc.setDate(nc.getDate()+2);}
+  else if(dow===0){nc.setDate(nc.getDate()+1);}
+  else{nc.setDate(nc.getDate()+1);}
+  return nc;
+}
+function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
+function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
+const tomorrow=getTomorrow();
 </script>
 </div>
 
