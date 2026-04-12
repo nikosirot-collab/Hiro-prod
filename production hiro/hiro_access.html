@@ -1431,11 +1431,13 @@ function laboRenderFiche(shop,order){
       if(val>0) chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
     });
     // Articles libres CHR
-    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+    var _libreStr=order.libre||order.vlibre||'';
+    if(_libreStr){try{var lc=JSON.parse(_libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
     if(chrContent) chrRows=chrContent;
   }else{
     // Autres magasins: uniquement articles libres
-    if(order.libre){try{var lc2=JSON.parse(order.libre);if(lc2.chr){var ci=lc2.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}}catch(e){}}
+    var _libreStr2=order.libre||order.vlibre||'';
+    if(_libreStr2){try{var lc2=JSON.parse(_libreStr2);if(lc2.chr){var ci=lc2.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';}).join('');}}catch(e){}}
   }
 
   // Plats chauds Ville
