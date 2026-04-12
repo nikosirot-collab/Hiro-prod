@@ -1886,7 +1886,7 @@ function cmdRenderFiche(shop, order){
   var color=_CMD_COLORS[shop];
   var label=_CMD_LABELS[shop];
 
-  if(!order||!order.ts){
+  if(!order||((!order.ts)&&order.status!=='validated')){
     return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
       +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
@@ -1895,19 +1895,27 @@ function cmdRenderFiche(shop, order){
   }
 
   var isVal=order.status==='validated';
+  // Pour une commande validée, utiliser vqty_ si le champ original est absent
+  var getVal=function(key){
+    if(order[key]!==undefined) return order[key];
+    if(isVal&&order['vqty_'+key]!==undefined) return order['vqty_'+key];
+    return 0;
+  };
+
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
 
   // Salade
-  var saladeRows=_CMD_SALADE.map(function(p){return cmdRow(p.name,order[p.key]||0);}).join('');
+  var saladeRows=_CMD_SALADE.map(function(p){return cmdRow(p.name,getVal(p.key));}).join('');
   // Riz/Poke
-  var midRows=cmdRow('Riz',order.rizprod||0)+cmdRow('Poke thon',order.pokethon||0)+cmdRow('Poke saumon',order.pokesaumon||0);
+  var midRows=cmdRow('Riz',getVal('rizprod'))+cmdRow('Poke thon',getVal('pokethon'))+cmdRow('Poke saumon',getVal('pokesaumon'));
   // Dessert
-  var dessertRows=_CMD_DESSERT.map(function(p){return cmdRow(p.name,order[p.key]||0);}).join('');
-  if(order.libre){try{var lt=JSON.parse(order.libre);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  var dessertRows=_CMD_DESSERT.map(function(p){return cmdRow(p.name,getVal(p.key));}).join('');
+  var libreStr=order.libre||order.vlibre||'';
+  if(libreStr){try{var lt=JSON.parse(libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   // Tapas
   var tapasKeys=shop==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
   var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
-  var tapasRows=tapasKeys.map(function(k){return cmdRow(tapasNames[k],order[k]||0);}).join('');
+  var tapasRows=tapasKeys.map(function(k){return cmdRow(tapasNames[k],getVal(k));}).join('');
   // CHR
   var chrContent='';
   if(shop==='ville'){
