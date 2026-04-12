@@ -163,6 +163,20 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
     <button onclick="checkOrderPwd()" style="width:100%;padding:10px;background:#1a5fa8;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Connexion</button>
     <div id="pwd-error" style="color:#e74c3c;font-size:12px;margin-top:10px;display:none;">Mot de passe incorrect</div>
   </div>
+<script>
+function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+async function _getOrderPwd(){
+  try{var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');if(res.ok){var j=await res.json();if(j.fields&&j.fields.hash)return j.fields.hash.stringValue;}}catch(e){}return '1af5a601';
+}
+async function checkOrderPwd(){
+  var v=document.getElementById('pwd-input').value;
+  var hash=await _getOrderPwd();
+  if(_h(v)===hash){sessionStorage.setItem('hiro-order-ok','1');document.getElementById('login-screen').style.display='none';}
+  else{document.getElementById('pwd-error').style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();}
+}
+if(sessionStorage.getItem('hiro-order-ok')==='1') document.getElementById('login-screen').style.display='none';
+else{_getOrderPwd().then(function(){});}
+</script>
 </div>
 
 <header class="app-header">
