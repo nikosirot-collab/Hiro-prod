@@ -929,8 +929,20 @@ async function loadRecap(){
     var libreStr=d.libre||d.vlibre||'';
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
-    var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
+
+    // Plats chauds (Ville uniquement)
+    var platsRows='';
+    platsRows+=getV('gyoza')>0?rR('Gyoza',getV('gyoza')):'';
+    platsRows+=getV('siumai')>0?rR('Siu Mai',getV('siumai')):'';
+    if(libreStr){try{var lp2=JSON.parse(libreStr);if(lp2.plats){lp2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+=rR(i.name,i.qty);});}}catch(e){}}
+    if(!platsRows) platsRows='<div class="recap-row"><div class="recap-qty zero">—</div><div class="recap-name zero">Aucun</div></div>';
+
+    // CHR fixes (qty > 0)
+    var CHR_KEYS_NAMES={'chr_farce_wonton':'FARCE wonton','chr_concombres':'Concombres','chr_carottes':'Carottes','chr_oignons_secs':'Oignons secs','chr_oignons_verts':'Oignons verts','chr_ail':'Ail','chr_vinaigre_blanc':'Vinaigre blanc','chr_nuoc_mam':'Nuoc mam','chr_vetsin':'Vetsin','chr_poivre':'Poivre','chr_maggie':'Maggie','chr_sel':'Sel','chr_citron':'Citron','chr_curry_japonais':'Curry japonais','chr_curry':'Curry','chr_soyou_poisson':'Soyou poisson','chr_soyou_sachet_rouge':'Soyou sachet rouge','chr_soyou_yamasa_bouteilles':'Soyou YAMASA','chr_wasabi':'WASABI','chr_gingembre':'GINGEMBRE','chr_navet':'Navet','chr_panko':'Panko','chr_nori':'Nori','chr_sesames_grilles':'Sésames grillés','chr_sauce_cacahuete':'Sauce cacahuète','chr_sauce_huitres':'Sauce huîtres','chr_sauce_bbq':'Sauce BBQ','chr_ketchup':'KETCHUP','chr_sweet_chili':'SWEET CHILI','chr_huile_sesames':'HUILE SÉSAMES','chr_beurre':'Beurre','chr_oeufs':'Oeufs','chr_bull_dog_teriyaki':'Bull dog teriyaki','chr_mirin':'Mirin','chr_bombe_graisse':'BOMBE GRAISSE','chr_ito_sugar_free_600_ml':'Ito sugar free 600ml','chr_ito_sugar_free_300ml':'Ito sugar free 300ml','chr_ito_lychee':'Ito lychee','chr_ito_peach':'Ito peach','chr_ito_citron':'Ito citron'};
+    var chrRows='';
+    Object.entries(CHR_KEYS_NAMES).forEach(function(e){var v=getV(e[0]);if(v>0)chrRows+=rR(e[1],v);});
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+=rR(i.name,i.qty);});}}catch(e){}}
+    if(!chrRows) chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
 
     var statusBadge=isVal
       ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
@@ -944,9 +956,10 @@ async function loadRecap(){
       +'<div class="recap-col recap-col-left"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
       +'<div class="recap-col"><div class="recap-col-title">Riz / Poke</div>'+rightRows+'</div>'
       +'</div>'
-      +'<div class="recap-bottom">'
+      +'<div class="recap-bottom" style="grid-template-columns:1fr 1fr 1fr 1fr;">'
       +'<div class="recap-bottom-col"><div class="recap-col-title">Dessert</div>'+dessertRows+'</div>'
       +'<div class="recap-bottom-col"><div class="recap-col-title">Tapas</div>'+tapasRows+'</div>'
+      +'<div class="recap-bottom-col"><div class="recap-col-title">Plats chauds</div>'+platsRows+'</div>'
       +'<div class="recap-bottom-col"><div class="recap-col-title">CHR</div>'+chrRows+'</div>'
       +'</div></div>';
   }catch(e){el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';}

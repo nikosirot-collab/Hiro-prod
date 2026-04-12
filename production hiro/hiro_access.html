@@ -1427,7 +1427,7 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     // Articles fixes avec quantite > 0
     LABO_CHR_KEYS.forEach(function(k){
-      var val=order[k]||0;
+      var val=_v(k);
       if(val>0) chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
     });
     // Articles libres CHR
@@ -1442,9 +1442,11 @@ function laboRenderFiche(shop,order){
   var platsColRows='';
   if(shop==='ville'){
     var allPlats=[];
-    if(order.gyoza)allPlats.push({key:'gyoza',name:'Gyoza',val:order.gyoza});
-    if(order.siumai)allPlats.push({key:'siumai',name:'Siu Mai',val:order.siumai});
-    try{if(order.libre){var lpl=JSON.parse(order.libre);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty});});}}catch(e){}
+    var gyozaV=_v('gyoza');var siumaiV=_v('siumai');
+    if(gyozaV>0)allPlats.push({key:'gyoza',name:'Gyoza',val:gyozaV});
+    if(siumaiV>0)allPlats.push({key:'siumai',name:'Siu Mai',val:siumaiV});
+    var _libreStr2=order.libre||order.vlibre||'';
+    try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty});});}}catch(e){}
     platsColRows=allPlats.length>0?allPlats.map(function(p){return makeRow(p.key,p.name,p.val);}).join(''):'<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
   }
 
