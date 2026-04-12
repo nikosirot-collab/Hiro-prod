@@ -1771,7 +1771,7 @@ function _printCombined(type) {
     <tbody>${rows}</tbody>
   </table>
   <script>window.onload=()=>{window.print();}<\/script>
-  </body></html>`);
+  `);
   win.document.close();
 }
 
@@ -2020,7 +2020,7 @@ function exportCmdPDF(){
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+shopCards+'</div>'
     +'<div style="margin-top:12px;text-align:right;font-size:9px;color:#aaa;">Imprimé le '+new Date().toLocaleString('fr-FR')+'</div>'
     +'<div style="margin-top:8px;text-align:center;"><button onclick="window.print()" style="padding:8px 24px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">🖨 Imprimer / Enregistrer PDF</button></div>'
-    +'</body></html>');
+    +'');
   win.document.close();
   win.focus();
 }

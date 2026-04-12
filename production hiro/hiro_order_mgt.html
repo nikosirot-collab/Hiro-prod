@@ -245,18 +245,7 @@ const tomorrow=getTomorrow();
   <div class="qty-count">Total : <span id="total-count" style="color:#0d7a52">0</span></div>
   <button class="btn-send" id="btn-send" onclick="sendOrder()">Envoyer →</button>
 </div>
-<div class="success-overlay" id="success-overlay">
-  <div style="width:100%;max-width:480px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <div>
-        <div style="font-size:16px;font-weight:700;">DSM — Commande envoyée ✅</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Livraison <span id="success-date"></span></div>
-      </div>
-      <button onclick="editOrder()" style="padding:10px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">✏️ Modifier</button>
-    </div>
-    <div id="recap-content" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;"></div>
-  </div>
-</div>
+
 
 <script>
 const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
@@ -274,7 +263,6 @@ var TAPAS_RECAP_KEYS=['gyoza','gnem','pnem','sesame','banhbao'];
 var TAPAS_RECAP_NAMES={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
 
 document.getElementById('date-badge').textContent='Livraison '+fmtDate(tomorrow);
-document.getElementById('success-date').textContent=fmtDate(tomorrow);
 
 let qty={},libreItems={},lineCount={};
 
@@ -331,7 +319,7 @@ function editOrder(){
 }
 function showRecapOverlay(d){
   const overlay=document.getElementById('success-overlay');
-  if(overlay){overlay.style.display='flex';document.getElementById('success-date').textContent=fmtDate(tomorrow);}
+  if(overlay){overlay.style.display='flex';}
   showRecap(d);
 }
 
