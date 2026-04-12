@@ -1795,13 +1795,13 @@ if('serviceWorker' in navigator){
 }
 let _offlineQueue = JSON.parse(localStorage.getItem('hiro-offline-queue') || '[]');
 function _saveOfflineQueue(){localStorage.setItem('hiro-offline-queue', JSON.stringify(_offlineQueue));}
-const _fbSaveAll_orig = _fbSaveAll;
+const _fbSaveAll_orig = typeof _fbSaveAll !== 'undefined' ? _fbSaveAll : null;
 window._fbSaveAll = async function(docId) {
   if(!navigator.onLine){
     _offlineQueue.push({docId, data: {...data}, ts: Date.now()});
     _saveOfflineQueue();_setStatus(false);showOfflineBanner();return;
   }
-  await _fbSaveAll_orig(docId);
+  if(_fbSaveAll_orig) await _fbSaveAll_orig(docId);
 };
 function showOfflineBanner(){
   let b=document.getElementById('offline-banner');
