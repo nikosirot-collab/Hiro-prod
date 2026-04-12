@@ -866,21 +866,40 @@ async function loadRecap(){
       else if(v.stringValue!==undefined)d[k]=v.stringValue;
       else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
     });
-    // Afficher le recap de la commande
     var isVal=d.status==='validated';
+    var getV=function(k){return d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:0);};
+
+    function rR(name,val){
+      var zero=!val||val===0;
+      return '<div class="recap-row"><div class="recap-qty'+(zero?' zero':'')+'">'+( zero?'—':val)+'</div><div class="recap-name'+(zero?' zero':'')+'">'+name+'</div></div>';
+    }
+
+    var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rR(SALADE_RECAP_NAMES[k],getV(k));}).join('');
+    var rightRows=rR('Riz',getV('rizprod'))+rR('Poke thon',getV('pokethon'))+rR('Poke saumon',getV('pokesaumon'));
+    var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rR(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
+    var libreStr=d.libre||d.vlibre||'';
+    if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
+    var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
+    var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
+
     var statusBadge=isVal
       ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
-      :'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#fef3e2;color:#b07000;font-size:12px;font-weight:600;">⏳ En attente de validation</span>';
-    var getVal=function(k){return d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:0);};
-    showRecap(d);
+      :'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#fef3e2;color:#b07000;font-size:12px;font-weight:600;">⏳ En attente</span>';
+
     el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
       +'<div style="font-size:14px;font-weight:700;">Livraison '+fmtDate(tomorrow)+'</div>'
       +statusBadge+'</div>'
-      +'<div id="recap-order-inner"></div>';
-    showRecap(d);
-    var inner=document.getElementById('recap-order-inner');
-    var rc=document.getElementById('recap-content');
-    if(inner&&rc)inner.innerHTML=rc.innerHTML;
+      +'<div class="recap-fiche">'
+      +'<div class="recap-top">'
+      +'<div class="recap-col recap-col-left"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
+      +'<div class="recap-col"><div class="recap-col-title">Riz / Poke</div>'+rightRows+'</div>'
+      +'</div>'
+      +'<div class="recap-bottom">'
+      +'<div class="recap-bottom-col"><div class="recap-col-title">Dessert</div>'+dessertRows+'</div>'
+      +'<div class="recap-bottom-col"><div class="recap-col-title">Tapas</div>'+tapasRows+'</div>'
+      +'<div class="recap-bottom-col"><div class="recap-col-title">CHR</div>'+chrRows+'</div>'
+      +'</div></div>';
   }catch(e){el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';}
 }
 
