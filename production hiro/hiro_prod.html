@@ -1843,6 +1843,8 @@ var cmdDate=(function(){
   var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   var d=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate());
   var dow=d.getDay();
+  // Lundi : afficher aujourd'hui (commandes du week-end pour lundi)
+  if(dow===1){return d;}
   if(dow===6){d.setDate(d.getDate()+2);}
   else if(dow===0){d.setDate(d.getDate()+1);}
   else{d.setDate(d.getDate()+1);}
@@ -1919,19 +1921,20 @@ function cmdRenderFiche(shop, order){
   // CHR
   var chrContent='';
   if(shop==='ville'){
-    _CMD_CHR_KEYS.forEach(function(k){var v=order[k]||0;if(v>0)chrContent+=cmdRow(_CMD_CHR_NAMES[k],v);});
-    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+    _CMD_CHR_KEYS.forEach(function(k){var v=getVal(k);if(v>0)chrContent+=cmdRow(_CMD_CHR_NAMES[k],v);});
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   }else{
-    if(order.libre){try{var lc2=JSON.parse(order.libre);if(lc2.chr){lc2.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+    if(libreStr){try{var lc2=JSON.parse(libreStr);if(lc2.chr){lc2.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   }
   var chrRows=chrContent||'<div style="padding:10px 12px;color:var(--text-muted);font-size:12px;">—</div>';
   // Plats chauds Ville
   var platsRows='';
   if(shop==='ville'){
     var allPlats=[];
-    if(order.gyoza)allPlats.push({name:'Gyoza',qty:order.gyoza});
-    if(order.siumai)allPlats.push({name:'Siu Mai',qty:order.siumai});
-    if(order.libre){try{var lp=JSON.parse(order.libre);if(lp.plats)lp.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({name:i.name,qty:i.qty});});}catch(e){}}
+    var gyozaV=getVal('gyoza');var siumaiV=getVal('siumai');
+    if(gyozaV>0)allPlats.push({name:'Gyoza',qty:gyozaV});
+    if(siumaiV>0)allPlats.push({name:'Siu Mai',qty:siumaiV});
+    if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.plats)lp.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({name:i.name,qty:i.qty});});}catch(e){}}
     platsRows=allPlats.length>0?allPlats.map(function(p){return cmdRow(p.name,p.qty);}).join(''):'<div style="padding:10px 12px;color:var(--text-muted);font-size:12px;">Aucun plat</div>';
   }
 
