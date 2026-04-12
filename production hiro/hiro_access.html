@@ -1379,8 +1379,9 @@ function laboRenderFiche(shop,order){
     if(isValidated){
       var vqty=order['vqty_'+key];
       var isRupt=order['rupt_'+key];
+      // Si pas de valeur originale ET vqty existe → utiliser vqty sans signaler changement
       var display=vqty!==undefined?vqty:val;
-      var changed=vqty!==undefined&&vqty!==val;
+      var changed=vqty!==undefined&&val>0&&vqty!==val;
       var zero=!display||display===0;
       return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
         +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
@@ -1393,11 +1394,16 @@ function laboRenderFiche(shop,order){
 
   var saladeRows=LABO_SALADE.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _v=function(k){return order[k]!==undefined?order[k]:(isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);};
+  var _fish=function(f){
+    // Pour commande validée : utiliser vqty_f_X si disponible, sinon calcul auto
+    if(isValidated&&order['vqty_f_'+f]!==undefined) return order['vqty_f_'+f];
+    return laboGetFish(shop,f);
+  };
   var rightItems=[
-    {key:'f_t',name:'Thon',val:laboGetFish(shop,'t')},{key:'f_s',name:'Saumon',val:laboGetFish(shop,'s')},
-    {key:'f_a',name:'Aburi',val:laboGetFish(shop,'a')},{key:'f_tamago',name:'Tamago',val:laboGetFish(shop,'tamago')},
-    {key:'rizprod',name:'Riz',val:laboGetRiz(shop)},{key:'pokethon',name:'Poke thon',val:_v('pokethon')},
-    {key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')},{key:'roll',name:'Roll',val:laboGetRoll(shop)},
+    {key:'f_t',name:'Thon',val:_fish('t')},{key:'f_s',name:'Saumon',val:_fish('s')},
+    {key:'f_a',name:'Aburi',val:_fish('a')},{key:'f_tamago',name:'Tamago',val:(isValidated&&order['vqty_f_tamago']!==undefined?order['vqty_f_tamago']:laboGetFish(shop,'tamago'))},
+    {key:'rizprod',name:'Riz',val:_v('rizprod')||laboGetRiz(shop)},{key:'pokethon',name:'Poke thon',val:_v('pokethon')},
+    {key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')},{key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined?order['vqty_roll']:laboGetRoll(shop))},
     {key:'gyoza',name:'Gyoza',val:shop==='ville'?0:_v('gyoza')}
   ];
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
