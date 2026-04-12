@@ -407,7 +407,6 @@ const PRODUCT_NAMES={
   pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'
 };
 function editOrder(){
-  // Vérifier limite horaire 19h30 heure NC (GMT+11)
   var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var ncHour=ncNow.getHours()+ncNow.getMinutes()/60;
   if(ncHour>=19.5){
@@ -420,6 +419,13 @@ function editOrder(){
     document.body.appendChild(msg);
     return;
   }
+  // Re-remplir les inputs depuis qty en mémoire
+  ALL_KEYS.forEach(function(k){
+    var v=qty[k]||0;
+    var el=document.getElementById('q-'+k);
+    if(el){el.value=v>0?v:0;el.classList.toggle('active',v>0);el.style.color=v>0?ACCENT:'';el.style.borderColor=v>0?ACCENT:'';}
+  });
+  updateCount();
   document.querySelector('.nav-tab').click();
 }
 
