@@ -1348,11 +1348,11 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+var _laboEditing=new Set();
+
 function laboModify(shop){
-  // Remettre la commande en mode édition (garder status validated mais vider _laboValid)
   if(window._laboValid&&window._laboValid[shop]) delete window._laboValid[shop];
-  // Forcer le statut à non validé pour afficher les inputs
-  if(laboOrders[shop]) laboOrders[shop]._editing=true;
+  _laboEditing.add(shop);
   laboRender();
 }
 
@@ -1380,7 +1380,7 @@ async function laboValidate(shop){
     if(res.ok){
       laboOrders[shop].status='validated';
       laboOrders[shop].validatedAt=Date.now();
-      laboOrders[shop]._editing=false;
+      _laboEditing.delete(shop);
       Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
       if(window._laboValid)delete window._laboValid[shop];
       laboRender();
@@ -1401,7 +1401,7 @@ function laboRenderFiche(shop,order){
       +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non recue</div></div>';
   }
 
-  var isValidated=order.status==='validated' && !order._editing;
+  var isValidated=order.status==='validated' && !_laboEditing.has(shop);
   var fmtT=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
   function makeRow(key,name,val){
