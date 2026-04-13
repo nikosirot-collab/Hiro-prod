@@ -1421,8 +1421,8 @@ function laboRenderFiche(shop,order){
     }
   }
 
-  var saladeRows=LABO_SALADE.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
-  var _v=function(k){return order[k]!==undefined?order[k]:(isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);};
+  var saladeRows=LABO_SALADE.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var _v=function(k){return order[k]!==undefined?order[k]:(order['vqty_'+k]!==undefined?order['vqty_'+k]:0);};
   var _fish=function(f){
     // Pour commande validée : utiliser vqty_f_X si disponible, sinon calcul auto
     if(isValidated&&order['vqty_f_'+f]!==undefined) return order['vqty_f_'+f];
@@ -1436,9 +1436,9 @@ function laboRenderFiche(shop,order){
     {key:'gyoza',name:'Gyoza',val:shop==='ville'?0:_v('gyoza')}
   ];
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
-  var dessertRows=LABO_DESSERT.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var dessertRows=LABO_DESSERT.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.libre||order.vlibre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
-  var tapasRows=LABO_TAPAS.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var tapasRows=LABO_TAPAS.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
 
   // CHR — pour la ville: articles fixes (>0 seulement) + libres
   var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
@@ -1446,7 +1446,7 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     // Articles fixes avec quantite > 0
     LABO_CHR_KEYS.forEach(function(k){
-      var val=_v(k);
+      var val=order[k]!==undefined?order[k]:(order['vqty_'+k]!==undefined?order['vqty_'+k]:0);
       if(val>0) chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
     });
     // Articles libres CHR
