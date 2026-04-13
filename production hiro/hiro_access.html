@@ -1342,6 +1342,14 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+function laboModify(shop){
+  // Remettre la commande en mode édition (garder status validated mais vider _laboValid)
+  if(window._laboValid&&window._laboValid[shop]) delete window._laboValid[shop];
+  // Forcer le statut à non validé pour afficher les inputs
+  if(laboOrders[shop]) laboOrders[shop]._editing=true;
+  laboRender();
+}
+
 async function laboValidate(shop){
   var order=laboOrders[shop];
   if(!order||((!order.ts)&&order.status!=='validated'))return;
@@ -1366,6 +1374,7 @@ async function laboValidate(shop){
     if(res.ok){
       laboOrders[shop].status='validated';
       laboOrders[shop].validatedAt=Date.now();
+      laboOrders[shop]._editing=false;
       Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
       if(window._laboValid)delete window._laboValid[shop];
       laboRender();
@@ -1386,7 +1395,7 @@ function laboRenderFiche(shop,order){
       +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non recue</div></div>';
   }
 
-  var isValidated=order.status==='validated';
+  var isValidated=order.status==='validated' && !order._editing;
   var fmtT=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
   function makeRow(key,name,val){
@@ -1478,7 +1487,10 @@ function laboRenderFiche(shop,order){
   var validateBtn=!isValidated
     ?'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
       +'<button class="valid-btn-validate" id="vbtn-'+shop+'" onclick="laboValidate(\''+shop+'\')">✓ Valider la commande</button>'
-      +'</div>':'' ;
+      +'</div>'
+    :'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
+      +'<button onclick="laboModify(\''+shop+'\')" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">✏️ Modifier la commande</button>'
+      +'</div>';
 
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
