@@ -1284,9 +1284,14 @@ function laboValidState(shop){
   if(!window._laboValid)window._laboValid={};
   if(!window._laboValid[shop]){
     var order=laboOrders[shop]||{};
+    var isVal=order.status==='validated';
     var state={};
     var allKeys=['bo','sin','thon','thai','plp','rouleaux','rizprod','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao'].concat(LABO_CHR_KEYS);
-    allKeys.forEach(function(k){if(order[k]!==undefined&&order[k]>0)state[k]={qty:order[k],rupture:false};});
+    allKeys.forEach(function(k){
+      // Chercher la valeur originale : order[k] ou vqty_k si commande validée
+      var val=order[k]!==undefined?order[k]:(isVal&&order['vqty_'+k]!==undefined?order['vqty_'+k]:undefined);
+      if(val!==undefined&&val>0) state[k]={qty:val,rupture:order['rupt_'+k]||false};
+    });
     window._laboValid[shop]=state;
   }
   return window._laboValid[shop];
@@ -1303,7 +1308,7 @@ function laboMakeValidRow(shop,key,name,origQty){
   var onclk='laboToggleRupt("'+shop+'","'+key+'",'+origQty+')';
   return '<div class="valid-row'+(s.rupture?' rupture':'')+'" id="vrow-'+shop+'-'+key+'">'
     +'<div class="valid-qty-orig">'+origQty+'</div>'
-    +'<input class="valid-qty-inp'+inpClass+'" id="vinp-'+shop+'-'+key+'" type="number" min="0" max="'+origQty+'" value="'+(s.rupture?0:s.qty)+'" onchange="'+onch+'">'
+    +'<input class="valid-qty-inp'+inpClass+'" id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(s.rupture?0:s.qty)+'" onchange="'+onch+'">'
     +'<div style="font-size:12px;font-weight:500;flex:1;">'+name+'</div>'
     +'<button class="valid-btn-rupt'+ruptClass+'" onclick="'+onclk+'">Stock insuff.</button>'
     +'</div>';
@@ -1312,8 +1317,9 @@ function laboMakeValidRow(shop,key,name,origQty){
 function laboSetQty(shop,key,val){
   var state=laboValidState(shop);
   var order=laboOrders[shop]||{};
-  var orig=order[key]||0;
-  var v=Math.max(0,Math.min(parseInt(val)||0,orig));
+  var isVal=order.status==='validated';
+  var orig=order[key]!==undefined?order[key]:(isVal&&order['vqty_'+key]!==undefined?order['vqty_'+key]:0);
+  var v=Math.max(0,parseInt(val)||0);
   if(!state[key])state[key]={qty:orig,rupture:false};
   state[key].qty=v;state[key].rupture=false;
   var inp=document.getElementById('vinp-'+shop+'-'+key);
