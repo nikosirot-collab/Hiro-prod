@@ -1370,7 +1370,13 @@ async function laboValidate(shop){
     fields['vqty_'+k]={integerValue:s.qty};
     if(s.rupture)fields['rupt_'+k]={booleanValue:true};
   });
-  if(order.libre)fields['vlibre']={stringValue:order.libre};
+  // Préserver les articles libres (libre ou vlibre)
+  var libreStr=order.libre||order.vlibre||'';
+  if(libreStr) fields['vlibre']={stringValue:libreStr};
+  // Préserver aussi les vqty CHR fixes qui ne sont pas dans state
+  Object.keys(order).forEach(function(k){
+    if(k.startsWith('vqty_chr_')&&!fields[k]) fields[k]={integerValue:order[k]};
+  });
   try{
     var dStr=laboDs(laboDate);
     var res=await fetch(_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY,{
