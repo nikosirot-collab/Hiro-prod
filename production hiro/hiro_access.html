@@ -155,7 +155,37 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 .valid-btn-validate:disabled{opacity:.4;}
 .valid-status-validated{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;}
 .valid-status-pending{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;}
+
+@media (prefers-color-scheme: dark) {
+  :root{--bg:#1a1916;--surface:#242220;--border:#333;--border-strong:#444;--text:#f0ede8;--text-muted:#a09d96;--text-hint:#6b6860;}
+}
+[data-theme="dark"]{--bg:#1a1916;--surface:#242220;--border:#333;--border-strong:#444;--text:#f0ede8;--text-muted:#a09d96;--text-hint:#6b6860;}
+[data-theme="dark"] body{background:var(--bg);color:var(--text);}
+[data-theme="dark"] .nav-tabs,[data-theme="dark"] .section,[data-theme="dark"] .card{background:var(--surface);}
+[data-theme="dark"] input,[data-theme="dark"] .inp{background:var(--surface);color:var(--text);border-color:var(--border);}
+[data-theme="dark"] th{background:#1e1c1a;}
+[data-theme="dark"] .valid-row{background:var(--surface);}
+[data-theme="dark"] .valid-qty-inp{background:var(--surface);color:var(--text);}
+[data-theme="dark"] #sec-devices>div,[data-theme="dark"] .histo-week{background:var(--surface);}
+[data-theme="light"]{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;}
 </style>
+<script>
+(function(){
+  var saved=localStorage.getItem('hiro-theme');
+  if(saved){document.documentElement.setAttribute('data-theme',saved);}
+  else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+function toggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme');
+  var next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('hiro-theme',next);
+  var btn=document.getElementById('theme-toggle');
+  if(btn)btn.textContent=next==='dark'?'☀️':'🌙';
+}
+</script>
 </head>
 <body>
 <div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1916;z-index:9999;display:flex;align-items:center;justify-content:center;">

@@ -137,7 +137,64 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 .valid-notif-name{font-size:13px;font-weight:500;flex:1;}
 .valid-notif-orig{font-size:11px;color:var(--text-hint);}
 .valid-notif-back{display:block;width:calc(100% - 32px);margin:0 16px;padding:13px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:"DM Sans",sans-serif;text-align:center;}
+
+/* Mode nuit */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#1a1916;--surface:#242220;--border:#333;--border-strong:#444;
+    --text:#f0ede8;--text-muted:#a09d96;--text-hint:#6b6860;
+  }
+  body{background:var(--bg);}
+  th{background:#1e1c1a;}
+  .app-header{background:#111;}
+  .nav-tabs{background:var(--surface);}
+  .qty-btn{background:var(--surface);}
+  .qty-inp,.libre-qty,.libre-name{background:var(--surface);color:var(--text);}
+  .bottom-bar{background:var(--surface);border-top:1px solid var(--border);}
+  .status-banner.pending{background:#2a2015;color:#e67e22;}
+  .status-banner.sent{background:#0d2b1e;color:#0d7a52;}
+  .histo-week-header{background:var(--surface);}
+  .recap-fiche{background:var(--surface);}
+  .recap-col-title{background:#1e1c1a;}
+}
+[data-theme="dark"] {
+  --bg:#1a1916;--surface:#242220;--border:#333;--border-strong:#444;
+  --text:#f0ede8;--text-muted:#a09d96;--text-hint:#6b6860;
+}
+[data-theme="dark"] body{background:var(--bg);}
+[data-theme="dark"] th{background:#1e1c1a;}
+[data-theme="dark"] .app-header{background:#111;}
+[data-theme="dark"] .nav-tabs{background:var(--surface);}
+[data-theme="dark"] .qty-btn{background:var(--surface);}
+[data-theme="dark"] .qty-inp,[data-theme="dark"] .libre-qty,[data-theme="dark"] .libre-name{background:var(--surface);color:var(--text);}
+[data-theme="dark"] .bottom-bar{background:var(--surface);border-top:1px solid var(--border);}
+[data-theme="dark"] .status-banner.pending{background:#2a2015;color:#e67e22;}
+[data-theme="dark"] .status-banner.sent{background:#0d2b1e;color:#0d7a52;}
+[data-theme="dark"] .histo-week-header{background:var(--surface);}
+[data-theme="dark"] .recap-fiche{background:var(--surface);}
+[data-theme="dark"] .recap-col-title{background:#1e1c1a;}
+[data-theme="light"] { --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96; }
 </style>
+
+<script>
+// Mode nuit
+(function(){
+  var saved=localStorage.getItem('hiro-theme');
+  if(saved){document.documentElement.setAttribute('data-theme',saved);}
+  else{
+    var prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if(prefersDark) document.documentElement.setAttribute('data-theme','dark');
+  }
+})();
+function toggleTheme(){
+  var current=document.documentElement.getAttribute('data-theme');
+  var next=current==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('hiro-theme',next);
+  var btn=document.getElementById('theme-toggle');
+  if(btn) btn.textContent=next==='dark'?'☀️':'🌙';
+}
+</script>
 </head>
 <body>
 <div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1916;z-index:9999;display:flex;align-items:center;justify-content:center;">
@@ -187,6 +244,7 @@ const tomorrow=getTomorrow();
     <div><h1>Hiro Order</h1><div class="subtitle">Commande journalière</div></div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
+  <button id="theme-toggle" onclick="toggleTheme()" style="background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;color:#fff;">🌙</button>
     <div class="date-badge" id="date-badge">—</div>
     <div class="shop-badge" style="color:#1a5fa8;border:1px solid #1a5fa844">DSM</div>
   </div>
