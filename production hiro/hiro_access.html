@@ -1400,7 +1400,18 @@ async function laboValidate(shop){
   });
   try{
     var dStr=laboDs(laboDate);
-    var res=await fetch(_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY,{
+    var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+    if(!navigator.onLine){
+      queueOfflineAction(url,fields);
+      laboOrders[shop].status='validated';laboOrders[shop].validatedAt=Date.now();
+      _laboEditing.delete(shop);laboPoids={};laboPoidsDirty=false;
+      Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
+      if(window._laboValid)delete window._laboValid[shop];
+      laboRender();
+      if(btn){btn.disabled=false;btn.textContent='✓ Valider la commande';}
+      return;
+    }
+    var res=await fetch(url,{
       method:'PATCH',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})
     });
@@ -1945,6 +1956,51 @@ if(!navigator.onLine){
   _sendPing();
   setInterval(_sendPing,30000);
 })();
+</script>
+
+
+<script>
+// ── MODE HORS LIGNE ──
+var _offlineQueueAP=[];
+var _offlineQueueKey='hiro-offline-queue-access';
+
+function _saveQueueAP(){try{localStorage.setItem(_offlineQueueKey,JSON.stringify(_offlineQueueAP));}catch(e){}}
+function _loadQueueAP(){try{var q=localStorage.getItem(_offlineQueueKey);if(q)_offlineQueueAP=JSON.parse(q);}catch(e){}}
+
+function showOfflineBanner(){
+  var b=document.getElementById('offline-banner');
+  if(!b){b=document.createElement('div');b.id='offline-banner';b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;';document.body.appendChild(b);}
+  b.textContent='⚠️ Hors ligne — action sauvegardée, envoi automatique à la reconnexion';
+  b.style.display='block';
+}
+function hideOfflineBanner(){var b=document.getElementById('offline-banner');if(b)b.style.display='none';}
+
+function queueOfflineAction(url,fields){
+  _offlineQueueAP.push({url:url,fields:fields,ts:Date.now()});
+  _saveQueueAP();
+  showOfflineBanner();
+}
+
+async function _flushQueueAP(){
+  if(!navigator.onLine||_offlineQueueAP.length===0)return;
+  var sent=[];
+  for(var i=0;i<_offlineQueueAP.length;i++){
+    var item=_offlineQueueAP[i];
+    try{
+      var res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
+      if(res.ok)sent.push(i);
+    }catch(e){}
+  }
+  _offlineQueueAP=_offlineQueueAP.filter(function(_,i){return sent.indexOf(i)===-1;});
+  _saveQueueAP();
+  if(_offlineQueueAP.length===0)hideOfflineBanner();
+}
+
+window.addEventListener('online',function(){_flushQueueAP();});
+window.addEventListener('offline',function(){showOfflineBanner();});
+_loadQueueAP();
+if(!navigator.onLine)showOfflineBanner();
+if(_offlineQueueAP.length>0)showOfflineBanner();
 </script>
 
 </body>

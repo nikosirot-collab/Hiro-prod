@@ -864,5 +864,42 @@ setTimeout(startValidationPolling,2000);
   </div>
 </div>
 
+
+<script>
+// ── MODE HORS LIGNE ──
+var _offlineQueue=[];
+function _saveQueue(){try{localStorage.setItem('hiro-offline-queue-'+SHOP,JSON.stringify(_offlineQueue));}catch(e){}}
+function _loadQueue(){try{var q=localStorage.getItem('hiro-offline-queue-'+SHOP);if(q)_offlineQueue=JSON.parse(q);}catch(e){}}
+
+function showOfflineBanner(){
+  var b=document.getElementById('offline-banner');
+  if(!b){b=document.createElement('div');b.id='offline-banner';b.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#e67e22;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9998;';document.body.appendChild(b);}
+  b.textContent='⚠️ Hors ligne — commande sauvegardée, envoi automatique à la reconnexion';
+  b.style.display='block';
+}
+function hideOfflineBanner(){var b=document.getElementById('offline-banner');if(b)b.style.display='none';}
+
+async function _flushQueue(){
+  if(!navigator.onLine||_offlineQueue.length===0)return;
+  var sent=[];
+  for(var i=0;i<_offlineQueue.length;i++){
+    var item=_offlineQueue[i];
+    try{
+      var res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
+      if(res.ok)sent.push(i);
+    }catch(e){}
+  }
+  _offlineQueue=_offlineQueue.filter(function(_,i){return sent.indexOf(i)===-1;});
+  _saveQueue();
+  if(_offlineQueue.length===0){hideOfflineBanner();updateStatusBanner(true);}
+}
+
+window.addEventListener('online',function(){_flushQueue();});
+window.addEventListener('offline',function(){showOfflineBanner();});
+_loadQueue();
+if(!navigator.onLine)showOfflineBanner();
+if(_offlineQueue.length>0)showOfflineBanner();
+</script>
+
 </body>
 </html>
