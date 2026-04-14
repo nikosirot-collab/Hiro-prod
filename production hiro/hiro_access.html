@@ -1227,6 +1227,11 @@ function laboChangeDate(d){
   laboFetch();
 }
 
+function laboGoToShop(shop){
+  var tab=document.querySelector('.labo-tab[onclick*="\''+shop+'\'"]');
+  if(tab) tab.click();
+}
+
 function laboShowShop(shop,el){
   laboCurrentShop=shop;
   document.querySelectorAll('.labo-tab').forEach(function(t){t.style.borderBottomColor='transparent';t.style.color='var(--muted)';t.style.fontWeight='400';});
@@ -1567,10 +1572,10 @@ function laboRender(){
     LABO_SHOPS.forEach(function(s){
       var o=laboOrders[s];var ok=o&&(o.ts||o.status==='validated');
       var isVal=ok&&o.status==='validated';
-      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;">'
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;" onclick="laboGoToShop(\''+s+'\')">'
         +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
         +'<div><div style="font-size:13px;font-weight:600;">'+LABO_LABELS[s]+'</div>'
-        +'<div style="font-size:11px;color:var(--muted);">'+(ok?(isVal?'Validee ':'Recue ')+laboFmtTime(o.ts):'En attente')+'</div></div>'
+        +'<div style="font-size:11px;color:var(--muted);">'+(ok?(isVal?'Validée '+laboFmtTime(o.validatedAt||o.ts):'Reçue '+laboFmtTime(o.ts)):'En attente')+'</div></div>'
         +'<div style="margin-left:auto;font-size:18px;">'+(isVal?'✅':ok?'⏳':'⌛')+'</div></div>';
     });
     cards+='</div>';
