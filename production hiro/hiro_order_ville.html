@@ -620,6 +620,14 @@ async function loadRecap(){
     var libreStr=d.libre||d.vlibre||'';
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
+
+    // Plats chauds
+    var platsRows='';
+    platsRows+=getV('gyoza')>0?rR('Gyoza',getV('gyoza')):'';
+    platsRows+=getV('siumai')>0?rR('Siu Mai',getV('siumai')):'';
+    if(libreStr){try{var lp2=JSON.parse(libreStr);if(lp2.plats){lp2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+=rR(i.name,i.qty);});}}catch(e){}}
+    if(!platsRows) platsRows='<div class="recap-row"><div class="recap-qty zero">—</div><div class="recap-name zero">Aucun</div></div>';
+
     var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
     if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
 
@@ -645,9 +653,10 @@ async function loadRecap(){
       +'<div class="recap-col recap-col-left"><div class="recap-col-title">Salade</div>'+saladeRows+'</div>'
       +'<div class="recap-col"><div class="recap-col-title">Riz / Poke</div>'+rightRows+'</div>'
       +'</div>'
-      +'<div class="recap-bottom">'
+      +'<div class="recap-bottom" style="grid-template-columns:1fr 1fr 1fr 1fr;">'
       +'<div class="recap-bottom-col"><div class="recap-col-title">Dessert</div>'+dessertRows+'</div>'
       +'<div class="recap-bottom-col"><div class="recap-col-title">Tapas</div>'+tapasRows+'</div>'
+      +'<div class="recap-bottom-col"><div class="recap-col-title">Plats chauds</div>'+platsRows+'</div>'
       +'<div class="recap-bottom-col"><div class="recap-col-title">CHR</div>'+chrRows+'</div>'
       +'</div></div>';
   }catch(e){el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';}
@@ -657,37 +666,44 @@ async function loadRecap(){
 async function loadHistorique(){
   var el=document.getElementById('histo-content');
   if(!el)return;
-  el.innerHTML='<div class="histo-loading">Recherche des commandes...</div>';
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
   var today=getTodayNC();
   var monday=getMondayNC(today);
-  var weeksWithOrders=[];
-  for(var w=1;w<=16;w++){
+  // Générer tous les jours des 12 dernières semaines
+  var allDays=[];
+  for(var w=1;w<=12;w++){
     var m=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-w*7);
-    var hasOrder=false;
     for(var i=0;i<6;i++){
       var d=new Date(m.getFullYear(),m.getMonth(),m.getDate()+i);
-      var dStr=dsLocal(d);
-      try{
-        var res=await fetch(_API+'/order_'+dStr+'_'+SHOP+'?key='+_KEY);
-        if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts){hasOrder=true;break;}}
-      }catch(e){}
+      allDays.push({dStr:dsLocal(d),weekMon:dsLocal(m)});
     }
-    if(hasOrder) weeksWithOrders.push(m);
   }
-  if(weeksWithOrders.length===0){el.innerHTML='<div class="histo-loading">Aucun historique de commande</div>';return;}
+  // Requêtes en parallèle
+  var results=await Promise.all(allDays.map(async function(day){
+    try{
+      var res=await fetch(_API+'/order_'+day.dStr+'_'+SHOP+'?key='+_KEY);
+      if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts)return day.weekMon;}
+    }catch(e){}
+    return null;
+  }));
+  // Semaines uniques avec commandes
+  var weeksSet=[];
+  results.forEach(function(w){if(w&&weeksSet.indexOf(w)===-1)weeksSet.push(w);});
+  if(weeksSet.length===0){el.innerHTML='<div class="histo-loading">Aucun historique de commande</div>';return;}
   var html='';
-  for(var wi=0;wi<weeksWithOrders.length;wi++){
-    var wMon=weeksWithOrders[wi];
+  weeksSet.forEach(function(wStr){
+    var parts=wStr.split('-');
+    var wMon=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
     var wSat=new Date(wMon.getFullYear(),wMon.getMonth(),wMon.getDate()+5);
     var wLabel=wMon.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' - '+wSat.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
-    var wId='week-'+dsLocal(wMon);
+    var wId='week-'+wStr;
     html+='<div class="histo-week">'
-      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+dsLocal(wMon)+'\')">'
+      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+wStr+'\')">  '
       +'<span>'+wLabel+'</span><span>&#9658;</span>'
       +'</div>'
       +'<div class="histo-week-body" id="'+wId+'"></div>'
       +'</div>';
-  }
+  });
   el.innerHTML=html;
 }
 
