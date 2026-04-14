@@ -1203,8 +1203,12 @@ var LABO_DESSERT=[
   {key:'cheesemangue',name:'Cheese mangue'},{key:'cheeseframboise',name:'Cheese framboise'}
 ];
 var LABO_TAPAS=[
-  {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'gyoza',name:'Gyoza'},{key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
   {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'}
+];
+var LABO_TAPAS_VILLE=[
+  {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'},{key:'samossa',name:'Samossa'}
 ];
 
 var LABO_CHR_KEYS=['chr_salades','chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
@@ -1457,7 +1461,8 @@ function laboRenderFiche(shop,order){
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
   var dessertRows=LABO_DESSERT.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.libre||order.vlibre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
-  var tapasRows=LABO_TAPAS.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
+  var tapasRows=tapasList.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
 
   // CHR — pour la ville: articles fixes (>0 seulement) + libres
   var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
