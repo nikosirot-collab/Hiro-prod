@@ -657,24 +657,33 @@ async function loadRecap(){
 async function loadHistorique(){
   var el=document.getElementById('histo-content');
   if(!el)return;
-  el.innerHTML='<div class="histo-loading">Chargement...</div>';
-  // Génère les 8 dernières semaines
+  el.innerHTML='<div class="histo-loading">Recherche des commandes...</div>';
   var today=getTodayNC();
   var monday=getMondayNC(today);
-  var weeks=[];
-  for(var w=1;w<=8;w++){
+  var weeksWithOrders=[];
+  for(var w=1;w<=16;w++){
     var m=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-w*7);
-    weeks.push(m);
+    var hasOrder=false;
+    for(var i=0;i<6;i++){
+      var d=new Date(m.getFullYear(),m.getMonth(),m.getDate()+i);
+      var dStr=dsLocal(d);
+      try{
+        var res=await fetch(_API+'/order_'+dStr+'_'+SHOP+'?key='+_KEY);
+        if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts){hasOrder=true;break;}}
+      }catch(e){}
+    }
+    if(hasOrder) weeksWithOrders.push(m);
   }
+  if(weeksWithOrders.length===0){el.innerHTML='<div class="histo-loading">Aucun historique de commande</div>';return;}
   var html='';
-  for(var wi=0;wi<weeks.length;wi++){
-    var wMon=weeks[wi];
+  for(var wi=0;wi<weeksWithOrders.length;wi++){
+    var wMon=weeksWithOrders[wi];
     var wSat=new Date(wMon.getFullYear(),wMon.getMonth(),wMon.getDate()+5);
-    var wLabel=wMon.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+wSat.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+    var wLabel=wMon.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' - '+wSat.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
     var wId='week-'+dsLocal(wMon);
     html+='<div class="histo-week">'
-      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+dsLocal(wMon)+'\'">'
-      +'<span>'+wLabel+'</span><span>▸</span>'
+      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+dsLocal(wMon)+'\')">'
+      +'<span>'+wLabel+'</span><span>&#9658;</span>'
       +'</div>'
       +'<div class="histo-week-body" id="'+wId+'"></div>'
       +'</div>';
