@@ -1347,9 +1347,17 @@ function laboToggleRupt(shop,key,origQty){
 }
 
 var _laboEditing=new Set();
+var laboPoids={};
+var laboPoidsDirty=false;
 
 function laboModify(shop){
   if(window._laboValid&&window._laboValid[shop]) delete window._laboValid[shop];
+  // Charger les poids existants depuis vlibre
+  var order=laboOrders[shop]||{};
+  var libreStr=order.libre||order.vlibre||'';
+  laboPoids={};
+  try{if(libreStr){var lp=JSON.parse(libreStr);if(lp.poids)laboPoids=lp.poids;}}catch(e){}
+  laboPoidsDirty=false;
   _laboEditing.add(shop);
   laboRender();
 }
@@ -1368,9 +1376,15 @@ async function laboValidate(shop){
     fields['vqty_'+k]={integerValue:s.qty};
     if(s.rupture)fields['rupt_'+k]={booleanValue:true};
   });
-  // Préserver les articles libres (libre ou vlibre)
+  // Préserver les articles libres (libre ou vlibre) + poids plats chauds
   var libreStr=order.libre||order.vlibre||'';
-  if(libreStr) fields['vlibre']={stringValue:libreStr};
+  var libreObj={};
+  try{if(libreStr)libreObj=JSON.parse(libreStr);}catch(e){}
+  // Injecter les poids si modifiés
+  if(laboPoidsDirty&&Object.keys(laboPoids).length>0){
+    libreObj.poids=laboPoids;
+  }
+  fields['vlibre']={stringValue:JSON.stringify(libreObj)};
   // Préserver aussi les vqty CHR fixes qui ne sont pas dans state
   Object.keys(order).forEach(function(k){
     if(k.startsWith('vqty_chr_')&&!fields[k]) fields[k]={integerValue:order[k]};
@@ -1385,6 +1399,7 @@ async function laboValidate(shop){
       laboOrders[shop].status='validated';
       laboOrders[shop].validatedAt=Date.now();
       _laboEditing.delete(shop);
+      laboPoids={};laboPoidsDirty=false;
       Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
       if(window._laboValid)delete window._laboValid[shop];
       laboRender();
@@ -1471,8 +1486,39 @@ function laboRenderFiche(shop,order){
     if(gyozaV>0)allPlats.push({key:'gyoza',name:'Gyoza',val:gyozaV});
     if(siumaiV>0)allPlats.push({key:'siumai',name:'Siu Mai',val:siumaiV});
     var _libreStr2=order.libre||order.vlibre||'';
-    try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty});});}}catch(e){}
-    platsColRows=allPlats.length>0?allPlats.map(function(p){return makeRow(p.key,p.name,p.val);}).join(''):'<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
+    var _platsLibre=[];
+    try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty,poids:i.poids||''});});_platsLibre=lpl.plats||[];}}catch(e){}
+
+    // Récupérer les poids déjà sauvegardés
+    var _poids={};
+    try{if(_libreStr2){var _lp2=JSON.parse(_libreStr2);if(_lp2.poids)_poids=_lp2.poids;}}catch(e){}
+
+    if(allPlats.length>0){
+      platsColRows=allPlats.map(function(p){
+        var poidsVal=_poids[p.key]||p.poids||'';
+        if(!isValidated){
+          // Mode édition : afficher input quantité + input poids
+          return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
+            +'<div class="valid-qty-orig">'+p.val+'</div>'
+            +'<input class="valid-qty-inp" type="number" min="0" value="'+p.val+'" onchange="laboSetQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:48px;">'
+            +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
+            +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+            +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);" onchange="laboPoids[\''+p.key+'\']=this.value;laboPoidsDirty=true;">'
+            +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+            +'</div>'
+            +'</div>';
+        }else{
+          // Mode lecture : afficher quantité + poids si dispo
+          var zero=!p.val||p.val===0;
+          return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
+            +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':p.val)+'</div>'
+            +'<div style="font-size:13px;font-weight:500;flex:1;">'+p.name+(poidsVal?' <span style="font-size:11px;color:var(--muted);">'+poidsVal+' kg</span>':'')+'</div>'
+            +'</div>';
+        }
+      }).join('');
+    }else{
+      platsColRows='<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
+    }
   }
 
   var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
