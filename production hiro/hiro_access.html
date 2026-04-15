@@ -1649,8 +1649,9 @@ laboFetchFish();
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  // Charger d'abord les données prod (poisson/riz/rolls), puis les commandes
-  await laboFetchFish();
+  // Charger les données prod seulement si pas encore chargées
+  if(Object.keys(laboFishData).length===0) await laboFetchFish();
+  else laboFetchFish(); // Recharger en arrière-plan sans bloquer
   try{
     var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
     if(listRes.ok){
