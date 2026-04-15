@@ -1644,6 +1644,8 @@ async function laboFetchFish(){
     }
   }catch(e){}
 }
+// Précharger les données de production au démarrage
+laboFetchFish();
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
