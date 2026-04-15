@@ -720,7 +720,11 @@ function render(){
     const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
-    const ar={dsm:getRolls(v.dsm,isDim),mgt:getRolls(v.mgt,isDim),paita:getRolls(v.paita,isDim)};
+    const ar={
+      dsm:getR(dStr,'dsm')||getRolls(v.dsm,isDim),
+      mgt:getR(dStr,'mgt')||getRolls(v.mgt,isDim),
+      paita:getR(dStr,'paita')||getRolls(v.paita,isDim)
+    };
     const villeR=getR(dStr,'ville')||0;
     const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR;
     totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;
@@ -1132,7 +1136,11 @@ async function loadWeekFromHistory(dateStr) {
     wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
     wThon+=dayT;
-    const ar={dsm:getRolls(riz.dsm,isDim),mgt:getRolls(riz.mgt,isDim),paita:getRolls(riz.paita,isDim)};
+    const ar={
+      dsm:hr(d,'dsm')||getRolls(riz.dsm,isDim),
+      mgt:hr(d,'mgt')||getRolls(riz.mgt,isDim),
+      paita:hr(d,'paita')||getRolls(riz.paita,isDim)
+    };
     const villeR=hr(dStr,'ville');
     const bg=isDim?'background:var(--bg);':'';
     const td=(val,cls='')=>`<td style="padding:5px 6px;text-align:center;font-size:12px;${cls}">${val||'—'}</td>`;
@@ -1649,9 +1657,6 @@ laboFetchFish();
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  // Charger les données prod seulement si pas encore chargées
-  if(Object.keys(laboFishData).length===0) await laboFetchFish();
-  else laboFetchFish(); // Recharger en arrière-plan sans bloquer
   try{
     var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
     if(listRes.ok){
@@ -1687,7 +1692,11 @@ function showPage(p,el){
   el.classList.add('active');
   if(p==='historique')loadHistorique();
   if(p==='recap'){recapFetch();}
-  if(p==='labo'){laboFetch();if(!laboPollInterval)laboPollInterval=setInterval(laboFetch,5000);}
+  if(p==='labo'){
+    // Toujours attendre laboFetchFish avant de rendre
+    laboFetchFish().then(function(){ laboFetch(); });
+    if(!laboPollInterval)laboPollInterval=setInterval(laboFetch,5000);
+  }
   else{if(laboPollInterval){clearInterval(laboPollInterval);laboPollInterval=null;}}
 }
 
