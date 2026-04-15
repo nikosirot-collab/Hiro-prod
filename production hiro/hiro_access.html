@@ -156,6 +156,32 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 .valid-status-validated{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-weight:600;}
 .valid-status-pending{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;}
 
+/* Mobile responsive pour fiches commande */
+@media (max-width: 480px) {
+  /* Réduire la taille des quantités dans les fiches */
+  #labo-content div[style*="font-size:20px"],
+  #labo-content div[style*="font-size:18px"] {
+    font-size:15px !important;
+    min-width:24px !important;
+  }
+  #labo-content div[style*="font-size:13px"] {
+    font-size:11px !important;
+  }
+  #labo-content div[style*="font-size:12px"] {
+    font-size:10px !important;
+  }
+  #labo-content div[style*="padding:6px 12px"] {
+    padding:4px 6px !important;
+  }
+  #labo-content div[style*="padding:7px 12px"] {
+    padding:4px 6px !important;
+  }
+  /* Colonne titre */
+  #labo-content div[style*="font-size:10px"] {
+    font-size:9px !important;
+    padding:4px 6px !important;
+  }
+}
 </style>
 
 </head>
@@ -1241,9 +1267,9 @@ function laboShowShop(shop,el){
 
 function laboPRow(name,val){
   var zero=!val||val===0;
-  return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
-    +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
-    +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--hint)':'var(--text)')+';">'+name+'</div>'
+  return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);">'
+    +'<div style="font-size:15px;font-weight:700;font-family:DM Mono,monospace;min-width:26px;text-align:right;color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
+    +'<div style="font-size:11px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--hint)':'var(--text)')+';">'+name+'</div>'
     +'</div>';
 }
 
@@ -1447,13 +1473,12 @@ function laboRenderFiche(shop,order){
     if(isValidated){
       var vqty=order['vqty_'+key];
       var isRupt=order['rupt_'+key];
-      // Si pas de valeur originale ET vqty existe → utiliser vqty sans signaler changement
       var display=vqty!==undefined?vqty:val;
       var changed=vqty!==undefined&&val>0&&vqty!==val;
       var zero=!display||display===0;
-      return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
-        +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
-        +'<div style="font-size:13px;font-weight:500;color:'+(isRupt?'#c0392b':zero?'var(--hint)':'var(--text)')+';">'+name+(isRupt?' ⚠ Stock insuff.':changed?' (dem. '+val+')':'')+'</div>'
+      return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
+        +'<div style="font-size:15px;font-weight:700;font-family:DM Mono,monospace;min-width:26px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
+        +'<div style="font-size:11px;font-weight:500;color:'+(isRupt?'#c0392b':zero?'var(--hint)':'var(--text)')+';">'+name+(isRupt?' ⚠':changed?' ('+val+')':'')+'</div>'
         +'</div>';
     }else{
       return laboMakeValidRow(shop,key,name,val);
@@ -1542,7 +1567,7 @@ function laboRenderFiche(shop,order){
     }
   }
 
-  var colTitle=function(t){return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--hint);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
+  var colTitle=function(t){return '<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">'+t+'</div>';};
   var statusBadge=isValidated
     ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">'+(order.ts?'Recu '+fmtT(order.ts)+' · ':'')+'Valide '+fmtT(order.validatedAt)+'</div><span class="valid-status-validated">Validee</span></div>'
     :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu a '+fmtT(order.ts)+'</div><span class="valid-status-pending">A valider</span></div>';
@@ -1622,8 +1647,8 @@ async function laboFetchFish(){
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
-  // Charger en parallèle : commandes + données prod (poisson/riz)
-  await Promise.all([laboFetchFish(), (async function(){
+  // Charger d'abord les données prod (poisson/riz/rolls), puis les commandes
+  await laboFetchFish();
   try{
     var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
     if(listRes.ok){
@@ -1649,7 +1674,6 @@ async function laboFetch(){
       });
     }
   }catch(e){console.error('laboFetch',e);}
-  })()]);
   laboRender();
 }
 
