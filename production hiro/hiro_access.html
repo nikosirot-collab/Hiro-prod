@@ -1581,18 +1581,19 @@ function laboRenderFiche(shop,order){
     :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu a '+fmtT(order.ts)+'</div><span class="valid-status-pending">A valider</span></div>';
 
   var topSection=shop==='ville'
-    ?'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:3px solid var(--border);">'
+    ?'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-      +'<div style="border-right:1px solid var(--border);">'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'
+      +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr;border-bottom:3px solid var(--border);">'
       +'<div>'+colTitle('Plats chauds')+platsColRows+'</div>'+'</div>'
     :'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
       +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'+'</div>';
 
-  var bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;">'
+  var bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);">'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
-    +'<div style="border-right:1px solid var(--border);">'+colTitle('Tapas')+tapasRows+'</div>'
-    +'<div>'+colTitle('CHR')+chrRows+'</div>'+'</div>';
+    +'<div>'+colTitle('Tapas')+tapasRows+'</div>'+'</div>'
+    +'<div>'+colTitle('CHR')+chrRows+'</div>';
 
   var validateBtn=!isValidated
     ?'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
@@ -1693,9 +1694,12 @@ function showPage(p,el){
   if(p==='historique')loadHistorique();
   if(p==='recap'){recapFetch();}
   if(p==='labo'){
-    // Toujours attendre laboFetchFish avant de rendre
-    laboFetchFish().then(function(){ laboFetch(); });
-    if(!laboPollInterval)laboPollInterval=setInterval(laboFetch,5000);
+    var laboCont=document.getElementById('labo-content');
+    if(laboCont)laboCont.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Chargement...</div>';
+    laboFetchFish().then(function(){
+      laboFetch();
+      if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
+    });
   }
   else{if(laboPollInterval){clearInterval(laboPollInterval);laboPollInterval=null;}}
 }
