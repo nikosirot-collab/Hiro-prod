@@ -1695,11 +1695,18 @@ function showPage(p,el){
   if(p==='recap'){recapFetch();}
   if(p==='labo'){
     var laboCont=document.getElementById('labo-content');
-    if(laboCont)laboCont.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Chargement...</div>';
-    laboFetchFish().then(function(){
+    if(Object.keys(laboFishData).length>0){
+      // Données déjà chargées - rendu immédiat
       laboFetch();
       if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
-    });
+    } else {
+      // Attendre le chargement
+      if(laboCont)laboCont.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Chargement...</div>';
+      laboFetchFish().then(function(){
+        laboFetch();
+        if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
+      });
+    }
   }
   else{if(laboPollInterval){clearInterval(laboPollInterval);laboPollInterval=null;}}
 }
