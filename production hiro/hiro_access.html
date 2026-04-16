@@ -233,7 +233,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
   <div class="nav-tab" onclick="showPage('labo',this)">Commande</div>
-  <div class="nav-tab" onclick="showPage('recap',this)">Récap</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
@@ -395,17 +394,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 
   <!-- PAGE RÉCAP JOURNALIER -->
-  <div id="page-recap" class="page">
-    <div style="padding:8px 0;">
-      <div style="display:flex;align-items:center;gap:12px;padding:4px 0 12px;">
-        <button onclick="recapChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">←</button>
-        <div id="recap-date-label" style="flex:1;text-align:center;font-size:14px;font-weight:600;text-transform:capitalize;"></div>
-        <button onclick="recapChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
-      </div>
-      <div id="recap-content"><div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div></div>
-    </div>
-  </div>
-
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
     <div style="padding:8px 0;">
@@ -1692,7 +1680,6 @@ function showPage(p,el){
   document.getElementById('page-'+p).classList.add('active');
   el.classList.add('active');
   if(p==='historique')loadHistorique();
-  if(p==='recap'){recapFetch();}
   if(p==='labo'){
     var laboCont=document.getElementById('labo-content');
     if(Object.keys(laboFishData).length>0){
@@ -1712,114 +1699,6 @@ function showPage(p,el){
 }
 
 // ─── RÉCAP JOURNALIER ───
-var _ORDERS_API_R='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
-var recapDate=(function(){
-  var d=new Date(TODAY_NC);
-  var dow=d.getDay();
-  if(dow===6){d.setDate(d.getDate()+2);}
-  else if(dow===0){d.setDate(d.getDate()+1);}
-  else{d.setDate(d.getDate()+1);}
-  return d;
-})();
-
-function recapDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-function recapFmt(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
-
-document.getElementById('recap-date-label').textContent=recapFmt(recapDate);
-
-function recapChangeDate(d){
-  recapDate.setDate(recapDate.getDate()+d);
-  document.getElementById('recap-date-label').textContent=recapFmt(recapDate);
-  recapFetch();
-}
-
-var RECAP_SHOPS=['dsm','mgt','paita','ville'];
-var RECAP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-var RECAP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
-
-var RECAP_SECTIONS=[
-  {title:'Salade',keys:['bo','sin','thon','thai','plp','rouleaux','tataki'],names:{bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleau',tataki:'Tataki'}},
-  {title:'Dessert',keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'],names:{tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'}},
-  {title:'Tapas',keys:['gyoza','gnem','pnem','sesame','banhbao'],names:{gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'}},
-  {title:'Poke',keys:['pokethon','pokesaumon'],names:{pokethon:'Poke thon',pokesaumon:'Poke saumon'}}
-];
-
-async function recapFetch(){
-  var el=document.getElementById('recap-content');
-  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>';
-  var dStr=recapDs(recapDate);
-  var orders={};
-  await Promise.all(RECAP_SHOPS.map(async function(s){
-    try{
-      var res=await fetch(_ORDERS_API_R+'/order_'+dStr+'_'+s+'?key='+_KEY);
-      if(res.ok){
-        var json=await res.json();
-        if(json.fields){
-          var d={};
-          Object.entries(json.fields).forEach(function(e){
-            var k=e[0],v=e[1];
-            if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
-            else if(v.stringValue!==undefined)d[k]=v.stringValue;
-          });
-          if(d.ts)orders[s]=d;
-        }
-      }
-    }catch(e){}
-  }));
-
-  var receivedShops=Object.keys(orders);
-  if(receivedShops.length===0){
-    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune commande reçue pour ce jour</div>';
-    return;
-  }
-
-  var html='';
-
-  // Statut par boutique
-  html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;">';
-  RECAP_SHOPS.forEach(function(s){
-    var o=orders[s];
-    var ok=!!o;
-    var isVal=ok&&o.status==='validated';
-    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;">'
-      +'<div style="width:8px;height:8px;border-radius:50%;background:'+(ok?RECAP_COLORS[s]:'#ddd')+';flex-shrink:0;"></div>'
-      +'<div><div style="font-size:12px;font-weight:600;">'+RECAP_LABELS[s]+'</div>'
-      +'<div style="font-size:10px;color:var(--muted);">'+(ok?(isVal?'✓ Validée':'Reçue'):'En attente')+'</div></div>'
-      +'</div>';
-  });
-  html+='</div>';
-
-  // Totaux par section
-  RECAP_SECTIONS.forEach(function(sec){
-    var hasAny=false;
-    var rows='';
-    sec.keys.forEach(function(k){
-      var total=0;
-      var perShop=[];
-      RECAP_SHOPS.forEach(function(s){
-        var v=(orders[s]&&orders[s][k])||0;
-        total+=v;
-        if(v>0)perShop.push('<span style="color:'+RECAP_COLORS[s]+';font-weight:600;font-size:10px;">'+RECAP_LABELS[s]+':'+v+'</span>');
-      });
-      if(total>0){
-        hasAny=true;
-        rows+='<div style="display:flex;align-items:center;padding:7px 12px;border-bottom:1px solid var(--border);gap:8px;">'
-          +'<div style="font-size:18px;font-weight:700;font-family:DM Mono,monospace;min-width:32px;text-align:right;">'+total+'</div>'
-          +'<div style="flex:1;">'
-          +'<div style="font-size:13px;font-weight:500;">'+sec.names[k]+'</div>'
-          +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;">'+perShop.join('')+'</div>'
-          +'</div>'
-          +'</div>';
-      }
-    });
-    if(!hasAny)return;
-    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;">'
-      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:7px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+sec.title+'</div>'
-      +rows+'</div>';
-  });
-
-  el.innerHTML=html;
-}
 
 // Remplace l ancien showPage
 </script>
