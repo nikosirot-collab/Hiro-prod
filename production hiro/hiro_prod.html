@@ -608,13 +608,25 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <div id="sec-log"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div></div>
       </div>
 
-      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe interfaces magasin</div>
         <div style="display:flex;gap:8px;align-items:center;">
           <input id="new-pwd-input" type="password" placeholder="Nouveau mot de passe" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;">
           <button onclick="changeOrderPwd()" style="padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
         </div>
         <div id="pwd-change-msg" style="font-size:12px;margin-top:8px;display:none;"></div>
+      </div>
+
+      <!-- Débit réseau -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;">Débit réseau <span id="net-live" style="font-size:10px;color:#27ae60;font-weight:400;"></span></div>
+          <button onclick="runNetTest()" id="net-test-btn" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Tester</button>
+        </div>
+        <div id="net-results">
+          <div style="font-size:12px;color:var(--text-muted);">Analyse en cours...</div>
+        </div>
+        <div id="net-history" style="margin-top:10px;"></div>
       </div>
     </div>
   </div>
@@ -921,8 +933,8 @@ function showPage(p, el) {
   if(p==='historique') loadHistorique();
   if(p==='recap') renderRecap();
   if(p==='commandes') loadCommandes();
-  if(p==='securite'){loadSecurite();secPollStart();}
-  else secPollStop();
+  if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();}
+  else{secPollStop();stopNetMonitor();secPollStop();}
 }
 
 function changeWeek(d){
@@ -2308,6 +2320,65 @@ function secDevCard(e){
     +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
     +'</div>';
 }
+
+var _netInterval=null;
+
+async function runNetTest(){
+  var liveEl=document.getElementById('net-live');
+  if(liveEl)liveEl.textContent='⟳ mesure...';
+
+  // Latence (3 pings)
+  var latencies=[];
+  for(var i=0;i<3;i++){
+    var t0=Date.now();
+    try{
+      await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
+      latencies.push(Date.now()-t0);
+    }catch(e){latencies.push(9999);}
+  }
+  var avgLat=Math.round(latencies.reduce(function(a,b){return a+b;},0)/latencies.length);
+  var latQ=avgLat<150?{label:'Excellent',color:'#27ae60'}:avgLat<400?{label:'Bon',color:'#f39c12'}:avgLat<800?{label:'Moyen',color:'#e67e22'}:{label:'Mauvais',color:'#e74c3c'};
+
+  // Débit
+  var dlSpeed='—';var dlKbps=0;
+  var dlQ={label:'—',color:'#999'};
+  try{
+    var t1=Date.now();
+    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders?pageSize=20&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
+    var txt=await r.text();
+    var elapsed=(Date.now()-t1)/1000;
+    dlKbps=Math.round((txt.length/elapsed)/1024);
+    dlSpeed=dlKbps+'KB/s';
+    dlQ=dlKbps>500?{label:'Excellent',color:'#27ae60'}:dlKbps>100?{label:'Bon',color:'#f39c12'}:dlKbps>30?{label:'Moyen',color:'#e67e22'}:{label:'Lent',color:'#e74c3c'};
+  }catch(e){}
+
+  var gs=avgLat<150?3:avgLat<400?2:avgLat<800?1:0;
+  var global=gs===3?{label:'Excellente',color:'#27ae60',icon:'🟢'}:gs===2?{label:'Bonne',color:'#f39c12',icon:'🟡'}:gs===1?{label:'Moyenne',color:'#e67e22',icon:'🟠'}:{label:'Mauvaise',color:'#e74c3c',icon:'🔴'};
+
+  var res=document.getElementById('net-results');
+  if(res){
+    res.innerHTML=
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;background:'+global.color+'18;border-radius:8px;border:1px solid '+global.color+'44;">'
+      +'<span style="font-size:16px;">'+global.icon+'</span>'
+      +'<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:'+global.color+';">Connexion '+global.label+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);">Firebase · Nouméa</div></div>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+      +'<div style="background:var(--bg);border-radius:8px;padding:8px 10px;">'
+      +'<div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">Latence</div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+latQ.color+';">'+avgLat+'<span style="font-size:10px;font-weight:400;"> ms</span></div>'
+      +'<div style="font-size:10px;color:'+latQ.color+';">'+latQ.label+'</div></div>'
+      +'<div style="background:var(--bg);border-radius:8px;padding:8px 10px;">'
+      +'<div style="font-size:9px;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px;">Débit</div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+dlQ.color+';">'+dlSpeed+'</div>'
+      +'<div style="font-size:10px;color:'+dlQ.color+';">'+dlQ.label+'</div></div>'
+      +'</div>';
+  }
+  if(liveEl)liveEl.textContent='· '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function startNetMonitor(){runNetTest();if(!_netInterval)_netInterval=setInterval(runNetTest,30000);}
+function stopNetMonitor(){if(_netInterval){clearInterval(_netInterval);_netInterval=null;}}
 
 async function secDeleteDevice(devId){
   if(!confirm('Supprimer cet appareil ?')) return;
