@@ -576,6 +576,16 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <span class="section-title">Appareils connectés</span>
         <button onclick="loadSecurite()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
       </div>
+      <!-- Monitoring Firebase + dernières connexions -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Monitoring Firebase</div>
+        <div id="firebase-status" style="margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text-muted);">Vérification...</div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Dernière connexion par interface</div>
+        <div id="last-seen-interfaces"></div>
+      </div>
+
       <div id="sec-devices" style="margin-bottom:24px;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
 
       <!-- Log connexions -->
@@ -2277,6 +2287,81 @@ async function loadLogs(){
   }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
+async function loadMonitoring(entries){
+  // ── Statut Firebase ──
+  var fbEl=document.getElementById('firebase-status');
+  var t0=Date.now();
+  var fbOk=false;
+  try{
+    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
+    fbOk=r.ok;
+  }catch(e){}
+  var lat=Date.now()-t0;
+  if(fbEl){
+    var fbColor=fbOk?(lat<300?'#27ae60':'#f39c12'):'#e74c3c';
+    var fbLabel=fbOk?(lat<300?'Opérationnel':'Lent'):'Hors ligne';
+    var fbIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
+    fbEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+fbColor+'18;border-radius:8px;border:1px solid '+fbColor+'44;margin-bottom:8px;">'
+      +'<span style="font-size:16px;">'+fbIcon+'</span>'
+      +'<div><div style="font-size:12px;font-weight:700;color:'+fbColor+';">Firebase '+fbLabel+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);">Latence '+lat+'ms</div></div>'
+      +'</div>';
+  }
+
+  // ── Dernière connexion par interface ──
+  var lsEl=document.getElementById('last-seen-interfaces');
+  if(!lsEl||!entries) return;
+  var now=Date.now();
+  var IFACES=[
+    {key:'Hiro Prod',label:'🍱 Hiro Prod',color:'#1a1916'},
+    {key:'Hiro Access',label:'👁 Hiro Access',color:'#555'},
+    {key:'Commande',label:'📦 Magasins',color:'#1a5fa8'},
+  ];
+  var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var html='';
+  IFACES.forEach(function(iface){
+    var matching=entries.filter(function(e){return e.iface===iface.key&&!e.disabled;});
+    if(matching.length===0){
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="width:7px;height:7px;border-radius:50%;background:#ddd;flex-shrink:0;"></div>'
+        +'<div style="font-size:12px;font-weight:600;flex:1;">'+iface.label+'</div>'
+        +'<div style="font-size:10px;color:var(--text-muted);">Jamais connecté</div>'
+        +'</div>';
+      return;
+    }
+    // Pour Commande, grouper par shop
+    if(iface.key==='Commande'){
+      var byShop={};
+      matching.forEach(function(e){
+        if(!byShop[e.shop]||e.ts>byShop[e.shop].ts) byShop[e.shop]=e;
+      });
+      var shopHtml=Object.entries(byShop).map(function(kv){
+        var s=kv[0],e=kv[1];
+        var ago=Math.round((now-e.ts)/60000);
+        var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
+        var isOnline=(now-e.ts)<90000;
+        var dot='<div style="width:6px;height:6px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>';
+        return dot+' <span style="font-size:10px;font-weight:600;color:#1a5fa8;">'+(SHOP_LABELS[s]||s)+'</span> <span style="font-size:10px;color:var(--text-muted);">'+agoStr+'</span>';
+      }).join(' &nbsp;·&nbsp; ');
+      html+='<div style="padding:7px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="font-size:12px;font-weight:600;margin-bottom:4px;">'+iface.label+'</div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:10px;">'+shopHtml+'</div>'
+        +'</div>';
+    } else {
+      var best=matching.reduce(function(a,b){return b.ts>a.ts?b:a;});
+      var ago=Math.round((now-best.ts)/60000);
+      var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
+      var isOnline=(now-best.ts)<90000;
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="width:7px;height:7px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>'
+        +'<div style="font-size:12px;font-weight:600;flex:1;">'+iface.label+'</div>'
+        +'<div style="font-size:10px;color:var(--text-muted);">'+agoStr+'</div>'
+        +'</div>';
+    }
+  });
+  lsEl.innerHTML=html;
+}
+
 async function loadSecurite(){
   var el=document.getElementById('sec-devices');
   if(!el)return;
@@ -2345,6 +2430,7 @@ async function loadSecurite(){
     if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
     el.innerHTML=html;
     loadSecLog();
+    loadMonitoring(entries);
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
