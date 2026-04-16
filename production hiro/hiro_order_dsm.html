@@ -245,7 +245,7 @@ const tomorrow=getTomorrow();
 <div class="bottom-bar">
   <button class="btn-reset" onclick="resetAll()">Effacer</button>
   <div class="qty-count">Total : <span id="total-count" style="color:#1a5fa8">0</span></div>
-  <button class="btn-send" id="btn-send" onclick="sendOrder()">Envoyer →</button>
+  <button class="btn-send" id="btn-send" onclick="showConfirmModal()">Envoyer →</button>
 </div>
 
 <script>
@@ -324,7 +324,22 @@ function showRecapOverlay(d){
   showRecap(d);
 }
 
-async function sendOrder(){
+
+function showConfirmModal(){
+  var tot=0;
+  ALL_KEYS.forEach(function(k){tot+=(qty[k]||0);});
+  if(libreItems)Object.values(libreItems).forEach(function(arr){if(Array.isArray(arr))arr.forEach(function(i){tot+=(i.qty||0);});});
+  document.getElementById('confirm-date').textContent=fmtDate(getTomorrow());
+  document.getElementById('confirm-total').textContent=tot;
+  document.getElementById('confirm-modal').style.display='flex';
+}
+var _pendingSend=null;
+function confirmSend(){
+  document.getElementById('confirm-modal').style.display='none';
+  _doSendOrder();
+}
+
+async function _doSendOrder(){
   // Recalculer tomorrow au moment de l'envoi
   var tomorrow=getTomorrow();
   // Vérif 19h30
@@ -359,7 +374,7 @@ function confirmNameAndSend(){
   var err=document.getElementById('name-modal-error');if(err)err.style.display='none';
   localStorage.setItem('hiro-user-name',name);
   var modal=document.getElementById('name-modal');if(modal)modal.style.display='none';
-  sendOrder();
+  _doSendOrder();
 }
 
 async function loadExistingOrder(){
@@ -538,9 +553,9 @@ function recapChangeDay(d){
   if(btn){
     if(isToday){
       // Restaurer selon le statut réel (loadRecap va charger et mettre à jour)
-      btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+      btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};
     }else{
-      btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+      btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};
     }
   }
   loadRecap();
@@ -595,7 +610,7 @@ async function loadRecap(){
       if(_isTomorrow&&(d.ts||d.status)){
         btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};
       }else{
-        btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};
+        btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};
       }
     }
 
@@ -700,7 +715,7 @@ function updateStatusBanner(hasOrder){
   }else{
     banner.className='status-banner pending';
     text.textContent='⚠ Commande non envoyée pour le '+fmtDate(tomorrow);
-    if(btn){btn.textContent='Envoyer →';btn.onclick=function(){sendOrder();};}
+    if(btn){btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
   }
 }
 
@@ -965,6 +980,59 @@ if(_offlineQueue.length>0)showOfflineBanner();
   }
   _sendPing();
   setInterval(_sendPing,30000);
+})();
+</script>
+
+
+<!-- Modale confirmation envoi -->
+<div id="confirm-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:300px;width:90%;text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;">📋</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Confirmer l'envoi</div>
+    <div style="font-size:13px;color:#888;margin-bottom:6px;">Livraison <span id="confirm-date" style="font-weight:600;color:#1a1916;"></span></div>
+    <div style="font-size:13px;color:#888;margin-bottom:20px;"><span id="confirm-total" style="font-weight:700;font-size:16px;color:#1a1916;"></span> articles</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('confirm-modal').style.display='none'" style="flex:1;padding:11px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;">Annuler</button>
+      <button id="confirm-btn-ok" onclick="confirmSend()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#1a5fa8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Envoyer ✓</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── Service Worker Helper ──
+(function(){
+  // Enregistrement SW
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/Hiro-prod/production%20hiro/sw.js')
+      .then(function(reg){
+        console.log('SW registered');
+        // Écouter les messages du SW
+        navigator.serviceWorker.addEventListener('message', function(e){
+          if(e.data&&e.data.type==='sync-success'){
+            console.log('SW: sync success pour', e.data.shop);
+            hideOfflineBanner();
+            updateStatusBanner(true);
+          }
+        });
+      }).catch(function(e){ console.log('SW error:', e); });
+  }
+
+  // Envoyer une action au SW via IndexedDB
+  window.swQueueAction = function(url, fields, shop, date){
+    if(navigator.serviceWorker && navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({
+        type:'queue-action', url:url, fields:fields, shop:shop, date:date
+      });
+    } else {
+      // Fallback localStorage si SW pas disponible
+      try{
+        var q=JSON.parse(localStorage.getItem('hiro-offline-queue-'+SHOP)||'[]');
+        q.push({url:url,fields:fields,shop:shop,date:date});
+        localStorage.setItem('hiro-offline-queue-'+SHOP, JSON.stringify(q));
+      }catch(e){}
+    }
+  };
 })();
 </script>
 
