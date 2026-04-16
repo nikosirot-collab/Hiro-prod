@@ -555,25 +555,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 
   <!-- PAGE SECURITE -->
-  <div id="page-securite" class="page">
-    <div class="section">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <span class="section-title">Appareils connectés</span>
-        <button onclick="loadSecurite()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
-      </div>
-      <div id="sec-devices" style="margin-bottom:24px;">
-        <div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>
-      </div>
-      <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:16px;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe interfaces magasin</div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input id="new-pwd-input" type="password" placeholder="Nouveau mot de passe" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;">
-          <button onclick="changeOrderPwd()" style="padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
-        </div>
-        <div id="pwd-change-msg" style="font-size:12px;margin-top:8px;display:none;"></div>
-      </div>
-    </div>
-  </div>
 
   <!-- PAGE COMMANDES -->
   <div id="page-commandes" class="page">
