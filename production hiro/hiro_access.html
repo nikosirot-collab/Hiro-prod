@@ -182,6 +182,12 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
     padding:4px 6px !important;
   }
 }
+
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 </style>
 
 </head>
@@ -234,6 +240,8 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
   <div class="nav-tab" onclick="showPage('labo',this)">Commande</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
+  <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
+  <div class="nav-tab" onclick="showPage('cmd-histo',this);loadCmdHisto()">Commandes</div>
 </nav>
 
 <div class="week-bar">
@@ -394,6 +402,31 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 
   <!-- PAGE RÉCAP JOURNALIER -->
+  <!-- PAGE LOGS -->
+  <div id="page-logs" class="page">
+    <div style="padding:8px 0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;">Modifications & validations</div>
+        <button onclick="loadLogs()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻</button>
+      </div>
+      <div id="logs-content" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
+      </div>
+    </div>
+  </div>
+  <!-- PAGE CMD HISTO -->
+  <div id="page-cmd-histo" class="page">
+    <div style="padding:8px 0;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <button onclick="cmdHistoChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">←</button>
+        <div id="cmd-histo-date" style="flex:1;text-align:center;font-size:13px;font-weight:600;text-transform:capitalize;"></div>
+        <button onclick="cmdHistoChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">→</button>
+      </div>
+      <div id="cmd-histo-content">
+        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
+      </div>
+    </div>
+  </div>
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
     <div style="padding:8px 0;">
@@ -1258,6 +1291,16 @@ function laboShowShop(shop,el){
   laboCurrentShop=shop;
   document.querySelectorAll('.labo-tab').forEach(function(t){t.style.borderBottomColor='transparent';t.style.color='var(--muted)';t.style.fontWeight='400';});
   el.style.borderBottomColor='var(--text)';el.style.color='var(--text)';el.style.fontWeight='500';
+  // Détecter nouvelles commandes
+  LABO_SHOPS.forEach(function(s){
+    var prev=_prevOrders[s];
+    var curr=laboOrders[s];
+    if(!prev&&curr&&curr.ts){
+      showNewOrderNotif(s);
+      logAction('reception',s,'Commande reçue');
+    }
+    _prevOrders[s]=curr?{ts:curr.ts,status:curr.status}:null;
+  });
   laboRender();
 }
 
@@ -1381,16 +1424,189 @@ var _laboEditing=new Set();
 var laboPoids={};
 var laboPoidsDirty=false;
 
+async function writeLog(action, shop, details){
+  try{
+    var dStr=laboDs(laboDate);
+    var docId='log_'+Date.now()+'_'+shop;
+    var fields={
+      ts:{integerValue:Date.now()},
+      action:{stringValue:action},
+      shop:{stringValue:shop},
+      date:{stringValue:dStr},
+      details:{stringValue:details||''}
+    };
+    await fetch(_LOG_API+'/'+docId+'?key='+_LOG_KEY,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+  }catch(e){}
+}
+
 function laboModify(shop){
   if(window._laboValid&&window._laboValid[shop]) delete window._laboValid[shop];
-  // Charger les poids existants depuis vlibre
   var order=laboOrders[shop]||{};
   var libreStr=order.libre||order.vlibre||'';
   laboPoids={};
   try{if(libreStr){var lp=JSON.parse(libreStr);if(lp.poids)laboPoids=lp.poids;}}catch(e){}
   laboPoidsDirty=false;
   _laboEditing.add(shop);
+  writeLog('modification', shop, 'Ouverture en modification');
   laboRender();
+}
+
+
+
+// ── HISTORIQUE COMMANDES MAGASIN ──
+var _cmdHistoDate=(function(){
+  var d=new Date(TODAY_NC);
+  // Lundi de la semaine courante
+  var dow=d.getDay();var diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff);return d;
+})();
+
+function cmdHistoChangeDate(d){
+  _cmdHistoDate.setDate(_cmdHistoDate.getDate()+d*7);
+  loadCmdHisto();
+}
+
+async function loadCmdHisto(){
+  var el=document.getElementById('cmd-histo-content');
+  var dateEl=document.getElementById('cmd-histo-date');
+  if(!el)return;
+  var monday=new Date(_cmdHistoDate);
+  var saturday=new Date(monday);saturday.setDate(saturday.getDate()+5);
+  var wLabel='Semaine du '+monday.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})+' au '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  if(dateEl)dateEl.textContent=wLabel;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
+
+  var shops=['dsm','mgt','paita','ville'];
+  var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var days=[];
+  for(var i=0;i<6;i++){
+    var d2=new Date(monday);d2.setDate(d2.getDate()+i);
+    days.push({date:d2,dStr:laboDs(d2),label:['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i]});
+  }
+
+  // Charger toutes les commandes de la semaine
+  var allOrders={};
+  await Promise.all(days.map(async function(day){
+    allOrders[day.dStr]={};
+    await Promise.all(shops.map(async function(shop){
+      try{
+        var res=await fetch(_ORDERS_API+'/order_'+day.dStr+'_'+shop+'?key='+_KEY);
+        if(res.ok){
+          var json=await res.json();
+          if(json.fields){
+            var d3={};
+            Object.entries(json.fields).forEach(function(e){
+              var k=e[0],v=e[1];
+              if(v.integerValue!==undefined)d3[k]=parseInt(v.integerValue);
+              else if(v.stringValue!==undefined)d3[k]=v.stringValue;
+              else if(v.booleanValue!==undefined)d3[k]=v.booleanValue;
+            });
+            allOrders[day.dStr][shop]=d3;
+          }
+        }
+      }catch(e){}
+    }));
+  }));
+
+  var html='';
+  days.forEach(function(day){
+    var dayOrders=allOrders[day.dStr];
+    var hasAny=Object.values(dayOrders).some(function(o){return o&&o.ts;});
+    html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);">'
+      +'<div style="font-size:13px;font-weight:600;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
+      +'<div style="display:flex;gap:6px;">';
+    shops.forEach(function(shop){
+      var o=dayOrders[shop];
+      var ok=o&&o.ts;
+      var isVal=ok&&o.status==='validated';
+      html+='<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+(ok?shopColors[shop]+'22':'#f0f0f0')+';color:'+(ok?shopColors[shop]:'#bbb')+';font-weight:600;">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
+    });
+    html+='</div></div>';
+    if(hasAny){
+      html+='<div style="border-top:1px solid var(--border);">';
+      shops.forEach(function(shop){
+        var o=dayOrders[shop];
+        if(!o||!o.ts)return;
+        var isVal=o.status==='validated';
+        var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
+        var items=[];
+        ['bo','sin','thon','thai','plp','rouleaux','rizprod','pokethon','pokesaumon','tataki'].forEach(function(k){if(getV(k)>0)items.push(getV(k)+' '+{bo:'Bun Bò',sin:'Sing.',thon:'Thon',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki'}[k]);});
+        html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;">'
+          +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';min-width:40px;">'+shopLabels[shop]+'</span>'
+          +'<span style="font-size:11px;color:var(--text);">'+items.join(' · ')+'</span>'
+          +(isVal?'<span style="margin-left:auto;font-size:10px;color:#0d7a52;font-weight:600;">✓</span>':'')
+          +'</div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  });
+
+  el.innerHTML=html||'<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune commande cette semaine</div>';
+}
+
+// ── LOG DES MODIFICATIONS ──
+var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-logs';
+var _LOG_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+async function logAction(action, shop, details){
+  try{
+    var devId=localStorage.getItem('hiro-dev-id')||'unknown';
+    var docId='log_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+    var fields={
+      ts:{integerValue:Date.now()},
+      action:{stringValue:action},
+      shop:{stringValue:shop||''},
+      details:{stringValue:details||''},
+      devId:{stringValue:devId},
+      date:{stringValue:laboDs(laboDate)}
+    };
+    await fetch(_LOG_API+'/'+docId+'?key='+_LOG_KEY,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+  }catch(e){}
+}
+
+async function loadLogs(){
+  var el=document.getElementById('logs-content');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
+  try{
+    var res=await fetch(_LOG_API+'?orderBy=ts+desc&pageSize=50&key='+_LOG_KEY);
+    if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;">Erreur</div>';return;}
+    var json=await res.json();
+    var docs=(json.documents||[]);
+    if(docs.length===0){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Aucun log</div>';return;}
+    var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+    var html=docs.map(function(doc){
+      if(!doc.fields)return '';
+      var f=doc.fields;
+      var ts=f.ts?parseInt(f.ts.integerValue):0;
+      var action=f.action?f.action.stringValue:'';
+      var shop=f.shop?f.shop.stringValue:'';
+      var details=f.details?f.details.stringValue:'';
+      var date=f.date?f.date.stringValue:'';
+      var time=ts?new Date(ts).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+      var color=SHOP_COLORS[shop]||'#888';
+      var icon=action==='validation'?'✅':action==='modification'?'✏️':action==='envoi'?'📤':'📝';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);">'
+        +'<span style="font-size:16px;flex-shrink:0;">'+icon+'</span>'
+        +'<div style="flex:1;min-width:0;">'
+        +'<div style="font-size:12px;font-weight:600;">'
+        +(shop?'<span style="color:'+color+';">'+shop.toUpperCase()+'</span> · ':'')
+        +action+'</div>'
+        +(details?'<div style="font-size:11px;color:var(--muted);margin-top:1px;">'+details+'</div>':'')
+        +'<div style="font-size:10px;color:var(--muted);margin-top:2px;">'+time+(date?' · livraison '+date:'')+'</div>'
+        +'</div></div>';
+    }).join('');
+    el.innerHTML=html||'<div style="text-align:center;color:var(--muted);padding:1rem;">Aucun log</div>';
+  }catch(e){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
 async function laboValidate(shop){
@@ -1427,6 +1643,7 @@ async function laboValidate(shop){
       queueOfflineAction(url,fields);
       laboOrders[shop].status='validated';laboOrders[shop].validatedAt=Date.now();
       _laboEditing.delete(shop);laboPoids={};laboPoidsDirty=false;
+      logAction(_laboEditing.size>0?'modification':'validation',shop,'Commande validée/modifiée');
       Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
       if(window._laboValid)delete window._laboValid[shop];
       laboRender();
@@ -1438,12 +1655,15 @@ async function laboValidate(shop){
       body:JSON.stringify({fields:fields})
     });
     if(res.ok){
+      var wasEditing=_laboEditing.has(shop);
       laboOrders[shop].status='validated';
       laboOrders[shop].validatedAt=Date.now();
       _laboEditing.delete(shop);
       laboPoids={};laboPoidsDirty=false;
       Object.entries(state).forEach(function(e){laboOrders[shop]['vqty_'+e[0]]=e[1].qty;});
       if(window._laboValid)delete window._laboValid[shop];
+      writeLog(wasEditing?'modification':'validation', shop,
+        wasEditing?'Commande modifiée et revalidée':'Commande validée');
       laboRender();
     }
   }catch(e){alert('Erreur lors de la validation');}
@@ -1644,6 +1864,33 @@ async function laboFetchFish(){
 // Précharger les données de production au démarrage
 laboFetchFish();
 
+
+var _prevOrders={dsm:null,mgt:null,paita:null,ville:null};
+var LABO_NOTIF_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+var LABO_NOTIF_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+
+function showNewOrderNotif(shop){
+  var label=LABO_NOTIF_LABELS[shop]||shop;
+  var color=LABO_NOTIF_COLORS[shop]||'#1a1916';
+  var n=document.createElement('div');
+  n.style.cssText='position:fixed;top:16px;right:16px;z-index:9999;background:'+color+';color:#fff;padding:12px 16px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.25);display:flex;align-items:center;gap:10px;max-width:260px;animation:slideInRight .3s ease;';
+  n.innerHTML='<span style="font-size:20px;">📦</span><div><div>Nouvelle commande</div><div style="font-weight:400;font-size:11px;opacity:.85;">'+label+' vient d\'envoyer sa commande</div></div>';
+  // Son de notification
+  try{var ctx=new AudioContext();var o=ctx.createOscillator();var g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=880;g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);o.start(ctx.currentTime);o.stop(ctx.currentTime+0.4);}catch(e){}
+  document.body.appendChild(n);
+  setTimeout(function(){if(n.parentNode)n.remove();},5000);
+  n.onclick=function(){n.remove();};
+  // Badge sur l\'onglet Commande
+  var tab=document.querySelector('.nav-tab[onclick*="labo"]');
+  if(tab&&!tab.querySelector('.cmd-badge')){
+    var b=document.createElement('span');
+    b.className='cmd-badge';
+    b.style.cssText='display:inline-block;background:#e74c3c;color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;margin-left:4px;vertical-align:middle;';
+    b.textContent='NEW';
+    tab.appendChild(b);
+  }
+}
+
 async function laboFetch(){
   var dStr=laboDs(laboDate);
   try{
@@ -1680,7 +1927,9 @@ function showPage(p,el){
   document.getElementById('page-'+p).classList.add('active');
   el.classList.add('active');
   if(p==='historique')loadHistorique();
-  if(p==='labo'){
+  if(p==='logs')loadLogs();
+  if(p==='cmd-histo')loadCmdHisto();
+  if(p==='labo'){var _badge=document.querySelector('.nav-tab[onclick*="labo"] .cmd-badge');if(_badge)_badge.remove();
     var laboCont=document.getElementById('labo-content');
     if(Object.keys(laboFishData).length>0){
       // Données déjà chargées - rendu immédiat
