@@ -240,7 +240,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('thon',this)">Thon</div>
   <div class="nav-tab" onclick="showPage('labo',this)">Commande</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
-  <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
   <div class="nav-tab" onclick="showPage('cmd-histo',this);loadCmdHisto()">Commandes</div>
 </nav>
 
@@ -403,30 +402,6 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
 
   <!-- PAGE RÉCAP JOURNALIER -->
   <!-- PAGE LOGS -->
-  <div id="page-logs" class="page">
-    <div style="padding:8px 0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-size:13px;font-weight:600;">Modifications & validations</div>
-        <button onclick="loadLogs()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻</button>
-      </div>
-      <div id="logs-content" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-        <div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
-      </div>
-    </div>
-  </div>
-  <!-- PAGE CMD HISTO -->
-  <div id="page-cmd-histo" class="page">
-    <div style="padding:8px 0;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <button onclick="cmdHistoChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">←</button>
-        <div id="cmd-histo-date" style="flex:1;text-align:center;font-size:13px;font-weight:600;text-transform:capitalize;"></div>
-        <button onclick="cmdHistoChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">→</button>
-      </div>
-      <div id="cmd-histo-content">
-        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
-      </div>
-    </div>
-  </div>
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
     <div style="padding:8px 0;">
@@ -1579,7 +1554,7 @@ async function loadLogs(){
   el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
   try{
     var res=await fetch(_LOG_API+'?orderBy=ts+desc&pageSize=50&key='+_LOG_KEY);
-    if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;">Erreur</div>';return;}
+    if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Aucun log disponible</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
     if(docs.length===0){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Aucun log</div>';return;}
@@ -1927,7 +1902,6 @@ function showPage(p,el){
   document.getElementById('page-'+p).classList.add('active');
   el.classList.add('active');
   if(p==='historique')loadHistorique();
-  if(p==='logs')loadLogs();
   if(p==='cmd-histo')loadCmdHisto();
   if(p==='labo'){var _badge=document.querySelector('.nav-tab[onclick*="labo"] .cmd-badge');if(_badge)_badge.remove();
     var laboCont=document.getElementById('labo-content');
