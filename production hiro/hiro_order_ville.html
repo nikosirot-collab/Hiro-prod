@@ -996,12 +996,24 @@ if(_offlineQueue.length>0)showOfflineBanner();
 
   async function _sendPing(){
     try{
+      // Mesurer latence Firebase
+      var _t0=Date.now();
+      var _fbOk=false;
+      try{
+        var _tr=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
+        _fbOk=_tr.ok;
+        // Vérif désactivation
+        if(_tr.ok){var _chk=await _tr.json();if(_chk.fields&&_chk.fields.disabled&&_chk.fields.disabled.booleanValue===true)return;}
+      }catch(e){_fbOk=false;}
+      var _lat=Date.now()-_t0;
       var fields={
         iface:{stringValue:_IFACE},
         shop:{stringValue:_SHOP},
         devId:{stringValue:_devId},
         userName:{stringValue:localStorage.getItem('hiro-user-name')||''},
         ts:{integerValue:Date.now()},
+        online:{booleanValue:_fbOk},
+        latency:{integerValue:_lat},
         device:{stringValue:(function(){
           var ua=navigator.userAgent;
           if(/iPad/.test(ua)||(('ontouchstart' in window)&&window.screen.width>=768)) return 'iPad';
@@ -1022,8 +1034,6 @@ if(_offlineQueue.length>0)showOfflineBanner();
           return '';
         })()}
       };
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){var chk=await chkRes.json();if(chk.fields&&chk.fields.disabled&&chk.fields.disabled.booleanValue===true)return;}
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }

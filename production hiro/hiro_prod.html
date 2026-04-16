@@ -2288,7 +2288,11 @@ async function loadLogs(){
 }
 
 async function loadMonitoring(entries){
-  // ── Statut Firebase ──
+  var now=Date.now();
+  var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+
+  // ── Statut Firebase local (Hiro Prod) ──
   var fbEl=document.getElementById('firebase-status');
   var t0=Date.now();
   var fbOk=false;
@@ -2308,58 +2312,55 @@ async function loadMonitoring(entries){
       +'</div>';
   }
 
-  // ── Dernière connexion par interface ──
+
+  // ── Statut Firebase par interface ──
   var lsEl=document.getElementById('last-seen-interfaces');
-  if(!lsEl||!entries) return;
-  var now=Date.now();
-  var IFACES=[
-    {key:'Hiro Prod',label:'🍱 Hiro Prod',color:'#1a1916'},
-    {key:'Hiro Access',label:'👁 Hiro Access',color:'#555'},
-    {key:'Commande',label:'📦 Magasins',color:'#1a5fa8'},
-  ];
-  var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var html='';
+  var IFACES=[
+    {key:'Hiro Access',label:'👁 Hiro Access'},
+    {key:'Commande',label:'📦 Magasins',isGroup:true},
+  ];
   IFACES.forEach(function(iface){
-    var matching=entries.filter(function(e){return e.iface===iface.key&&!e.disabled;});
-    if(matching.length===0){
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="width:7px;height:7px;border-radius:50%;background:#ddd;flex-shrink:0;"></div>'
-        +'<div style="font-size:12px;font-weight:600;flex:1;">'+iface.label+'</div>'
-        +'<div style="font-size:10px;color:var(--text-muted);">Jamais connecté</div>'
-        +'</div>';
-      return;
-    }
-    // Pour Commande, grouper par shop
-    if(iface.key==='Commande'){
-      var byShop={};
-      matching.forEach(function(e){
-        if(!byShop[e.shop]||e.ts>byShop[e.shop].ts) byShop[e.shop]=e;
+    var matching=(entries||[]).filter(function(e){return e.iface===iface.key&&!e.disabled;});
+    if(iface.isGroup){
+      html+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:6px 0 4px;text-transform:uppercase;letter-spacing:.06em;">Magasins</div>';
+      ['dsm','mgt','paita','ville'].forEach(function(s){
+        var byShop=matching.filter(function(e){return e.shop===s;});
+        var e=byShop.length>0?byShop.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+        var isRecent=e&&(now-e.ts)<120000;
+        var fbOk2=e&&e.online!==undefined?e.online:(isRecent?true:false);
+        var eLat=e&&e.latency?e.latency:null;
+        var icon=!e?'⚫':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+        var label=!e?'—':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
+        var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
+        var ago=e?Math.round((now-e.ts)/60000):null;
+        var agoStr=ago===null?'':ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
+        html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'
+          +'<span style="font-size:12px;">'+icon+'</span>'
+          +'<div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span>'
+          +(agoStr?' <span style="font-size:10px;color:var(--text-muted);">'+agoStr+'</span>':'')+'</div>'
+          +(eLat?'<span style="font-size:10px;color:'+latColor+';">'+eLat+'ms</span>':'')
+          +'</div>';
       });
-      var shopHtml=Object.entries(byShop).map(function(kv){
-        var s=kv[0],e=kv[1];
-        var ago=Math.round((now-e.ts)/60000);
-        var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
-        var isOnline=(now-e.ts)<90000;
-        var dot='<div style="width:6px;height:6px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>';
-        return dot+' <span style="font-size:10px;font-weight:600;color:#1a5fa8;">'+(SHOP_LABELS[s]||s)+'</span> <span style="font-size:10px;color:var(--text-muted);">'+agoStr+'</span>';
-      }).join(' &nbsp;·&nbsp; ');
-      html+='<div style="padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="font-size:12px;font-weight:600;margin-bottom:4px;">'+iface.label+'</div>'
-        +'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:10px;">'+shopHtml+'</div>'
-        +'</div>';
     } else {
-      var best=matching.reduce(function(a,b){return b.ts>a.ts?b:a;});
-      var ago=Math.round((now-best.ts)/60000);
-      var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
-      var isOnline=(now-best.ts)<90000;
+      var best=matching.length>0?matching.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+      var isRecent=best&&(now-best.ts)<120000;
+      var fbOk2=best&&best.online!==undefined?best.online:(isRecent?true:false);
+      var eLat=best&&best.latency?best.latency:null;
+      var icon=!best?'⚫':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+      var label=!best?'Jamais connecté':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
+      var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
+      var ago=best?Math.round((now-best.ts)/60000):null;
+      var agoStr=ago===null?'':ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
       html+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="width:7px;height:7px;border-radius:50%;background:'+(isOnline?'#27ae60':'#bbb')+';flex-shrink:0;"></div>'
-        +'<div style="font-size:12px;font-weight:600;flex:1;">'+iface.label+'</div>'
-        +'<div style="font-size:10px;color:var(--text-muted);">'+agoStr+'</div>'
+        +'<span style="font-size:14px;">'+icon+'</span>'
+        +'<div style="flex:1;"><div style="font-size:12px;font-weight:600;">'+iface.label+'</div>'
+        +(agoStr?'<div style="font-size:10px;color:var(--text-muted);">'+agoStr+'</div>':'')+'</div>'
+        +(eLat?'<span style="font-size:10px;color:'+latColor+';">'+eLat+'ms</span>':'')
         +'</div>';
     }
   });
-  lsEl.innerHTML=html;
+  if(lsEl) lsEl.innerHTML=html;
 }
 
 async function loadSecurite(){

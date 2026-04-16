@@ -1973,16 +1973,30 @@ if(!navigator.onLine){
 
   async function _sendPing(){
     try{
-      var now=new Date();
+      var _t0=Date.now();
+      var _fbOk=false;
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY).catch(function(){return null;});
+      _fbOk=!!(chkRes&&chkRes.ok);
+      var _lat=Date.now()-_t0;
+      if(chkRes&&chkRes.ok){
+        var chkJson=await chkRes.json();
+        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
+          sessionStorage.clear();
+          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
+          return;
+        }
+      }
       var fields={
         iface:{stringValue:_IFACE},
         shop:{stringValue:_SHOP},
         devId:{stringValue:_devId},
         userName:{stringValue:_pingName()},
         ts:{integerValue:Date.now()},
+        online:{booleanValue:_fbOk},
+        latency:{integerValue:_lat},
         ua:{stringValue:navigator.userAgent.substr(0,80)},
         device:{stringValue:(function(){
-          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
+          var w=window.screen.width,t='ontouchstart' in window;
           var ua=navigator.userAgent;
           if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
           if(/iPhone/.test(ua)) return 'iPhone';
@@ -2005,17 +2019,6 @@ if(!navigator.onLine){
           return '';
         })()}
       };
-      // Check if disabled
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){
-        var chkJson=await chkRes.json();
-        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          // Force logout
-          sessionStorage.clear();
-          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
-          return;
-        }
-      }
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
