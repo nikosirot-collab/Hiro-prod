@@ -325,6 +325,8 @@ function showRecapOverlay(d){
 }
 
 async function sendOrder(){
+  // Recalculer tomorrow au moment de l'envoi
+  var tomorrow=getTomorrow();
   // Vérif 19h30
   var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
@@ -617,37 +619,44 @@ async function loadRecap(){
 async function loadHistorique(){
   var el=document.getElementById('histo-content');
   if(!el)return;
-  el.innerHTML='<div class="histo-loading">Recherche des commandes...</div>';
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
   var today=getTodayNC();
   var monday=getMondayNC(today);
-  var weeksWithOrders=[];
-  for(var w=1;w<=16;w++){
+  // Générer tous les jours des 12 dernières semaines
+  var allDays=[];
+  for(var w=1;w<=12;w++){
     var m=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()-w*7);
-    var hasOrder=false;
     for(var i=0;i<6;i++){
       var d=new Date(m.getFullYear(),m.getMonth(),m.getDate()+i);
-      var dStr=dsLocal(d);
-      try{
-        var res=await fetch(_API+'/order_'+dStr+'_'+SHOP+'?key='+_KEY);
-        if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts){hasOrder=true;break;}}
-      }catch(e){}
+      allDays.push({dStr:dsLocal(d),weekMon:dsLocal(m)});
     }
-    if(hasOrder) weeksWithOrders.push(m);
   }
-  if(weeksWithOrders.length===0){el.innerHTML='<div class="histo-loading">Aucun historique de commande</div>';return;}
+  // Requêtes en parallèle
+  var results=await Promise.all(allDays.map(async function(day){
+    try{
+      var res=await fetch(_API+'/order_'+day.dStr+'_'+SHOP+'?key='+_KEY);
+      if(res.ok){var json=await res.json();if(json.fields&&json.fields.ts)return day.weekMon;}
+    }catch(e){}
+    return null;
+  }));
+  // Semaines uniques avec commandes
+  var weeksSet=[];
+  results.forEach(function(w){if(w&&weeksSet.indexOf(w)===-1)weeksSet.push(w);});
+  if(weeksSet.length===0){el.innerHTML='<div class="histo-loading">Aucun historique de commande</div>';return;}
   var html='';
-  for(var wi=0;wi<weeksWithOrders.length;wi++){
-    var wMon=weeksWithOrders[wi];
+  weeksSet.forEach(function(wStr){
+    var parts=wStr.split('-');
+    var wMon=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
     var wSat=new Date(wMon.getFullYear(),wMon.getMonth(),wMon.getDate()+5);
     var wLabel=wMon.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' - '+wSat.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
-    var wId='week-'+dsLocal(wMon);
+    var wId='week-'+wStr;
     html+='<div class="histo-week">'
-      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+dsLocal(wMon)+'\')">'
+      +'<div class="histo-week-header" onclick="toggleHistoWeek(\''+wId+'\',\''+wStr+'\')">  '
       +'<span>'+wLabel+'</span><span>&#9658;</span>'
       +'</div>'
       +'<div class="histo-week-body" id="'+wId+'"></div>'
       +'</div>';
-  }
+  });
   el.innerHTML=html;
 }
 
@@ -850,15 +859,25 @@ function hideOfflineBanner(){var b=document.getElementById('offline-banner');if(
 
 async function _flushQueue(){
   if(!navigator.onLine||_offlineQueue.length===0)return;
+  var todayStr=ds(getTomorrow());
   var sent=[];
+  var stale=[];
   for(var i=0;i<_offlineQueue.length;i++){
     var item=_offlineQueue[i];
+    // Vérifier que la commande est pour le bon jour
+    var itemDate=item.fields&&item.fields.date?item.fields.date.stringValue:'';
+    if(itemDate&&itemDate!==todayStr){
+      // Commande périmée - on la supprime sans envoyer
+      stale.push(i);
+      console.warn('Commande périmée ignorée:',itemDate,'(attendu:',todayStr+')');
+      continue;
+    }
     try{
       var res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
       if(res.ok)sent.push(i);
     }catch(e){}
   }
-  _offlineQueue=_offlineQueue.filter(function(_,i){return sent.indexOf(i)===-1;});
+  _offlineQueue=_offlineQueue.filter(function(_,i){return sent.indexOf(i)===-1&&stale.indexOf(i)===-1;});
   _saveQueue();
   if(_offlineQueue.length===0){hideOfflineBanner();updateStatusBanner(true);}
 }

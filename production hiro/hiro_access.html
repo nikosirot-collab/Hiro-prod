@@ -1407,7 +1407,7 @@ function laboModify(shop){
 
 async function laboValidate(shop){
   var order=laboOrders[shop];
-  if(!order||((!order.ts)&&order.status!=='validated'))return;
+  if(!order) return;
   var state=laboValidState(shop);
   var btn=document.getElementById('vbtn-'+shop);
   if(btn){btn.disabled=true;btn.textContent='Validation...';}

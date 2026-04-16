@@ -365,6 +365,8 @@ function showRecapOverlay(d){
 }
 
 async function sendOrder(){
+  // Recalculer tomorrow au moment de l'envoi
+  var tomorrow=getTomorrow();
   // Vérif 19h30
   var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
@@ -906,15 +908,25 @@ function hideOfflineBanner(){var b=document.getElementById('offline-banner');if(
 
 async function _flushQueue(){
   if(!navigator.onLine||_offlineQueue.length===0)return;
+  var todayStr=ds(getTomorrow());
   var sent=[];
+  var stale=[];
   for(var i=0;i<_offlineQueue.length;i++){
     var item=_offlineQueue[i];
+    // Vérifier que la commande est pour le bon jour
+    var itemDate=item.fields&&item.fields.date?item.fields.date.stringValue:'';
+    if(itemDate&&itemDate!==todayStr){
+      // Commande périmée - on la supprime sans envoyer
+      stale.push(i);
+      console.warn('Commande périmée ignorée:',itemDate,'(attendu:',todayStr+')');
+      continue;
+    }
     try{
       var res=await fetch(item.url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:item.fields})});
       if(res.ok)sent.push(i);
     }catch(e){}
   }
-  _offlineQueue=_offlineQueue.filter(function(_,i){return sent.indexOf(i)===-1;});
+  _offlineQueue=_offlineQueue.filter(function(_,i){return sent.indexOf(i)===-1&&stale.indexOf(i)===-1;});
   _saveQueue();
   if(_offlineQueue.length===0){hideOfflineBanner();updateStatusBanner(true);}
 }

@@ -865,19 +865,20 @@ function setV(d,s,v){
   const val=parseInt(v)||0;
   const k=d+'__'+s;
   data[k]=val;
-  // Si on modifie le riz du lendemain après 11h → verrouille le poisson automatiquement
-  if(isFishLocked(d)){
+  // Avant 11h : recalcul auto du poisson depuis le nouveau riz
+  if(!isFishLocked(d)){
     ['dsm','mgt','paita','ville'].forEach(shop=>{
       const riz=getV(d,shop);
       const fd=getFish(shop,riz,isFete);
       if(fd){
         ['t','s','a'].forEach(f=>{
           const fk=d+'__f__'+shop+'__'+f;
-          if(data[fk]===undefined) data[fk]=fd[f]; // verrouille si pas déjà overridé
+          if(data[fk]===undefined) data[fk]=fd[f];
         });
       }
     });
   }
+  // Après 11h : le poisson reste intact, saisie manuelle possible
   _scheduleSave(weekDocId());render();
 }
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
