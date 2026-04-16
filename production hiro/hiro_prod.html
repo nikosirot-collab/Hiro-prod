@@ -2218,7 +2218,12 @@ async function loadSecurite(){
       });
     });
 
-    // Grouper par interface
+    // Filtrer les appareils inconnus de plus de 24h
+    var DAY_MS=24*60*60*1000;
+    entries=entries.filter(function(e){
+      var isUnknown=!e.userName&&!e.shop&&!e.device;
+      return !(isUnknown&&(now-e.ts)>DAY_MS);
+    });
     var groups={};
     SEC_IFACE_ORDER.forEach(function(g){groups[g.key]=[];});
     entries.forEach(function(e){
@@ -2280,25 +2285,36 @@ function parseUA(ua){
 function secDevCard(e){
   var now=Date.now();
   var ago=Math.round((now-e.ts)/60000);
-  var agoStr=e.isOnline?(ago<1?'à l\'instant':'il y a '+ago+' min'):'il y a '+ago+' min';
-  var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop.toUpperCase();
+  var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
+  var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'';
   var nameStr=e.userName||(shopLabel||'');
-  // Utiliser device+browser s'ils existent, sinon fallback sur parseUA
-  var deviceStr = (e.device&&e.browser) ? e.device+' · '+e.browser
-                : e.device ? e.device
-                : parseUA(e.ua||'');
-  var disabledStyle=e.disabled?'opacity:.5;':'';
-  var btnLabel=e.disabled?'Réactiver':'Désactiver';
-  var btnColor=e.disabled?'#0d7a52':'#e74c3c';
-  return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:12px;'+disabledStyle+'">'
-    +'<div style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':'#bbb')+';"></div>'
+  var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
+  var isOld=ago>1440; // Plus de 24h
+  var disabledStyle=e.disabled?'opacity:.4;':'';
+  var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
+  var btnLabel=isOld?'🗑 Supprimer':(e.disabled?'Réactiver':'Désactiver');
+  var btnColor=isOld?'#999':(e.disabled?'#0d7a52':'#e74c3c');
+  var btnAction=isOld?'secDeleteDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
+  return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'+disabledStyle+'">'
+    +statusDot
     +'<div style="flex:1;min-width:0;">'
-    +'<div style="font-size:13px;font-weight:600;">'+(nameStr?nameStr:'—')+(shopLabel&&nameStr!==shopLabel?' <span style="font-weight:400;color:#888;">'+shopLabel+'</span>':'')+'</div>'
-    +'<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">'+deviceStr+'</div>'
-    +'<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">'+agoStr+(e.disabled?' · <span style="color:#e74c3c;font-weight:600;">Désactivé</span>':'')+'</div>'
+    +'<div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">'
+    +(nameStr?nameStr:'—')
+    +(shopLabel&&nameStr!==shopLabel?' <span style="font-weight:400;color:var(--text-muted);font-size:11px;">'+shopLabel+'</span>':'')
+    +(e.disabled?' <span style="color:#e74c3c;font-size:10px;font-weight:700;">DÉSACTIVÉ</span>':'')
     +'</div>'
-    +'<button onclick="secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')" style="padding:5px 12px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
+    +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
+    +'</div>'
+    +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
     +'</div>';
+}
+
+async function secDeleteDevice(devId){
+  if(!confirm('Supprimer cet appareil ?')) return;
+  try{
+    await fetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{method:'DELETE'});
+    loadSecurite();
+  }catch(e){alert('Erreur');}
 }
 
 async function secToggleDevice(devId, disable){
