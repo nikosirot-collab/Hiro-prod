@@ -579,11 +579,9 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
       <!-- Monitoring Firebase + dernières connexions -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Monitoring Firebase</div>
-        <div id="firebase-status" style="margin-bottom:12px;">
+        <div id="monitoring-content">
           <div style="font-size:12px;color:var(--text-muted);">Vérification...</div>
         </div>
-        <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Dernière connexion par interface</div>
-        <div id="last-seen-interfaces"></div>
       </div>
 
       <div id="sec-devices" style="margin-bottom:24px;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
@@ -2291,83 +2289,70 @@ async function loadMonitoring(entries){
   var now=Date.now();
   var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var el=document.getElementById('monitoring-content');
+  if(!el) return;
 
-  // ── Statut Firebase local (Hiro Prod) ──
-  var fbEl=document.getElementById('firebase-status');
-  var t0=Date.now();
-  var fbOk=false;
-  try{
-    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
-    fbOk=r.ok;
-  }catch(e){}
-  var lat=Date.now()-t0;
-  if(fbEl){
-    var fbColor=fbOk?(lat<300?'#27ae60':'#f39c12'):'#e74c3c';
-    var fbLabel=fbOk?(lat<300?'Opérationnel':'Lent'):'Hors ligne';
-    var fbIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
-    fbEl.innerHTML='<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:'+fbColor+'18;border-radius:8px;border:1px solid '+fbColor+'44;margin-bottom:8px;">'
-      +'<span style="font-size:16px;">'+fbIcon+'</span>'
-      +'<div><div style="font-size:12px;font-weight:700;color:'+fbColor+';">Firebase '+fbLabel+'</div>'
-      +'<div style="font-size:10px;color:var(--text-muted);">Latence '+lat+'ms</div></div>'
+  var row=function(icon,label,sub,lat,latColor){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
+      +'<span style="font-size:14px;">'+icon+'</span>'
+      +'<div style="flex:1;"><div style="font-size:12px;font-weight:600;">'+label+'</div>'
+      +(sub?'<div style="font-size:10px;color:var(--text-muted);">'+sub+'</div>':'')+'</div>'
+      +(lat?'<span style="font-size:10px;color:'+(latColor||'#999')+';">'+lat+'ms</span>':'')
       +'</div>';
+  };
+
+  // 1. Hiro Prod — mesure locale directe
+  var t0=Date.now(); var fbOk=false;
+  try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
+  var lat=Date.now()-t0;
+  var prodIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
+  var prodLabel=fbOk?(lat<300?'Connecté':'Lent'):'Hors ligne';
+  var prodLatColor=lat<300?'#27ae60':lat<600?'#f39c12':'#e74c3c';
+  var html=row(prodIcon,'🍱 Hiro Prod',prodLabel,lat,prodLatColor);
+
+  // 2. Hiro Access — depuis les pings (prendre le plus récent avec online défini)
+  var accessEntries=(entries||[]).filter(function(e){return e.iface==='Hiro Access'&&!e.disabled&&e.online!==undefined&&e.online!==null;});
+  var best=accessEntries.length>0?accessEntries.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+  var accessIcon,accessSub,accessLat,accessLatColor;
+  if(!best){
+    accessIcon='⚫'; accessSub='Jamais connecté'; accessLat=null;
+  } else {
+    var ago=Math.round((now-best.ts)/60000);
+    var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
+    var eLat=best.latency||null;
+    accessIcon=best.online?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+    accessSub=(best.online?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
+    accessLat=eLat; accessLatColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
   }
+  html+=row(accessIcon,'👁 Hiro Access',accessSub,accessLat,accessLatColor);
 
-
-  // ── Statut Firebase par interface ──
-  var lsEl=document.getElementById('last-seen-interfaces');
-  var html='';
-  var IFACES=[
-    {key:'Hiro Access',label:'👁 Hiro Access'},
-    {key:'Commande',label:'📦 Magasins',isGroup:true},
-  ];
-  IFACES.forEach(function(iface){
-    var matching=(entries||[]).filter(function(e){return e.iface===iface.key&&!e.disabled;});
-    // Préférer les entrées avec online défini
-    var withOnline=matching.filter(function(e){return e.online!==undefined&&e.online!==null;});
-    if(withOnline.length>0) matching=withOnline;
-    if(iface.isGroup){
-      html+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:6px 0 4px;text-transform:uppercase;letter-spacing:.06em;">Magasins</div>';
-      ['dsm','mgt','paita','ville'].forEach(function(s){
-        var byShop=matching.filter(function(e){return e.shop===s;});
-        // Préférer les entrées avec online défini
-        var withOnline=byShop.filter(function(e){return e.online!==undefined&&e.online!==null;});
-        if(withOnline.length>0) byShop=withOnline;
-        var e=byShop.length>0?byShop.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
-        var isRecent=e&&(now-e.ts)<120000;
-        var fbOk2=e&&e.online!==undefined?e.online:null;
-        var eLat=e&&e.latency?e.latency:null;
-        var icon=!e?'⚫':fbOk2===null?'⚪':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-        var label=!e?'—':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
-        var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
-        var ago=e?Math.round((now-e.ts)/60000):null;
-        var agoStr=ago===null?'':ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
-        html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'
-          +'<span style="font-size:12px;">'+icon+'</span>'
-          +'<div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span>'
-          +(agoStr?' <span style="font-size:10px;color:var(--text-muted);">'+agoStr+'</span>':'')+'</div>'
-          +(eLat?'<span style="font-size:10px;color:'+latColor+';">'+eLat+'ms</span>':'')
-          +'</div>';
-      });
+  // 3. Magasins — un par magasin
+  html+='<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px;">Magasins</div>';
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    var shopEntries=(entries||[]).filter(function(e){return e.iface==='Commande'&&e.shop===s&&!e.disabled&&e.online!==undefined&&e.online!==null;});
+    var e=shopEntries.length>0?shopEntries.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+    var icon,sub,eLat,latColor;
+    if(!e){
+      icon='⚫'; sub='Jamais connecté'; eLat=null;
     } else {
-      var best=matching.length>0?matching.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
-      var isRecent=best&&(now-best.ts)<120000;
-      var fbOk2=best&&best.online!==undefined?best.online:(isRecent?true:false);
-      var eLat=best&&best.latency?best.latency:null;
-      var icon=!best?'⚫':fbOk2===null?'⚪':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-      var label=!best?'Jamais connecté':fbOk2===null?'En attente':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
-      var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
-      var ago=best?Math.round((now-best.ts)/60000):null;
-      var agoStr=ago===null?'':ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
-      html+='<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<span style="font-size:14px;">'+icon+'</span>'
-        +'<div style="flex:1;"><div style="font-size:12px;font-weight:600;">'+iface.label+'</div>'
-        +(agoStr?'<div style="font-size:10px;color:var(--text-muted);">'+agoStr+'</div>':'')+'</div>'
-        +(eLat?'<span style="font-size:10px;color:'+latColor+';">'+eLat+'ms</span>':'')
-        +'</div>';
+      var ago=Math.round((now-e.ts)/60000);
+      var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
+      eLat=e.latency||null;
+      icon=e.online?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+      sub=(e.online?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
+      latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
     }
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'
+      +'<span style="font-size:12px;">'+icon+'</span>'
+      +'<div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span>'
+      +(sub?' <span style="font-size:10px;color:var(--text-muted);">'+sub+'</span>':'')+'</div>'
+      +(eLat?'<span style="font-size:10px;color:'+(latColor||'#999')+';">'+eLat+'ms</span>':'')
+      +'</div>';
   });
-  if(lsEl) lsEl.innerHTML=html;
+
+  el.innerHTML=html;
 }
+
 
 async function loadSecurite(){
   var el=document.getElementById('sec-devices');
@@ -2465,7 +2450,7 @@ function parseUA(ua){
 function secDevCard(e){
   var now=Date.now();
   var ago=Math.round((now-e.ts)/60000);
-  var agoStr=ago<1?'à l\'instant':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
+  var agoStr=ago<1?'il y a 1min':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
   var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'';
   var nameStr=e.userName||(shopLabel||'');
   var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
