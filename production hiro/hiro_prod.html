@@ -2603,8 +2603,12 @@ function secPollStop(){
   function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
   async function _sendPing(){
     try{
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){
+      var _t0=Date.now();
+      var _fbOk=false;
+      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY).catch(function(){return null;});
+      _fbOk=!!(chkRes&&chkRes.ok);
+      var _lat=Date.now()-_t0;
+      if(chkRes&&chkRes.ok){
         var chkJson=await chkRes.json();
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
           sessionStorage.clear();
@@ -2615,7 +2619,7 @@ function secPollStop(){
       var _ua=navigator.userAgent;
       var _dev=(function(){var w=window.screen.width,t='ontouchstart' in window;if(/iPad/.test(_ua)||(t&&w>=768))return 'iPad';if(/iPhone/.test(_ua))return 'iPhone';if(/Android/.test(_ua)&&t&&w<768)return 'Android Phone';if(/Android/.test(_ua)&&t)return 'Android Tablet';if(/Macintosh/.test(_ua))return 'Mac';if(/Windows/.test(_ua))return 'PC Windows';if(/Linux/.test(_ua))return 'Linux';return 'Inconnu';})();
       var _bro=(function(){if(/CriOS/.test(_ua))return 'Chrome';if(/FxiOS/.test(_ua))return 'Firefox';if(/EdgiOS/.test(_ua)||/Edg\//.test(_ua))return 'Edge';if(/OPR\//.test(_ua))return 'Opera';if(/Chrome/.test(_ua))return 'Chrome';if(/Firefox/.test(_ua))return 'Firefox';if(/Safari/.test(_ua))return 'Safari';return '';})();
-      var fields={iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},userName:{stringValue:_pingName()},ts:{integerValue:Date.now()},ua:{stringValue:_ua.substr(0,80)},device:{stringValue:_dev},browser:{stringValue:_bro}};
+      var fields={iface:{stringValue:_IFACE},shop:{stringValue:_SHOP},devId:{stringValue:_devId},userName:{stringValue:_pingName()},ts:{integerValue:Date.now()},online:{booleanValue:_fbOk},latency:{integerValue:_lat},ua:{stringValue:_ua.substr(0,80)},device:{stringValue:_dev},browser:{stringValue:_bro}};
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
