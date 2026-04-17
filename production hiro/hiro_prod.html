@@ -595,6 +595,17 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <div id="sec-log"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div></div>
       </div>
 
+      <!-- Stockage Firebase estimé -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-size:13px;font-weight:600;">Stockage Firebase <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(estimé)</span></div>
+          <button onclick="loadStorageEstimate()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Calculer</button>
+        </div>
+        <div id="storage-content">
+          <div style="font-size:12px;color:var(--text-muted);">Cliquez sur Calculer pour estimer</div>
+        </div>
+      </div>
+
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe interfaces magasin</div>
         <div style="display:flex;gap:8px;align-items:center;">
@@ -2378,6 +2389,75 @@ async function loadMonitoring(){
 }
 
 
+
+async function loadStorageEstimate(){
+  var el=document.getElementById('storage-content');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:12px;color:var(--text-muted);">Calcul en cours...</div>';
+
+  var COLLECTIONS=[
+    {id:'hiro-orders',    label:'Commandes',   color:'#1a5fa8'},
+    {id:'hiro-production',label:'Production',  color:'#0d7a52'},
+    {id:'hiro-presence',  label:'Présence',    color:'#b84a1a'},
+    {id:'hiro-logs',      label:'Logs',        color:'#7a3db8'},
+    {id:'hiro-config',    label:'Config',      color:'#888'},
+  ];
+  var BASE='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/';
+  var KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var LIMIT_GB=1;
+  var results=[];
+  var totalBytes=0;
+
+  for(var i=0;i<COLLECTIONS.length;i++){
+    var col=COLLECTIONS[i];
+    try{
+      var res=await fetch(BASE+col.id+'?pageSize=300&key='+KEY);
+      var txt=await res.text();
+      var bytes=new TextEncoder().encode(txt).length;
+      var json=JSON.parse(txt);
+      var count=(json.documents||[]).length;
+      results.push({label:col.label,color:col.color,bytes:bytes,count:count});
+      totalBytes+=bytes;
+    }catch(e){
+      results.push({label:col.label,color:col.color,bytes:0,count:0,err:true});
+    }
+  }
+
+  var fmt=function(b){
+    if(b<1024)return b+'B';
+    if(b<1024*1024)return Math.round(b/1024)+'KB';
+    return (b/1024/1024).toFixed(2)+'MB';
+  };
+  var pct=(totalBytes/(LIMIT_GB*1024*1024*1024)*100);
+  var barColor=pct<50?'#27ae60':pct<80?'#f39c12':'#e74c3c';
+
+  var html='';
+  // Barre globale
+  html+='<div style="margin-bottom:14px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">'
+    +'<span style="font-size:12px;font-weight:600;">Total estimé : '+fmt(totalBytes)+'</span>'
+    +'<span style="font-size:10px;color:var(--text-muted);">Limite : 1 GB</span>'
+    +'</div>'
+    +'<div style="background:#f0f0f0;border-radius:20px;height:6px;overflow:hidden;">'
+    +'<div style="height:100%;border-radius:20px;background:'+barColor+';width:'+Math.max(pct,0.1).toFixed(3)+'%;transition:width .5s;"></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:var(--text-muted);margin-top:3px;">'+pct.toFixed(4)+'% utilisé</div>'
+    +'</div>';
+
+  // Détail par collection
+  results.forEach(function(r){
+    var colPct=totalBytes>0?(r.bytes/totalBytes*100):0;
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:'+r.color+';flex-shrink:0;"></div>'
+      +'<div style="flex:1;font-size:11px;font-weight:600;">'+r.label+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);">'+r.count+' docs</div>'
+      +'<div style="font-size:11px;font-weight:600;min-width:50px;text-align:right;">'+fmt(r.bytes)+'</div>'
+      +'</div>';
+  });
+
+  html+='<div style="font-size:10px;color:var(--text-muted);margin-top:8px;">* Taille du JSON retourné par l\'API — approximation</div>';
+  el.innerHTML=html;
+}
 
 async function loadSecurite(){
   var el=document.getElementById('sec-devices');
