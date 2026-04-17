@@ -2313,9 +2313,11 @@ async function loadMonitoring(entries){
   var prodLatColor=lat<300?'#27ae60':lat<600?'#f39c12':'#e74c3c';
   var html=row(prodIcon,'🍱 Hiro Prod',prodLabel,lat,prodLatColor);
 
-  // 2. Hiro Access — depuis les pings (prendre le plus récent avec online défini)
-  var accessEntries=(entries||[]).filter(function(e){return e.iface==='Hiro Access'&&!e.disabled&&e.online!==undefined&&e.online!==null;});
-  var best=accessEntries.length>0?accessEntries.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+  // 2. Hiro Access — prendre le plus récent avec online défini, sinon le plus récent tout court
+  var accessAll=(entries||[]).filter(function(e){return e.iface==='Hiro Access'&&!e.disabled;});
+  var accessWithOnline=accessAll.filter(function(e){return e.online!==undefined&&e.online!==null;});
+  var best=accessWithOnline.length>0?accessWithOnline.reduce(function(a,b){return b.ts>a.ts?b:a;}):
+           accessAll.length>0?accessAll.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
   var accessIcon,accessSub,accessLat,accessLatColor;
   if(!best){
     accessIcon='⚫'; accessSub='Jamais connecté'; accessLat=null;
@@ -2323,8 +2325,9 @@ async function loadMonitoring(entries){
     var ago=Math.round((now-best.ts)/60000);
     var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
     var eLat=best.latency||null;
-    accessIcon=best.online?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-    accessSub=(best.online?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
+    var isOnline=best.online!==undefined?best.online:(now-best.ts)<90000;
+    accessIcon=isOnline?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+    accessSub=(isOnline?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
     accessLat=eLat; accessLatColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
   }
   html+=row(accessIcon,'👁 Hiro Access',accessSub,accessLat,accessLatColor);
@@ -2332,8 +2335,10 @@ async function loadMonitoring(entries){
   // 3. Magasins — un par magasin
   html+='<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px;">Magasins</div>';
   ['dsm','mgt','paita','ville'].forEach(function(s){
-    var shopEntries=(entries||[]).filter(function(e){return e.iface==='Commande'&&e.shop===s&&!e.disabled&&e.online!==undefined&&e.online!==null;});
-    var e=shopEntries.length>0?shopEntries.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
+    var shopAll=(entries||[]).filter(function(e){return e.iface==='Commande'&&e.shop===s&&!e.disabled;});
+    var shopWithOnline=shopAll.filter(function(e){return e.online!==undefined&&e.online!==null;});
+    var e=shopWithOnline.length>0?shopWithOnline.reduce(function(a,b){return b.ts>a.ts?b:a;}):
+          shopAll.length>0?shopAll.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
     var icon,sub,eLat,latColor;
     if(!e){
       icon='⚫'; sub='Jamais connecté'; eLat=null;
@@ -2341,8 +2346,9 @@ async function loadMonitoring(entries){
       var ago=Math.round((now-e.ts)/60000);
       var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
       eLat=e.latency||null;
-      icon=e.online?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-      sub=(e.online?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
+      var isOnline=e.online!==undefined?e.online:(now-e.ts)<90000;
+      icon=isOnline?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+      sub=(isOnline?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
       latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
     }
     html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'
