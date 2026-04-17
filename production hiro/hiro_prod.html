@@ -2377,6 +2377,8 @@ async function loadSecurite(){
         ts:ts,
         disabled:f.disabled&&f.disabled.booleanValue===true,
         isOnline:(now-ts)<_NOW_ONLINE_MS,
+        online:f.online?f.online.booleanValue:undefined,
+        latency:f.latency?parseInt(f.latency.integerValue):null,
         device:f.device?f.device.stringValue:'',
         browser:f.browser?f.browser.stringValue:''
       });
