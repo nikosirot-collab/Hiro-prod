@@ -921,7 +921,7 @@ function showPage(p, el) {
   if(p==='recap') renderRecap();
   if(p==='commandes') loadCommandes();
   if(p==='logs'){loadLogs();}
-  if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();}
+  if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
   else{secPollStop();stopNetMonitor();secPollStop();}
 }
 
@@ -2288,7 +2288,7 @@ async function loadLogs(){
   }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
-async function loadMonitoring(entries){
+async function loadMonitoring(){
   var now=Date.now();
   var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
@@ -2304,63 +2304,79 @@ async function loadMonitoring(entries){
       +'</div>';
   };
 
-  // 1. Hiro Prod — mesure locale directe
+  // 1. Hiro Prod — mesure locale
   var t0=Date.now(); var fbOk=false;
   try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
   var lat=Date.now()-t0;
   var prodIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
-  var prodLabel=fbOk?(lat<300?'Connecté':'Lent'):'Hors ligne';
-  var prodLatColor=lat<300?'#27ae60':lat<600?'#f39c12':'#e74c3c';
-  var html=row(prodIcon,'🍱 Hiro Prod',prodLabel,lat,prodLatColor);
+  var html=row(prodIcon,'🍱 Hiro Prod',fbOk?(lat<300?'Connecté':'Lent'):'Hors ligne',lat,lat<300?'#27ae60':lat<600?'#f39c12':'#e74c3c');
 
-  // 2. Hiro Access — prendre le plus récent avec online défini, sinon le plus récent tout court
-  var accessAll=(entries||[]).filter(function(e){return e.iface==='Hiro Access'&&!e.disabled;});
-  var accessWithOnline=accessAll.filter(function(e){return e.online!==undefined&&e.online!==null;});
-  var best=accessWithOnline.length>0?accessWithOnline.reduce(function(a,b){return b.ts>a.ts?b:a;}):
-           accessAll.length>0?accessAll.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
-  var accessIcon,accessSub,accessLat,accessLatColor;
-  if(!best){
-    accessIcon='⚫'; accessSub='Jamais connecté'; accessLat=null;
+  // Charger tous les pings depuis Firebase
+  var allDocs=[];
+  try{
+    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    if(res.ok){
+      var json=await res.json();
+      (json.documents||[]).forEach(function(doc){
+        if(!doc.fields)return;
+        var f=doc.fields;
+        var ts=f.ts?parseInt(f.ts.integerValue):0;
+        if(!ts)return;
+        allDocs.push({
+          iface:f.iface?f.iface.stringValue:'?',
+          shop:f.shop?f.shop.stringValue:'',
+          ts:ts,
+          online:f.online?f.online.booleanValue:undefined,
+          latency:f.latency?parseInt(f.latency.integerValue):null,
+          disabled:f.disabled&&f.disabled.booleanValue===true
+        });
+      });
+    }
+  }catch(e){}
+
+  // Helper : trouver le meilleur ping pour une interface/shop
+  var getBest=function(iface,shop){
+    var filtered=allDocs.filter(function(d){
+      return d.iface===iface&&!d.disabled&&(shop?d.shop===shop:true);
+    });
+    // Trier par ts desc, préférer ceux avec online défini
+    filtered.sort(function(a,b){return b.ts-a.ts;});
+    // Prendre le plus récent avec online défini si possible
+    var withOnline=filtered.filter(function(d){return d.online!==undefined;});
+    return withOnline.length>0?withOnline[0]:filtered.length>0?filtered[0]:null;
+  };
+
+  // 2. Hiro Access
+  var acc=getBest('Hiro Access',null);
+  if(!acc){
+    html+=row('⚫','👁 Hiro Access','Jamais connecté',null,null);
   } else {
-    var ago=Math.round((now-best.ts)/60000);
+    var ago=Math.round((now-acc.ts)/60000);
     var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
-    var eLat=best.latency||null;
-    var isOnline=best.online!==undefined?best.online:(now-best.ts)<90000;
-    accessIcon=isOnline?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-    accessSub=(isOnline?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
-    accessLat=eLat; accessLatColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
+    var isOn=acc.online!==undefined?acc.online:(now-acc.ts)<90000;
+    var icon=isOn?(acc.latency&&acc.latency<300?'🟢':'🟡'):'🔴';
+    html+=row(icon,'👁 Hiro Access',(isOn?'Connecté':'Hors ligne')+' · '+agoStr,acc.latency,acc.latency?(acc.latency<300?'#27ae60':acc.latency<600?'#f39c12':'#e74c3c'):'#999');
   }
-  html+=row(accessIcon,'👁 Hiro Access',accessSub,accessLat,accessLatColor);
 
-  // 3. Magasins — un par magasin
+  // 3. Magasins
   html+='<div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 0 4px;">Magasins</div>';
   ['dsm','mgt','paita','ville'].forEach(function(s){
-    var shopAll=(entries||[]).filter(function(e){return e.iface==='Commande'&&e.shop===s&&!e.disabled;});
-    var shopWithOnline=shopAll.filter(function(e){return e.online!==undefined&&e.online!==null;});
-    var e=shopWithOnline.length>0?shopWithOnline.reduce(function(a,b){return b.ts>a.ts?b:a;}):
-          shopAll.length>0?shopAll.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
-    var icon,sub,eLat,latColor;
+    var e=getBest('Commande',s);
     if(!e){
-      icon='⚫'; sub='Jamais connecté'; eLat=null;
-    } else {
-      var ago=Math.round((now-e.ts)/60000);
-      var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
-      eLat=e.latency||null;
-      var isOnline=e.online!==undefined?e.online:(now-e.ts)<90000;
-      icon=isOnline?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-      sub=(isOnline?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne')+' · '+agoStr;
-      latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'+'<span style="font-size:12px;">⚫</span><div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span> <span style="font-size:10px;color:var(--text-muted);">Jamais connecté</span></div></div>';
+      return;
     }
-    html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'
-      +'<span style="font-size:12px;">'+icon+'</span>'
-      +'<div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span>'
-      +(sub?' <span style="font-size:10px;color:var(--text-muted);">'+sub+'</span>':'')+'</div>'
-      +(eLat?'<span style="font-size:10px;color:'+(latColor||'#999')+';">'+eLat+'ms</span>':'')
-      +'</div>';
+    var ago=Math.round((now-e.ts)/60000);
+    var agoStr=ago<1?'<1min':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
+    var isOn=e.online!==undefined?e.online:(now-e.ts)<90000;
+    var icon=isOn?(e.latency&&e.latency<300?'🟢':'🟡'):'🔴';
+    var latColor=e.latency?(e.latency<300?'#27ae60':e.latency<600?'#f39c12':'#e74c3c'):'#999';
+    html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'+'<span style="font-size:12px;">'+icon+'</span><div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span> <span style="font-size:10px;color:var(--text-muted);">'+( isOn?'Connecté':'Hors ligne')+' · '+agoStr+'</span></div>'+( e.latency?'<span style="font-size:10px;color:'+latColor+';">'+e.latency+'ms</span>':'')+'</div>';
   });
 
   el.innerHTML=html;
 }
+
 
 
 async function loadSecurite(){
@@ -2433,7 +2449,7 @@ async function loadSecurite(){
     if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
     el.innerHTML=html;
     loadSecLog();
-    loadMonitoring(entries);
+    loadMonitoring();
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
