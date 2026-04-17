@@ -2827,16 +2827,15 @@ function secPollStop(){
 </script>
 
 
+<script>
 // ── Pause polling quand en arrière-plan ──
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
-    // En arrière-plan — stopper tous les intervals
     if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
     if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
     if(_netInterval){clearInterval(_netInterval);_netInterval=null;}
     if(typeof cmdPollTimer!=='undefined'&&cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}
   } else {
-    // Retour au premier plan — recharger et relancer
     subscribeWeek();
     var activePage=document.querySelector('.nav-tab.active');
     if(activePage){
@@ -2846,6 +2845,7 @@ document.addEventListener('visibilitychange', function(){
     }
   }
 });
+</script>
 
 </body>
 </html>

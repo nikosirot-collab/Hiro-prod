@@ -2185,6 +2185,7 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
 </script>
 
 
+<script>
 // ── Pause ping quand en arrière-plan ──
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
@@ -2193,6 +2194,7 @@ document.addEventListener('visibilitychange', function(){
     if(window._sendPing) window._sendPing();
   }
 });
+</script>
 
 </body>
 </html>

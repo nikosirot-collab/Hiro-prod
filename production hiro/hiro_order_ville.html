@@ -1115,6 +1115,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
 </script>
 
 
+<script>
 // ── Pause ping quand en arrière-plan ──
 (function(){
   var _pingTimer=null;
@@ -1125,6 +1126,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
     else{if(window._sendPing)window._sendPing();startPing();}
   });
 })();
+</script>
 
 </body>
 </html>
