@@ -2494,6 +2494,8 @@ async function loadMonitoring(){
 
   el.innerHTML=html;
 }
+
+async function loadStorageEstimate(){
   var el=document.getElementById('storage-content');
   if(!el)return;
   el.innerHTML='<div style="font-size:12px;color:var(--text-muted);">Calcul en cours...</div>';
