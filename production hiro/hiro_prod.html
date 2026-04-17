@@ -696,19 +696,24 @@ function _setStatus(ok, status) {
 
 function _show429Banner(){
   if(document.getElementById('banner-429')) return;
+  // Stopper tous les intervals pour ne plus faire de requêtes
+  if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+  if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
+  if(_netInterval){clearInterval(_netInterval);_netInterval=null;}
+  if(typeof cmdPollTimer!=='undefined'&&cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}
   var b=document.createElement('div');
   b.id='banner-429';
   b.style.cssText='position:fixed;top:0;left:0;right:0;background:#e74c3c;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9999;display:flex;align-items:center;justify-content:center;gap:12px;';
   b.innerHTML='⚠️ Trop de requêtes Firebase — connexion temporairement bloquée'
     +'<button onclick="location.reload()" style="padding:5px 14px;border-radius:6px;border:none;background:#fff;color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;">Recharger</button>';
   document.body.prepend(b);
-  // Réessayer automatiquement toutes les 30s
+  // Réessayer toutes les 60s (plus espacé pour ne pas aggraver)
   var retryInterval=setInterval(function(){
     fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now())
       .then(function(r){
-        if(r.ok){clearInterval(retryInterval);var el=document.getElementById('banner-429');if(el)el.remove();_setStatus(true);}
+        if(r.ok){clearInterval(retryInterval);location.reload();}
       }).catch(function(){});
-  },30000);
+  },60000);
 }
 
 let _saving=false;
@@ -747,25 +752,40 @@ function _scheduleSave(docId){
 }
 
 async function _fbGet(docId) {
+  var cacheKey='hiro-cache-'+docId;
   try {
     const url = `${_API}/${docId}?key=${_KEY}`;
     const res = await fetch(url);
-    if(res.status===429){_setStatus(false,429);return null;}
+    if(res.status===429){
+      _setStatus(false,429);
+      // Retourner le cache si disponible
+      try{var c=localStorage.getItem(cacheKey);if(c)return JSON.parse(c);}catch(e){}
+      return null;
+    }
     if (!res.ok) return null;
     const json = await res.json();
-    return _fromFirestore(json);
-  } catch(e) { return null; }
+    const d=_fromFirestore(json);
+    // Sauvegarder en cache
+    try{localStorage.setItem(cacheKey,JSON.stringify(d));}catch(e){}
+    return d;
+  } catch(e) {
+    // Réseau KO — utiliser le cache
+    try{var c=localStorage.getItem(cacheKey);if(c)return JSON.parse(c);}catch(e2){}
+    return null;
+  }
 }
 
 let _pollInterval = null;
 let _pollSlowdown = false;
 function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
+  var cacheKey='hiro-cache-'+docId;
+  // Afficher le cache immédiatement si disponible
+  try{var c=localStorage.getItem(cacheKey);if(c){var cached=JSON.parse(c);if(cached&&Object.keys(cached).length>0){Object.assign(data,cached);onData(cached);}}}catch(e){}
   const tryFetch = () => {
     if(_saving) return;
     _fbGet(docId).then(d=>{
       if(d===null){
-        // Document n'existe pas — ralentir le polling à 30s
         if(!_pollSlowdown){
           _pollSlowdown=true;
           clearInterval(_pollInterval);
@@ -773,7 +793,6 @@ function _fbPoll(docId, onData, interval=8000) {
         }
         onData({});
       } else {
-        // Document existe — polling normal
         if(_pollSlowdown){
           _pollSlowdown=false;
           clearInterval(_pollInterval);
@@ -2112,12 +2131,32 @@ function exportCmdPDF(){
   win.focus();
 }
 
+
+// ── Cache utilitaire global ──
+function _cacheSet(key, data){try{localStorage.setItem('hiro-gc-'+key,JSON.stringify({d:data,ts:Date.now()}));}catch(e){}}
+function _cacheGet(key, maxAgeMs){
+  try{
+    var raw=localStorage.getItem('hiro-gc-'+key);
+    if(!raw)return null;
+    var c=JSON.parse(raw);
+    if(maxAgeMs&&Date.now()-c.ts>maxAgeMs)return null;
+    return c.d;
+  }catch(e){return null;}
+}
+
 async function loadCommandes(){
   var el=document.getElementById('cmd-content');
   if(!el)return;
   document.getElementById('cmd-date-label').textContent=cmdFmt(cmdDate);
   el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
   var dStr=cmdDs(cmdDate);
+
+  // Afficher le cache immédiatement si disponible
+  var _cmdCache=_cacheGet('commandes-'+dStr, 300000); // 5 min
+  if(_cmdCache){
+    _CMD_SHOPS.forEach(function(s){cmdOrders[s]=_cmdCache[s]||null;});
+    el.innerHTML=_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
+  }
 
   // Lister tous les docs de hiro-orders et filtrer par date
   try{
@@ -2178,6 +2217,9 @@ async function loadCommandes(){
     }else{if(badge)badge.remove();}
   }
 
+  // Sauvegarder en cache
+  var _toCache={};_CMD_SHOPS.forEach(function(s){if(cmdOrders[s])_toCache[s]=cmdOrders[s];});
+  if(Object.keys(_toCache).length>0)_cacheSet('commandes-'+dStr,_toCache);
   var html=alertHtml+_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
   el.innerHTML=html;
   if(cmdPollTimer)clearInterval(cmdPollTimer);
@@ -2191,6 +2233,9 @@ var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databas
 async function loadSecLog(){
   var el=document.getElementById('sec-log');
   if(!el)return;
+  // Cache immédiat
+  var _slCache=_cacheGet('sec-log', 120000); // 2 min
+  if(_slCache)el.innerHTML=_slCache;
   try{
     var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
     if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
@@ -2252,6 +2297,7 @@ async function loadSecLog(){
       });
       html+='</div>';
     });
+    _cacheSet('sec-log',html);
     el.innerHTML=html;
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur: '+e.message+'</div>';}
 }
@@ -2287,7 +2333,10 @@ var _LOG_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 async function loadLogs(){
   var el=document.getElementById('logs-content');
   if(!el)return;
-  el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>';
+  // Cache immédiat
+  var _logsCache=_cacheGet('logs', 60000); // 1 min
+  if(_logsCache){el.innerHTML=_logsCache;}
+  else{el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>';}
   try{
     var res=await fetch(_LOG_API+'?orderBy=ts+desc&pageSize=100&key='+_LOG_KEY);
     if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Aucun log disponible</div>';return;}
@@ -2316,7 +2365,9 @@ async function loadLogs(){
         +'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">'+time+(date?' · livraison '+date:'')+'</div>'
         +'</div></div>';
     }).join('');
-    el.innerHTML=html||'<div style="text-align:center;color:var(--text-muted);padding:1rem;">Aucun log</div>';
+    var _lHtml=html||'<div style="text-align:center;color:var(--text-muted);padding:1rem;">Aucun log</div>';
+    _cacheSet('logs',_lHtml);
+    el.innerHTML=_lHtml;
   }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
