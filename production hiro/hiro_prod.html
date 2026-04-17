@@ -2322,13 +2322,19 @@ async function loadMonitoring(entries){
   ];
   IFACES.forEach(function(iface){
     var matching=(entries||[]).filter(function(e){return e.iface===iface.key&&!e.disabled;});
+    // Préférer les entrées avec online défini
+    var withOnline=matching.filter(function(e){return e.online!==undefined&&e.online!==null;});
+    if(withOnline.length>0) matching=withOnline;
     if(iface.isGroup){
       html+='<div style="font-size:11px;font-weight:700;color:var(--text-muted);padding:6px 0 4px;text-transform:uppercase;letter-spacing:.06em;">Magasins</div>';
       ['dsm','mgt','paita','ville'].forEach(function(s){
         var byShop=matching.filter(function(e){return e.shop===s;});
+        // Préférer les entrées avec online défini
+        var withOnline=byShop.filter(function(e){return e.online!==undefined&&e.online!==null;});
+        if(withOnline.length>0) byShop=withOnline;
         var e=byShop.length>0?byShop.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
         var isRecent=e&&(now-e.ts)<120000;
-        var fbOk2=e&&e.online!==undefined?e.online:null; // null = inconnu
+        var fbOk2=e&&e.online!==undefined?e.online:null;
         var eLat=e&&e.latency?e.latency:null;
         var icon=!e?'⚫':fbOk2===null?'⚪':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
         var label=!e?'—':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
