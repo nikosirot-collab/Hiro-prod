@@ -2629,6 +2629,7 @@ function secPollStop(){
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
+  window._sendPing=_sendPing;
   _sendPing();setInterval(_sendPing,60000);
 })();
 </script>
