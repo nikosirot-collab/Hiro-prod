@@ -953,7 +953,7 @@ function subscribeWeek(){
       _setStatus(true);
     }
     render();
-  }, 8000);
+  }, 30000);
 }
 
 function toggleFete(){
@@ -2223,7 +2223,7 @@ async function loadCommandes(){
   var html=alertHtml+_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
   el.innerHTML=html;
   if(cmdPollTimer)clearInterval(cmdPollTimer);
-  cmdPollTimer=setInterval(loadCommandes,15000);
+  cmdPollTimer=setInterval(loadCommandes,30000);
 }
 </script>
 <script>
@@ -2754,7 +2754,7 @@ async function changeOrderPwd(){
 
 function secPollStart(){
   secPollStop();
-  _secPollTimer=setInterval(loadSecurite,30000);
+  _secPollTimer=setInterval(loadSecurite,60000);
 }
 function secPollStop(){
   if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
@@ -2793,7 +2793,7 @@ function secPollStop(){
     }catch(e){}
   }
   window._sendPing=_sendPing;
-  _sendPing();setInterval(_sendPing,60000);
+  _sendPing();setInterval(_sendPing,120000);
 })();
 </script>
 
@@ -2825,6 +2825,27 @@ function secPollStop(){
   localStorage.setItem('hiro-version', VERSION);
 })();
 </script>
+
+
+// ── Pause polling quand en arrière-plan ──
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    // En arrière-plan — stopper tous les intervals
+    if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
+    if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
+    if(_netInterval){clearInterval(_netInterval);_netInterval=null;}
+    if(typeof cmdPollTimer!=='undefined'&&cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}
+  } else {
+    // Retour au premier plan — recharger et relancer
+    subscribeWeek();
+    var activePage=document.querySelector('.nav-tab.active');
+    if(activePage){
+      var p=activePage.getAttribute('onclick');
+      if(p&&p.includes('commandes'))loadCommandes();
+      if(p&&p.includes('securite')){loadSecurite();secPollStart();startNetMonitor();}
+    }
+  }
+});
 
 </body>
 </html>

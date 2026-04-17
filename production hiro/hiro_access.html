@@ -2057,7 +2057,7 @@ if(!navigator.onLine){
 
   window._sendPing=_sendPing;
   _sendPing();
-  setInterval(_sendPing,60000);
+  setInterval(_sendPing,120000);
   window.addEventListener('beforeunload',function(){
     try{
       fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
@@ -2183,6 +2183,16 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
   };
 })();
 </script>
+
+
+// ── Pause ping quand en arrière-plan ──
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    if(typeof _pingTimer!=='undefined'&&_pingTimer){clearInterval(_pingTimer);}
+  } else {
+    if(window._sendPing) window._sendPing();
+  }
+});
 
 </body>
 </html>

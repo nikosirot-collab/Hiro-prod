@@ -1057,7 +1057,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
     }catch(e){}
   }
   _sendPing();
-  setInterval(_sendPing,60000);
+  setInterval(_sendPing,120000);
 })();
 </script>
 
@@ -1113,6 +1113,18 @@ if(_offlineQueue.length>0)showOfflineBanner();
   };
 })();
 </script>
+
+
+// ── Pause ping quand en arrière-plan ──
+(function(){
+  var _pingTimer=null;
+  function startPing(){if(!_pingTimer)_pingTimer=setInterval(window._sendPing||function(){},120000);}
+  function stopPing(){if(_pingTimer){clearInterval(_pingTimer);_pingTimer=null;}}
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden){stopPing();}
+    else{if(window._sendPing)window._sendPing();startPing();}
+  });
+})();
 
 </body>
 </html>
