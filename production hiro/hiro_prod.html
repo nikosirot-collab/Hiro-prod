@@ -2187,18 +2187,21 @@ async function loadSecLog(){
     entries.sort(function(a,b){return b.ts-a.ts;});
     if(entries.length===0){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Aucune connexion récente</div>';return;}
 
-    // Grouper par jour
+    // Grouper par jour et dédupliquer par devId (garder uniquement la dernière connexion par appareil par jour)
     var byDay={};
     entries.forEach(function(e){
       var d=new Date(e.ts);
       var dk=d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-      if(!byDay[dk])byDay[dk]=[];
-      byDay[dk].push(e);
+      if(!byDay[dk])byDay[dk]={};
+      // Clé unique : devId (un seul ping par appareil par jour)
+      var key=e.devId;
+      if(!byDay[dk][key]||e.ts>byDay[dk][key].ts) byDay[dk][key]=e;
     });
 
     var html='';
     Object.entries(byDay).forEach(function(kv){
-      var day=kv[0],list=kv[1];
+      var day=kv[0],devMap=kv[1];
+      var list=Object.values(devMap).sort(function(a,b){return b.ts-a.ts;});
       html+='<div style="margin-bottom:12px;">'
         +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px;">'+day+'</div>';
       list.forEach(function(e){
