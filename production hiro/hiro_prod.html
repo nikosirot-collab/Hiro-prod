@@ -688,6 +688,25 @@ function _fromFirestore(doc) {
   return out;
 }
 
+// ── Compteur requêtes Firebase ──
+var _fbReqCount=0;
+var _fbReqDay=null;
+function _fbFetch(url, opts){
+  var today=new Date().toLocaleDateString('fr-FR');
+  if(_fbReqDay!==today){_fbReqDay=today;_fbReqCount=0;}
+  _fbReqCount++;
+  try{localStorage.setItem('hiro-req-count',JSON.stringify({count:_fbReqCount,day:today}));}catch(e){}
+  return fetch(url, opts);
+}
+// Charger le compteur du jour au démarrage
+(function(){
+  try{
+    var c=JSON.parse(localStorage.getItem('hiro-req-count')||'{}');
+    var today=new Date().toLocaleDateString('fr-FR');
+    if(c.day===today){_fbReqCount=c.count||0;_fbReqDay=today;}
+  }catch(e){}
+})();
+
 function _setStatus(ok, status) {
   const el = document.getElementById('sync-status');
   if(status===429){ _show429Banner(); return; }
@@ -734,7 +753,7 @@ async function _fbSaveAll(docId) {
       else fields[ek]={stringValue:String(v)};
     });
     fields['init']={stringValue:'true'};
-    const checkRes=await fetch(`${_API}/${docId}?key=${_KEY}`);
+    const checkRes=await _fbFetch(`${_API}/${docId}?key=${_KEY}`);
     if(checkRes.status===429){_setStatus(false,429);return;}
     if(!checkRes.ok){
       await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{init:{stringValue:'true'}}})});
@@ -1213,7 +1232,7 @@ async function loadHistorique() {
     const batch=weekIds.slice(i,i+8);
     const fetched=await Promise.all(batch.map(async dateStr=>{
       try{
-        const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
+        const res=await _fbFetch(`${_API}/week_${dateStr}?key=${_KEY}`);
         if(!res.ok) return null;
         const json=await res.json();
         return {dateStr,hData:_fromFirestore(json)};
@@ -1286,7 +1305,7 @@ function toggleHistMonth(mKey){
 
 async function loadWeekFromHistory(dateStr) {
   const docId='week_'+dateStr;
-  const res=await fetch(`${_API}/${docId}?key=${_KEY}`);
+  const res=await _fbFetch(`${_API}/${docId}?key=${_KEY}`);
   if(!res.ok) return;
   const hData=_fromFirestore(await res.json());
   const monday=new Date(dateStr);
@@ -1869,7 +1888,7 @@ async function _syncOfflineQueue(){
       const fields={};
       Object.entries(item.data).forEach(([k,v])=>{if(typeof v==='number')fields[_encKey(k)]={integerValue:v};else fields[_encKey(k)]={stringValue:String(v)};});
       fields['init']={stringValue:'true'};
-      await fetch(_API+'/'+item.docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+      await _fbFetch(_API+'/'+item.docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
     }catch(e){_offlineQueue.push(item);_saveOfflineQueue();}
   }
   if(_offlineQueue.length===0){hideOfflineBanner();_setStatus(true);}
@@ -2160,7 +2179,7 @@ async function loadCommandes(){
 
   // Lister tous les docs de hiro-orders et filtrer par date
   try{
-    var listRes=await fetch(_CMD_API+'?key='+_KEY);
+    var listRes=await _fbFetch(_CMD_API+'?key='+_KEY);
     if(listRes.ok){
       var listJson=await listRes.json();
       var docs=listJson.documents||[];
@@ -2237,7 +2256,7 @@ async function loadSecLog(){
   var _slCache=_cacheGet('sec-log', 120000); // 2 min
   if(_slCache)el.innerHTML=_slCache;
   try{
-    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
     if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
@@ -2338,7 +2357,7 @@ async function loadLogs(){
   if(_logsCache){el.innerHTML=_logsCache;}
   else{el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>';}
   try{
-    var res=await fetch(_LOG_API+'?orderBy=ts+desc&pageSize=100&key='+_LOG_KEY);
+    var res=await _fbFetch(_LOG_API+'?orderBy=ts+desc&pageSize=100&key='+_LOG_KEY);
     if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Aucun log disponible</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
@@ -2389,7 +2408,7 @@ async function loadMonitoring(){
 
   // 1. Hiro Prod — mesure locale
   var t0=Date.now(); var fbOk=false;
-  try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
+  try{var r=await _fbFetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
   var lat=Date.now()-t0;
   var prodIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
   var html=row(prodIcon,'🍱 Hiro Prod',fbOk?(lat<300?'Connecté':'Lent'):'Hors ligne',lat,lat<300?'#27ae60':lat<600?'#f39c12':'#e74c3c');
@@ -2397,7 +2416,7 @@ async function loadMonitoring(){
   // Charger tous les pings depuis Firebase
   var allDocs=[];
   try{
-    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
     if(res.ok){
       var json=await res.json();
       (json.documents||[]).forEach(function(doc){
@@ -2457,12 +2476,24 @@ async function loadMonitoring(){
     html+='<div style="display:flex;align-items:center;gap:10px;padding:6px 0 6px 8px;border-bottom:1px solid var(--border);">'+'<span style="font-size:12px;">'+icon+'</span><div style="flex:1;"><span style="font-size:11px;font-weight:600;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span> <span style="font-size:10px;color:var(--text-muted);">'+( isOn?'Connecté':'Hors ligne')+' · '+agoStr+'</span></div>'+( e.latency?'<span style="font-size:10px;color:'+latColor+';">'+e.latency+'ms</span>':'')+'</div>';
   });
 
+  // Compteur requêtes du jour
+  var today=new Date().toLocaleDateString('fr-FR');
+  if(_fbReqDay!==today){_fbReqCount=0;_fbReqDay=today;}
+  var reqPct=Math.round(_fbReqCount/50000*100);
+  var reqColor=reqPct<50?'#27ae60':reqPct<80?'#f39c12':'#e74c3c';
+  html+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">'
+    +'<span style="font-size:11px;font-weight:600;">Requêtes Firebase aujourd\'hui</span>'
+    +'<span style="font-size:10px;color:var(--text-muted);">Limite : 50 000/j</span>'
+    +'</div>'
+    +'<div style="background:#f0f0f0;border-radius:20px;height:5px;overflow:hidden;margin-bottom:4px;">'
+    +'<div style="height:100%;border-radius:20px;background:'+reqColor+';width:'+Math.max(reqPct,0.2)+'%;"></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:'+reqColor+';">'+_fbReqCount.toLocaleString('fr-FR')+' requêtes · '+reqPct+'% utilisé</div>'
+    +'</div>';
+
   el.innerHTML=html;
 }
-
-
-
-async function loadStorageEstimate(){
   var el=document.getElementById('storage-content');
   if(!el)return;
   el.innerHTML='<div style="font-size:12px;color:var(--text-muted);">Calcul en cours...</div>';
@@ -2534,7 +2565,7 @@ async function loadSecurite(){
   var el=document.getElementById('sec-devices');
   if(!el)return;
   try{
-    var res=await fetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
     if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur de chargement</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
@@ -2663,7 +2694,7 @@ async function runNetTest(){
   for(var i=0;i<3;i++){
     var t0=Date.now();
     try{
-      await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
+      await _fbFetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
       latencies.push(Date.now()-t0);
     }catch(e){latencies.push(9999);}
   }
@@ -2675,7 +2706,7 @@ async function runNetTest(){
   var dlQ={label:'—',color:'#999'};
   try{
     var t1=Date.now();
-    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders?pageSize=20&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
+    var r=await _fbFetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders?pageSize=20&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());
     var txt=await r.text();
     var elapsed=(Date.now()-t1)/1000;
     dlKbps=Math.round((txt.length/elapsed)/1024);
@@ -2714,7 +2745,7 @@ function stopNetMonitor(){if(_netInterval){clearInterval(_netInterval);_netInter
 async function secDeleteDevice(devId){
   if(!confirm('Supprimer cet appareil ?')) return;
   try{
-    await fetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{method:'DELETE'});
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{method:'DELETE'});
     loadSecurite();
   }catch(e){alert('Erreur');}
 }
@@ -2722,7 +2753,7 @@ async function secDeleteDevice(devId){
 async function secToggleDevice(devId, disable){
   try{
     var fields={disabled:{booleanValue:disable}};
-    await fetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})
@@ -2738,7 +2769,7 @@ async function changeOrderPwd(){
   if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
   try{
     var hash=_h(pwd);
-    var res=await fetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
+    var res=await _fbFetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:{hash:{stringValue:hash}}})

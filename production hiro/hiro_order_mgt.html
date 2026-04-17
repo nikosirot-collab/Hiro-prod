@@ -397,8 +397,24 @@ function confirmNameAndSend(){
 }
 
 async function loadExistingOrder(){
+  const docId='order_'+ds(tomorrow)+'_'+SHOP;
+  const cacheKey='hiro-order-cache-'+docId;
+  // Afficher le cache immédiatement
+  function _applyOrder(d){
+    if(!d.ts&&d.status!=='validated')return;
+    var isVal=d.status==='validated';
+    ALL_KEYS.forEach(k=>{
+      var val=d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:undefined);
+      if(val!==undefined&&val>0){qty[k]=val;const el=document.getElementById('q-'+k);if(el){el.value=val;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}}
+    });
+    if(d.libre){try{const libre=JSON.parse(d.libre);Object.entries(libre).forEach(([pageId,items])=>{items.forEach(item=>{if(item.name&&item.qty>0)addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
+    updateCount();updateStatusBanner(true);
+  }
   try{
-    const docId='order_'+ds(tomorrow)+'_'+SHOP;
+    var cached=localStorage.getItem(cacheKey);
+    if(cached){_applyOrder(JSON.parse(cached));}
+  }catch(e){}
+  try{
     const res=await fetch(_API+'/'+docId+'?key='+_KEY);
     if(!res.ok)return;
     const json=await res.json();
@@ -408,14 +424,9 @@ async function loadExistingOrder(){
       if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
       else if(v.stringValue!==undefined)d[k]=v.stringValue;
     });
-    if(!d.ts&&d.status!=='validated')return;
-    var isVal=d.status==='validated';
-    ALL_KEYS.forEach(k=>{
-      var val=d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:undefined);
-      if(val!==undefined&&val>0){qty[k]=val;const el=document.getElementById('q-'+k);if(el){el.value=val;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}}
-    });
-    if(d.libre){try{const libre=JSON.parse(d.libre);Object.entries(libre).forEach(([pageId,items])=>{items.forEach(item=>{if(item.name&&item.qty>0)addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
-    updateCount();updateStatusBanner(true);
+    // Sauvegarder en cache
+    try{localStorage.setItem(cacheKey,JSON.stringify(d));}catch(e){}
+    _applyOrder(d);
   }catch(e){}
 }
 

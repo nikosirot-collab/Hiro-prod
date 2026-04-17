@@ -1896,6 +1896,16 @@ function showNewOrderNotif(shop){
 
 async function laboFetch(){
   var dStr=laboDs(laboDate);
+  var cacheKey='hiro-labo-orders-'+dStr;
+  // Afficher le cache immédiatement
+  try{
+    var cached=localStorage.getItem(cacheKey);
+    if(cached){
+      var c=JSON.parse(cached);
+      LABO_SHOPS.forEach(function(s){if(c[s])laboOrders[s]=c[s];});
+      laboRender();
+    }
+  }catch(e){}
   try{
     var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
     if(listRes.ok){
@@ -1919,6 +1929,12 @@ async function laboFetch(){
         });
         laboOrders[docShop]=d2;
       });
+      // Sauvegarder en cache
+      try{
+        var toCache={};
+        LABO_SHOPS.forEach(function(s){if(laboOrders[s])toCache[s]=laboOrders[s];});
+        localStorage.setItem(cacheKey,JSON.stringify(toCache));
+      }catch(e){}
     }
   }catch(e){console.error('laboFetch',e);}
   laboRender();
