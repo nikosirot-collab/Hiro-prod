@@ -688,9 +688,27 @@ function _fromFirestore(doc) {
   return out;
 }
 
-function _setStatus(ok) {
+function _setStatus(ok, status) {
   const el = document.getElementById('sync-status');
+  if(status===429){ _show429Banner(); return; }
   if (el) { el.textContent = ok ? '● Sync' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
+}
+
+function _show429Banner(){
+  if(document.getElementById('banner-429')) return;
+  var b=document.createElement('div');
+  b.id='banner-429';
+  b.style.cssText='position:fixed;top:0;left:0;right:0;background:#e74c3c;color:#fff;padding:10px 16px;font-size:13px;text-align:center;z-index:9999;display:flex;align-items:center;justify-content:center;gap:12px;';
+  b.innerHTML='⚠️ Trop de requêtes Firebase — connexion temporairement bloquée'
+    +'<button onclick="location.reload()" style="padding:5px 14px;border-radius:6px;border:none;background:#fff;color:#e74c3c;font-size:12px;font-weight:700;cursor:pointer;">Recharger</button>';
+  document.body.prepend(b);
+  // Réessayer automatiquement toutes les 30s
+  var retryInterval=setInterval(function(){
+    fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now())
+      .then(function(r){
+        if(r.ok){clearInterval(retryInterval);var el=document.getElementById('banner-429');if(el)el.remove();_setStatus(true);}
+      }).catch(function(){});
+  },30000);
 }
 
 let _saving=false;
@@ -712,10 +730,12 @@ async function _fbSaveAll(docId) {
     });
     fields['init']={stringValue:'true'};
     const checkRes=await fetch(`${_API}/${docId}?key=${_KEY}`);
+    if(checkRes.status===429){_setStatus(false,429);return;}
     if(!checkRes.ok){
       await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{init:{stringValue:'true'}}})});
     }
     const res=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+    if(res.status===429){_setStatus(false,429);return;}
     _setStatus(res.ok);
   } catch(e){ _setStatus(false); }
   finally{ setTimeout(()=>{ _saving=false; },3000); }
@@ -730,7 +750,8 @@ async function _fbGet(docId) {
   try {
     const url = `${_API}/${docId}?key=${_KEY}`;
     const res = await fetch(url);
-    if (!res.ok) return null; // null = document n'existe pas
+    if(res.status===429){_setStatus(false,429);return null;}
+    if (!res.ok) return null;
     const json = await res.json();
     return _fromFirestore(json);
   } catch(e) { return null; }
