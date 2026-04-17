@@ -2328,9 +2328,9 @@ async function loadMonitoring(entries){
         var byShop=matching.filter(function(e){return e.shop===s;});
         var e=byShop.length>0?byShop.reduce(function(a,b){return b.ts>a.ts?b:a;}):null;
         var isRecent=e&&(now-e.ts)<120000;
-        var fbOk2=e&&e.online!==undefined?e.online:(isRecent?true:false);
+        var fbOk2=e&&e.online!==undefined?e.online:null; // null = inconnu
         var eLat=e&&e.latency?e.latency:null;
-        var icon=!e?'⚫':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+        var icon=!e?'⚫':fbOk2===null?'⚪':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
         var label=!e?'—':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
         var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
         var ago=e?Math.round((now-e.ts)/60000):null;
@@ -2347,8 +2347,8 @@ async function loadMonitoring(entries){
       var isRecent=best&&(now-best.ts)<120000;
       var fbOk2=best&&best.online!==undefined?best.online:(isRecent?true:false);
       var eLat=best&&best.latency?best.latency:null;
-      var icon=!best?'⚫':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
-      var label=!best?'Jamais connecté':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
+      var icon=!best?'⚫':fbOk2===null?'⚪':fbOk2?(eLat&&eLat<300?'🟢':'🟡'):'🔴';
+      var label=!best?'Jamais connecté':fbOk2===null?'En attente':fbOk2?(eLat&&eLat<300?'Connecté':'Lent'):'Hors ligne';
       var latColor=eLat?(eLat<300?'#27ae60':eLat<600?'#f39c12':'#e74c3c'):'#999';
       var ago=best?Math.round((now-best.ts)/60000):null;
       var agoStr=ago===null?'':ago<1?'à l\'instant':ago<60?'il y a '+ago+'min':'il y a '+Math.round(ago/60)+'h';
@@ -2585,7 +2585,7 @@ async function changeOrderPwd(){
 
 function secPollStart(){
   secPollStop();
-  _secPollTimer=setInterval(loadSecurite,15000);
+  _secPollTimer=setInterval(loadSecurite,30000);
 }
 function secPollStop(){
   if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
@@ -2619,7 +2619,7 @@ function secPollStop(){
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
-  _sendPing();setInterval(_sendPing,30000);
+  _sendPing();setInterval(_sendPing,60000);
 })();
 </script>
 

@@ -270,6 +270,22 @@ let qty={},libreItems={},lineCount={};
 
 async function loadRiz(){
   try{
+    // Vérifier le cache localStorage (10 min)
+    var cacheKey='hiro-riz-cache-'+SHOP;
+    var cached=localStorage.getItem(cacheKey);
+    if(cached){
+      try{
+        var c=JSON.parse(cached);
+        if(Date.now()-c.ts<600000&&c.val>0){
+          var el=document.getElementById('q-rizprod');
+          if(el&&!el.classList.contains('active')){
+            el.value=c.val;el.placeholder=c.val;
+            el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;
+            qty['rizprod']=c.val;updateCount();
+          }
+        }
+      }catch(e){}
+    }
     const monday=mondayOf(tomorrow);
     const docId='week_'+ds(monday);
     const res=await fetch(_API_PROD+'/'+docId+'?key='+_KEY);
@@ -286,6 +302,8 @@ async function loadRiz(){
     if(rizVal>0){
       const el=document.getElementById('q-rizprod');
       if(el){el.value=rizVal;el.placeholder=rizVal;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;qty['rizprod']=rizVal;updateCount();}
+      // Sauvegarder en cache
+      try{localStorage.setItem(cacheKey,JSON.stringify({val:rizVal,ts:Date.now()}));}catch(e){}
     }
   }catch(e){console.log('Riz error:',e);}
 }
@@ -990,7 +1008,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
     }catch(e){}
   }
   _sendPing();
-  setInterval(_sendPing,30000);
+  setInterval(_sendPing,60000);
 })();
 </script>
 

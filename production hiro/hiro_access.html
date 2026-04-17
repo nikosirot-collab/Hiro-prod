@@ -1826,13 +1826,41 @@ async function laboFetchFish(){
     var mon1=mondayOf(approxWeekOff+1);
     var mon=laboLocal>=mon1?mon1:mon0;
     var monStr=ds(mon);
+    // Vérifier cache (5 min)
+    var cacheKey='hiro-fish-cache-'+monStr;
+    try{
+      var cached=localStorage.getItem(cacheKey);
+      if(cached){
+        var c=JSON.parse(cached);
+        if(Date.now()-c.ts<300000&&Object.keys(c.data).length>0){
+          Object.assign(laboFishData,c.data);
+          // Recharger en arrière-plan quand même
+          fetch(_API+'/week_'+monStr+'?key='+_KEY).then(function(res){
+            if(res.ok)return res.json();
+          }).then(function(json){
+            if(json&&json.fields){
+              Object.entries(json.fields).forEach(function(e){
+                var dk=e[0].replace(/--/g,'__');
+                if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
+              });
+              try{localStorage.setItem(cacheKey,JSON.stringify({data:Object.assign({},laboFishData),ts:Date.now()}));}catch(e){}
+            }
+          }).catch(function(){});
+          return;
+        }
+      }
+    }catch(e){}
     var res=await fetch(_API+'/week_'+monStr+'?key='+_KEY);
     if(res.ok){
       var json=await res.json();
-      if(json.fields)Object.entries(json.fields).forEach(function(e){
-        var dk=e[0].replace(/--/g,'__');
-        if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
-      });
+      if(json.fields){
+        Object.entries(json.fields).forEach(function(e){
+          var dk=e[0].replace(/--/g,'__');
+          if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
+        });
+        // Sauvegarder en cache
+        try{localStorage.setItem(cacheKey,JSON.stringify({data:Object.assign({},laboFishData),ts:Date.now()}));}catch(e){}
+      }
     }
   }catch(e){}
 }
@@ -2028,7 +2056,7 @@ if(!navigator.onLine){
   }
 
   _sendPing();
-  setInterval(_sendPing,30000);
+  setInterval(_sendPing,60000);
   window.addEventListener('beforeunload',function(){
     try{
       fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
@@ -2104,7 +2132,7 @@ if(!navigator.onLine){
   }
 
   _sendPing();
-  setInterval(_sendPing,30000);
+  setInterval(_sendPing,60000);
 })();
 </script>
 
