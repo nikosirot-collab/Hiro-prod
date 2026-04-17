@@ -2303,7 +2303,7 @@ async function loadMonitoring(entries){
 
   // 1. Hiro Prod — mesure locale directe
   var t0=Date.now(); var fbOk=false;
-  try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
+  try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=1&key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE&_='+Date.now());fbOk=r.ok;}catch(e){}
   var lat=Date.now()-t0;
   var prodIcon=fbOk?(lat<300?'🟢':'🟡'):'🔴';
   var prodLabel=fbOk?(lat<300?'Connecté':'Lent'):'Hors ligne';
