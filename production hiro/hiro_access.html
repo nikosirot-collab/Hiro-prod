@@ -2055,6 +2055,7 @@ if(!navigator.onLine){
     }catch(e){}
   }
 
+  window._sendPing=_sendPing;
   _sendPing();
   setInterval(_sendPing,60000);
   window.addEventListener('beforeunload',function(){
@@ -2069,72 +2070,7 @@ if(!navigator.onLine){
 })();
 </script>
 
-<script>
-(function(){
-  var _PING_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
-  var _PING_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-  var _IFACE='Hiro Access';
-  var _SHOP='access';
 
-  var _devId=localStorage.getItem('hiro-dev-id');
-  if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id',_devId);}
-
-  function _pingName(){return localStorage.getItem('hiro-user-name')||'';}
-
-  async function _sendPing(){
-    try{
-      var chkRes=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
-      if(chkRes.ok){
-        var chkJson=await chkRes.json();
-        if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          sessionStorage.clear();
-          document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
-          return;
-        }
-      }
-      var fields={
-        iface:{stringValue:_IFACE},
-        shop:{stringValue:_SHOP},
-        devId:{stringValue:_devId},
-        userName:{stringValue:_pingName()},
-        ts:{integerValue:Date.now()},
-        ua:{stringValue:navigator.userAgent.substr(0,80)},
-        device:{stringValue:(function(){
-          var w=window.screen.width,h=window.screen.height,t='ontouchstart' in window;
-          var ua=navigator.userAgent;
-          if(/iPad/.test(ua)||(t&&w>=768)) return 'iPad';
-          if(/iPhone/.test(ua)) return 'iPhone';
-          if(/Android/.test(ua)&&t&&w<768) return 'Android Phone';
-          if(/Android/.test(ua)&&t) return 'Android Tablet';
-          if(/Macintosh/.test(ua)) return 'Mac';
-          if(/Windows/.test(ua)) return 'PC Windows';
-          if(/Linux/.test(ua)) return 'Linux';
-          return 'Inconnu';
-        })()},
-        browser:{stringValue:(function(){
-          var ua=navigator.userAgent;
-          if(/CriOS/.test(ua)) return 'Chrome';
-          if(/FxiOS/.test(ua)) return 'Firefox';
-          if(/EdgiOS/.test(ua)||/Edg\//.test(ua)) return 'Edge';
-          if(/OPR\//.test(ua)) return 'Opera';
-          if(/Chrome/.test(ua)) return 'Chrome';
-          if(/Firefox/.test(ua)) return 'Firefox';
-          if(/Safari/.test(ua)) return 'Safari';
-          return '';
-        })()}
-      };
-      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({fields:fields})
-      });
-    }catch(e){}
-  }
-
-  _sendPing();
-  setInterval(_sendPing,60000);
-})();
-</script>
 
 
 <script>
