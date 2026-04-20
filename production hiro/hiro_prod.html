@@ -1980,7 +1980,7 @@ function cmdRenderFiche(shop, order){
   // Salade
   var saladeRows=_CMD_SALADE.map(function(p){return cmdRow(p.name,getVal(p.key));}).join('');
   // Riz/Poke
-  var midRows=cmdRow('Riz',getVal('rizprod'))+cmdRow('Poke thon',getVal('pokethon'))+cmdRow('Poke saumon',getVal('pokesaumon'));
+  var midRows=cmdRow('Riz',getVal('rizprod'))+(shop==='ville'?cmdRow('Rolls',getVal('villerolls')):'')+cmdRow('Poke thon',getVal('pokethon'))+cmdRow('Poke saumon',getVal('pokesaumon'));
   // Dessert
   var dessertRows=_CMD_DESSERT.map(function(p){return cmdRow(p.name,getVal(p.key));}).join('');
   var libreStr=order.libre||order.vlibre||'';
@@ -2039,8 +2039,8 @@ function exportCmdExcel(){
   var orders=window._cmdOrders||{};
   var shops=['dsm','mgt','paita','ville'];
   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-  var keys=['bo','sin','thon','thai','plp','rouleaux','rizprod','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao'];
-  var names={bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleau',rizprod:'Riz',pokethon:'Poke thon',pokesaumon:'Poke saumon',tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
+  var keys=['bo','sin','thon','thai','plp','rouleaux','rizprod','villerolls','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao'];
+  var names={bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleau',rizprod:'Riz',villerolls:'Rolls (Ville)',pokethon:'Poke thon',pokesaumon:'Poke saumon',tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
   
   // Construire CSV
   var rows=[];
@@ -2112,7 +2112,7 @@ function exportCmdPDF(){
     if(!o||!o.ts) return '<div style="border:1px solid #ddd;border-radius:6px;padding:12px;break-inside:avoid;"><div style="font-size:14px;font-weight:700;color:'+color+';margin-bottom:8px;">'+label+'</div><div style="color:#aaa;font-size:11px;">Commande non reçue</div></div>';
 
     var saladeRows=_CMD_SALADE.map(function(p){return pdfRow(p.name,o[p.key]||0);}).join('');
-    var midRows=pdfRow('Riz',o.rizprod||0)+pdfRow('Poke thon',o.pokethon||0)+pdfRow('Poke saumon',o.pokesaumon||0);
+    var midRows=pdfRow('Riz',o.rizprod||0)+(s==='ville'?pdfRow('Rolls',o.villerolls||0):'')+pdfRow('Poke thon',o.pokethon||0)+pdfRow('Poke saumon',o.pokesaumon||0);
     var dessertRows=_CMD_DESSERT.map(function(p){return pdfRow(p.name,o[p.key]||0);}).join('');
     if(o.libre){try{var lt=JSON.parse(o.libre);if(lt.tarte)lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+=pdfRow(i.name,i.qty);});}catch(e){}}
     var tapasKeys=s==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];

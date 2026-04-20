@@ -214,6 +214,7 @@ const tomorrow=getTomorrow();
 <tr><td class="td-product">Poulpe</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('plp',-1)">&#8722;</button><input class="qty-inp" id="q-plp" type="number" min="0" value="0" onchange="setQ('plp',this.value)"><button class="qty-btn" onclick="adj('plp',1)">+</button></div></td></tr>
 <tr><td class="td-product">Rouleaux printemps</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('rouleaux',-1)">&#8722;</button><input class="qty-inp" id="q-rouleaux" type="number" min="0" value="0" onchange="setQ('rouleaux',this.value)"><button class="qty-btn" onclick="adj('rouleaux',1)">+</button></div></td></tr>
 <tr><td class="td-product">Riz</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('rizprod',-1)">&#8722;</button><input class="qty-inp" id="q-rizprod" type="number" min="0" value="0" placeholder="Auto" onchange="setQ('rizprod',this.value)"><button class="qty-btn" onclick="adj('rizprod',1)">+</button></div></td></tr>
+<tr><td class="td-product">Rolls</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('villerolls',-1)">&#8722;</button><input class="qty-inp" id="q-villerolls" type="number" min="0" value="0" onchange="setQ('villerolls',this.value)"><button class="qty-btn" onclick="adj('villerolls',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poke thon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokethon',-1)">&#8722;</button><input class="qty-inp" id="q-pokethon" type="number" min="0" value="0" onchange="setQ('pokethon',this.value)"><button class="qty-btn" onclick="adj('pokethon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poke saumon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokesaumon',-1)">&#8722;</button><input class="qty-inp" id="q-pokesaumon" type="number" min="0" value="0" onchange="setQ('pokesaumon',this.value)"><button class="qty-btn" onclick="adj('pokesaumon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Tataki</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('tataki',-1)">&#8722;</button><input class="qty-inp" id="q-tataki" type="number" min="0" value="0" onchange="setQ('tataki',this.value)"><button class="qty-btn" onclick="adj('tataki',1)">+</button></div></td></tr></tbody></table><div class="riz-note">Le riz est pré-rempli depuis Hiro Prod · modifiable</div></div></div></div></div>
@@ -296,7 +297,7 @@ const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/data
 const SHOP='ville';
 const SHOP_LABEL='Ville';
 const ACCENT='#7a3db8';
-const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'siumai', 'gnem', 'pnem', 'sesame', 'banhbao', 'chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
+const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'villerolls', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'siumai', 'gnem', 'pnem', 'sesame', 'banhbao', 'chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
 var SALADE_RECAP_KEYS=['bo','sin','thon','thai','plp','rouleaux','tataki'];
 var SALADE_RECAP_NAMES={bo:'Bun Bo',sin:'Singapour',thon:'Thon marine',thai:'Thai',plp:'Poulpe',rouleaux:'Rouleau',tataki:'Tataki'};
 var DESSERT_RECAP_KEYS=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'];
@@ -491,7 +492,7 @@ function showRecap(d){
   var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rRow(SALADE_RECAP_NAMES[k],d[k]||0);}).join('');
 
   // Col droite : poke + riz
-  var rightRows=rRow('Riz',d.rizprod||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
+  var rightRows=rRow('Riz',d.rizprod||0)+rRow('Rolls',d.villerolls||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
 
   // Dessert
   var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
@@ -553,7 +554,7 @@ function renderDayOrder(order, dateStr, dayName, isVille){
   if(hasOrder){
     var saladeRows=['bo','sin','thon','thai','plp','rouleaux','tataki']
       .map(function(k){return rRow({bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleaux',tataki:'Tataki'}[k],order[k]||0);}).join('');
-    var midRows=rRow('Riz',order.rizprod||0)+rRow('Poke thon',order.pokethon||0)+rRow('Poke saumon',order.pokesaumon||0);
+    var midRows=rRow('Riz',order.rizprod||0)+rRow('Rolls',order.villerolls||0)+rRow('Poke thon',order.pokethon||0)+rRow('Poke saumon',order.pokesaumon||0);
     var dessertRows=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise']
       .map(function(k){return rRow({tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'}[k],order[k]||0);}).join('');
     // Tartes libres
@@ -662,7 +663,7 @@ async function loadRecap(){
     }
 
     var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rR(SALADE_RECAP_NAMES[k],getV(k));}).join('');
-    var rightRows=rR('Riz',getV('rizprod'))+rR('Poke thon',getV('pokethon'))+rR('Poke saumon',getV('pokesaumon'));
+    var rightRows=rR('Riz',getV('rizprod'))+rR('Rolls',getV('villerolls'))+rR('Poke thon',getV('pokethon'))+rR('Poke saumon',getV('pokesaumon'));
     var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rR(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
     var libreStr=d.libre||d.vlibre||'';
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
@@ -842,7 +843,7 @@ async function checkValidationStatus(){
 
 var PROD_NAMES={
   bo:'Bun Bò',sin:'Singapour',thai:'Thaï',thon:'Thon mariné',plp:'Poulpe',
-  rouleaux:'Rouleaux',rizprod:'Riz',pokethon:'Poke thon',pokesaumon:'Poke saumon',
+  rouleaux:'Rouleaux',rizprod:'Riz',villerolls:'Rolls',pokethon:'Poke thon',pokesaumon:'Poke saumon',
   tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',
   poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',
   cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',
@@ -861,7 +862,7 @@ function showValidationNotif(d){
 
   var SECTIONS=[
     {title:'Salade',keys:['bo','sin','thai','thon','plp','rouleaux','tataki']},
-    {title:'Riz & Poke',keys:['rizprod','pokethon','pokesaumon']},
+    {title:'Riz & Poke',keys:['rizprod','villerolls','pokethon','pokesaumon']},
     {title:'Dessert',keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise']},
     {title:'Tapas',keys:['gyoza','gnem','pnem','sesame','banhbao']}
   ];
