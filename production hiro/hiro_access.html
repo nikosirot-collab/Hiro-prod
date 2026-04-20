@@ -1928,6 +1928,14 @@ async function laboFetch(){
           else if(v.booleanValue!==undefined)d2[k]=v.booleanValue;
         });
         laboOrders[docShop]=d2;
+        // ── Sync riz : si rizprod de la commande diffère → mettre à jour laboFishData
+        if(d2.rizprod!==undefined&&d2.rizprod>0){
+          var dStr=laboDs(laboDate);
+          var rizKey=dStr+'__'+docShop;
+          if(laboFishData[rizKey]!==d2.rizprod){
+            laboFishData[rizKey]=d2.rizprod;
+          }
+        }
       });
       // Sauvegarder en cache
       try{

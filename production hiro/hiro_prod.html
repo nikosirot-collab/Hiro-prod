@@ -2201,6 +2201,17 @@ async function loadCommandes(){
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
         cmdOrders[docShop]=d;
+        // ── Sync riz : si rizprod de la commande diffère du Prod → mettre à jour
+        if(d.rizprod!==undefined&&d.rizprod>0){
+          var dStr=cmdDs(cmdDate);
+          var prodKey=dStr+'__'+docShop;
+          var currentRiz=getV(dStr,docShop);
+          if(currentRiz!==d.rizprod){
+            data[prodKey]=d.rizprod;
+            _scheduleSave(weekDocId());
+            render();
+          }
+        }
         // Détecter nouvelle commande
         if(d.ts&&d.ts!==_prevCmdTs[docShop]){
           if(_prevCmdTs[docShop]!==undefined) _showNewOrderNotif(docShop);
