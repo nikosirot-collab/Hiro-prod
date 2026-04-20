@@ -864,7 +864,7 @@ const FISH = {
   paita: [{r:500,t:150,s:150,a:50},{r:750,t:200,s:180,a:200},{r:1000,t:200,s:200,a:250},{r:1250,t:235,s:200,a:250},{r:1500,t:400,s:360,a:250},{r:1750,t:500,s:500,a:400},{r:2000,t:550,s:550,a:450}],
   ville: {t:65,s:95,a:30}
 };
-const RTBL = [{r:0,v:0},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
+const RTBL = [{r:0,v:0},{r:500,v:60},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
 
 function getFish(shop, riz, isFete) {
   if (shop==='ville') return riz>0 ? {...FISH.ville} : null;
@@ -2207,17 +2207,6 @@ async function loadCommandes(){
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
         cmdOrders[docShop]=d;
-        // ── Sync riz : si rizprod de la commande diffère du Prod → mettre à jour
-        if(d.rizprod!==undefined&&d.rizprod>0){
-          var dStr2=cmdDs(cmdDate);
-          var prodKey=dStr2+'__'+docShop;
-          var currentRiz=getV(dStr2,docShop);
-          if(currentRiz!==d.rizprod){
-            data[prodKey]=d.rizprod;
-            _scheduleSave(weekDocId());
-            render();
-          }
-        }
         // Détecter nouvelle commande
         if(d.ts&&d.ts!==_prevCmdTs[docShop]){
           if(_prevCmdTs[docShop]!==undefined) _showNewOrderNotif(docShop);
