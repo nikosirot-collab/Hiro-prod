@@ -1689,9 +1689,9 @@ function laboRenderFiche(shop,order){
     {key:'f_t',name:'Thon',val:_fish('t')},{key:'f_s',name:'Saumon',val:_fish('s')},
     {key:'f_a',name:'Aburi',val:_fish('a')},{key:'f_tamago',name:'Tamago',val:(isValidated&&order['vqty_f_tamago']!==undefined?order['vqty_f_tamago']:laboGetFish(shop,'tamago'))},
     {key:'rizprod',name:'Riz',val:_v('rizprod')||laboGetRiz(shop)},
-    ...(shop==='ville'?[{key:'villerolls',name:'Rolls',val:_v('villerolls')}]:[]),
+    ...(shop==='ville'?[{key:'villerolls',name:'Rolls',val:_v('villerolls')}]:[{key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))}]),
     {key:'pokethon',name:'Poke thon',val:_v('pokethon')},
-    {key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')},{key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))}
+    {key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')}
   ];
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
