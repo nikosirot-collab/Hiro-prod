@@ -335,6 +335,9 @@ function editOrder(){
   var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
   if(ncH>=19.5){var m=document.createElement('div');m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Modification impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être modifiées après 19h30</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(m);return;}
+  // Remettre le bouton en mode Envoyer
+  var btn=document.getElementById('btn-send');
+  if(btn){btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
   document.querySelector('.nav-tab').click();
 }
 function showRecapOverlay(d){
