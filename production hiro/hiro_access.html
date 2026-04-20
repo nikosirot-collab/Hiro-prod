@@ -1907,7 +1907,7 @@ async function laboFetch(){
     }
   }catch(e){}
   try{
-    var listRes=await fetch(_ORDERS_API+'?key='+_KEY);
+    var listRes=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
     if(listRes.ok){
       var listJson=await listRes.json();
       var docs=listJson.documents||[];

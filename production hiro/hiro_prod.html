@@ -2185,7 +2185,7 @@ async function loadCommandes(){
 
   // Lister tous les docs de hiro-orders et filtrer par date
   try{
-    var listRes=await _fbFetch(_CMD_API+'?key='+_KEY);
+    var listRes=await _fbFetch(_CMD_API+'?pageSize=10000&key='+_KEY);
     if(listRes.ok){
       var listJson=await listRes.json();
       var docs=listJson.documents||[];
@@ -2209,9 +2209,9 @@ async function loadCommandes(){
         cmdOrders[docShop]=d;
         // ── Sync riz : si rizprod de la commande diffère du Prod → mettre à jour
         if(d.rizprod!==undefined&&d.rizprod>0){
-          var dStr=cmdDs(cmdDate);
-          var prodKey=dStr+'__'+docShop;
-          var currentRiz=getV(dStr,docShop);
+          var dStr2=cmdDs(cmdDate);
+          var prodKey=dStr2+'__'+docShop;
+          var currentRiz=getV(dStr2,docShop);
           if(currentRiz!==d.rizprod){
             data[prodKey]=d.rizprod;
             _scheduleSave(weekDocId());
