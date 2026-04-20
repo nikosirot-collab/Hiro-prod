@@ -1697,6 +1697,7 @@ function laboRenderFiche(shop,order){
   }
   rightItems.push({key:'pokethon',name:'Poke thon',val:_v('pokethon')});
   rightItems.push({key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')});
+  if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
   var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
   var dessertRows=LABO_DESSERT.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.libre||order.vlibre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
