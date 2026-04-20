@@ -410,7 +410,7 @@ async function loadExistingOrder(){
       var val=d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:undefined);
       if(val!==undefined&&val>0){qty[k]=val;const el=document.getElementById('q-'+k);if(el){el.value=val;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}}
     });
-    if(d.libre){try{const libre=JSON.parse(d.libre);Object.entries(libre).forEach(([pageId,items])=>{items.forEach(item=>{if(item.name&&item.qty>0)addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
+    if(d.libre||d.vlibre){try{const libre=JSON.parse(d.vlibre||d.libre);Object.entries(libre).forEach(([pageId,items])=>{if(Array.isArray(items))items.forEach(item=>{if(item.name&&item.qty>0)addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
     updateCount();updateStatusBanner(true);
   }
   try{
