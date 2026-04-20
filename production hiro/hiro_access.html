@@ -1312,8 +1312,9 @@ function laboGetRoll(shop){
   // Valeur manuelle override (clé __r__shop)
   var manualKey=dStr+'__r__'+shop;
   if(laboFishData[manualKey]!==undefined) return laboFishData[manualKey];
-  // Sinon calcul auto depuis le riz
+  // Riz depuis laboFishData ou laboOrders en fallback
   var riz=laboFishData[dStr+'__'+shop]||0;
+  if(!riz&&laboOrders[shop]&&laboOrders[shop].rizprod) riz=laboOrders[shop].rizprod;
   return getRolls(riz,isDim)||0;
 }
 
