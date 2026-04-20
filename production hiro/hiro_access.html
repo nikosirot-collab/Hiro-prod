@@ -1665,8 +1665,9 @@ function laboRenderFiche(shop,order){
     if(isValidated){
       var vqty=order['vqty_'+key];
       var isRupt=order['rupt_'+key];
-      var display=vqty!==undefined?vqty:val;
-      var changed=vqty!==undefined&&val>0&&vqty!==val;
+      // Si vqty est 0 mais val est défini et > 0, utiliser val (ex: roll recalculé)
+      var display=(vqty!==undefined&&vqty>0)?vqty:(val>0?val:vqty);
+      var changed=vqty!==undefined&&vqty>0&&val>0&&vqty!==val;
       var zero=!display||display===0;
       return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
         +'<div style="font-size:15px;font-weight:700;font-family:DM Mono,monospace;min-width:26px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
