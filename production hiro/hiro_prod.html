@@ -925,9 +925,15 @@ function getR(d,s){return data[d+'__r__'+s]||0;}
 // Vérifie si le poisson du jour dStr est verrouillé (lendemain + après 11h Nouméa)
 function isFishLocked(dStr){
   const now=new Date();
-  const ncHour=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000).getHours();
+  const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const ncHour=ncNow.getHours();
   const tomorrow=new Date(TODAY_NC);tomorrow.setDate(tomorrow.getDate()+1);
-  return ncHour>=11 && dStr===ds(tomorrow);
+  // Verrouillé si après 11h pour le lendemain
+  if(ncHour>=11 && dStr===ds(tomorrow)) return true;
+  // Toujours verrouillé si le jour cible est un lundi (poisson commandé le samedi)
+  var targetDate=new Date(dStr);
+  if(targetDate.getDay()===1) return true; // 1 = lundi
+  return false;
 }
 
 function setV(d,s,v){
