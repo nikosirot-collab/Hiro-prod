@@ -964,7 +964,9 @@ function setV(d,s,v){
       if(fd){
         ['t','s','a'].forEach(f=>{
           const fk=d+'__f__'+shop+'__'+f;
-          if(data[fk]===undefined) data[fk]=fd[f];
+          const overrideKey=d+'__fo__'+shop+'__'+f; // flag override manuel
+          // Recalculer sauf si override manuel explicite
+          if(!data[overrideKey]) data[fk]=fd[f];
         });
       }
     });
@@ -974,12 +976,15 @@ function setV(d,s,v){
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
 function setFishV(d,s,f,v,auto){
   const k=d+'__f__'+s+'__'+f;
+  const overrideKey=d+'__fo__'+s+'__'+f;
   if(v===''||v===null){
     delete data[k];
+    delete data[overrideKey]; // Effacer le flag override
   } else {
     const val=parseInt(v);
     if(isNaN(val)) return;
     data[k]=val;
+    data[overrideKey]=true; // Marquer comme override manuel
   }
   _scheduleSave(weekDocId());render();
 }
