@@ -941,8 +941,22 @@ function isFishLocked(dStr){
 function setV(d,s,v){
   const val=parseInt(v)||0;
   const k=d+'__'+s;
+  // Si le jour est verrouillé, figer le poisson AVANT de changer le riz
+  if(isFishLocked(d)){
+    ['dsm','mgt','paita','ville'].forEach(shop=>{
+      const rizActuel=getV(d,shop);
+      const fd=getFish(shop,rizActuel,isFete);
+      if(fd){
+        ['t','s','a'].forEach(f=>{
+          const fk=d+'__f__'+shop+'__'+f;
+          if(data[fk]===undefined) data[fk]=fd[f]||0;
+        });
+      }
+    });
+  }
+  // Modifier le riz
   data[k]=val;
-  // Avant 11h : recalcul auto du poisson depuis le nouveau riz
+  // Recalcul poisson uniquement si pas verrouillé
   if(!isFishLocked(d)){
     ['dsm','mgt','paita','ville'].forEach(shop=>{
       const riz=getV(d,shop);
@@ -955,7 +969,6 @@ function setV(d,s,v){
       }
     });
   }
-  // Après 11h : le poisson reste intact, saisie manuelle possible
   _scheduleSave(weekDocId());render();
 }
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
