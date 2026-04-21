@@ -928,11 +928,11 @@ function isFishLocked(dStr){
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const ncHour=ncNow.getHours();
   // Toujours verrouillé si le jour cible est un lundi
-  var targetDate=new Date(dStr);
+  var targetDate=new Date(dStr+'T00:00:00');
   if(targetDate.getDay()===1) return true;
-  // Recalculer today dynamiquement (pas depuis TODAY_NC qui est une constante)
+  // Calculer demain en Nouméa avec ds() pour avoir le bon format
   var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
-  var tomorrowNC=new Date(todayNC);tomorrowNC.setDate(tomorrowNC.getDate()+1);
+  var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
   // Verrouillé après 11h pour le lendemain
   if(ncHour>=11 && dStr===ds(tomorrowNC)) return true;
   return false;
