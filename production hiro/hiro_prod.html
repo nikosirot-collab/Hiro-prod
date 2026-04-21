@@ -927,13 +927,19 @@ function isFishLocked(dStr){
   const now=new Date();
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const ncHour=ncNow.getHours();
-  // Toujours verrouillé si le jour cible est un lundi
+  const ncDay=ncNow.getDay(); // 0=dim, 1=lun, 2=mar, 3=mer, 4=jeu, 5=ven, 6=sam
   var targetDate=new Date(dStr+'T00:00:00');
-  if(targetDate.getDay()===1) return true;
-  // Calculer demain en Nouméa avec ds() pour avoir le bon format
+  const targetDay=targetDate.getDay();
+  // Règle lundi : verrouillé si on est samedi après 11h, dimanche, ou lundi
+  if(targetDay===1){
+    if(ncDay===6&&ncHour>=11) return true; // samedi après 11h
+    if(ncDay===0) return true; // dimanche
+    if(ncDay===1) return true; // lundi lui-même
+    return false;
+  }
+  // Autres jours : verrouillé après 11h pour le lendemain
   var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
   var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
-  // Verrouillé après 11h pour le lendemain
   if(ncHour>=11 && dStr===ds(tomorrowNC)) return true;
   return false;
 }
