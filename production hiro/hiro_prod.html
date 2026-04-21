@@ -927,12 +927,14 @@ function isFishLocked(dStr){
   const now=new Date();
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const ncHour=ncNow.getHours();
-  const tomorrow=new Date(TODAY_NC);tomorrow.setDate(tomorrow.getDate()+1);
-  // Verrouillé si après 11h pour le lendemain
-  if(ncHour>=11 && dStr===ds(tomorrow)) return true;
-  // Toujours verrouillé si le jour cible est un lundi (poisson commandé le samedi)
+  // Toujours verrouillé si le jour cible est un lundi
   var targetDate=new Date(dStr);
-  if(targetDate.getDay()===1) return true; // 1 = lundi
+  if(targetDate.getDay()===1) return true;
+  // Recalculer today dynamiquement (pas depuis TODAY_NC qui est une constante)
+  var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+  var tomorrowNC=new Date(todayNC);tomorrowNC.setDate(tomorrowNC.getDate()+1);
+  // Verrouillé après 11h pour le lendemain
+  if(ncHour>=11 && dStr===ds(tomorrowNC)) return true;
   return false;
 }
 
