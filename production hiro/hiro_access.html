@@ -387,7 +387,8 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <button onclick="laboChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">←</button>
         <div id="labo-date-label" style="flex:1;text-align:center;font-size:14px;font-weight:600;text-transform:capitalize;"></div>
         <button onclick="laboChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
-        <button onclick="laboPrint()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--text);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">🖨 Imprimer</button>
+        <button onclick="laboPrintSalade()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:#0d7a52;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">🥗 Salade</button>
+        <button onclick="laboPrint()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--text);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">🖨 Tout</button>
       </div>
       <!-- Sous-onglets magasins -->
       <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto;">
@@ -1905,18 +1906,31 @@ function laboPrint(){
     if(libreStr){try{var ll=JSON.parse(libreStr);['plats','tarte'].forEach(function(pg){if(ll[pg]&&shop!=='ville')ll[pg].filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+=pRow(i.name,i.qty);});});}catch(e){}}
 
     var status=isVal?'Validée':'En attente';
-    var statusColor=isVal?'#0d7a52':'#b07000';
 
-    return '<div style="flex:1;border-right:1px solid #ddd;padding:0 8px;min-width:0;overflow:hidden;">'
-      +'<div style="background:'+COLORS[shop]+';color:#fff;padding:5px 8px;border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">'
+    var header='<div style="background:'+COLORS[shop]+';color:#fff;padding:5px 8px;border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">'
       +'<span style="font-size:13px;font-weight:700;">'+LABELS[shop]+'</span>'
       +'<span style="font-size:9px;background:rgba(255,255,255,.25);padding:2px 6px;border-radius:3px;">'+status+'</span>'
-      +'</div>'
+      +'</div>';
+
+    if(shop==='ville'){
+      // Ville sur 2 colonnes
+      var col1=pSection('Salade',saladeRows)+pSection('Poisson / Riz',poissonRows)+(tapasRows?pSection('Tapas',tapasRows):'');
+      var col2=(dessertRows?pSection('Dessert',dessertRows):'')+(platsRows?pSection('Plats chauds',platsRows):'')+(chrRows?pSection('CHR',chrRows):'');
+      return '<div style="flex:2;padding:0 8px;min-width:0;overflow:hidden;border-left:1px solid #ddd;">'
+        +header
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+        +'<div>'+col1+'</div>'
+        +'<div>'+col2+'</div>'
+        +'</div>'
+        +'</div>';
+    }
+
+    return '<div style="flex:1;border-right:1px solid #ddd;padding:0 8px;min-width:0;overflow:hidden;">'
+      +header
       +pSection('Salade',saladeRows)
       +pSection('Poisson / Riz',poissonRows)
       +(tapasRows?pSection('Tapas',tapasRows):'')
       +(dessertRows?pSection('Dessert',dessertRows):'')
-      +(platsRows?pSection('Plats chauds',platsRows):'')
       +(chrRows?pSection('CHR',chrRows):'')
       +(libreRows?pSection('Libres',libreRows):'')
       +'</div>';
@@ -1936,6 +1950,55 @@ function laboPrint(){
     +'<div style="display:flex;gap:0;height:calc(100vh - 50px);">'
     +cols.join('')
     +'</div>'
+    +'<script>window.onload=function(){window.print();}<\/script>'
+    +'</body></html>';
+
+  var win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+}
+
+function laboPrintSalade(){
+  var shops=['paita','dsm','mgt','ville'];
+  var COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#5b4bb5'};
+  var LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var dateLabel=document.getElementById('labo-date-label').textContent;
+
+  function pRow(name,val){
+    if(!val||val===0)return '';
+    return '<tr>'
+      +'<td style="padding:4px 8px;font-size:16px;font-weight:500;">'+name+'</td>'
+      +'<td style="padding:4px 8px;font-size:22px;font-weight:800;text-align:right;font-family:monospace;">'+val+'</td>'
+      +'</tr>';
+  }
+
+  var cols=shops.map(function(shop){
+    var order=laboOrders[shop]||{};
+    var isVal=order.status==='validated';
+    function v(k){return order[k]!==undefined?order[k]:(isVal&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);}
+    var rows='';
+    LABO_SALADE.forEach(function(p){var val=v(p.key);if(val>0)rows+=pRow(p.name,val);});
+    var status=isVal?'✓':'⏳';
+    return '<div style="flex:1;border-right:2px solid #ddd;padding:0 12px;min-width:0;">'
+      +'<div style="background:'+COLORS[shop]+';color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<span style="font-size:20px;font-weight:800;">'+LABELS[shop]+'</span>'
+      +'<span style="font-size:16px;">'+status+'</span>'
+      +'</div>'
+      +(rows?'<table style="width:100%;border-collapse:collapse;">'+rows+'</table>'
+        :'<div style="font-size:14px;color:#999;padding:8px;">—</div>')
+      +'</div>';
+  });
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
+    +'<title>Salade '+dateLabel+'</title>'
+    +'<style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box;}body{font-family:system-ui,sans-serif;margin:0;padding:0;}</style>'
+    +'</head><body>'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;border-bottom:3px solid #1a1916;padding-bottom:8px;">'
+    +'<div style="font-size:20px;font-weight:800;">🥗 Salade — Hiro Sushi</div>'
+    +'<div style="font-size:14px;color:#666;">Livraison : '+dateLabel+'</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:0;">'+cols.join('')+'</div>'
     +'<script>window.onload=function(){window.print();}<\/script>'
     +'</body></html>';
 
