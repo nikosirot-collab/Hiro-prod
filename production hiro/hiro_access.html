@@ -498,6 +498,46 @@ const FISH={
 };
 const RTBL=[{r:0,v:0},{r:500,v:60},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
 
+function laboDsFromStr(dStr){return new Date(dStr+'T00:00:00');}
+function isFishLockedLabo(dStr){
+  const now=new Date();
+  const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const ncHour=ncNow.getHours();
+  const ncDay=ncNow.getDay();
+  var targetDay=laboDsFromStr(dStr).getDay();
+  if(targetDay===1){
+    if(ncDay===6&&ncHour>=11) return true;
+    if(ncDay===0) return true;
+    if(ncDay===1) return true;
+    return false;
+  }
+  var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+  var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
+  var tomorrowStr=tomorrowNC.getFullYear()+'-'+String(tomorrowNC.getMonth()+1).padStart(2,'0')+'-'+String(tomorrowNC.getDate()).padStart(2,'0');
+  if(ncHour>=11&&dStr===tomorrowStr) return true;
+  return false;
+}
+function _laboRecalcFish(monStr){
+  // Recalculer le poisson pour les 7 jours de la semaine si non verrouillés
+  var monday=new Date(monStr+'T00:00:00');
+  for(var di=0;di<7;di++){
+    var d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+di);
+    var dStr=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    if(!isFishLockedLabo(dStr)){
+      ['dsm','mgt','paita','ville'].forEach(function(shop){
+        var riz=laboFishData[dStr+'__'+shop]||0;
+        var fd=getFish(shop,riz);
+        if(fd){
+          ['t','s','a'].forEach(function(f){
+            var fk=dStr+'__f__'+shop+'__'+f;
+            var overrideKey=dStr+'__fo__'+shop+'__'+f;
+            if(!laboFishData[overrideKey]) laboFishData[fk]=fd[f];
+          });
+        }
+      });
+    }
+  }
+}
 function getFish(shop,riz){
   if(shop==='ville')return riz>0?{...FISH.ville}:null;
   if(shop==='asia')return null;
@@ -1866,6 +1906,8 @@ async function laboFetchFish(){
           var dk=e[0].replace(/--/g,'__');
           if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
         });
+        // Recalculer le poisson pour les jours non verrouillés
+        _laboRecalcFish(monStr);
         // Sauvegarder en cache
         try{localStorage.setItem(cacheKey,JSON.stringify({data:Object.assign({},laboFishData),ts:Date.now()}));}catch(e){}
       }
