@@ -1510,75 +1510,81 @@ async function loadCmdHisto(){
   if(dateEl)dateEl.textContent=wLabel;
   el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
 
-  var shops=['dsm','mgt','paita','ville'];
+  var shops=['paita','dsm','mgt','ville'];
   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
   var days=[];
   for(var i=0;i<6;i++){
-    var d2=new Date(monday);d2.setDate(d2.getDate()+i);
+    var d2=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
     days.push({date:d2,dStr:laboDs(d2),label:['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i]});
   }
+  var dStrs=days.map(function(d){return d.dStr;});
 
-  // Charger toutes les commandes de la semaine
-  var allOrders={};
-  await Promise.all(days.map(async function(day){
-    allOrders[day.dStr]={};
-    await Promise.all(shops.map(async function(shop){
-      try{
-        var res=await fetch(_ORDERS_API+'/order_'+day.dStr+'_'+shop+'?key='+_KEY);
-        if(res.ok){
-          var json=await res.json();
-          if(json.fields){
-            var d3={};
-            Object.entries(json.fields).forEach(function(e){
-              var k=e[0],v=e[1];
-              if(v.integerValue!==undefined)d3[k]=parseInt(v.integerValue);
-              else if(v.stringValue!==undefined)d3[k]=v.stringValue;
-              else if(v.booleanValue!==undefined)d3[k]=v.booleanValue;
-            });
-            allOrders[day.dStr][shop]=d3;
-          }
-        }
-      }catch(e){}
-    }));
-  }));
+  // Une seule requête pour toutes les commandes
+  try{
+    var res=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
+    var allOrders={};
+    days.forEach(function(d){allOrders[d.dStr]={};});
+    if(res.ok){
+      var json=await res.json();
+      var docs=json.documents||[];
+      docs.forEach(function(doc){
+        var name=doc.name.split('/').pop();
+        var parts=name.split('_');
+        if(parts.length<3)return;
+        var docDate=parts[1],docShop=parts[2];
+        if(!dStrs.includes(docDate))return;
+        if(!shops.includes(docShop))return;
+        var d3={};
+        if(doc.fields)Object.entries(doc.fields).forEach(function(e){
+          var k=e[0],v=e[1];
+          if(v.integerValue!==undefined)d3[k]=parseInt(v.integerValue);
+          else if(v.stringValue!==undefined)d3[k]=v.stringValue;
+          else if(v.booleanValue!==undefined)d3[k]=v.booleanValue;
+        });
+        allOrders[docDate][docShop]=d3;
+      });
+    }
 
-  var html='';
-  days.forEach(function(day){
-    var dayOrders=allOrders[day.dStr];
-    var hasAny=Object.values(dayOrders).some(function(o){return o&&o.ts;});
-    html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);">'
-      +'<div style="font-size:13px;font-weight:600;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
-      +'<div style="display:flex;gap:6px;">';
-    shops.forEach(function(shop){
-      var o=dayOrders[shop];
-      var ok=o&&o.ts;
-      var isVal=ok&&o.status==='validated';
-      html+='<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+(ok?shopColors[shop]+'22':'#f0f0f0')+';color:'+(ok?shopColors[shop]:'#bbb')+';font-weight:600;">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
-    });
-    html+='</div></div>';
-    if(hasAny){
-      html+='<div style="border-top:1px solid var(--border);">';
+    var NAMES={bo:'Bun Bò',sin:'Sing.',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Gd nem',pnem:'Pt nem',sesame:'Sésame',banhbao:'Bao',tiramisu:'Tira.',ananas:'Ananas',poebanane:'Poe ban.',cheesemangue:'CK mangue',cheeseframboise:'CK framb.',villerolls:'Rolls'};
+    var html='';
+    days.forEach(function(day){
+      var dayOrders=allOrders[day.dStr];
+      var hasAny=shops.some(function(s){return dayOrders[s]&&(dayOrders[s].ts||dayOrders[s].status);});
+      html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);">'
+        +'<div style="font-size:13px;font-weight:600;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
+        +'<div style="display:flex;gap:6px;">';
       shops.forEach(function(shop){
         var o=dayOrders[shop];
-        if(!o||!o.ts)return;
-        var isVal=o.status==='validated';
-        var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
-        var items=[];
-        ['bo','sin','thon','thai','plp','rouleaux','rizprod','pokethon','pokesaumon','tataki'].forEach(function(k){if(getV(k)>0)items.push(getV(k)+' '+{bo:'Bun Bò',sin:'Sing.',thon:'Thon',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki'}[k]);});
-        html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;">'
-          +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';min-width:40px;">'+shopLabels[shop]+'</span>'
-          +'<span style="font-size:11px;color:var(--text);">'+items.join(' · ')+'</span>'
-          +(isVal?'<span style="margin-left:auto;font-size:10px;color:#0d7a52;font-weight:600;">✓</span>':'')
-          +'</div>';
+        var ok=o&&(o.ts||o.status);
+        var isVal=ok&&o.status==='validated';
+        html+='<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+(ok?shopColors[shop]+'22':'#f0f0f0')+';color:'+(ok?shopColors[shop]:'#bbb')+';font-weight:600;">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
       });
+      html+='</div></div>';
+      if(hasAny){
+        html+='<div style="border-top:1px solid var(--border);">';
+        shops.forEach(function(shop){
+          var o=dayOrders[shop];
+          if(!o||((!o.ts)&&o.status!=='validated'))return;
+          var isVal=o.status==='validated';
+          var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
+          var items=[];
+          Object.keys(NAMES).forEach(function(k){if(getV(k)>0)items.push(getV(k)+' '+NAMES[k]);});
+          html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">'
+            +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';min-width:40px;">'+shopLabels[shop]+'</span>'
+            +'<span style="font-size:11px;color:var(--text);flex:1;">'+items.join(' · ')+'</span>'
+            +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;">✓</span>':'')
+            +'</div>';
+        });
+        html+='</div>';
+      }
       html+='</div>';
-    }
-    html+='</div>';
-  });
-
-  el.innerHTML=html||'<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune commande cette semaine</div>';
+    });
+    el.innerHTML=html||'<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune commande cette semaine</div>';
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Erreur de chargement</div>';
+  }
 }
 
 // ── LOG DES MODIFICATIONS ──
