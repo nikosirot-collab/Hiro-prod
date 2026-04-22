@@ -1001,6 +1001,24 @@ function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
     if(remote){
       Object.assign(data, remote);
+      // Recalculer le poisson pour les jours non verrouillés si le riz a changé
+      for(let di=0;di<7;di++){
+        const d=dayOf(weekOff,di);
+        const dStr=ds(d);
+        if(!isFishLocked(dStr)){
+          ['dsm','mgt','paita','ville'].forEach(shop=>{
+            const riz=getV(dStr,shop);
+            const fd=getFish(shop,riz,isFete);
+            if(fd){
+              ['t','s','a'].forEach(f=>{
+                const fk=dStr+'__f__'+shop+'__'+f;
+                const overrideKey=dStr+'__fo__'+shop+'__'+f;
+                if(!data[overrideKey]) data[fk]=fd[f];
+              });
+            }
+          });
+        }
+      }
       _setStatus(true);
     }
     render();
