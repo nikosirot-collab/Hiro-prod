@@ -1020,6 +1020,7 @@ function subscribeWeek(){
         }
       }
       _setStatus(true);
+      _scheduleSave(weekDocId());
     }
     render();
   }, 30000);
