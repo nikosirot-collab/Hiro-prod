@@ -13,7 +13,7 @@
 <title>Hiro Order — Paita</title>
 <meta name="apple-mobile-web-app-title" content="Hiro Paita">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>:root{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;--radius:8px;}
+<style>:root{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;--radius:8px;--today:#e8f5e9;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;padding-bottom:80px;}
 .app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
@@ -203,6 +203,7 @@ const tomorrow=getTomorrow();
   <div class="nav-tab" onclick="showPage('dessert',this)">Dessert</div>
   <div class="nav-tab" onclick="showPage('tapas',this)">Tapas</div>
   <div class="nav-tab" onclick="showPage('chr',this)">CHR</div>
+  <div class="nav-tab" onclick="showPage('riz',this);loadRizSemaine()">Riz semaine</div>
   <div class="nav-tab" onclick="showPage('recap',this);loadRecap()">Récap</div>
   <div class="nav-tab" onclick="showPage('histo',this);loadHistorique()">Historique</div>
   
@@ -231,6 +232,22 @@ const tomorrow=getTomorrow();
 <tr><td class="td-product">Banh Bao</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('banhbao',-1)">&#8722;</button><input class="qty-inp" id="q-banhbao" type="number" min="0" value="0" onchange="setQ('banhbao',this.value)"><button class="qty-btn" onclick="adj('banhbao',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
 <div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
 
+<div id="page-riz" class="page"><div class="main" style="padding-top:12px;">
+  <div class="section">
+    <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span class="section-title">Riz semaine</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="rizChangeWeek(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">←</button>
+        <span id="riz-week-label" style="font-size:13px;font-weight:600;min-width:120px;text-align:center;"></span>
+        <button onclick="rizChangeWeek(1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">→</button>
+      </div>
+    </div>
+    <div id="riz-semaine-content">
+      <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>
+    </div>
+    <div id="riz-save-msg" style="font-size:12px;margin-top:8px;display:none;text-align:center;"></div>
+  </div>
+</div></div>
 <div id="page-recap" class="page"><div class="main" style="padding-top:12px;">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
     <button onclick="recapChangeDay(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">←</button>
@@ -1092,6 +1109,131 @@ if(_offlineQueue.length>0)showOfflineBanner();
   });
 })();
 </script>
+
+<script>
+// ── RIZ SEMAINE ──
+const DAYS_RIZ=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+var _rizWeekOff=0;
+var _rizData={};
+
+function fmtRizWeek(off){
+  const m=mondayOfOff(off),e=new Date(m);e.setDate(e.getDate()+6);
+  return fmtRizDate(m)+' – '+fmtRizDate(e);
+}
+function mondayOfOff(off){
+  const now=new Date();
+  const nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const d=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate());
+  const dow=d.getDay();
+  const diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff+off*7);
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+}
+function fmtRizDate(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
+function dsRiz(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+function rizChangeWeek(d){
+  if(_rizWeekOff+d>1)return; // max semaine N+1
+  if(_rizWeekOff+d<0)return; // min semaine courante
+  _rizWeekOff+=d;
+  loadRizSemaine();
+}
+
+async function loadRizSemaine(){
+  const el=document.getElementById('riz-semaine-content');
+  const labelEl=document.getElementById('riz-week-label');
+  if(!el)return;
+  labelEl.textContent=fmtRizWeek(_rizWeekOff);
+  el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
+  const monday=mondayOfOff(_rizWeekOff);
+  const docId='week_'+dsRiz(monday);
+  try{
+    const res=await fetch(_API_PROD+'/'+docId+'?key='+_KEY);
+    _rizData={};
+    if(res.ok){
+      const json=await res.json();
+      if(json.fields)Object.entries(json.fields).forEach(([k,v])=>{
+        const dk=k.replace(/--/g,'__');
+        if(v.integerValue!==undefined)_rizData[dk]=parseInt(v.integerValue);
+      });
+    }
+    renderRizSemaine(monday);
+  }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur de chargement</div>';}
+}
+
+function renderRizSemaine(monday){
+  const el=document.getElementById('riz-semaine-content');
+  if(!el)return;
+  const nc=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  const todayStr=dsRiz(new Date(nc.getFullYear(),nc.getMonth(),nc.getDate()));
+  let html='<div class="tbl-wrap"><table><thead><tr>'
+    +'<th style="text-align:left;padding-left:12px;min-width:100px;">Jour</th>'
+    +'<th>Boules de riz</th>'
+    +'<th style="font-size:11px;color:var(--text-muted);">Bacs</th>'
+    +'</tr></thead><tbody>';
+  for(let di=0;di<7;di++){
+    const d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+di);
+    const dStr=dsRiz(d);
+    const isToday=dStr===todayStr;
+    const key=dStr+'__'+SHOP;
+    const val=_rizData[key]||0;
+    const bacs=val>0?(val/250).toFixed(1):'—';
+    const bg=isToday?'background:var(--today);':'';
+    html+=`<tr style="${bg}">
+      <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
+      <td style="padding:6px 8px;text-align:center;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+          <button onclick="adjRiz('${dStr}',${val},-250)" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">−</button>
+          <input type="number" min="0" step="250" value="${val||''}" placeholder="0"
+            style="width:80px;text-align:center;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-weight:700;font-family:monospace;${val>0?'border-color:'+ACCENT+';color:'+ACCENT+';':''}"
+            onchange="setRizSemaine('${dStr}',this.value)"
+            id="riz-inp-${dStr}">
+          <button onclick="adjRiz('${dStr}',${val},250)" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">+</button>
+        </div>
+      </td>
+      <td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-muted);">${bacs}</td>
+    </tr>`;
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
+
+function adjRiz(dStr,current,delta){
+  const newVal=Math.max(0,(current||0)+delta);
+  setRizSemaine(dStr,newVal);
+}
+
+async function setRizSemaine(dStr,val){
+  const v=Math.max(0,parseInt(val)||0);
+  const monday=mondayOfOff(_rizWeekOff);
+  const docId='week_'+dsRiz(monday);
+  const key=dStr+'__'+SHOP;
+  const fsKey=key.replace(/__/g,'--');
+  _rizData[key]=v;
+  // Mettre à jour l'input immédiatement
+  const inp=document.getElementById('riz-inp-'+dStr);
+  if(inp){inp.value=v||'';inp.style.borderColor=v>0?ACCENT:'';inp.style.color=v>0?ACCENT:'';}
+  // Recalculer les bacs
+  renderRizSemaine(monday);
+  // Sauvegarder dans Firebase avec updateMask pour ne toucher qu'à ce champ
+  try{
+    const msg=document.getElementById('riz-save-msg');
+    const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
+    });
+    if(msg){
+      msg.style.display='block';
+      msg.style.color=res.ok?'#27ae60':'#e74c3c';
+      msg.textContent=res.ok?'✓ Riz sauvegardé':'Erreur de sauvegarde';
+      setTimeout(()=>{msg.style.display='none';},2000);
+    }
+  }catch(e){
+    const msg=document.getElementById('riz-save-msg');
+    if(msg){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur réseau';setTimeout(()=>{msg.style.display='none';},2000);}
+  }
+}
 
 </body>
 </html>
