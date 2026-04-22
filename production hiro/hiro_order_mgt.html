@@ -1124,8 +1124,10 @@ function mondayOfOff(off){
   const now=new Date();
   const nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const d=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate());
-  const dow=d.getDay();const diff=dow===0?-6:1-dow;
-  d.setDate(d.getDate()+diff+off*7);return d;
+  const dow=d.getDay();
+  const diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff+off*7);
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate());
 }
 function fmtRizDate(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
 function dsRiz(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
@@ -1216,7 +1218,7 @@ async function setRizSemaine(dStr,val){
   // Sauvegarder dans Firebase avec updateMask pour ne toucher qu'à ce champ
   try{
     const msg=document.getElementById('riz-save-msg');
-    const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent(fsKey)+'&key='+_KEY,{
+    const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
