@@ -1206,9 +1206,19 @@ async function loadRizSemaine(){
   const labelEl=document.getElementById('riz-week-label');
   if(!el)return;
   labelEl.textContent=fmtRizWeek(_rizWeekOff);
-  el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
   const monday=mondayOfOff(_rizWeekOff);
   const docId='week_'+dsRiz(monday);
+  const cacheKey='hiro-riz-semaine-'+docId;
+  // Afficher le cache immédiatement
+  try{
+    const cached=localStorage.getItem(cacheKey);
+    if(cached){
+      _rizData=JSON.parse(cached);
+      renderRizSemaine(monday);
+    } else {
+      el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>';
+    }
+  }catch(e){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>'; }
   try{
     const res=await fetch(_API_PROD+'/'+docId+'?key='+_KEY);
     _rizData={};
@@ -1218,9 +1228,10 @@ async function loadRizSemaine(){
         const dk=k.replace(/--/g,'__');
         if(v.integerValue!==undefined)_rizData[dk]=parseInt(v.integerValue);
       });
+      try{localStorage.setItem(cacheKey,JSON.stringify(_rizData));}catch(e){}
     }
     renderRizSemaine(monday);
-  }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur de chargement</div>';}
+  }catch(e){if(!localStorage.getItem(cacheKey))el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur de chargement</div>';}
 }
 
 function renderRizSemaine(monday){
