@@ -740,7 +740,7 @@ function render(){
   let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
   let rizCards='',fishCards='',rollCards='';
   let rizTbl='',fishTbl='',rollTbl='',thonTbl='',totTbl='';
-  let totFS={dsm:{t:0,s:0,a:0,ta:0},mgt:{t:0,s:0,a:0,ta:0},paita:{t:0,s:0,a:0,ta:0},ville:{t:0,s:0,a:0,ta:0}};
+  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totRolls={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totFish={t:0,s:0,a:0};
@@ -764,24 +764,21 @@ function render(){
     const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
     const gtv=(s)=>{const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
-      totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');totFS[s].ta+=gtv(s);
+      totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');
     });
     const dayT=gfv('dsm','t')+gfv('mgt','t')+gfv('paita','t')+gfv('ville','t');
     const dayS=gfv('dsm','s')+gfv('mgt','s')+gfv('paita','s')+gfv('ville','s');
     const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
-    const dayTA=gtv('dsm')+gtv('mgt')+gtv('paita')+gtv('ville');
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={
       dsm:getR(dStr,'dsm')||getRolls(v.dsm,isDim),
       mgt:getR(dStr,'mgt')||getRolls(v.mgt,isDim),
-      paita:getR(dStr,'paita')||getRolls(v.paita,isDim),
-      ville:getR(dStr,'ville')||0,
-      asia:getR(dStr,'asia')||0
+      paita:getR(dStr,'paita')||getRolls(v.paita,isDim)
     };
-    const villeR=ar.ville;
-    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR+ar.asia;
-    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;totRolls.ville+=ar.ville;totRolls.asia+=ar.asia;
+    const villeR=getR(dStr,'ville')||0;
+    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR;
+    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;
 
     const tags=(isToday?`<span class="tag tag-today">Aujourd'hui</span>`:'')+(isDim?`<span class="tag tag-dim">Dim</span>`:'');
     const cardId=dStr.replace(/-/g,'');
@@ -828,8 +825,7 @@ function render(){
         <td style="text-align:left;font-weight:600;padding:6px 8px;border-right:1px solid var(--border);font-size:12px;color:var(--dsm)">Total jour</td>
         <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--dsm);font-size:14px">${dayT}</td>
         <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--mgt);font-size:14px">${dayS}</td>
-        <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--paita);font-size:14px">${dayA}</td>
-        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-weight:600;color:#c8a000;font-size:14px">${dayTA}</td>
+        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-weight:600;color:var(--paita);font-size:14px">${dayA}</td>
       </tr>`;
     fishCards+=`<div class="${todayClass}">
       <div class="day-head" onclick="toggleDay('fish${cardId}')">
@@ -910,8 +906,8 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.dsm||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.mgt||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.paita||'—'}</td>
-      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.ville||'—'}</td>
-      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.asia||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2} vmono">—</td>
+      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2} vmono">—</td>
       <td class="${dc2} col-sep vmono" style="font-weight:600">${totDayRolls||'—'}</td>
     </tr>`;
 
@@ -1014,20 +1010,20 @@ function render(){
 
   if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td><td class="td-tot" style="color:#c8a000">${totFS.dsm.ta}</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td><td class="td-tot" style="color:#c8a000">${totFS.mgt.ta}</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.paita.t}</td><td class="td-tot vs2">${totFS.paita.s}</td><td class="td-tot va2">${totFS.paita.a}</td><td class="td-tot" style="color:#c8a000">${totFS.paita.ta}</td>
-    <td class="td-tot col-sep vt2">${totFS.ville.t}</td><td class="td-tot vs2">${totFS.ville.s}</td><td class="td-tot va2">${totFS.ville.a}</td><td class="td-tot" style="color:#c8a000">${totFS.ville.ta}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.paita.t}</td><td class="td-tot vs2">${totFS.paita.s}</td><td class="td-tot va2">${totFS.paita.a}</td>
+    <td class="td-tot col-sep vt2">${totFS.ville.t}</td><td class="td-tot vs2">${totFS.ville.s}</td><td class="td-tot va2">${totFS.ville.a}</td>
   </tr>`;
 
-  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita+totRolls.ville+totRolls.asia;
+  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita;
   if(document.getElementById('foot-rolls')) document.getElementById('foot-rolls').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.dsm}</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.mgt}</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.paita}</td>
-    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.ville||'—'}</td>
-    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.asia||'—'}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
     <td class="td-btot col-sep">${totAllRolls}</td>
   </tr>`;
 
@@ -1455,6 +1451,146 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+// ── Panneau ajout articles ──
+var _laboAddPanelOpen={};
+
+function laboToggleAddPanel(shop){
+  var panel=document.getElementById('addpanel-'+shop);
+  var btn=document.getElementById('addbtn-'+shop);
+  if(!panel)return;
+  if(_laboAddPanelOpen[shop]){
+    _laboAddPanelOpen[shop]=false;
+    panel.style.display='none';
+    if(btn)btn.textContent='+ Ajouter des articles';
+    return;
+  }
+  _laboAddPanelOpen[shop]=true;
+  // Réinitialiser les compteurs de lignes libres pour ce shop
+  var cats=['chr','tapas','dessert','salade','plats'];
+  cats.forEach(function(c){_laboAddLibreCount[shop+c]=0;});
+  if(btn)btn.textContent='▲ Fermer';
+  panel.style.display='block';
+  panel.innerHTML=laboRenderAddPanel(shop);
+  // Restaurer les articles libres déjà saisis
+  setTimeout(function(){laboRestoreLibres(shop);},0);
+}
+
+function laboRestoreLibres(shop){
+  var order=laboOrders[shop];
+  if(!order)return;
+  var libreStr=order.vlibre||order.libre||'';
+  if(!libreStr)return;
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){return;}
+  Object.keys(libre).forEach(function(catId){
+    var items=libre[catId];
+    if(!Array.isArray(items))return;
+    items.forEach(function(item){
+      if(!item.name||!item.qty||item.qty<=0)return;
+      var container=document.getElementById('addlibres-'+shop+'-'+catId);
+      if(!container)return;
+      var idx=(_laboAddLibreCount[shop+catId]||0);
+      _laboAddLibreCount[shop+catId]=idx+1;
+      var div=document.createElement('div');
+      div.style.cssText='display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;';
+      div.innerHTML='<input type="text" placeholder="Article..." value="'+item.name.replace(/"/g,'&quot;')+'" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'name\',this.value)">'
+        +'<input type="number" min="0" value="'+item.qty+'" style="width:48px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:13px;font-weight:600;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'qty\',this.value)">'
+        +'<button onclick="this.parentNode.remove();laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'del\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);">×</button>';
+      container.appendChild(div);
+    });
+  });
+}
+
+function laboRenderAddPanel(shop){
+  var isVille=shop==='ville';
+  var cats=[
+    {id:'chr',label:'CHR',items:LABO_CHR_KEYS.map(function(k){return {key:k,name:LABO_CHR_NAMES[k]};})},
+    {id:'tapas',label:'Tapas',items:(isVille?LABO_TAPAS_VILLE:LABO_TAPAS)},
+    {id:'dessert',label:'Dessert',items:LABO_DESSERT},
+    {id:'salade',label:'Salade',items:LABO_SALADE},
+  ];
+  if(isVille) cats.push({id:'plats',label:'Plats chauds',items:[{key:'gyoza',name:'Gyoza'},{key:'siumai',name:'Siu Mai'}]});
+
+  var state=laboValidState(shop);
+  var html='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:4px;">';
+
+  cats.forEach(function(cat){
+    html+='<div style="border-bottom:1px solid var(--border);">'
+      +'<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:6px 12px;background:#faf9f6;border-bottom:1px solid var(--border);">'+cat.label+'</div>';
+
+    cat.items.forEach(function(item){
+      var cur=state[item.key]?state[item.key].qty:0;
+      html+='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
+        +'<div style="font-size:12px;flex:1;">'+item.name+'</div>'
+        +'<button onclick="laboAddAdjQty(\''+shop+'\',\''+item.key+'\','+(-1)+')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;font-size:16px;cursor:pointer;color:var(--text);">−</button>'
+        +'<input id="addqty-'+shop+'-'+item.key+'" type="number" min="0" value="'+cur+'" onchange="laboAddSetQty(\''+shop+'\',\''+item.key+'\',this.value)" style="width:48px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:13px;font-weight:600;">'
+        +'<button onclick="laboAddAdjQty(\''+shop+'\',\''+item.key+'\',1)" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;font-size:16px;cursor:pointer;color:var(--text);">+</button>'
+        +'</div>';
+    });
+
+    // Ligne libre pour chaque catégorie
+    html+='<div id="addlibres-'+shop+'-'+cat.id+'" style=""></div>'
+      +'<div style="padding:6px 12px;">'
+      +'<button onclick="laboAddLibreLine(\''+shop+'\',\''+cat.id+'\')" style="font-size:12px;color:var(--hint);background:none;border:none;cursor:pointer;padding:0;">+ Article libre</button>'
+      +'</div>';
+
+    html+='</div>';
+  });
+
+  html+='</div>';
+  return html;
+}
+
+function laboAddSetQty(shop,key,val){
+  var state=laboValidState(shop);
+  var v=Math.max(0,parseInt(val)||0);
+  var order=laboOrders[shop]||{};
+  var orig=order[key]!==undefined?order[key]:0;
+  if(v===0){delete state[key];}
+  else{if(!state[key])state[key]={qty:orig,rupture:false};state[key].qty=v;}
+  var inp=document.getElementById('vinp-'+shop+'-'+key);
+  if(inp)inp.value=v;
+  // Mettre à jour aussi le row de validation si visible
+  var vrow=document.getElementById('vrow-'+shop+'-'+key);
+  if(vrow){var vi=document.getElementById('vinp-'+shop+'-'+key);if(vi)vi.value=v;}
+}
+
+function laboAddAdjQty(shop,key,delta){
+  var inp=document.getElementById('addqty-'+shop+'-'+key);
+  if(!inp)return;
+  var v=Math.max(0,(parseInt(inp.value)||0)+delta);
+  inp.value=v;
+  laboAddSetQty(shop,key,v);
+}
+
+var _laboAddLibreCount={};
+function laboAddLibreLine(shop,catId){
+  var container=document.getElementById('addlibres-'+shop+'-'+catId);
+  if(!container)return;
+  var idx=(_laboAddLibreCount[shop+catId]||0);
+  _laboAddLibreCount[shop+catId]=idx+1;
+  var div=document.createElement('div');
+  div.style.cssText='display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;';
+  div.innerHTML='<input type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'name\',this.value)">'
+    +'<input type="number" min="0" value="1" style="width:48px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:13px;font-weight:600;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'qty\',this.value)">'
+    +'<button onclick="this.parentNode.remove();laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'del\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);">×</button>';
+  container.appendChild(div);
+  laboAddLibreUpdate(shop,catId,idx,'qty',1);
+}
+
+function laboAddLibreUpdate(shop,catId,idx,field,val){
+  var order=laboOrders[shop];
+  if(!order)return;
+  var libreStr=order.vlibre||order.libre||'{}';
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+  if(!libre[catId])libre[catId]=[];
+  while(libre[catId].length<=idx)libre[catId].push({name:'',qty:0});
+  if(field==='del'){libre[catId][idx]={name:'',qty:0};}
+  else if(field==='qty'){libre[catId][idx].qty=Math.max(0,parseInt(val)||0);}
+  else{libre[catId][idx].name=val;}
+  if(!order.vlibre)order.vlibre='{}';
+  order.vlibre=JSON.stringify(libre);
+}
+
 var _laboEditing=new Set();
 var laboPoids={};
 var laboPoidsDirty=false;
@@ -1665,7 +1801,7 @@ async function laboValidate(shop){
     if(s.rupture)fields['rupt_'+k]={booleanValue:true};
   });
   // Préserver les articles libres (libre ou vlibre) + poids plats chauds
-  var libreStr=order.libre||order.vlibre||'';
+  var libreStr=order.vlibre||order.libre||'';
   var libreObj={};
   try{if(libreStr)libreObj=JSON.parse(libreStr);}catch(e){}
   // Injecter les poids si modifiés
@@ -1852,8 +1988,10 @@ function laboRenderFiche(shop,order){
     +'<div>'+colTitle('CHR')+chrRows+'</div>';
 
   var validateBtn=!isValidated
-    ?'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
+    ?'<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">'
       +'<button class="valid-btn-validate" id="vbtn-'+shop+'" onclick="laboValidate(\''+shop+'\')">✓ Valider la commande</button>'
+      +'<button onclick="laboToggleAddPanel(\''+shop+'\')" id="addbtn-'+shop+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">+ Ajouter des articles</button>'
+      +'<div id="addpanel-'+shop+'" style="display:none;"></div>'
       +'</div>'
     :'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
       +'<button onclick="laboModify(\''+shop+'\')" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">✏️ Modifier la commande</button>'
