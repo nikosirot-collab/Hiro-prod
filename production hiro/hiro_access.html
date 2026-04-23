@@ -740,7 +740,7 @@ function render(){
   let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
   let rizCards='',fishCards='',rollCards='';
   let rizTbl='',fishTbl='',rollTbl='',thonTbl='',totTbl='';
-  let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  let totFS={dsm:{t:0,s:0,a:0,ta:0},mgt:{t:0,s:0,a:0,ta:0},paita:{t:0,s:0,a:0,ta:0},ville:{t:0,s:0,a:0,ta:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totRolls={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totFish={t:0,s:0,a:0};
@@ -764,21 +764,24 @@ function render(){
     const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
     const gtv=(s)=>{const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
-      totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');
+      totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');totFS[s].ta+=gtv(s);
     });
     const dayT=gfv('dsm','t')+gfv('mgt','t')+gfv('paita','t')+gfv('ville','t');
     const dayS=gfv('dsm','s')+gfv('mgt','s')+gfv('paita','s')+gfv('ville','s');
     const dayA=gfv('dsm','a')+gfv('mgt','a')+gfv('paita','a')+gfv('ville','a');
+    const dayTA=gtv('dsm')+gtv('mgt')+gtv('paita')+gtv('ville');
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={
       dsm:getR(dStr,'dsm')||getRolls(v.dsm,isDim),
       mgt:getR(dStr,'mgt')||getRolls(v.mgt,isDim),
-      paita:getR(dStr,'paita')||getRolls(v.paita,isDim)
+      paita:getR(dStr,'paita')||getRolls(v.paita,isDim),
+      ville:getR(dStr,'ville')||0,
+      asia:getR(dStr,'asia')||0
     };
-    const villeR=getR(dStr,'ville')||0;
-    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR;
-    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;
+    const villeR=ar.ville;
+    const totDayRolls=ar.dsm+ar.mgt+ar.paita+villeR+ar.asia;
+    totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;totRolls.ville+=ar.ville;totRolls.asia+=ar.asia;
 
     const tags=(isToday?`<span class="tag tag-today">Aujourd'hui</span>`:'')+(isDim?`<span class="tag tag-dim">Dim</span>`:'');
     const cardId=dStr.replace(/-/g,'');
@@ -825,7 +828,8 @@ function render(){
         <td style="text-align:left;font-weight:600;padding:6px 8px;border-right:1px solid var(--border);font-size:12px;color:var(--dsm)">Total jour</td>
         <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--dsm);font-size:14px">${dayT}</td>
         <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--mgt);font-size:14px">${dayS}</td>
-        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-weight:600;color:var(--paita);font-size:14px">${dayA}</td>
+        <td style="padding:6px 8px;border-right:1px solid var(--border);font-family:'DM Mono',monospace;font-weight:600;color:var(--paita);font-size:14px">${dayA}</td>
+        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-weight:600;color:#c8a000;font-size:14px">${dayTA}</td>
       </tr>`;
     fishCards+=`<div class="${todayClass}">
       <div class="day-head" onclick="toggleDay('fish${cardId}')">
@@ -906,8 +910,8 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.dsm||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.mgt||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.paita||'—'}</td>
-      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2} vmono">—</td>
-      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2} vmono">—</td>
+      <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.ville||'—'}</td>
+      <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2} vmono" style="font-weight:500">${ar.asia||'—'}</td>
       <td class="${dc2} col-sep vmono" style="font-weight:600">${totDayRolls||'—'}</td>
     </tr>`;
 
@@ -1010,20 +1014,20 @@ function render(){
 
   if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.paita.t}</td><td class="td-tot vs2">${totFS.paita.s}</td><td class="td-tot va2">${totFS.paita.a}</td>
-    <td class="td-tot col-sep vt2">${totFS.ville.t}</td><td class="td-tot vs2">${totFS.ville.s}</td><td class="td-tot va2">${totFS.ville.a}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.dsm.t}</td><td class="td-tot vs2">${totFS.dsm.s}</td><td class="td-tot va2">${totFS.dsm.a}</td><td class="td-tot" style="color:#c8a000">${totFS.dsm.ta}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.mgt.t}</td><td class="td-tot vs2">${totFS.mgt.s}</td><td class="td-tot va2">${totFS.mgt.a}</td><td class="td-tot" style="color:#c8a000">${totFS.mgt.ta}</td>
+    <td class="td-tot col-sep">—</td><td class="td-tot vt2">${totFS.paita.t}</td><td class="td-tot vs2">${totFS.paita.s}</td><td class="td-tot va2">${totFS.paita.a}</td><td class="td-tot" style="color:#c8a000">${totFS.paita.ta}</td>
+    <td class="td-tot col-sep vt2">${totFS.ville.t}</td><td class="td-tot vs2">${totFS.ville.s}</td><td class="td-tot va2">${totFS.ville.a}</td><td class="td-tot" style="color:#c8a000">${totFS.ville.ta}</td>
   </tr>`;
 
-  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita;
+  const totAllRolls=totRolls.dsm+totRolls.mgt+totRolls.paita+totRolls.ville+totRolls.asia;
   if(document.getElementById('foot-rolls')) document.getElementById('foot-rolls').innerHTML=`<tr>
     <td class="td-tot td-day">Total</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.dsm}</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.mgt}</td>
     <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.paita}</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
-    <td class="td-tot col-sep">—</td><td class="td-tot">—</td>
+    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.ville||'—'}</td>
+    <td class="td-tot col-sep">—</td><td class="td-btot">${totRolls.asia||'—'}</td>
     <td class="td-btot col-sep">${totAllRolls}</td>
   </tr>`;
 
@@ -2042,37 +2046,6 @@ function laboRender(){
         +'<div style="margin-left:auto;font-size:18px;">'+(isVal?'✅':ok?'⏳':'⌛')+'</div></div>';
     });
     cards+='</div>';
-
-    // ── Bloc CHR par magasin ──
-    var chrSection='';
-    LABO_SHOPS.forEach(function(s){
-      var o=laboOrders[s];
-      if(!o) return;
-      var items=[];
-      // Ville : articles fixes CHR
-      if(s==='ville'){
-        LABO_CHR_KEYS.forEach(function(k){
-          var val=o[k]!==undefined?o[k]:(o['vqty_'+k]!==undefined?o['vqty_'+k]:0);
-          if(val>0) items.push(LABO_CHR_NAMES[k]+' ×'+val);
-        });
-      }
-      // Tous magasins : articles libres CHR
-      var _ls=o.libre||o.vlibre||'';
-      if(_ls){try{var lc=JSON.parse(_ls);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){items.push(i.name+' ×'+i.qty);});}}catch(e){}}
-      if(items.length===0) return;
-      chrSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="font-size:12px;font-weight:700;color:'+LABO_COLORS[s]+';min-width:44px;">'+LABO_LABELS[s]+'</div>'
-        +'<div style="font-size:12px;color:var(--text);">'+items.join(' · ')+'</div>'
-        +'</div>';
-    });
-
-    if(chrSection){
-      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
-        +'<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">CHR</div>'
-        +chrSection
-        +'</div>';
-    }
-
     el.innerHTML=cards;
   }else{
     el.innerHTML=laboRenderFiche(laboCurrentShop,laboOrders[laboCurrentShop]);
