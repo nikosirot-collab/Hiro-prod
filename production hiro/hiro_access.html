@@ -1479,15 +1479,11 @@ async function laboPatchQty(shop,key,val){
   if(!order)return;
   var fields={};
   var isValidated=order.status==='validated';
-  if(isValidated){
-    fields['vqty_'+key]={integerValue:v};
-    order['vqty_'+key]=v;
-  } else {
-    fields[key]={integerValue:v};
-    order[key]=v;
-  }
+  var fieldKey=isValidated?'vqty_'+key:key;
+  fields[fieldKey]={integerValue:v};
+  if(isValidated) order['vqty_'+key]=v; else order[key]=v;
   var dStr=laboDs(laboDate);
-  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+encodeURIComponent(fieldKey);
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     laboShowSaveToast(shop);
@@ -1504,7 +1500,7 @@ async function laboPatchPoids(shop,key,val){
   order.vlibre=JSON.stringify(libre);
   var fields={'vlibre':{stringValue:order.vlibre}};
   var dStr=laboDs(laboDate);
-  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths=vlibre';
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     laboShowSaveToast(shop);
@@ -1521,7 +1517,7 @@ async function laboPatchLibreChr(shop,idx,val){
   order.vlibre=JSON.stringify(libre);
   var fields={'vlibre':{stringValue:order.vlibre}};
   var dStr=laboDs(laboDate);
-  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths=vlibre';
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     laboShowSaveToast(shop);
