@@ -685,102 +685,111 @@ async function loadRecap(){
 }
 
 // HISTORIQUE
-// ── Historique commandes — nouvelle version ──
+// ── Historique commandes ──
 var _histoMonday=(function(){
   var now=new Date();
   var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
-  var dow=nc.getDay();
-  var diff=dow===0?-6:1-dow;
-  var m=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate()+diff-7);
-  return m;
+  var dow=nc.getDay();var diff=dow===0?-6:1-dow;
+  return new Date(nc.getFullYear(),nc.getMonth(),nc.getDate()+diff-7);
 })();
-
 function histoDs(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-
 function histoChangeWeek(dir){
   _histoMonday=new Date(_histoMonday.getFullYear(),_histoMonday.getMonth(),_histoMonday.getDate()+dir*7);
   loadHistorique();
 }
-
 async function loadHistorique(){
   var el=document.getElementById('histo-content');
   var labelEl=document.getElementById('histo-week-label');
   if(!el)return;
   var monday=new Date(_histoMonday);
   var saturday=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+5);
-  if(labelEl) labelEl.textContent='Sem. du '+monday.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' au '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
+  if(labelEl)labelEl.textContent='Sem. du '+monday.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' au '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
   el.innerHTML='<div class="histo-loading">Chargement...</div>';
-
-  var NAMES={bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleaux',tataki:'Tataki',rizprod:'Riz prod',pokethon:'Poke thon',pokesaumon:'Poke saumon',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Gd nem',pnem:'Pt nem',sesame:'Sésame',banhbao:'Banh Bao',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'};
   var SHOPCOLOR='#0d7a52';
-
+  var IS_VILLE=false;
   var days=[];
   for(var i=0;i<6;i++){
     var d=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
     days.push({date:d,dStr:histoDs(d),label:['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i]});
   }
-
+  function rH(name,val){
+    if(!val||val===0)return '';
+    return '<div class="rh-row"><div class="rh-qty">'+val+'</div><div class="rh-name">'+name+'</div></div>';
+  }
   try{
     var results=await Promise.all(days.map(async function(day){
       try{
         var res=await fetch(_API+'/order_'+day.dStr+'_'+SHOP+'?key='+_KEY);
-        if(res.ok){
-          var json=await res.json();
-          if(json.fields){
-            var o={};
-            Object.entries(json.fields).forEach(function(e){
-              var k=e[0],v=e[1];
-              if(v.integerValue!==undefined)o[k]=parseInt(v.integerValue);
-              else if(v.stringValue!==undefined)o[k]=v.stringValue;
-              else if(v.booleanValue!==undefined)o[k]=v.booleanValue;
-            });
-            return {day:day,order:o};
-          }
-        }
+        if(res.ok){var json=await res.json();if(json.fields){var o={};Object.entries(json.fields).forEach(function(e){var k=e[0],v=e[1];if(v.integerValue!==undefined)o[k]=parseInt(v.integerValue);else if(v.stringValue!==undefined)o[k]=v.stringValue;else if(v.booleanValue!==undefined)o[k]=v.booleanValue;});return {day:day,order:o};}}
       }catch(e){}
       return {day:day,order:null};
     }));
-
     var html='';
     results.forEach(function(r){
       var day=r.day,o=r.order;
       var hasOrder=o&&(o.ts||o.status==='validated');
       var isVal=hasOrder&&o.status==='validated';
       var getV=function(k){return o&&o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
-
-      // Articles commandés
-      var items=[];
-      if(hasOrder){
-        Object.keys(NAMES).forEach(function(k){if(getV(k)>0)items.push(getV(k)+' '+NAMES[k]);});
-        // Tartes libres
-        var _ls=o.libre||'';
-        if(_ls){try{var lp=JSON.parse(_ls);
-          if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){items.push(i.qty+' '+i.name);});
-          if(lp.chr)lp.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){items.push(i.qty+' '+i.name+' (CHR)');});
-          if(lp.plats)lp.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){items.push(i.qty+' '+i.name);});
-        }catch(e){}}
-      }
-
-      html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
-      // Header jour
+      html+='<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
+      // Header
       html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);">'
         +'<div style="font-size:13px;font-weight:600;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
         +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:'+(hasOrder?SHOPCOLOR+'22':'#f0f0f0')+';color:'+(hasOrder?SHOPCOLOR:'#bbb')+';font-weight:600;">'
         +SHOP_LABEL+(isVal?' ✓':hasOrder?' ⏳':'')+'</span>'
         +'</div>';
-
-      // Contenu
-      if(hasOrder&&items.length>0){
-        html+='<div style="padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--text);line-height:1.8;">'
-          +items.join(' · ')
-          +'</div>';
-      } else if(!hasOrder){
-        html+='<div style="padding:8px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">Pas de commande</div>';
+      if(hasOrder){
+        // Salade
+        var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rH(SALADE_RECAP_NAMES[k],getV(k));}).join('');
+        // Riz/Poke
+        var midRows=rH('Riz prod',getV('rizprod'))+rH('Poke thon',getV('pokethon'))+rH('Poke saumon',getV('pokesaumon'));
+        if(IS_VILLE) midRows+=rH('Rolls',getV('villerolls'));
+        // Dessert
+        var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rH(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
+        var _ls=o.libre||'';
+        if(_ls){try{var lp=JSON.parse(_ls);if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+        // Tapas
+        var tapasKeys=IS_VILLE?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
+        var tapasRows=tapasKeys.map(function(k){return rH(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
+        if(_ls){try{var lpl=JSON.parse(_ls);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){tapasRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+        // CHR
+        var chrRows='';
+        if(_ls){try{var lc=JSON.parse(_ls);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}}catch(e){}}
+        if(IS_VILLE){
+          LABO_CHR_KEYS&&LABO_CHR_KEYS.forEach(function(k){var val=getV(k)||getV('vqty_'+k);if(val>0)chrRows+='<div class="rh-row"><div class="rh-qty">'+val+'</div><div class="rh-name">'+(LABO_CHR_NAMES&&LABO_CHR_NAMES[k]?LABO_CHR_NAMES[k]:k)+'</div></div>';});
+        }
+        // Plats chauds Ville
+        var platsRows='';
+        if(IS_VILLE){
+          platsRows+=rH('Gyoza',getV('gyoza'))+rH('Siu Mai',getV('siumai'));
+          if(_ls){try{var lpl2=JSON.parse(_ls);if(lpl2.plats)lpl2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+        }
+        // Construire les colonnes — uniquement si non vide
+        var cols=[];
+        if(saladeRows) cols.push({title:'Salade',rows:saladeRows});
+        if(midRows) cols.push({title:'Riz / Poke',rows:midRows});
+        if(IS_VILLE&&platsRows) cols.push({title:'Plats chauds',rows:platsRows});
+        if(dessertRows) cols.push({title:'Dessert',rows:dessertRows});
+        if(tapasRows) cols.push({title:'Tapas',rows:tapasRows});
+        if(chrRows) cols.push({title:'CHR',rows:chrRows});
+        if(cols.length>0){
+          // Grille 2 colonnes
+          html+='<div style="border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;">';
+          cols.forEach(function(col,i){
+            var borderR=i%2===0?'border-right:1px solid var(--border);':'';
+            var borderB=i<cols.length-2||(cols.length%2===1&&i===cols.length-2)?'border-bottom:1px solid var(--border);':'';
+            if(cols.length%2===1&&i===cols.length-1) borderR='';
+            html+='<div style="'+borderR+borderB+'">'
+              +'<div class="rh-col-title">'+col.title+'</div>'
+              +col.rows
+              +'</div>';
+          });
+          html+='</div>';
+        }
+      } else {
+        html+='<div style="padding:10px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);">Pas de commande</div>';
       }
-
       html+='</div>';
     });
-
     el.innerHTML=html||'<div class="histo-loading">Aucune commande cette semaine</div>';
   }catch(e){
     el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';
