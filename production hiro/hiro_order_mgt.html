@@ -745,15 +745,17 @@ async function loadHistorique(){
         if(IS_VILLE) midRows+=rH('Rolls',getV('villerolls'));
         // Dessert
         var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rH(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
+        // Parser libre une seule fois
         var _ls=o.libre||'';
-        if(_ls){try{var lp=JSON.parse(_ls);if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+        var _lparsed=null;
+        if(_ls){try{_lparsed=JSON.parse(_ls);}catch(e){}}
+        if(_lparsed&&_lparsed.tarte)_lparsed.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});
         // Tapas
         var tapasKeys=IS_VILLE?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
         var tapasRows=tapasKeys.map(function(k){return rH(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
-        if(_ls){try{var lpl=JSON.parse(_ls);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){tapasRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
         // CHR
         var chrRows='';
-        if(_ls){try{var lc=JSON.parse(_ls);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}}catch(e){}}
+        if(_lparsed&&_lparsed.chr){_lparsed.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}
         if(IS_VILLE){
           LABO_CHR_KEYS&&LABO_CHR_KEYS.forEach(function(k){var val=getV(k)||getV('vqty_'+k);if(val>0)chrRows+='<div class="rh-row"><div class="rh-qty">'+val+'</div><div class="rh-name">'+(LABO_CHR_NAMES&&LABO_CHR_NAMES[k]?LABO_CHR_NAMES[k]:k)+'</div></div>';});
         }
