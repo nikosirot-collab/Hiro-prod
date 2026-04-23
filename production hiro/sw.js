@@ -1,6 +1,6 @@
-// ── Hiro Sushi Service Worker v2.0 ──
-const SW_VERSION = '2.0.0';
-const CACHE_NAME = 'hiro-cache-v2';
+// ── Hiro Sushi Service Worker v2.1 ──
+const SW_VERSION = '2.1.0';
+const CACHE_NAME = 'hiro-cache-v3';
 const DB_NAME = 'hiro-offline-db';
 const DB_VERSION = 1;
 const BASE = 'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/';
@@ -21,7 +21,8 @@ self.addEventListener('install', function(e){
       return Promise.allSettled(PRECACHE_URLS.map(function(url){
         return cache.add(url).catch(function(err){ console.log('SW: skip', url, err); });
       }));
-    }).then(function(){ return self.skipWaiting(); })
+    })
+    // Ne pas skipWaiting ici — on attend que la page demande le rechargement
   );
 });
 
@@ -30,7 +31,14 @@ self.addEventListener('activate', function(e){
   e.waitUntil(
     caches.keys().then(function(keys){
       return Promise.all(keys.filter(function(k){ return k !== CACHE_NAME; }).map(function(k){ return caches.delete(k); }));
-    }).then(function(){ return self.clients.claim(); })
+    }).then(function(){
+      return self.clients.claim();
+    }).then(function(){
+      // Notifier toutes les pages qu'une mise à jour est disponible
+      return self.clients.matchAll({includeUncontrolled:true}).then(function(clients){
+        clients.forEach(function(c){ c.postMessage({type:'sw-updated'}); });
+      });
+    })
   );
 });
 

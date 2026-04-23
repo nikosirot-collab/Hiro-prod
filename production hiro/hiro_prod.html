@@ -1915,6 +1915,25 @@ subscribeWeek();
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js').catch(e=>console.log('SW:',e));
 }
+// ── Détection mise à jour SW ──
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    window.location.reload();
+  });
+  navigator.serviceWorker.addEventListener('message', function(e){
+    if(e.data&&e.data.type==='sw-updated'){
+      var b=document.getElementById('sw-update-banner');
+      if(!b){
+        b=document.createElement('div');
+        b.id='sw-update-banner';
+        b.style.cssText='position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:9999;background:#1a1a1a;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:12px;box-shadow:0 4px 16px rgba(0,0,0,.3);';
+        b.innerHTML='🔄 Mise à jour disponible <button onclick="navigator.serviceWorker.controller&&navigator.serviceWorker.controller.postMessage({type:\'skip-waiting\'});window.location.reload();" style="background:#fff;color:#1a1a1a;border:none;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;">Mettre à jour</button>';
+        document.body.appendChild(b);
+      }
+    }
+  });
+}
+
 let _offlineQueue = JSON.parse(localStorage.getItem('hiro-offline-queue') || '[]');
 function _saveOfflineQueue(){localStorage.setItem('hiro-offline-queue', JSON.stringify(_offlineQueue));}
 const _fbSaveAll_orig = typeof _fbSaveAll !== 'undefined' ? _fbSaveAll : null;
