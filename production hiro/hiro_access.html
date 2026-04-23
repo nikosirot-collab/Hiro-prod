@@ -1455,6 +1455,62 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+// ── Sauvegarde auto inline ──
+var _laboPatchTimer={};
+
+function laboShowSaveToast(shop){
+  var toastId='save-toast-'+shop;
+  var t=document.getElementById(toastId);
+  if(!t){
+    t=document.createElement('div');
+    t.id=toastId;
+    t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0d7a52;color:#fff;padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:9999;transition:opacity .3s;';
+    t.textContent='✓ Changement enregistré';
+    document.body.appendChild(t);
+  }
+  t.style.opacity='1';
+  clearTimeout(t._hideTimer);
+  t._hideTimer=setTimeout(function(){t.style.opacity='0';},2000);
+}
+
+async function laboPatchQty(shop,key,val){
+  var v=Math.max(0,parseInt(val)||0);
+  var order=laboOrders[shop];
+  if(!order)return;
+  var fields={};
+  var isValidated=order.status==='validated';
+  if(isValidated){
+    fields['vqty_'+key]={integerValue:v};
+    order['vqty_'+key]=v;
+  } else {
+    fields[key]={integerValue:v};
+    order[key]=v;
+  }
+  var dStr=laboDs(laboDate);
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboShowSaveToast(shop);
+  }catch(e){}
+}
+
+async function laboPatchPoids(shop,key,val){
+  var order=laboOrders[shop];
+  if(!order)return;
+  var libreStr=order.vlibre||order.libre||'{}';
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+  if(!libre.poids)libre.poids={};
+  libre.poids[key]=parseInt(val)||0;
+  order.vlibre=JSON.stringify(libre);
+  var fields={'vlibre':{stringValue:order.vlibre}};
+  var dStr=laboDs(laboDate);
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboShowSaveToast(shop);
+  }catch(e){}
+}
+
 // ── Panneau ajout articles ──
 var _laboAddPanelOpen={};
 var _laboAddLibreCount={};
@@ -1851,21 +1907,23 @@ function laboRenderFiche(shop,order){
   var isValidated=order.status==='validated' && !_laboEditing.has(shop);
   var fmtT=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
+  // CHR avec champ poids
+  var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes'];
+
   function makeRow(key,name,val){
-    if(isValidated){
-      var vqty=order['vqty_'+key];
-      var isRupt=order['rupt_'+key];
-      // Si vqty est 0 mais val est défini et > 0, utiliser val (ex: roll recalculé)
-      var display=(vqty!==undefined&&vqty>0)?vqty:(val>0?val:vqty);
-      var changed=vqty!==undefined&&vqty>0&&val>0&&vqty!==val;
-      var zero=!display||display===0;
-      return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);'+(isRupt?'background:#fde8e8;':'')+'">'
-        +'<div style="font-size:15px;font-weight:700;font-family:DM Mono,monospace;min-width:26px;text-align:right;color:'+(isRupt?'#c0392b':changed?'#e67e22':zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':display)+'</div>'
-        +'<div style="font-size:11px;font-weight:500;color:'+(isRupt?'#c0392b':zero?'var(--hint)':'var(--text)')+';">'+name+(isRupt?' ⚠':changed?' ('+val+')':'')+'</div>'
-        +'</div>';
-    }else{
-      return laboMakeValidRow(shop,key,name,val);
-    }
+    var vqty=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:val;
+    var isRupt=order['rupt_'+key];
+    var hasPoids=CHR_POIDS_KEYS.includes(key);
+    var curPoids='';
+    if(hasPoids){try{var _lp=JSON.parse(order.vlibre||order.libre||'{}');if(_lp.poids&&_lp.poids[key])curPoids=_lp.poids[key];}catch(e){}}
+    var poidsField=hasPoids
+      ?'<input type="number" min="0" placeholder="g" value="'+curPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+key+'\',this.value)" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:11px;text-align:center;color:var(--muted);">'
+      :'';
+    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);" id="vrow-'+shop+'-'+key+'">'
+      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:48px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<div style="font-size:12px;font-weight:500;flex:1;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
+      +poidsField
+      +'</div>';
   }
 
   var saladeRows=LABO_SALADE.map(function(p){var v=order[p.key]!==undefined?order[p.key]:(order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:0);return makeRow(p.key,p.name,v);}).join('');
@@ -1931,25 +1989,14 @@ function laboRenderFiche(shop,order){
     if(allPlats.length>0){
       platsColRows=allPlats.map(function(p){
         var poidsVal=_poids[p.key]||p.poids||'';
-        if(!isValidated){
-          // Mode édition : afficher input quantité + input poids
-          return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
-            +'<div class="valid-qty-orig">'+p.val+'</div>'
-            +'<input class="valid-qty-inp" type="number" min="0" value="'+p.val+'" onchange="laboSetQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:48px;">'
-            +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
-            +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
-            +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);" onchange="laboPoids[\''+p.key+'\']=this.value;laboPoidsDirty=true;">'
-            +'<span style="font-size:10px;color:var(--muted);">kg</span>'
-            +'</div>'
-            +'</div>';
-        }else{
-          // Mode lecture : afficher quantité + poids si dispo
-          var zero=!p.val||p.val===0;
-          return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
-            +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':p.val)+'</div>'
-            +'<div style="font-size:13px;font-weight:500;flex:1;">'+p.name+(poidsVal?' <span style="font-size:11px;color:var(--muted);">'+poidsVal+' kg</span>':'')+'</div>'
-            +'</div>';
-        }
+        return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
+          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:48px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+          +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
+          +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+          +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
+          +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+          +'</div>'
+          +'</div>';
       }).join('');
     }else{
       platsColRows='<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
