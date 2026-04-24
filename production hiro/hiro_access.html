@@ -1530,7 +1530,7 @@ async function laboPatchPoids(shop,key,val){
   var libreStr=order.vlibre||order.libre||'{}';
   var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
   if(!libre.poids)libre.poids={};
-  libre.poids[key]=parseInt(val)||0;
+  libre.poids[key]=parseFloat(val)||0;
   order.vlibre=JSON.stringify(libre);
   var fields={'vlibre':{stringValue:order.vlibre}};
   var dStr=laboDs(laboDate);
