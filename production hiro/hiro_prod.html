@@ -2222,7 +2222,7 @@ async function loadCommandes(){
   var dStr=cmdDs(cmdDate);
 
   // Afficher le cache immédiatement si disponible
-  var _cmdCache=_cacheGet('commandes-'+dStr, 300000); // 5 min
+  var _cmdCache=_cacheGet('commandes-'+dStr, 0); // pas de cache — toujours frais
   if(_cmdCache){
     _CMD_SHOPS.forEach(function(s){cmdOrders[s]=_cmdCache[s]||null;});
     el.innerHTML=_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
