@@ -1455,6 +1455,32 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+// ── Backup automatique ──
+var _BACKUP_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-backups';
+
+function laboBackup(shop,reason){
+  var order=laboOrders[shop];
+  if(!order)return;
+  var dStr=laboDs(laboDate);
+  var backupId='backup_'+dStr+'_'+shop+'_'+Date.now();
+  var fields={};
+  // Copier tous les champs de la commande
+  Object.entries(order).forEach(function(e){
+    var k=e[0],v=e[1];
+    if(typeof v==='number') fields[k]={integerValue:v};
+    else if(typeof v==='string') fields[k]={stringValue:v};
+    else if(typeof v==='boolean') fields[k]={booleanValue:v};
+  });
+  fields['_backup_ts']={integerValue:Date.now()};
+  fields['_backup_reason']={stringValue:reason||'auto'};
+  fields['_backup_doc']={stringValue:'order_'+dStr+'_'+shop};
+  // Fire and forget — ne bloque pas l'interface
+  fetch(_BACKUP_API+'/'+backupId+'?key='+_KEY,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:fields})
+  }).catch(function(){});
+}
+
 // ── Sauvegarde auto inline ──
 var _laboPatchTimer={};
 
@@ -1486,6 +1512,7 @@ async function laboPatchQty(shop,key,val){
   var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+encodeURIComponent(fieldKey);
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'patch_qty_'+key);
     laboShowSaveToast(shop);
   }catch(e){}
 }
@@ -1503,6 +1530,7 @@ async function laboPatchPoids(shop,key,val){
   var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths=vlibre';
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'patch_poids_'+key);
     laboShowSaveToast(shop);
   }catch(e){}
 }
@@ -1520,6 +1548,7 @@ async function laboPatchLibreChr(shop,idx,val){
   var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths=vlibre';
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'patch_chr_libre');
     laboShowSaveToast(shop);
   }catch(e){}
 }
@@ -1900,6 +1929,7 @@ async function laboValidate(shop){
       if(window._laboValid)delete window._laboValid[shop];
       writeLog(wasEditing?'modification':'validation', shop,
         wasEditing?'Commande modifiée et revalidée':'Commande validée');
+      laboBackup(shop, wasEditing?'revalidation':'validation');
       laboRender();
     }
   }catch(e){alert('Erreur lors de la validation');}
