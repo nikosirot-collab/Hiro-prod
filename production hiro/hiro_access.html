@@ -1506,10 +1506,17 @@ async function laboPatchQty(shop,key,val){
   var fields={};
   var isValidated=order.status==='validated';
   var fieldKey=isValidated?'vqty_'+key:key;
-  fields[fieldKey]={integerValue:v};
-  if(isValidated) order['vqty_'+key]=v; else order[key]=v;
+  if(isValidated){
+    fields[fieldKey]={integerValue:v};
+    fields[key]={integerValue:v};
+    order['vqty_'+key]=v; order[key]=v;
+  } else {
+    fields[fieldKey]={integerValue:v};
+    order[key]=v;
+  }
   var dStr=laboDs(laboDate);
-  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+encodeURIComponent(fieldKey);
+  var allKeys=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+allKeys;
   try{
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     laboBackup(shop,'patch_qty_'+key);
@@ -1967,7 +1974,7 @@ function laboRenderFiche(shop,order){
     // N'afficher que si val > 0 (sauf si on force l'affichage)
     if(vqty===0&&!isRupt) return '';
     return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);" id="vrow-'+shop+'-'+key+'">'
-      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:48px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
       +poidsField
       +'</div>';
@@ -2016,7 +2023,7 @@ function laboRenderFiche(shop,order){
     // Autres magasins: uniquement articles libres
     var _libreStr2=order.vlibre||order.libre||'';
     if(_libreStr2){try{var lc2=JSON.parse(_libreStr2);if(lc2.chr){var ci=lc2.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i,idx){return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;">'
-      +'<input type="number" min="0" value="'+i.qty+'" onchange="laboPatchLibreChr(\''+shop+'\','+idx+',this.value)" style="width:48px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<input type="number" min="0" value="'+i.qty+'" onchange="laboPatchLibreChr(\''+shop+'\','+idx+',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;">'+i.name+'</div>'
       +'</div>';}).join('');}}catch(e){}}
   }
@@ -2040,7 +2047,7 @@ function laboRenderFiche(shop,order){
       platsColRows=allPlats.map(function(p){
         var poidsVal=_poids[p.key]||p.poids||'';
         return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
-          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:48px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
           +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
           +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
           +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
