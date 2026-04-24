@@ -1455,6 +1455,91 @@ function laboToggleRupt(shop,key,origQty){
   }
 }
 
+// ── Ajout article rapide ──
+var _ARTICLE_MAP=(function(){
+  var m={};
+  // Construire une map nom normalisé -> clé Firebase
+  var all=[];
+  if(typeof LABO_SALADE!=='undefined') LABO_SALADE.forEach(function(p){all.push({key:p.key,name:p.name});});
+  if(typeof LABO_DESSERT!=='undefined') LABO_DESSERT.forEach(function(p){all.push({key:p.key,name:p.name});});
+  if(typeof LABO_TAPAS!=='undefined') LABO_TAPAS.forEach(function(p){all.push({key:p.key,name:p.name});});
+  if(typeof LABO_TAPAS_VILLE!=='undefined') LABO_TAPAS_VILLE.forEach(function(p){all.push({key:p.key,name:p.name});});
+  if(typeof LABO_CHR_KEYS!=='undefined') LABO_CHR_KEYS.forEach(function(k){if(LABO_CHR_NAMES[k])all.push({key:k,name:LABO_CHR_NAMES[k]});});
+  // Ajouter des alias courants
+  var extras=[
+    {key:'bo',name:'bo'},{key:'bo',name:'bun bo'},{key:'sin',name:'sin'},{key:'sin',name:'singapour'},
+    {key:'thon',name:'thon marine'},{key:'thon',name:'thon mariné'},{key:'thai',name:'thai'},{key:'thai',name:'thaï'},
+    {key:'plp',name:'plp'},{key:'plp',name:'poulpe'},{key:'rouleaux',name:'rouleau'},{key:'rouleaux',name:'rouleaux'},
+    {key:'tataki',name:'tataki'},{key:'gyoza',name:'gyoza'},{key:'gnem',name:'grand nem'},{key:'pnem',name:'petit nem'},
+    {key:'sesame',name:'sesame'},{key:'sesame',name:'sésame'},{key:'banhbao',name:'banh bao'},{key:'banhbao',name:'bao'},
+    {key:'tiramisu',name:'tiramisu'},{key:'ananas',name:'ananas'},{key:'cheesemangue',name:'cheese mangue'},
+    {key:'pokethon',name:'poke thon'},{key:'pokesaumon',name:'poke saumon'},{key:'rizprod',name:'riz'},
+    {key:'pouletfrit',name:'poulet'},{key:'pouletfrit',name:'poulet frit'}
+  ];
+  all.concat(extras).forEach(function(p){m[p.name.toLowerCase().trim()]=p.key;});
+  return m;
+})();
+
+async function laboAddArticle(shop){
+  var qtyInp=document.getElementById('addqty-'+shop);
+  var nameInp=document.getElementById('addname-'+shop);
+  if(!qtyInp||!nameInp)return;
+  var qty=parseInt(qtyInp.value)||0;
+  var name=nameInp.value.trim();
+  if(!qty||!name)return;
+
+  var order=laboOrders[shop];
+  if(!order)return;
+  var isValidated=order.status==='validated';
+
+  // Chercher si l'article correspond à un existant
+  var norm=name.toLowerCase().trim();
+  var key=_ARTICLE_MAP[norm]||null;
+
+  // Si pas de match exact, chercher un match partiel
+  if(!key){
+    Object.keys(_ARTICLE_MAP).forEach(function(k){
+      if(k.indexOf(norm)!==-1||norm.indexOf(k)!==-1) key=_ARTICLE_MAP[k];
+    });
+  }
+
+  var fields={};
+  if(key){
+    // Article connu — ajouter à sa clé
+    var cur=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:(order[key]||0);
+    var newVal=cur+qty;
+    var fieldKey=isValidated?'vqty_'+key:key;
+    fields[fieldKey]={integerValue:newVal};
+    if(isValidated){fields[key]={integerValue:newVal};order['vqty_'+key]=newVal;}
+    order[key]=newVal;
+  }else{
+    // Article inconnu — ajouter dans CHR libre
+    var libreStr=order.vlibre||order.libre||'{}';
+    var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+    if(!libre.chr)libre.chr=[];
+    // Chercher si l'article existe déjà dans libre.chr
+    var found=false;
+    libre.chr.forEach(function(i){if(i.name.toLowerCase()===norm){i.qty+=qty;found=true;}});
+    if(!found)libre.chr.push({name:name,qty:qty});
+    order.vlibre=JSON.stringify(libre);
+    fields['vlibre']={stringValue:order.vlibre};
+  }
+
+  var dStr=laboDs(laboDate);
+  var fieldPaths=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+fieldPaths;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'add_article_'+name);
+    laboShowSaveToast(shop);
+    // Vider les champs
+    qtyInp.value='';nameInp.value='';
+    // Re-render la fiche
+    var el=document.getElementById('labo-fiche-'+shop);
+    if(el)el.innerHTML=laboRenderFiche(shop,order);
+  }catch(e){}
+}
+
 // ── Backup automatique ──
 var _BACKUP_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-backups';
 
@@ -2102,11 +2187,19 @@ function laboRenderFiche(shop,order){
   var validateBtn=!isValidated
     ?'<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">'
       +'<button class="valid-btn-validate" id="vbtn-'+shop+'" onclick="laboValidate(\''+shop+'\')">✓ Valider la commande</button>'
-      +'<button onclick="laboToggleAddPanel(\''+shop+'\')" id="addbtn-'+shop+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">+ Ajouter des articles</button>'
-      +'<div id="addpanel-'+shop+'" style="display:none;"></div>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<input id="addqty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
+      +'<input id="addname-'+shop+'" type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;" onkeydown="if(event.key===\'Enter\')laboAddArticle(\''+shop+'\')">'
+      +'<button onclick="laboAddArticle(\''+shop+'\')" style="padding:8px 14px;border-radius:8px;border:none;background:var(--accent,#1a5fa8);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
       +'</div>'
-    :'<div style="padding:12px 16px;border-top:1px solid var(--border);">'
+      +'</div>'
+    :'<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">'
       +'<button onclick="laboModify(\''+shop+'\')" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">✏️ Modifier la commande</button>'
+      +'<div style="display:flex;gap:8px;">'
+      +'<input id="addqty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
+      +'<input id="addname-'+shop+'" type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;" onkeydown="if(event.key===\'Enter\')laboAddArticle(\''+shop+'\')">'
+      +'<button onclick="laboAddArticle(\''+shop+'\')" style="padding:8px 14px;border-radius:8px;border:none;background:var(--accent,#1a5fa8);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
+      +'</div>'
       +'</div>';
 
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
