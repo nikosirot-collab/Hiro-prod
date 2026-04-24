@@ -2377,6 +2377,9 @@ function laboPrintSalade(){
 function laboRender(){
   var el=document.getElementById('labo-content');
   if(!el)return;
+  // Ne pas re-render si un input d'ajout est en cours de saisie
+  var activeEl=document.activeElement;
+  if(activeEl&&(activeEl.id.indexOf('addqty-')===0||activeEl.id.indexOf('addname-')===0))return;
   if(laboCurrentShop==='resume'){
     var cards='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">';
     LABO_SHOPS.forEach(function(s){
