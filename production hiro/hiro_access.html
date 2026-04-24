@@ -1965,7 +1965,7 @@ function laboRenderFiche(shop,order){
     var vqty=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:val;
     if(!vqty&&vqty!==0) vqty=0;
     var isRupt=order['rupt_'+key];
-    var hasPoids=CHR_POIDS_KEYS.includes(key);
+    var hasPoids=CHR_POIDS_KEYS.indexOf(key)!==-1;
     var curPoids='';
     if(hasPoids){try{var _lp=JSON.parse(order.vlibre||order.libre||'{}');if(_lp.poids&&_lp.poids[key])curPoids=_lp.poids[key];}catch(e){}}
     var poidsField=hasPoids
