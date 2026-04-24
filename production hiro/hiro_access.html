@@ -1873,7 +1873,8 @@ async function laboValidate(shop){
   });
   try{
     var dStr=laboDs(laboDate);
-    var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY;
+    var fieldPaths=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+    var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+fieldPaths;
     if(!navigator.onLine){
       queueOfflineAction(url,fields);
       laboOrders[shop].status='validated';laboOrders[shop].validatedAt=Date.now();
