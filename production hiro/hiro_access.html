@@ -1971,8 +1971,8 @@ function laboRenderFiche(shop,order){
     var poidsField=hasPoids
       ?'<input type="number" min="0" placeholder="g" value="'+curPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+key+'\',this.value)" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:11px;text-align:center;color:var(--muted);">'
       :'';
-    // N'afficher que si val > 0 (sauf si on force l'affichage)
-    if(vqty===0&&!isRupt) return '';
+    // N'afficher que si val > 0 — sauf pour les CHR avec poids (toujours afficher)
+    if(vqty===0&&!isRupt&&!hasPoids) return '';
     return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);" id="vrow-'+shop+'-'+key+'">'
       +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
@@ -2012,11 +2012,11 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     // Articles fixes avec quantite > 0
     LABO_CHR_KEYS.forEach(function(k){
-      var val=order[k]!==undefined?order[k]:(order['vqty_'+k]!==undefined?order['vqty_'+k]:0);
+      var val=isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:(order[k]!==undefined?order[k]:0);
       if(val>0) chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
     });
     // Articles libres CHR
-    var _libreStr=order.libre||order.vlibre||'';
+    var _libreStr=order.vlibre||order.libre||'';
     if(_libreStr){try{var lc=JSON.parse(_libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
     if(chrContent) chrRows=chrContent;
   }else{
@@ -2079,6 +2079,22 @@ function laboRenderFiche(shop,order){
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
     +'<div>'+colTitle('Tapas')+tapasRows+'</div>'+'</div>'
     +'<div>'+colTitle('CHR')+chrRows+'</div>';
+
+  // Poulet frit DSM
+  if(shop==='dsm'){
+    var _pfQty=isValidated&&order['vqty_pouletfrit']!==undefined?order['vqty_pouletfrit']:(order['pouletfrit']||0);
+    var _pfPoids='';
+    try{var _lppf=JSON.parse(order.vlibre||order.libre||'{}');if(_lppf.poids&&_lppf.poids['pouletfrit'])_pfPoids=_lppf.poids['pouletfrit'];}catch(e){}
+    var pfSection='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
+      +'<input type="number" min="0" value="'+_pfQty+'" onchange="laboPatchQty(\'dsm\',\'pouletfrit\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<div style="font-size:12px;font-weight:500;flex:1;">Poulet frit</div>'
+      +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+      +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+_pfPoids+'" onchange="laboPatchPoids(\'dsm\',\'pouletfrit\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
+      +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+      +'</div>'
+      +'</div>';
+    bottomSection+='<div>'+colTitle('Poulet frit')+pfSection+'</div>';
+  }
 
   var validateBtn=!isValidated
     ?'<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">'
