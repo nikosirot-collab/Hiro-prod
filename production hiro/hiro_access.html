@@ -1969,13 +1969,16 @@ function laboRenderFiche(shop,order){
     var curPoids='';
     if(hasPoids){try{var _lp=JSON.parse(order.vlibre||order.libre||'{}');if(_lp.poids&&_lp.poids[key])curPoids=_lp.poids[key];}catch(e){}}
     var poidsField=hasPoids
-      ?'<input type="number" min="0" placeholder="g" value="'+curPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+key+'\',this.value)" style="width:52px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:11px;text-align:center;color:var(--muted);">'
+      ?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+      +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+curPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
+      +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+      +'</div>'
       :'';
     // N'afficher que si val > 0 — sauf pour les CHR avec poids (toujours afficher)
     if(vqty===0&&!isRupt&&!hasPoids) return '';
-    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);" id="vrow-'+shop+'-'+key+'">'
-      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
-      +'<div style="font-size:12px;font-weight:500;flex:1;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
+    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
+      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
       +poidsField
       +'</div>';
   }
