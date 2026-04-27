@@ -170,6 +170,7 @@ else{_getOrderPwd().then(function(){});}
 <script>
 // ── Jours off ──
 var _JOURS_OFF=[];
+var _JOURS_OFF_RP=[];
 var _joursOffLoaded=false;
 async function loadJoursOff(){
   try{
@@ -181,7 +182,8 @@ async function loadJoursOff(){
           try{
             var arr=JSON.parse(j.fields[SHOP].stringValue);
             _JOURS_OFF=arr.filter(function(e){return e.mode==='off';}).map(function(e){return e.date;});
-          }catch(e){_JOURS_OFF=[];}
+            _JOURS_OFF_RP=arr.filter(function(e){return e.mode==='rizpoisson';}).map(function(e){return e.date;});
+          }catch(e){_JOURS_OFF=[];_JOURS_OFF_RP=[];}
         } else if(j.fields[SHOP].arrayValue){
           _JOURS_OFF=(j.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;});
         }
@@ -1302,8 +1304,16 @@ function renderRizSemaine(monday){
     const val=_rizData[key]||0;
     const bacs=val>0?(val/250).toFixed(1):'—';
     const bg=isToday?'background:var(--today);':'';
-    html+=`<tr style="${bg}">
-      <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
+    // Badge jour off
+    const _isOff=_JOURS_OFF.indexOf(dStr)!==-1;
+    const _isRizPoisson=_JOURS_OFF_RP&&_JOURS_OFF_RP.indexOf(dStr)!==-1;
+    const offBadge=_isOff
+      ?'<span style="display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;background:#fde8e8;color:#c0392b;font-weight:700;margin-left:4px;">🚫 Fermé</span>'
+      :_isRizPoisson
+      ?'<span style="display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;background:#e8f5ee;color:#0d7a52;font-weight:700;margin-left:4px;">🐟 Riz/Poisson</span>'
+      :'';
+    html+=`<tr style="${bg}${_isOff?'opacity:0.5;':''}">
+      <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}${offBadge}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
       <td style="padding:6px 8px;text-align:center;">
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
           <button onclick="adjRiz('${dStr}',${val},-250)" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">−</button>
