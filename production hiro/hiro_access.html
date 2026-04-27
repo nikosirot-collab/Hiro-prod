@@ -1496,10 +1496,14 @@ async function laboAddArticle(shop){
   var norm=name.toLowerCase().trim();
   var key=_ARTICLE_MAP[norm]||null;
 
-  // Si pas de match exact, chercher un match partiel
+  // Si pas de match exact, chercher un match partiel uniquement si la clé fait plus de 3 caractères
   if(!key){
+    var bestLen=0;
     Object.keys(_ARTICLE_MAP).forEach(function(k){
-      if(k.indexOf(norm)!==-1||norm.indexOf(k)!==-1) key=_ARTICLE_MAP[k];
+      if(k.length<4) return; // ignorer les clés trop courtes comme 'bo', 'sin'
+      if(norm===k||(norm.length>3&&k.indexOf(norm)!==-1)||(k.length>3&&norm.indexOf(k)!==-1)){
+        if(k.length>bestLen){bestLen=k.length;key=_ARTICLE_MAP[k];}
+      }
     });
   }
 
