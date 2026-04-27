@@ -176,8 +176,15 @@ async function loadJoursOff(){
     var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');
     if(res.ok){
       var j=await res.json();
-      if(j.fields&&j.fields[SHOP]&&j.fields[SHOP].arrayValue){
-        _JOURS_OFF=(j.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;});
+      if(j.fields&&j.fields[SHOP]){
+        if(j.fields[SHOP].stringValue){
+          try{
+            var arr=JSON.parse(j.fields[SHOP].stringValue);
+            _JOURS_OFF=arr.filter(function(e){return e.mode==='off';}).map(function(e){return e.date;});
+          }catch(e){_JOURS_OFF=[];}
+        } else if(j.fields[SHOP].arrayValue){
+          _JOURS_OFF=(j.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;});
+        }
       }
     }
   }catch(e){}

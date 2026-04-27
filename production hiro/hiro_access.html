@@ -749,7 +749,7 @@ function render(){
     const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
     const isDim=(di===6),isToday=(dStr===todayDs);
     const label=DAYS[di];
-    const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const v={};SHOPS.forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
     const marmites=Math.round(totBacs/2+(isDim?0:2));
@@ -760,7 +760,7 @@ function render(){
     const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
       fd[s]=getFish(s,v[s]);
     });
-    // gfv : valeur manuelle si override, sinon calcul auto — 0 si magasin off ce jour
+    // gfv : 0 si off, normal si rizpoisson ou normal
     const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
     const gtv=(s)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
@@ -773,10 +773,10 @@ function render(){
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={
-      dsm:laboIsOff('dsm',dStr)?0:(getR(dStr,'dsm')||getRolls(v.dsm,isDim)),
-      mgt:laboIsOff('mgt',dStr)?0:(getR(dStr,'mgt')||getRolls(v.mgt,isDim)),
-      paita:laboIsOff('paita',dStr)?0:(getR(dStr,'paita')||getRolls(v.paita,isDim)),
-      ville:laboIsOff('ville',dStr)?0:(getR(dStr,'ville')||0),
+      dsm:(laboIsOff('dsm',dStr)||laboIsRizPoisson('dsm',dStr))?0:(getR(dStr,'dsm')||getRolls(v.dsm,isDim)),
+      mgt:(laboIsOff('mgt',dStr)||laboIsRizPoisson('mgt',dStr))?0:(getR(dStr,'mgt')||getRolls(v.mgt,isDim)),
+      paita:(laboIsOff('paita',dStr)||laboIsRizPoisson('paita',dStr))?0:(getR(dStr,'paita')||getRolls(v.paita,isDim)),
+      ville:(laboIsOff('ville',dStr)||laboIsRizPoisson('ville',dStr))?0:(getR(dStr,'ville')||0),
       asia:getR(dStr,'asia')||0
     };
     const villeR=ar.ville;
@@ -1288,18 +1288,27 @@ async function laboLoadJoursOff(){
       var j=await res.json();
       if(j.fields){
         LABO_SHOPS.forEach(function(s){
-          if(j.fields[s]&&j.fields[s].arrayValue){
-            _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return v.stringValue;});
+          if(j.fields[s]&&j.fields[s].stringValue){
+            try{_laboJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_laboJoursOff[s]=[];}
+          } else if(j.fields[s]&&j.fields[s].arrayValue){
+            // Ancien format
+            _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
+          } else {
+            _laboJoursOff[s]=[];
           }
         });
       }
     }
   }catch(e){}
-  // Re-render pour appliquer les jours off
   laboRender();
 }
 function laboIsOff(shop,dateStr){
-  return _laboJoursOff[shop]&&_laboJoursOff[shop].indexOf(dateStr)!==-1;
+  var e=(_laboJoursOff[shop]||[]).find(function(e){return e.date===dateStr;});
+  return e&&e.mode==='off';
+}
+function laboIsRizPoisson(shop,dateStr){
+  var e=(_laboJoursOff[shop]||[]).find(function(e){return e.date===dateStr;});
+  return e&&e.mode==='rizpoisson';
 }
 var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
 var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
@@ -2061,6 +2070,7 @@ function laboRenderFiche(shop,order){
   var label=LABO_LABELS[shop];
   var dStr=laboDs(laboDate);
   var isOff=laboIsOff(shop,dStr);
+  var isRizPoisson=laboIsRizPoisson(shop,dStr);
 
   if(isOff){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
@@ -2425,8 +2435,9 @@ function laboRender(){
       var isVal=ok&&o.status==='validated';
       var dStr=laboDs(laboDate);
       var isOff=laboIsOff(s,dStr);
-      var statusLabel=isOff?'🚫 Jour off':(ok?(isVal?'Validée '+laboFmtTime(o.validatedAt||o.ts):'Reçue '+laboFmtTime(o.ts)):'En attente');
-      var statusIcon=isOff?'🚫':(isVal?'✅':ok?'⏳':'⌛');
+      var isRizPoisson=laboIsRizPoisson(s,dStr);
+      var statusLabel=isOff?'🚫 Jour off':isRizPoisson?'🐟 Riz & Poisson uniquement':(ok?(isVal?'Validée '+laboFmtTime(o.validatedAt||o.ts):'Reçue '+laboFmtTime(o.ts)):'En attente');
+      var statusIcon=isOff?'🚫':isRizPoisson?'🐟':(isVal?'✅':ok?'⏳':'⌛');
       var cardStyle=isOff?'opacity:0.5;':'';
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;'+cardStyle+'" onclick="laboGoToShop(\''+s+'\')">'
         +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
