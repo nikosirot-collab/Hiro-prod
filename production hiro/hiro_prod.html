@@ -673,6 +673,29 @@ const _PROJECT = 'hiro-sushi-nc';
 const _API = `https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production`;
 const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 
+// ── Jours off — chargement global ──
+var _prodJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
+function prodIsOff(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr&&e.mode==='off';});}
+function prodIsRizPoisson(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr&&e.mode==='rizpoisson';});}
+function prodIsOffOrRP(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr;});}
+(async function(){
+  try{
+    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY);
+    if(res.ok){
+      var j=await res.json();
+      if(j.fields){
+        ['dsm','mgt','paita','ville'].forEach(function(s){
+          if(j.fields[s]&&j.fields[s].stringValue){
+            try{_prodJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_prodJoursOff[s]=[];}
+          } else if(j.fields[s]&&j.fields[s].arrayValue){
+            _prodJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
+          }
+        });
+      }
+    }
+  }catch(e){}
+})();
+
 function _toFirestore(obj) {
   const fields = {};
   for (const [k, v] of Object.entries(obj)) {
@@ -1404,8 +1427,12 @@ async function loadWeekFromHistory(dateStr) {
     const dayA=hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a');
     ['dsm','mgt','paita','ville'].forEach(s=>{totFS[s].t+=hfv(dStr,s,'t');totFS[s].s+=hfv(dStr,s,'s');totFS[s].a+=hfv(dStr,s,'a');});
     wThon+=dayT;
-    const ar={dsm:getRolls(riz.dsm,isDim,false),mgt:getRolls(riz.mgt,isDim,false),paita:getRolls(riz.paita,isDim,false)};
-    const villeR=hr(dStr,'ville');
+    const ar={
+      dsm:(prodIsOff('dsm',dStr)||prodIsRizPoisson('dsm',dStr))?0:getRolls(riz.dsm,isDim,false),
+      mgt:(prodIsOff('mgt',dStr)||prodIsRizPoisson('mgt',dStr))?0:getRolls(riz.mgt,isDim,false),
+      paita:(prodIsOff('paita',dStr)||prodIsRizPoisson('paita',dStr))?0:getRolls(riz.paita,isDim,false)
+    };
+    const villeR=(prodIsOff('ville',dStr)||prodIsRizPoisson('ville',dStr))?0:hr(dStr,'ville');
     totRolls.dsm+=ar.dsm;totRolls.mgt+=ar.mgt;totRolls.paita+=ar.paita;totRolls.ville+=villeR;
 
     const tr=(content,extra='')=>`<tr style="border-bottom:1px solid var(--border);font-size:12px;${bg}${extra}">${content}</tr>`;
@@ -1609,10 +1636,14 @@ function render() {
     </tr>`;
 
     // ROLLS — override manuel possible pour DSM/MGT/Paita
-    const getRollVal=(s)=>{const mk=dStr+'__r__'+s;return data[mk]!==undefined?data[mk]:getRolls(v[s],isDim,isFete);};
+    const getRollVal=(s)=>{
+      if(prodIsOff(s,dStr)||prodIsRizPoisson(s,dStr))return 0;
+      const mk=dStr+'__r__'+s;return data[mk]!==undefined?data[mk]:getRolls(v[s],isDim,isFete);
+    };
     const arDsm=getRollVal('dsm'), arMgt=getRollVal('mgt'), arPaita=getRollVal('paita');
     const vR=getR(dStr,'ville'); const aR=getR(dStr,'asia');
-    const villeR=vR!==undefined?vR:0; const asiaR=aR!==undefined?aR:0;
+    const villeR=(prodIsOff('ville',dStr)||prodIsRizPoisson('ville',dStr))?0:(vR!==undefined?vR:0);
+    const asiaR=aR!==undefined?aR:0;
     totRolls.dsm+=arDsm; totRolls.mgt+=arMgt; totRolls.paita+=arPaita; totRolls.ville+=villeR; totRolls.asia+=asiaR;
     const totDayRolls=arDsm+arMgt+arPaita+villeR+asiaR;
     // Style override : si valeur manuelle différente du calcul auto → orange
@@ -1792,8 +1823,12 @@ function _printCombined(type) {
       const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
       const isDim=(di===6);
       const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
-      const ar={dsm:getRolls(v.dsm,isDim,isFete),mgt:getRolls(v.mgt,isDim,isFete),paita:getRolls(v.paita,isDim,isFete)};
-      const villeR=getR(dStr,'ville')||0;
+      const ar={
+        dsm:(prodIsOff('dsm',dStr)||prodIsRizPoisson('dsm',dStr))?0:getRolls(v.dsm,isDim,isFete),
+        mgt:(prodIsOff('mgt',dStr)||prodIsRizPoisson('mgt',dStr))?0:getRolls(v.mgt,isDim,isFete),
+        paita:(prodIsOff('paita',dStr)||prodIsRizPoisson('paita',dStr))?0:getRolls(v.paita,isDim,isFete)
+      };
+      const villeR=(prodIsOff('ville',dStr)||prodIsRizPoisson('ville',dStr))?0:(getR(dStr,'ville')||0);
       const bg=isDim?'background:#f0f0f0;':'';
       rows+=`<tr>
         <td class="day${isDim?' dim':''}">${DAYS[di]}<br><span style="font-weight:400;font-size:10px">${short}</span></td>
