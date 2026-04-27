@@ -825,8 +825,10 @@ let _pollSlowdown = false;
 function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
   var cacheKey='hiro-cache-'+docId;
-  // Afficher le cache immédiatement si disponible
-  try{var c=localStorage.getItem(cacheKey);if(c){var cached=JSON.parse(c);if(cached&&Object.keys(cached).length>0){Object.assign(data,cached);onData(cached);}}}catch(e){}
+  // Afficher le cache après que les jours off soient chargés
+  _prodJoursOffReady.then(function(){
+    try{var c=localStorage.getItem(cacheKey);if(c){var cached=JSON.parse(c);if(cached&&Object.keys(cached).length>0){Object.assign(data,cached);onData(cached);}}}catch(e){}
+  });
   const tryFetch = () => {
     if(_saving) return;
     _fbGet(docId).then(d=>{
