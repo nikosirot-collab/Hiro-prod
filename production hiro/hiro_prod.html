@@ -677,24 +677,19 @@ const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 var _prodJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
 function prodIsOff(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr&&e.mode==='off';});}
 function prodIsRizPoisson(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr&&e.mode==='rizpoisson';});}
-function prodIsOffOrRP(shop,dateStr){return _prodJoursOff[shop].some(function(e){return e.date===dateStr;});}
-(async function(){
-  try{
-    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY);
-    if(res.ok){
-      var j=await res.json();
-      if(j.fields){
-        ['dsm','mgt','paita','ville'].forEach(function(s){
-          if(j.fields[s]&&j.fields[s].stringValue){
-            try{_prodJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_prodJoursOff[s]=[];}
-          } else if(j.fields[s]&&j.fields[s].arrayValue){
-            _prodJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
-          }
-        });
-      }
+var _prodJoursOffReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE')
+  .then(function(res){return res.ok?res.json():null;})
+  .then(function(j){
+    if(j&&j.fields){
+      ['dsm','mgt','paita','ville'].forEach(function(s){
+        if(j.fields[s]&&j.fields[s].stringValue){
+          try{_prodJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_prodJoursOff[s]=[];}
+        } else if(j.fields[s]&&j.fields[s].arrayValue){
+          _prodJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
+        }
+      });
     }
-  }catch(e){}
-})();
+  }).catch(function(){});
 
 function _toFirestore(obj) {
   const fields = {};
@@ -1029,32 +1024,33 @@ function setFishV(d,s,f,v,auto){
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
 function subscribeWeek(){
-  _fbPoll(weekDocId(), remote=>{
-    if(remote){
-      Object.assign(data, remote);
-      // Recalculer le poisson pour les jours non verrouillés si le riz a changé
-      for(let di=0;di<7;di++){
-        const d=dayOf(weekOff,di);
-        const dStr=ds(d);
-        if(!isFishLocked(dStr)){
-          ['dsm','mgt','paita','ville'].forEach(shop=>{
-            const riz=getV(dStr,shop);
-            const fd=getFish(shop,riz,isFete);
-            if(fd){
-              ['t','s','a'].forEach(f=>{
-                const fk=dStr+'__f__'+shop+'__'+f;
-                const overrideKey=dStr+'__fo__'+shop+'__'+f;
-                if(!data[overrideKey]) data[fk]=fd[f];
-              });
-            }
-          });
+  _prodJoursOffReady.then(function(){
+    _fbPoll(weekDocId(), remote=>{
+      if(remote){
+        Object.assign(data, remote);
+        for(let di=0;di<7;di++){
+          const d=dayOf(weekOff,di);
+          const dStr=ds(d);
+          if(!isFishLocked(dStr)){
+            ['dsm','mgt','paita','ville'].forEach(shop=>{
+              const riz=getV(dStr,shop);
+              const fd=getFish(shop,riz,isFete);
+              if(fd){
+                ['t','s','a'].forEach(f=>{
+                  const fk=dStr+'__f__'+shop+'__'+f;
+                  const overrideKey=dStr+'__fo__'+shop+'__'+f;
+                  if(!data[overrideKey]) data[fk]=fd[f];
+                });
+              }
+            });
+          }
         }
+        _setStatus(true);
+        _scheduleSave(weekDocId());
       }
-      _setStatus(true);
-      _scheduleSave(weekDocId());
-    }
-    render();
-  }, 30000);
+      render();
+    }, 30000);
+  });
 }
 
 function toggleFete(){

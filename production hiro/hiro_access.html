@@ -1281,20 +1281,32 @@ var LABO_SHOPS=['dsm','mgt','paita','ville'];
 
 // ── Jours off ──
 var _laboJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
+var _laboJoursOffReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY)
+  .then(function(res){return res.ok?res.json():null;})
+  .then(function(j){
+    if(j&&j.fields){
+      LABO_SHOPS.forEach(function(s){
+        if(j.fields[s]&&j.fields[s].stringValue){
+          try{_laboJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_laboJoursOff[s]=[];}
+        } else if(j.fields[s]&&j.fields[s].arrayValue){
+          _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
+        }
+      });
+    }
+  }).catch(function(){});
 async function laboLoadJoursOff(){
+  await _laboJoursOffReady;
+  // Recharger depuis Firebase pour avoir les données fraîches
   try{
     var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY);
     if(res.ok){
       var j=await res.json();
-      if(j.fields){
+      if(j&&j.fields){
         LABO_SHOPS.forEach(function(s){
           if(j.fields[s]&&j.fields[s].stringValue){
             try{_laboJoursOff[s]=JSON.parse(j.fields[s].stringValue);}catch(e){_laboJoursOff[s]=[];}
           } else if(j.fields[s]&&j.fields[s].arrayValue){
-            // Ancien format
             _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
-          } else {
-            _laboJoursOff[s]=[];
           }
         });
       }
@@ -2616,20 +2628,20 @@ function showPage(p,el){
   if(p==='historique')loadHistorique();
   if(p==='cmd-histo')loadCmdHisto();
   if(p==='labo'){var _badge=document.querySelector('.nav-tab[onclick*="labo"] .cmd-badge');if(_badge)_badge.remove();
-    laboLoadJoursOff(); // Charger les jours off
+    laboLoadJoursOff(); // Charger les jours off frais
     var laboCont=document.getElementById('labo-content');
-    if(Object.keys(laboFishData).length>0){
-      // Données déjà chargées - rendu immédiat
-      laboFetch();
-      if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
-    } else {
-      // Attendre le chargement
-      if(laboCont)laboCont.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Chargement...</div>';
-      laboFetchFish().then(function(){
+    if(laboCont)laboCont.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);">Chargement...</div>';
+    _laboJoursOffReady.then(function(){
+      if(Object.keys(laboFishData).length>0){
         laboFetch();
         if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
-      });
-    }
+      } else {
+        laboFetchFish().then(function(){
+          laboFetch();
+          if(!laboPollInterval)laboPollInterval=setInterval(function(){laboFetchFish().then(function(){laboFetch();});},10000);
+        });
+      }
+    }); // fin _laboJoursOffReady.then
   }
   else{if(laboPollInterval){clearInterval(laboPollInterval);laboPollInterval=null;}}
 }
