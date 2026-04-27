@@ -2440,6 +2440,14 @@ function laboRender(){
   // Ne pas re-render si un input d'ajout est en cours de saisie
   var activeEl=document.activeElement;
   if(activeEl&&(activeEl.id.indexOf('addqty-')===0||activeEl.id.indexOf('addname-')===0))return;
+  // Attendre les jours off si pas encore chargés
+  if(_laboJoursOff.dsm.length===0&&_laboJoursOff.mgt.length===0&&_laboJoursOff.paita.length===0&&_laboJoursOff.ville.length===0){
+    _laboJoursOffReady.then(function(){_laboRenderCore(el);});
+    return;
+  }
+  _laboRenderCore(el);
+}
+function _laboRenderCore(el){
   if(laboCurrentShop==='resume'){
     var cards='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">';
     LABO_SHOPS.forEach(function(s){
@@ -2489,7 +2497,7 @@ function laboRender(){
   }else{
     el.innerHTML=laboRenderFiche(laboCurrentShop,laboOrders[laboCurrentShop]);
   }
-}
+} // fin _laboRenderCore
 
 async function laboFetchFish(){
   try{
@@ -2577,13 +2585,13 @@ function showNewOrderNotif(shop){
 async function laboFetch(){
   var dStr=laboDs(laboDate);
   var cacheKey='hiro-labo-orders-'+dStr;
-  // Afficher le cache immédiatement
+  // Afficher le cache après que les jours off soient chargés
   try{
     var cached=localStorage.getItem(cacheKey);
     if(cached){
       var c=JSON.parse(cached);
       LABO_SHOPS.forEach(function(s){if(c[s])laboOrders[s]=c[s];});
-      laboRender();
+      _laboJoursOffReady.then(function(){laboRender();});
     }
   }catch(e){}
   try{
@@ -2617,6 +2625,7 @@ async function laboFetch(){
       }catch(e){}
     }
   }catch(e){console.error('laboFetch',e);}
+  await _laboJoursOffReady;
   laboRender();
 }
 
