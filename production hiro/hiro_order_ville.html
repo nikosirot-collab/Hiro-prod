@@ -168,6 +168,31 @@ else{_getOrderPwd().then(function(){});}
 </script>
 
 <script>
+// ── Jours off ──
+var _JOURS_OFF=[];
+var _joursOffLoaded=false;
+async function loadJoursOff(){
+  try{
+    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');
+    if(res.ok){
+      var j=await res.json();
+      if(j.fields&&j.fields[SHOP]&&j.fields[SHOP].arrayValue){
+        _JOURS_OFF=(j.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;});
+      }
+    }
+  }catch(e){}
+  _joursOffLoaded=true;
+  // Recalculer tomorrow avec les jours off et mettre à jour l'interface
+  var newTomorrow=getTomorrow();
+  var badge=document.getElementById('date-badge');
+  if(badge) badge.textContent='Livraison '+fmtDate(newTomorrow);
+  // Recharger la commande existante pour le bon jour
+  // Mettre à jour tomorrow globalement
+  tomorrow=newTomorrow;
+  // Recharger la commande pour la nouvelle date
+  loadExistingOrder();
+}
+
 function getTomorrow(){
   var now=new Date();
   var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
@@ -175,12 +200,19 @@ function getTomorrow(){
   if(dow===6){nc.setDate(nc.getDate()+2);}
   else if(dow===0){nc.setDate(nc.getDate()+1);}
   else{nc.setDate(nc.getDate()+1);}
+  // Sauter les jours off
+  while(_JOURS_OFF.indexOf(ds(nc))!==-1){
+    nc.setDate(nc.getDate()+1);
+    // Sauter aussi les dimanches
+    if(nc.getDay()===0) nc.setDate(nc.getDate()+1);
+  }
   return nc;
 }
 function ds(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function fmtDate(d){return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});}
 function mondayOf(d){const dow=d.getDay();const diff=dow===0?-6:1-dow;const m=new Date(d);m.setDate(m.getDate()+diff);return m;}
-const tomorrow=getTomorrow();
+var tomorrow=getTomorrow(); // sera recalculé après chargement jours off
+loadJoursOff();
 </script>
 </div>
 
@@ -410,6 +442,19 @@ function showRecapOverlay(d){
 
 
 function showConfirmModal(){
+  if(!_joursOffLoaded){
+    // Attendre le chargement des jours off avant d'autoriser l'envoi
+    var btn=document.getElementById('btn-send');
+    if(btn){btn.disabled=true;btn.textContent='Chargement...';}
+    var _wait=setInterval(function(){
+      if(_joursOffLoaded){
+        clearInterval(_wait);
+        if(btn){btn.disabled=false;btn.textContent='Envoyer →';}
+        showConfirmModal();
+      }
+    },200);
+    return;
+  }
   var tot=0;
   ALL_KEYS.forEach(function(k){tot+=(qty[k]||0);});
   if(libreItems)Object.values(libreItems).forEach(function(arr){if(Array.isArray(arr))arr.forEach(function(i){tot+=(i.qty||0);});});

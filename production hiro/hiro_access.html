@@ -760,9 +760,9 @@ function render(){
     const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
       fd[s]=getFish(s,v[s]);
     });
-    // gfv : valeur manuelle si override, sinon calcul auto
-    const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
-    const gtv=(s)=>{const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
+    // gfv : valeur manuelle si override, sinon calcul auto — 0 si magasin off ce jour
+    const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+    const gtv=(s)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
       totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');totFS[s].ta+=gtv(s);
     });
@@ -773,10 +773,10 @@ function render(){
     totFish.t+=dayT;totFish.s+=dayS;totFish.a+=dayA;wThon+=dayT;
 
     const ar={
-      dsm:getR(dStr,'dsm')||getRolls(v.dsm,isDim),
-      mgt:getR(dStr,'mgt')||getRolls(v.mgt,isDim),
-      paita:getR(dStr,'paita')||getRolls(v.paita,isDim),
-      ville:getR(dStr,'ville')||0,
+      dsm:laboIsOff('dsm',dStr)?0:(getR(dStr,'dsm')||getRolls(v.dsm,isDim)),
+      mgt:laboIsOff('mgt',dStr)?0:(getR(dStr,'mgt')||getRolls(v.mgt,isDim)),
+      paita:laboIsOff('paita',dStr)?0:(getR(dStr,'paita')||getRolls(v.paita,isDim)),
+      ville:laboIsOff('ville',dStr)?0:(getR(dStr,'ville')||0),
       asia:getR(dStr,'asia')||0
     };
     const villeR=ar.ville;
@@ -1278,6 +1278,29 @@ var laboPollInterval=null;
 var laboCurrentShop='resume';
 
 var LABO_SHOPS=['dsm','mgt','paita','ville'];
+
+// ── Jours off ──
+var _laboJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
+async function laboLoadJoursOff(){
+  try{
+    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY);
+    if(res.ok){
+      var j=await res.json();
+      if(j.fields){
+        LABO_SHOPS.forEach(function(s){
+          if(j.fields[s]&&j.fields[s].arrayValue){
+            _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return v.stringValue;});
+          }
+        });
+      }
+    }
+  }catch(e){}
+  // Re-render pour appliquer les jours off
+  laboRender();
+}
+function laboIsOff(shop,dateStr){
+  return _laboJoursOff[shop]&&_laboJoursOff[shop].indexOf(dateStr)!==-1;
+}
 var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
 var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
 
@@ -2036,6 +2059,17 @@ function laboRenderFiche(shop,order){
   ensureValidCSS();
   var color=LABO_COLORS[shop];
   var label=LABO_LABELS[shop];
+  var dStr=laboDs(laboDate);
+  var isOff=laboIsOff(shop,dStr);
+
+  if(isOff){
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<span style="font-size:11px;padding:3px 10px;border-radius:10px;background:#f5f5f5;color:#888;font-weight:600;">🚫 Jour off</span>'
+      +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Magasin fermé ce jour</div></div>';
+  }
+
   if(!order||((!order.ts)&&order.status!=='validated')){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
@@ -2566,6 +2600,7 @@ function showPage(p,el){
   if(p==='historique')loadHistorique();
   if(p==='cmd-histo')loadCmdHisto();
   if(p==='labo'){var _badge=document.querySelector('.nav-tab[onclick*="labo"] .cmd-badge');if(_badge)_badge.remove();
+    laboLoadJoursOff(); // Charger les jours off
     var laboCont=document.getElementById('labo-content');
     if(Object.keys(laboFishData).length>0){
       // Données déjà chargées - rendu immédiat
