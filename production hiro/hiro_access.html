@@ -230,6 +230,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
     <span id="sync-status" style="font-size:11px;color:#7fcf7f;">● Live</span>
     <span id="clock"></span>
     <span class="readonly-badge">LECTURE</span>
+    <button id="notif-btn" onclick="requestNotifPermission()" style="display:none;width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:15px;cursor:pointer;align-items:center;justify-content:center;" title="Activer les notifications">🔔</button>
     <button onclick="location.reload()" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Recharger">↻</button>
   </div>
 </header>
@@ -2896,8 +2897,24 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
           }
         });
         // ── Abonnement notifications push ──
-        subscribePush(reg,'access');
+        // Afficher le bouton si permission pas encore accordée
+        if('Notification' in window && Notification.permission !== 'granted'){
+          var nb=document.getElementById('notif-btn');
+          if(nb) nb.style.display='flex';
+        }
+        if(Notification.permission === 'granted'){
+          subscribePush(reg,'access');
+        }
       }).catch(function(e){ console.log('SW error:', e); });
+  }
+
+  async function requestNotifPermission(){
+    var nb=document.getElementById('notif-btn');
+    if('serviceWorker' in navigator){
+      var reg=await navigator.serviceWorker.ready;
+      await subscribePush(reg,'access');
+      if(nb) nb.style.display='none';
+    }
   }
 
   const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';

@@ -232,6 +232,7 @@ loadJoursOff();
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="date-badge" id="date-badge">—</div>
+    <button id="notif-btn" onclick="requestNotifPermission()" style="display:none;width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:16px;cursor:pointer;align-items:center;justify-content:center;" title="Activer les notifications">🔔</button>
     <div class="shop-badge" style="color:#b84a1a;border:1px solid #b84a1a44">Paita</div>
 
     <button onclick="location.reload()" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Recharger">↻</button>
@@ -1191,8 +1192,22 @@ if(_offlineQueue.length>0)showOfflineBanner();
         navigator.serviceWorker.addEventListener('controllerchange', function(){
           window.location.reload();
         });
-        subscribePush(reg);
+        // Afficher bouton si permission pas encore accordée
+        if('Notification' in window && Notification.permission !== 'granted'){
+          var nb=document.getElementById('notif-btn');
+          if(nb) nb.style.display='flex';
+        }
+        if(Notification.permission === 'granted') subscribePush(reg);
       }).catch(function(e){ console.log('SW error:', e); });
+  }
+
+  async function requestNotifPermission(){
+    var nb=document.getElementById('notif-btn');
+    if('serviceWorker' in navigator){
+      var reg=await navigator.serviceWorker.ready;
+      await subscribePush(reg);
+      if(nb) nb.style.display='none';
+    }
   }
   const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';
   const _PUSH_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/push-tokens';
