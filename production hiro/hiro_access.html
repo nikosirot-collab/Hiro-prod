@@ -235,6 +235,11 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   </div>
 </header>
 
+<!-- Bouton notifications flottant -->
+<div id="notif-float" style="display:none;position:fixed;bottom:80px;right:16px;z-index:9998;">
+  <button onclick="requestNotifPermission()" style="width:52px;height:52px;border-radius:50%;border:none;background:#1a5fa8;color:#fff;font-size:22px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);">🔔</button>
+</div>
+
 <nav class="nav">
   <div class="nav-tab active" onclick="showPage('riz',this)">Riz</div>
   <div class="nav-tab" onclick="showPage('poisson',this)">Poisson</div>
@@ -2901,6 +2906,8 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
         if('Notification' in window && Notification.permission !== 'granted'){
           var nb=document.getElementById('notif-btn');
           if(nb) nb.style.display='block';
+          var nf=document.getElementById('notif-float');
+          if(nf) nf.style.display='block';
         }
         if(Notification.permission === 'granted'){
           subscribePush(reg,'access');
@@ -2924,6 +2931,8 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
         await subscribePush(reg,'access');
         dbg.textContent+=' sub:ok';
         if(nb) nb.style.display='none';
+        var nf=document.getElementById('notif-float');
+        if(nf) nf.style.display='none';
       }
     }catch(e){
       dbg.textContent+=' ERR:'+e.message;
