@@ -2910,11 +2910,20 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
 
   async function requestNotifPermission(){
     var nb=document.getElementById('notif-btn');
+    // Debug visible
+    var dbg=document.createElement('div');
+    dbg.style.cssText='position:fixed;bottom:100px;left:10px;right:10px;background:#333;color:#fff;padding:10px;border-radius:8px;font-size:11px;z-index:9999;';
+    dbg.id='push-debug';
+    document.body.appendChild(dbg);
+    dbg.textContent='PushManager: '+('PushManager' in window)+' | Notif: '+('Notification' in window)+' | Permission: '+(typeof Notification!=='undefined'?Notification.permission:'N/A');
     if('serviceWorker' in navigator){
       var reg=await navigator.serviceWorker.ready;
+      dbg.textContent+=' | SW ready';
       await subscribePush(reg,'access');
+      dbg.textContent+=' | Done';
       if(nb) nb.style.display='none';
     }
+    setTimeout(function(){var d=document.getElementById('push-debug');if(d)d.remove();},8000);
   }
 
   const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';
