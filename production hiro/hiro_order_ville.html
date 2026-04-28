@@ -270,7 +270,7 @@ loadJoursOff();
 <div id="page-tapas" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Tapas</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Grand nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gnem',-1)">&#8722;</button><input class="qty-inp" id="q-gnem" type="number" min="0" value="0" onchange="setQ('gnem',this.value)"><button class="qty-btn" onclick="adj('gnem',1)">+</button></div></td></tr>
 <tr><td class="td-product">Petit nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pnem',-1)">&#8722;</button><input class="qty-inp" id="q-pnem" type="number" min="0" value="0" onchange="setQ('pnem',this.value)"><button class="qty-btn" onclick="adj('pnem',1)">+</button></div></td></tr>
 <tr><td class="td-product">Boule de sésame</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('sesame',-1)">&#8722;</button><input class="qty-inp" id="q-sesame" type="number" min="0" value="0" onchange="setQ('sesame',this.value)"><button class="qty-btn" onclick="adj('sesame',1)">+</button></div></td></tr>
-<tr><td class="td-product">Banh Bao</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('banhbao',-1)">&#8722;</button><input class="qty-inp" id="q-banhbao" type="number" min="0" value="0" onchange="setQ('banhbao',this.value)"><button class="qty-btn" onclick="adj('banhbao',1)">+</button></div></td></tr><tr><td class="td-product">Samossa</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('samossa',-1)">&#8722;</button><input class="qty-inp" id="q-samossa" type="number" min="0" value="0" onchange="setQ('samossa',this.value)"><button class="qty-btn" onclick="adj('samossa',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
+<tr><td class="td-product">Banh Bao</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('banhbao',-1)">&#8722;</button><input class="qty-inp" id="q-banhbao" type="number" min="0" value="0" onchange="setQ('banhbao',this.value)"><button class="qty-btn" onclick="adj('banhbao',1)">+</button></div></td></tr><tr><td class="td-product">Samossa</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('samossa',-1)">&#8722;</button><input class="qty-inp" id="q-samossa" type="number" min="0" value="0" onchange="setQ('samossa',this.value)"><button class="qty-btn" onclick="adj('samossa',1)">+</button></div></td></tr><tr><td class="td-product">Brochettes</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('brochettes',-1)">&#8722;</button><input class="qty-inp" id="q-brochettes" type="number" min="0" value="0" onchange="setQ('brochettes',this.value)"><button class="qty-btn" onclick="adj('brochettes',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
 <div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody>
 <tr><td class="td-product">FARCE wonton</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('chr_farce_wonton',-1)">&#8722;</button><input class="qty-inp" id="q-chr_farce_wonton" type="number" min="0" value="0" onchange="setQ('chr_farce_wonton',this.value)"><button class="qty-btn" onclick="adj('chr_farce_wonton',1)">+</button></div></td></tr><tr><td class="td-product">Salades</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('chr_salades',-1)">&#8722;</button><input class="qty-inp" id="q-chr_salades" type="number" min="0" value="0" onchange="setQ('chr_salades',this.value)"><button class="qty-btn" onclick="adj('chr_salades',1)">+</button></div></td></tr>
 <tr><td class="td-product">Concombres</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('chr_concombres',-1)">&#8722;</button><input class="qty-inp" id="q-chr_concombres" type="number" min="0" value="0" onchange="setQ('chr_concombres',this.value)"><button class="qty-btn" onclick="adj('chr_concombres',1)">+</button></div></td></tr>
@@ -359,13 +359,13 @@ const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/data
 const SHOP='ville';
 const SHOP_LABEL='Ville';
 const ACCENT='#7a3db8';
-const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'villerolls', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'siumai', 'gnem', 'pnem', 'sesame', 'banhbao', 'chr_farce_wonton', 'chr_salades', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
+const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'villerolls', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'siumai', 'gnem', 'pnem', 'sesame', 'banhbao', 'samossa', 'brochettes', 'chr_farce_wonton', 'chr_salades', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
 var SALADE_RECAP_KEYS=['bo','sin','thon','thai','plp','rouleaux','tataki'];
 var SALADE_RECAP_NAMES={bo:'Bun Bo',sin:'Singapour',thon:'Thon marine',thai:'Thai',plp:'Poulpe',rouleaux:'Rouleau',tataki:'Tataki'};
 var DESSERT_RECAP_KEYS=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'];
 var DESSERT_RECAP_NAMES={tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'};
-var TAPAS_RECAP_KEYS=['gyoza','gnem','pnem','sesame','banhbao','samossa'];
-var TAPAS_RECAP_NAMES={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao',samossa:'Samossa'};
+var TAPAS_RECAP_KEYS=['gyoza','gnem','pnem','sesame','banhbao','samossa','brochettes'];
+var TAPAS_RECAP_NAMES={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao',samossa:'Samossa',brochettes:'Brochettes'};
 
 document.getElementById('date-badge').textContent='Livraison '+fmtDate(tomorrow);
 
@@ -551,6 +551,22 @@ async function loadExistingOrder(){
 
 loadRiz();
 loadExistingOrder();
+
+// Pré-remplir brochettes à 20 les lundi, mercredi, vendredi si pas de commande
+(function(){
+  var dow=getTomorrow().getDay(); // 1=lun, 3=mer, 5=ven
+  if(dow===1||dow===3||dow===5){
+    setTimeout(function(){
+      // Seulement si pas déjà de valeur (pas de commande existante)
+      if(!qty['brochettes']||qty['brochettes']===0){
+        qty['brochettes']=20;
+        var el=document.getElementById('q-brochettes');
+        if(el){el.value=20;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}
+        updateCount();
+      }
+    },800); // laisser loadExistingOrder se terminer d'abord
+  }
+})();
 </script>
 
 <script>

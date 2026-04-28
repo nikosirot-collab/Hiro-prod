@@ -1343,7 +1343,8 @@ var LABO_TAPAS=[
 ];
 var LABO_TAPAS_VILLE=[
   {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
-  {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'},{key:'samossa',name:'Samossa'}
+  {key:'sesame',name:'Sesame'},{key:'banhbao',name:'Banh Bao'},{key:'samossa',name:'Samossa'},
+  {key:'brochettes',name:'Brochettes'}
 ];
 
 var LABO_CHR_KEYS=['chr_salades','chr_farce_wonton', 'chr_concombres', 'chr_carottes', 'chr_oignons_secs', 'chr_oignons_verts', 'chr_ail', 'chr_vinaigre_blanc', 'chr_nuoc_mam', 'chr_vetsin', 'chr_poivre', 'chr_maggie', 'chr_sel', 'chr_citron', 'chr_curry_japonais', 'chr_curry', 'chr_soyou_poisson', 'chr_soyou_sachet_rouge', 'chr_soyou_yamasa_bouteilles', 'chr_wasabi', 'chr_gingembre', 'chr_navet', 'chr_panko', 'chr_nori', 'chr_sesames_grilles', 'chr_sauce_cacahuete', 'chr_sauce_huitres', 'chr_sauce_bbq', 'chr_ketchup', 'chr_sweet_chili', 'chr_huile_sesames', 'chr_beurre', 'chr_oeufs', 'chr_bull_dog_teriyaki', 'chr_mirin', 'chr_bombe_graisse', 'chr_ito_sugar_free_600_ml', 'chr_ito_sugar_free_300ml', 'chr_ito_lychee', 'chr_ito_peach', 'chr_ito_citron'];
@@ -2178,7 +2179,7 @@ function laboRenderFiche(shop,order){
       +'</div>';}).join('');}}catch(e){}}
   }
 
-  // Plats chauds Ville
+  // Plats chauds Ville — uniquement Gyoza et Siu Mai
   var platsColRows='';
   if(shop==='ville'){
     var allPlats=[];
@@ -2187,7 +2188,7 @@ function laboRenderFiche(shop,order){
     if(siumaiV>0)allPlats.push({key:'siumai',name:'Siu Mai',val:siumaiV});
     var _libreStr2=order.vlibre||order.libre||'';
     var _platsLibre=[];
-    try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty,poids:i.poids||''});});_platsLibre=lpl.plats||[];}}catch(e){}
+    try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0&&i.name.toLowerCase().indexOf('brochette')===-1;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty,poids:i.poids||''});});_platsLibre=lpl.plats||[];}}catch(e){}
 
     // Récupérer les poids déjà sauvegardés
     var _poids={};
