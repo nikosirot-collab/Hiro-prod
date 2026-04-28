@@ -230,7 +230,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
     <span id="sync-status" style="font-size:11px;color:#7fcf7f;">● Live</span>
     <span id="clock"></span>
     <span class="readonly-badge">LECTURE</span>
-    <button id="notif-btn" onclick="requestNotifPermission()" style="display:none;width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:15px;cursor:pointer;align-items:center;justify-content:center;" title="Activer les notifications">🔔</button>
+    <button id="notif-btn" onclick="requestNotifPermission()" style="display:none;width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:15px;cursor:pointer;flex-direction:row;align-items:center;justify-content:center;" title="Activer les notifications">🔔</button>
     <button onclick="location.reload()" style="width:28px;height:28px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Recharger">↻</button>
   </div>
 </header>
@@ -2900,7 +2900,7 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
         // Afficher le bouton si permission pas encore accordée
         if('Notification' in window && Notification.permission !== 'granted'){
           var nb=document.getElementById('notif-btn');
-          if(nb) nb.style.display='flex';
+          if(nb) nb.style.display='block';
         }
         if(Notification.permission === 'granted'){
           subscribePush(reg,'access');
@@ -2909,21 +2909,25 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
   }
 
   async function requestNotifPermission(){
-    var nb=document.getElementById('notif-btn');
-    // Debug visible
+    // Debug visible immédiat
     var dbg=document.createElement('div');
-    dbg.style.cssText='position:fixed;bottom:100px;left:10px;right:10px;background:#333;color:#fff;padding:10px;border-radius:8px;font-size:11px;z-index:9999;';
+    dbg.style.cssText='position:fixed;bottom:100px;left:10px;right:10px;background:#333;color:#fff;padding:10px;border-radius:8px;font-size:11px;z-index:9999;word-break:break-all;';
     dbg.id='push-debug';
     document.body.appendChild(dbg);
-    dbg.textContent='PushManager: '+('PushManager' in window)+' | Notif: '+('Notification' in window)+' | Permission: '+(typeof Notification!=='undefined'?Notification.permission:'N/A');
-    if('serviceWorker' in navigator){
-      var reg=await navigator.serviceWorker.ready;
-      dbg.textContent+=' | SW ready';
-      await subscribePush(reg,'access');
-      dbg.textContent+=' | Done';
-      if(nb) nb.style.display='none';
+    dbg.textContent='Cliqué! PushManager:'+(typeof PushManager)+' Notif:'+(typeof Notification)+' perm:'+(typeof Notification!=='undefined'?Notification.permission:'N/A');
+    setTimeout(function(){var d=document.getElementById('push-debug');if(d)d.remove();},10000);
+    try{
+      var nb=document.getElementById('notif-btn');
+      if('serviceWorker' in navigator){
+        var reg=await navigator.serviceWorker.ready;
+        dbg.textContent+=' SW:ok';
+        await subscribePush(reg,'access');
+        dbg.textContent+=' sub:ok';
+        if(nb) nb.style.display='none';
+      }
+    }catch(e){
+      dbg.textContent+=' ERR:'+e.message;
     }
-    setTimeout(function(){var d=document.getElementById('push-debug');if(d)d.remove();},8000);
   }
 
   const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';
