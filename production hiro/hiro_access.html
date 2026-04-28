@@ -2155,7 +2155,28 @@ function laboRenderFiche(shop,order){
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
-  var tapasRows=tapasList.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var tapasRows=tapasList.filter(function(p){return p.key!=='brochettes';}).map(function(p){
+    var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);
+    return makeRow(p.key,p.name,v);
+  }).join('');
+  // Brochettes depuis champ fixe ou libre.plats
+  if(shop==='ville'){
+    var _brochVal=isValidated&&order['vqty_brochettes']!==undefined?order['vqty_brochettes']:(order['brochettes']||0);
+    var _libreStrT=order.vlibre||order.libre||'';
+    if(_brochVal===0&&_libreStrT){try{
+      var _lt=JSON.parse(_libreStrT);
+      if(_lt.plats){
+        var _broch=_lt.plats.filter(function(i){return i.name&&i.name.toLowerCase().indexOf('brochette')!==-1&&i.qty>0;});
+        if(_broch.length>0) _brochVal=_broch.reduce(function(s,i){return s+i.qty;},0);
+      }
+    }catch(e){}}
+    if(_brochVal>0){
+      tapasRows+='<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;">'
+        +'<input type="number" min="0" value="'+_brochVal+'" onchange="laboPatchQty(\'ville\',\'brochettes\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;">Brochettes</div>'
+        +'</div>';
+    }
+  }
 
   // CHR — pour la ville: articles fixes (>0 seulement) + libres
   var chrRows='<div style="padding:10px 12px;color:var(--hint);font-size:12px;">—</div>';
