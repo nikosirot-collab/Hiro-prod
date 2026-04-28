@@ -1281,6 +1281,7 @@ var LABO_SHOPS=['dsm','mgt','paita','ville'];
 
 // ── Jours off ──
 var _laboJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
+var _laboJoursOffLoaded=false;
 var _laboJoursOffReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY)
   .then(function(res){return res.ok?res.json():null;})
   .then(function(j){
@@ -1293,7 +1294,8 @@ var _laboJoursOffReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-
         }
       });
     }
-  }).catch(function(){});
+    _laboJoursOffLoaded=true;
+  }).catch(function(){_laboJoursOffLoaded=true;});
 async function laboLoadJoursOff(){
   await _laboJoursOffReady;
   // Recharger depuis Firebase pour avoir les données fraîches
@@ -2441,7 +2443,7 @@ function laboRender(){
   var activeEl=document.activeElement;
   if(activeEl&&(activeEl.id.indexOf('addqty-')===0||activeEl.id.indexOf('addname-')===0))return;
   // Attendre les jours off si pas encore chargés
-  if(_laboJoursOff.dsm.length===0&&_laboJoursOff.mgt.length===0&&_laboJoursOff.paita.length===0&&_laboJoursOff.ville.length===0){
+  if(!_laboJoursOffLoaded){
     _laboJoursOffReady.then(function(){_laboRenderCore(el);});
     return;
   }

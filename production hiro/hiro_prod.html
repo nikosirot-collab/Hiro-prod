@@ -825,10 +825,6 @@ let _pollSlowdown = false;
 function _fbPoll(docId, onData, interval=8000) {
   if (_pollInterval) clearInterval(_pollInterval);
   var cacheKey='hiro-cache-'+docId;
-  // Afficher le cache après que les jours off soient chargés
-  _prodJoursOffReady.then(function(){
-    try{var c=localStorage.getItem(cacheKey);if(c){var cached=JSON.parse(c);if(cached&&Object.keys(cached).length>0){Object.assign(data,cached);onData(cached);}}}catch(e){}
-  });
   const tryFetch = () => {
     if(_saving) return;
     _fbGet(docId).then(d=>{
@@ -838,19 +834,23 @@ function _fbPoll(docId, onData, interval=8000) {
           clearInterval(_pollInterval);
           _pollInterval=setInterval(tryFetch, 30000);
         }
-        onData({});
+        _prodJoursOffReady.then(function(){onData({});});
       } else {
         if(_pollSlowdown){
           _pollSlowdown=false;
           clearInterval(_pollInterval);
           _pollInterval=setInterval(tryFetch, interval);
         }
-        onData(d);
+        _prodJoursOffReady.then(function(){onData(d);});
       }
     });
   };
-  tryFetch();
-  _pollInterval = setInterval(tryFetch, interval);
+  // Cache et premier fetch attendent tous les deux les jours off
+  _prodJoursOffReady.then(function(){
+    try{var c=localStorage.getItem(cacheKey);if(c){var cached=JSON.parse(c);if(cached&&Object.keys(cached).length>0){Object.assign(data,cached);onData(cached);}}}catch(e){}
+    tryFetch();
+    _pollInterval = setInterval(tryFetch, interval);
+  });
 }
 </script>
 
@@ -1026,33 +1026,31 @@ function setFishV(d,s,f,v,auto){
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
 function subscribeWeek(){
-  _prodJoursOffReady.then(function(){
-    _fbPoll(weekDocId(), remote=>{
-      if(remote){
-        Object.assign(data, remote);
-        for(let di=0;di<7;di++){
-          const d=dayOf(weekOff,di);
-          const dStr=ds(d);
-          if(!isFishLocked(dStr)){
-            ['dsm','mgt','paita','ville'].forEach(shop=>{
-              const riz=getV(dStr,shop);
-              const fd=getFish(shop,riz,isFete);
-              if(fd){
-                ['t','s','a'].forEach(f=>{
-                  const fk=dStr+'__f__'+shop+'__'+f;
-                  const overrideKey=dStr+'__fo__'+shop+'__'+f;
-                  if(!data[overrideKey]) data[fk]=fd[f];
-                });
-              }
-            });
-          }
+  _fbPoll(weekDocId(), remote=>{
+    if(remote){
+      Object.assign(data, remote);
+      for(let di=0;di<7;di++){
+        const d=dayOf(weekOff,di);
+        const dStr=ds(d);
+        if(!isFishLocked(dStr)){
+          ['dsm','mgt','paita','ville'].forEach(shop=>{
+            const riz=getV(dStr,shop);
+            const fd=getFish(shop,riz,isFete);
+            if(fd){
+              ['t','s','a'].forEach(f=>{
+                const fk=dStr+'__f__'+shop+'__'+f;
+                const overrideKey=dStr+'__fo__'+shop+'__'+f;
+                if(!data[overrideKey]) data[fk]=fd[f];
+              });
+            }
+          });
         }
-        _setStatus(true);
-        _scheduleSave(weekDocId());
       }
-      render();
-    }, 30000);
-  });
+      _setStatus(true);
+      _scheduleSave(weekDocId());
+    }
+    render();
+  }, 30000);
 }
 
 function toggleFete(){
