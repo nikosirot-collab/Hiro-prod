@@ -950,25 +950,27 @@ const PREFILL = {
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
 function getR(d,s){return data[d+'__r__'+s]||0;}
 
-// Vérifie si le poisson du jour dStr est verrouillé (lendemain + après 11h Nouméa)
+// Vérifie si le poisson du jour dStr est verrouillé (lendemain + après 9h30 Nouméa)
 function isFishLocked(dStr){
   const now=new Date();
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const ncHour=ncNow.getHours();
+  const ncMin=ncNow.getMinutes();
   const ncDay=ncNow.getDay(); // 0=dim, 1=lun, 2=mar, 3=mer, 4=jeu, 5=ven, 6=sam
+  const afterCutoff=ncHour>9||(ncHour===9&&ncMin>=30); // après 9h30
   var targetDate=new Date(dStr+'T00:00:00');
   const targetDay=targetDate.getDay();
-  // Règle lundi : verrouillé si on est samedi après 11h, dimanche, ou lundi
+  // Règle lundi : verrouillé si on est samedi après 9h30, dimanche, ou lundi
   if(targetDay===1){
-    if(ncDay===6&&ncHour>=11) return true; // samedi après 11h
+    if(ncDay===6&&afterCutoff) return true; // samedi après 9h30
     if(ncDay===0) return true; // dimanche
     if(ncDay===1) return true; // lundi lui-même
     return false;
   }
-  // Autres jours : verrouillé après 11h pour le lendemain
+  // Autres jours : verrouillé après 9h30 pour le lendemain
   var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
   var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
-  if(ncHour>=11 && dStr===ds(tomorrowNC)) return true;
+  if(afterCutoff && dStr===ds(tomorrowNC)) return true;
   return false;
 }
 
@@ -1592,7 +1594,7 @@ function render() {
         value="${val===0?'0':(val||'')}" placeholder="${auto||'0'}"
         style="width:52px;font-size:11px;${isOverride?'color:#c0392b;font-weight:600;':''}${lockStyle}"
         onchange="setFishV('${dStr}','${s}','${f}',this.value,'${auto}')"
-        title="${isLocked?'🔒 Verrouillé (après 11h) — modifiable manuellement':'Auto: '+auto}">`;
+        title="${isLocked?'🔒 Verrouillé (après 9h30) — modifiable manuellement':'Auto: '+auto}">`;
     };
 
     // Input tamago

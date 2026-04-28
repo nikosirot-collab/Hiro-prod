@@ -518,10 +518,12 @@ function isFishLockedLabo(dStr){
   const now=new Date();
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const ncHour=ncNow.getHours();
+  const ncMin=ncNow.getMinutes();
   const ncDay=ncNow.getDay();
+  const afterCutoff=ncHour>9||(ncHour===9&&ncMin>=30);
   var targetDay=laboDsFromStr(dStr).getDay();
   if(targetDay===1){
-    if(ncDay===6&&ncHour>=11) return true;
+    if(ncDay===6&&afterCutoff) return true;
     if(ncDay===0) return true;
     if(ncDay===1) return true;
     return false;
@@ -529,7 +531,7 @@ function isFishLockedLabo(dStr){
   var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
   var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
   var tomorrowStr=tomorrowNC.getFullYear()+'-'+String(tomorrowNC.getMonth()+1).padStart(2,'0')+'-'+String(tomorrowNC.getDate()).padStart(2,'0');
-  if(ncHour>=11&&dStr===tomorrowStr) return true;
+  if(afterCutoff&&dStr===tomorrowStr) return true;
   return false;
 }
 function _laboRecalcFish(monStr){
