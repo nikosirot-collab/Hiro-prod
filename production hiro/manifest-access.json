@@ -1,0 +1,22 @@
+{
+  "name": "Hiro Access",
+  "short_name": "Access",
+  "description": "Consultation & gestion Hiro Sushi",
+  "start_url": "/Hiro-prod/production%20hiro/hiro_access.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/Hiro-prod/production%20hiro/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Hiro-prod/production%20hiro/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
