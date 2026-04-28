@@ -1189,7 +1189,49 @@ if(_offlineQueue.length>0)showOfflineBanner();
         navigator.serviceWorker.addEventListener('controllerchange', function(){
           window.location.reload();
         });
+        subscribePush(reg);
       }).catch(function(e){ console.log('SW error:', e); });
+  }
+  const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';
+  const _PUSH_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/push-tokens';
+
+  async function subscribePush(reg){
+    try{
+      if(!('PushManager' in window)) return;
+      const permission = await Notification.requestPermission();
+      if(permission !== 'granted') return;
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub){
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+      const token = JSON.stringify(sub);
+      const res = await fetch(_PUSH_API+'?key='+_KEY);
+      if(!res.ok) return;
+      const doc = await res.json();
+      const existing = doc.fields && doc.fields[SHOP] && doc.fields[SHOP].arrayValue
+        ? (doc.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;})
+        : [];
+      if(existing.indexOf(token) !== -1) return;
+      existing.push(token);
+      const fields = {};
+      fields[SHOP] = {arrayValue:{values:existing.map(function(t){return {stringValue:t};})}};
+      await fetch(_PUSH_API+'?key='+_KEY+'&updateMask.fieldPaths='+SHOP,{
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:fields})
+      });
+    }catch(e){ console.log('Push subscribe error:', e); }
+  }
+
+  function urlBase64ToUint8Array(base64String){
+    const padding='='.repeat((4-base64String.length%4)%4);
+    const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+    const rawData=window.atob(base64);
+    const outputArray=new Uint8Array(rawData.length);
+    for(let i=0;i<rawData.length;++i) outputArray[i]=rawData.charCodeAt(i);
+    return outputArray;
   }
 
   // Envoyer une action au SW via IndexedDB
