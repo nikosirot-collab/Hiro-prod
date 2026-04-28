@@ -232,10 +232,9 @@ loadJoursOff();
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="date-badge" id="date-badge">—</div>
-    <button id="notif-btn" onclick="requestNotifPermission()" style="display:none;width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:16px;cursor:pointer;align-items:center;justify-content:center;" title="Activer les notifications">🔔</button>
     <div class="shop-badge" style="color:#0d7a52;border:1px solid #0d7a5244">MGT</div>
 
-    <button onclick="location.reload()" style="width:32px;height:32px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.1);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Recharger">↻</button>
+    <button onclick="this.style.transform='rotate(360deg)';this.style.transition='transform .5s';setTimeout(function(){location.reload();},300)" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Recharger">↻</button>
   </div>
 </header>
 <div id="status-banner" class="status-banner pending">
@@ -1194,62 +1193,13 @@ if(_offlineQueue.length>0)showOfflineBanner();
         });
         // Afficher bouton si permission pas encore accordée
         if('Notification' in window && Notification.permission !== 'granted'){
-          var nb=document.getElementById('notif-btn');
           if(nb) nb.style.display='flex';
         }
-        if(Notification.permission === 'granted') subscribePush(reg);
       }).catch(function(e){ console.log('SW error:', e); });
   }
 
-  async function requestNotifPermission(){
-    var nb=document.getElementById('notif-btn');
-    if('serviceWorker' in navigator){
-      var reg=await navigator.serviceWorker.ready;
-      await subscribePush(reg);
-      if(nb) nb.style.display='none';
-    }
-  }
-  const VAPID_PUBLIC_KEY='BHCAKJ9a7b3yeUy_Gb524E7RWAFGbAwvenp3vlBZE3WDTEblGxvOMfw-PW3L9nVX-9Fx0YPB8dFLwgjB3meGg0M';
-  const _PUSH_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/push-tokens';
 
-  async function subscribePush(reg){
-    try{
-      if(!('PushManager' in window)) return;
-      const permission = await Notification.requestPermission();
-      if(permission !== 'granted') return;
-      let sub = await reg.pushManager.getSubscription();
-      if(!sub){
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
-      }
-      const token = JSON.stringify(sub);
-      const res = await fetch(_PUSH_API+'?key='+_KEY);
-      if(!res.ok) return;
-      const doc = await res.json();
-      const existing = doc.fields && doc.fields[SHOP] && doc.fields[SHOP].arrayValue
-        ? (doc.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;})
-        : [];
-      if(existing.indexOf(token) !== -1) return;
-      existing.push(token);
-      const fields = {};
-      fields[SHOP] = {arrayValue:{values:existing.map(function(t){return {stringValue:t};})}};
-      await fetch(_PUSH_API+'?key='+_KEY+'&updateMask.fieldPaths='+SHOP,{
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({fields:fields})
-      });
-    }catch(e){ console.log('Push subscribe error:', e); }
-  }
 
-  function urlBase64ToUint8Array(base64String){
-    const padding='='.repeat((4-base64String.length%4)%4);
-    const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
-    const rawData=window.atob(base64);
-    const outputArray=new Uint8Array(rawData.length);
-    for(let i=0;i<rawData.length;++i) outputArray[i]=rawData.charCodeAt(i);
-    return outputArray;
-  }
 
   // Envoyer une action au SW via IndexedDB
   window.swQueueAction = function(url, fields, shop, date){
