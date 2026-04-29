@@ -435,6 +435,24 @@ const _PROJECT = 'hiro-sushi-nc';
 const _API = `https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-production`;
 const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 
+// ── Jours off — chargement anticipé ──
+var _laboJoursOffEarly={dsm:[],mgt:[],paita:[],ville:[]};
+var _laboJoursOffEarlyLoaded=false;
+var _laboJoursOffEarlyReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY)
+  .then(function(res){return res.ok?res.json():null;})
+  .then(function(j){
+    if(j&&j.fields){
+      ['dsm','mgt','paita','ville'].forEach(function(s){
+        if(j.fields[s]&&j.fields[s].stringValue){
+          try{_laboJoursOffEarly[s]=JSON.parse(j.fields[s].stringValue);}catch(e){}
+        } else if(j.fields[s]&&j.fields[s].arrayValue){
+          _laboJoursOffEarly[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
+        }
+      });
+    }
+    _laboJoursOffEarlyLoaded=true;
+  }).catch(function(){_laboJoursOffEarlyLoaded=true;});
+
 function _fromFirestore(doc) {
   if (!doc || !doc.fields) return {};
   const out = {};
@@ -695,8 +713,8 @@ function subscribeWeek(){
       }
     }, 3000);
   };
-  if(typeof _laboJoursOffReady!=='undefined'){
-    _laboJoursOffReady.then(_startPoll);
+  if(typeof _laboJoursOffEarlyReady!=='undefined'){
+    _laboJoursOffEarlyReady.then(_startPoll);
   } else {
     _startPoll();
   }
@@ -1328,11 +1346,13 @@ async function laboLoadJoursOff(){
   laboRender();
 }
 function laboIsOff(shop,dateStr){
-  var e=(_laboJoursOff[shop]||[]).find(function(e){return e.date===dateStr;});
+  var src=(_laboJoursOff[shop]&&_laboJoursOff[shop].length>0)?_laboJoursOff[shop]:(_laboJoursOffEarly?_laboJoursOffEarly[shop]:[]);
+  var e=(src||[]).find(function(e){return e.date===dateStr;});
   return e&&e.mode==='off';
 }
 function laboIsRizPoisson(shop,dateStr){
-  var e=(_laboJoursOff[shop]||[]).find(function(e){return e.date===dateStr;});
+  var src=(_laboJoursOff[shop]&&_laboJoursOff[shop].length>0)?_laboJoursOff[shop]:(_laboJoursOffEarly?_laboJoursOffEarly[shop]:[]);
+  var e=(src||[]).find(function(e){return e.date===dateStr;});
   return e&&e.mode==='rizpoisson';
 }
 var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
