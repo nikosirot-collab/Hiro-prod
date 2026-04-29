@@ -681,17 +681,25 @@ function subscribeWeek(){
   _snapshotLoaded=false;
   _openSnapshot={};
   _lastDataStr='';
-  _fbPoll(weekDocId(), remote=>{
-    const r=remote||{};
-    const newStr=Object.keys(r).sort().map(k=>k+'='+r[k]).join('|');
-    const changed=newStr!==_lastDataStr;
-    if(changed){
-      _lastDataStr=newStr;
-      detectChanges(r);
-      data={};Object.assign(data,r);
-      renderWithState();
-    }
-  }, 3000);
+  // Attendre les jours off avant de lancer le polling
+  var _startPoll=function(){
+    _fbPoll(weekDocId(), remote=>{
+      const r=remote||{};
+      const newStr=Object.keys(r).sort().map(k=>k+'='+r[k]).join('|');
+      const changed=newStr!==_lastDataStr;
+      if(changed){
+        _lastDataStr=newStr;
+        detectChanges(r);
+        data={};Object.assign(data,r);
+        renderWithState();
+      }
+    }, 3000);
+  };
+  if(typeof _laboJoursOffReady!=='undefined'){
+    _laboJoursOffReady.then(_startPoll);
+  } else {
+    _startPoll();
+  }
 }
 
 function renderWithState(){
