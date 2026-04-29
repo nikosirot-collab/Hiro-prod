@@ -2546,8 +2546,8 @@ function _laboRenderCore(el){
       var dStr=laboDs(laboDate);
       var isOff=laboIsOff(s,dStr);
       var isRizPoisson=laboIsRizPoisson(s,dStr);
-      var statusLabel=isOff?'🚫 Jour off':isRizPoisson?'🐟 Riz & Poisson uniquement':(ok?(isVal?'Validée '+laboFmtTime(o.validatedAt||o.ts):'Reçue '+laboFmtTime(o.ts)):'En attente');
-      var statusIcon=isOff?'🚫':isRizPoisson?'🐟':(isVal?'✅':ok?'⏳':'⌛');
+      var statusLabel=s==='asia'?'Saisie directe':isOff?'🚫 Jour off':isRizPoisson?'🐟 Riz & Poisson uniquement':(ok?(isVal?'Validée '+laboFmtTime(o.validatedAt||o.ts):'Reçue '+laboFmtTime(o.ts)):'En attente');
+      var statusIcon=s==='asia'?'✏️':isOff?'🚫':isRizPoisson?'🐟':(isVal?'✅':ok?'⏳':'⌛');
       var cardStyle=isOff?'opacity:0.5;':'';
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;'+cardStyle+'" onclick="laboGoToShop(\''+s+'\')">'
         +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
