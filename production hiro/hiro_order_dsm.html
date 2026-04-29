@@ -198,7 +198,8 @@ async function loadJoursOff(){
   // Recharger la commande existante pour le bon jour
   // Mettre à jour tomorrow globalement
   tomorrow=newTomorrow;
-  // Recharger la commande pour la nouvelle date
+  // Recharger le riz et la commande pour la nouvelle date
+  loadRiz();
   loadExistingOrder();
 }
 
