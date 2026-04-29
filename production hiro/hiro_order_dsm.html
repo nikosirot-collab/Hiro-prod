@@ -210,7 +210,7 @@ function getTomorrow(){
   else if(dow===0){nc.setDate(nc.getDate()+1);}
   else{nc.setDate(nc.getDate()+1);}
   // Sauter les jours off
-  while(_JOURS_OFF.indexOf(ds(nc))!==-1){
+  while(_JOURS_OFF.indexOf(ds(nc))!==-1||_JOURS_OFF_RP.indexOf(ds(nc))!==-1){
     nc.setDate(nc.getDate()+1);
     // Sauter aussi les dimanches
     if(nc.getDay()===0) nc.setDate(nc.getDate()+1);
