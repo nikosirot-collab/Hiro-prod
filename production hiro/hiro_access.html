@@ -1670,7 +1670,11 @@ function laboShowSaveToast(shop){
 async function laboPatchQty(shop,key,val){
   var v=Math.max(0,parseInt(val)||0);
   var order=laboOrders[shop];
-  if(!order)return;
+  if(!order){
+    // Créer un ordre vide si Asia n'a pas encore de commande
+    laboOrders[shop]={shop:shop,date:laboDs(laboDate),ts:Date.now()};
+    order=laboOrders[shop];
+  }
   var fields={};
   var isValidated=order.status==='validated';
   var fieldKey=isValidated?'vqty_'+key:key;
@@ -2119,41 +2123,31 @@ function laboRenderFiche(shop,order){
   var isOff=laboIsOff(shop,dStr);
   var isRizPoisson=laboIsRizPoisson(shop,dStr);
 
-  // ── Fiche Asia — salades uniquement ──
+  // ── Fiche Asia — saisie depuis le Access ──
   if(shop==='asia'){
     var asiaOrder=laboOrders['asia']||{};
-    var hasOrder=asiaOrder.ts||asiaOrder.status==='validated';
-    var isVal=asiaOrder.status==='validated';
-    var _va=function(k){return isVal&&asiaOrder['vqty_'+k]!==undefined?asiaOrder['vqty_'+k]:(asiaOrder[k]||0);};
-    var statusLabel=isVal?'Validée '+laboFmtTime(asiaOrder.validatedAt||asiaOrder.ts):hasOrder?'Reçue '+laboFmtTime(asiaOrder.ts):'En attente';
-    var statusIcon=isVal?'✅':hasOrder?'⏳':'⌛';
+    var color2=LABO_COLORS['asia'];
     var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
-      +'<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">'+statusLabel+'<span>'+statusIcon+'</span></div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+color2+'">Asia</div>'
+      +'<div style="font-size:11px;color:var(--muted);">Saisie directe</div>'
       +'</div>';
-    if(!hasOrder){
-      html+='<div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non reçue</div>';
-    } else {
-      html+='<div style="display:grid;grid-template-columns:1fr;">'
-        +'<div>'
-        +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Salade</div>';
-      LABO_SALADE.forEach(function(p){
-        var v=_va(p.key);
-        if(v>0){
-          html+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
-            +'<div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+v+'</div>'
-            +'<div style="font-size:13px;font-weight:500;">'+p.name+'</div>'
-            +'</div>';
-        }
-      });
-      html+='</div></div>';
-    }
-    // Champ ajout article
+    // Section Salade — champs éditables
+    html+='<div>'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Salade</div>';
+    LABO_SALADE.forEach(function(p){
+      var cur=asiaOrder[p.key]||0;
+      html+='<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;">'
+        +'<input type="number" min="0" value="'+cur+'" onchange="laboPatchQty(\'asia\',\''+p.key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+    // Champ ajout article libre
     html+='<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">'
       +'<input id="addqty-asia" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
       +'<input id="addname-asia" type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;" onkeydown="if(event.key===\'Enter\')laboAddArticle(\'asia\')">'
-      +'<button onclick="laboAddArticle(\'asia\')" style="padding:8px 14px;border-radius:8px;border:none;background:var(--accent,#c8860a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
+      +'<button onclick="laboAddArticle(\'asia\')" style="padding:8px 14px;border-radius:8px;border:none;background:#c8860a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
       +'</div>';
     html+='</div>';
     return html;
