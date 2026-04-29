@@ -411,6 +411,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <div class="labo-tab" onclick="laboShowShop('mgt',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">MGT</div>
         <div class="labo-tab" onclick="laboShowShop('paita',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Paita</div>
         <div class="labo-tab" onclick="laboShowShop('ville',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Ville</div>
+        <div class="labo-tab" onclick="laboShowShop('asia',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Asia</div>
       </div>
       <div id="labo-content"></div>
     </div>
@@ -1306,7 +1307,7 @@ var laboFishData={};
 var laboPollInterval=null;
 var laboCurrentShop='resume';
 
-var LABO_SHOPS=['dsm','mgt','paita','ville'];
+var LABO_SHOPS=['dsm','mgt','paita','ville','asia'];
 
 // ── Jours off ──
 var _laboJoursOff={dsm:[],mgt:[],paita:[],ville:[]};
@@ -1355,8 +1356,8 @@ function laboIsRizPoisson(shop,dateStr){
   var e=(src||[]).find(function(e){return e.date===dateStr;});
   return e&&e.mode==='rizpoisson';
 }
-var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
+var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
+var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8',asia:'#c8860a'};
 
 var LABO_SALADE=[
   {key:'bo',name:'Bun Bo'},{key:'sin',name:'Singapour'},{key:'thon',name:'Thon marine'},
@@ -2118,6 +2119,46 @@ function laboRenderFiche(shop,order){
   var isOff=laboIsOff(shop,dStr);
   var isRizPoisson=laboIsRizPoisson(shop,dStr);
 
+  // ── Fiche Asia — salades uniquement ──
+  if(shop==='asia'){
+    var asiaOrder=laboOrders['asia']||{};
+    var hasOrder=asiaOrder.ts||asiaOrder.status==='validated';
+    var isVal=asiaOrder.status==='validated';
+    var _va=function(k){return isVal&&asiaOrder['vqty_'+k]!==undefined?asiaOrder['vqty_'+k]:(asiaOrder[k]||0);};
+    var statusLabel=isVal?'Validée '+laboFmtTime(asiaOrder.validatedAt||asiaOrder.ts):hasOrder?'Reçue '+laboFmtTime(asiaOrder.ts):'En attente';
+    var statusIcon=isVal?'✅':hasOrder?'⏳':'⌛';
+    var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">'+statusLabel+'<span>'+statusIcon+'</span></div>'
+      +'</div>';
+    if(!hasOrder){
+      html+='<div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non reçue</div>';
+    } else {
+      html+='<div style="display:grid;grid-template-columns:1fr;">'
+        +'<div>'
+        +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Salade</div>';
+      LABO_SALADE.forEach(function(p){
+        var v=_va(p.key);
+        if(v>0){
+          html+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
+            +'<div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+v+'</div>'
+            +'<div style="font-size:13px;font-weight:500;">'+p.name+'</div>'
+            +'</div>';
+        }
+      });
+      html+='</div></div>';
+    }
+    // Champ ajout article
+    html+='<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">'
+      +'<input id="addqty-asia" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
+      +'<input id="addname-asia" type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;" onkeydown="if(event.key===\'Enter\')laboAddArticle(\'asia\')">'
+      +'<button onclick="laboAddArticle(\'asia\')" style="padding:8px 14px;border-radius:8px;border:none;background:var(--accent,#c8860a);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
+      +'</div>';
+    html+='</div>';
+    return html;
+  }
+
   if(isOff){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
@@ -2441,9 +2482,9 @@ function laboPrint(){
 }
 
 function laboPrintSalade(){
-  var shops=['paita','dsm','mgt','ville'];
-  var COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#5b4bb5'};
-  var LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var shops=['paita','dsm','mgt','ville','asia'];
+  var COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#5b4bb5',asia:'#c8860a'};
+  var LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
   var dateLabel=document.getElementById('labo-date-label').textContent;
 
   function pRow(name,val){
