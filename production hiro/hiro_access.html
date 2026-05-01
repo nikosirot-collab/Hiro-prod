@@ -2482,7 +2482,6 @@ function laboPrintSalade(){
   var dateLabel=document.getElementById('labo-date-label').textContent;
 
   function pRow(name,val){
-    if(!val||val===0)return '';
     return '<tr>'
       +'<td style="padding:4px 8px;font-size:16px;font-weight:500;">'+name+'</td>'
       +'<td style="padding:4px 8px;font-size:22px;font-weight:800;text-align:right;font-family:monospace;">'+val+'</td>'
@@ -2494,7 +2493,7 @@ function laboPrintSalade(){
     var isVal=order.status==='validated';
     function v(k){return order[k]!==undefined?order[k]:(isVal&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);}
     var rows='';
-    LABO_SALADE.forEach(function(p){var val=v(p.key);if(val>0)rows+=pRow(p.name,val);});
+    LABO_SALADE.forEach(function(p){var val=v(p.key);rows+=pRow(p.name,val);});
     var status=isVal?'✓':'⏳';
     return '<div style="flex:1;border-right:2px solid #ddd;padding:0 12px;min-width:0;">'
       +'<div style="background:'+COLORS[shop]+';color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">'
