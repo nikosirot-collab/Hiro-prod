@@ -2673,22 +2673,21 @@ async function loadJoursOff(){
       if(j.fields){
         ['dsm','mgt','paita','ville'].forEach(function(s){
           if(j.fields[s]&&j.fields[s].stringValue){
-            // Nouveau format JSON
             try{
               var arr=JSON.parse(j.fields[s].stringValue);
-              var today=new Date().toISOString().slice(0,10);
-              _joursOffData[s]=arr.filter(function(e){return e.date>=today;});
+              // Garder TOUT — on sépare actif/historique à l'affichage
+              _joursOffData[s]=arr;
             }catch(e){_joursOffData[s]=[];}
           } else if(j.fields[s]&&j.fields[s].arrayValue){
             // Ancien format — migrer
-            var today=new Date().toISOString().slice(0,10);
             _joursOffData[s]=(j.fields[s].arrayValue.values||[])
-              .map(function(v){return {date:v.stringValue,mode:'off'};})
-              .filter(function(e){return e.date>=today;});
+              .map(function(v){return {date:v.stringValue,mode:'off'};});
           } else {
             _joursOffData[s]=[];
           }
         });
+        // Mettre à jour _prodJoursOff avec uniquement les entrées actives (>= aujourd'hui)
+        _syncProdJoursOff();
       }
     } else if(res.status===404){
       await saveJoursOff();
@@ -2697,43 +2696,49 @@ async function loadJoursOff(){
   renderJoursOff();
 }
 
+function _syncProdJoursOff(){
+  var today=new Date().toISOString().slice(0,10);
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    _prodJoursOff[s]=_joursOffData[s].filter(function(e){return e.date>=today;});
+  });
+}
+
+function toggleJoffPast(){
+  var p=document.getElementById('joff-past');
+  var c=document.getElementById('joff-past-chev');
+  if(!p)return;
+  var open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  if(c)c.style.transform=open?'rotate(90deg)':'';
+}
+
 function renderJoursOff(){
   var el=document.getElementById('joursoff-content');
   if(!el)return;
   var todayStr=new Date().toISOString().slice(0,10);
 
-  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
-    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">Ajouter un jour off</div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'
-    +'<input type="date" id="joff-date" min="'+todayStr+'" value="'+todayStr+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'
-    +'</div>'
-    // Mode
-    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'
-    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'
-    +'<input type="radio" name="joff-mode" id="joff-mode-off" value="off" checked> 🚫 Jour off complet</label>'
-    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'
-    +'<input type="radio" name="joff-mode" id="joff-mode-rp" value="rizpoisson"> 🐟 Riz & Poisson uniquement</label>'
-    +'</div>'
-    // Magasins
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">Ajouter un jour off</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'    +'<input type="date" id="joff-date" min="'+todayStr+'" value="'+todayStr+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'    +'</div>'    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-off" value="off" checked> 🚫 Jour off complet</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rp" value="rizpoisson"> 🐟 Riz & Poisson uniquement</label>'    +'</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
 
   ['dsm','mgt','paita','ville'].forEach(function(s){
-    html+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid '+_SHOPS_COLORS[s]+';border-radius:8px;">'
-      +'<input type="checkbox" id="joff-'+s+'" style="accent-color:'+_SHOPS_COLORS[s]+'">'
-      +'<span style="font-size:13px;font-weight:600;color:'+_SHOPS_COLORS[s]+';">'+_SHOPS_LABELS[s]+'</span>'
-      +'</label>';
+    html+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid '+_SHOPS_COLORS[s]+';border-radius:8px;">'      +'<input type="checkbox" id="joff-'+s+'" style="accent-color:'+_SHOPS_COLORS[s]+'">'      +'<span style="font-size:13px;font-weight:600;color:'+_SHOPS_COLORS[s]+';">'+_SHOPS_LABELS[s]+'</span>'      +'</label>';
   });
 
-  html+='</div>'
-    +'<button onclick="addJourOff()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">+ Ajouter</button>'
-    +'</div>';
+  html+='</div>'    +'<button onclick="addJourOff()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">+ Ajouter</button>'    +'</div>';
 
-  // Liste par magasin
-  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  // Séparation actif / historique
+  var activeItems={}, pastItems={};
   ['dsm','mgt','paita','ville'].forEach(function(s){
-    var days=_joursOffData[s].slice().sort(function(a,b){return a.date>b.date?1:-1;});
-    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;">'
-      +'<div style="font-size:13px;font-weight:700;color:'+_SHOPS_COLORS[s]+';margin-bottom:10px;">'+_SHOPS_LABELS[s]+'</div>';
+    var all=_joursOffData[s].slice().sort(function(a,b){return a.date>b.date?1:-1;});
+    activeItems[s]=all.filter(function(e){return e.date>=todayStr;});
+    pastItems[s]=all.filter(function(e){return e.date<todayStr;}).reverse(); // plus récent en premier
+  });
+
+  // ── Jours actifs ──
+  html+='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">À venir</div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">';
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    var days=activeItems[s];
+    html+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;">'      +'<div style="font-size:13px;font-weight:700;color:'+_SHOPS_COLORS[s]+';margin-bottom:10px;">'+_SHOPS_LABELS[s]+'</div>';
     if(days.length===0){
       html+='<div style="font-size:12px;color:var(--text-muted);">Aucun jour off</div>';
     } else {
@@ -2742,18 +2747,38 @@ function renderJoursOff(){
         var label=dateObj.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
         var modeLabel=e.mode==='rizpoisson'?'🐟 Riz & Poisson':'🚫 Off complet';
         var modeColor=e.mode==='rizpoisson'?'#0d7a52':'#c0392b';
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px;">'
-          +'<div>'
-          +'<div style="font-size:12px;">'+label+'</div>'
-          +'<div style="font-size:10px;font-weight:600;color:'+modeColor+';">'+modeLabel+'</div>'
-          +'</div>'
-          +'<button onclick="removeJourOff(\''+s+'\',\''+e.date+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:0 4px;flex-shrink:0;">×</button>'
-          +'</div>';
+        html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px;">'          +'<div>'          +'<div style="font-size:12px;">'+label+'</div>'          +'<div style="font-size:10px;font-weight:600;color:'+modeColor+';">'+modeLabel+'</div>'          +'</div>'          +'<button onclick="removeJourOff(\''+s+'\',\''+e.date+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:0 4px;flex-shrink:0;">×</button>'          +'</div>';
       });
     }
     html+='</div>';
   });
   html+='</div>';
+
+  // ── Historique passé (collapse) ──
+  var hasPast=['dsm','mgt','paita','ville'].some(function(s){return pastItems[s].length>0;});
+  if(hasPast){
+    html+='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+      +'<div onclick="toggleJoffPast()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--surface);">'
+      +'<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Historique passé</div>'
+      +'<span id="joff-past-chev" style="font-size:18px;color:var(--text-muted);transition:transform .2s;">›</span>'
+      +'</div>'
+      +'<div id="joff-past" style="display:none;border-top:1px solid var(--border);padding:14px;">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+    ['dsm','mgt','paita','ville'].forEach(function(s){
+      var days=pastItems[s];
+      if(days.length===0)return;
+      html+='<div>'        +'<div style="font-size:12px;font-weight:700;color:'+_SHOPS_COLORS[s]+';margin-bottom:8px;">'+_SHOPS_LABELS[s]+'</div>';
+      days.forEach(function(e){
+        var dateObj=new Date(e.date+'T00:00:00');
+        var label=dateObj.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+        var modeLabel=e.mode==='rizpoisson'?'🐟':'🚫';
+        html+='<div style="font-size:11px;color:var(--text-muted);padding:3px 0;border-bottom:1px solid var(--border);">'+modeLabel+' '+label+'</div>';
+      });
+      html+='</div>';
+    });
+    html+='</div></div></div>';
+  }
+
   el.innerHTML=html;
 }
 
@@ -2768,18 +2793,18 @@ async function addJourOff(){
     if(document.getElementById('joff-'+s)&&document.getElementById('joff-'+s).checked) shops.push(s);
   });
   if(shops.length===0){alert('Sélectionne au moins un magasin');return;}
-
   shops.forEach(function(s){
-    // Supprimer entrée existante pour cette date si elle existe
     _joursOffData[s]=_joursOffData[s].filter(function(e){return e.date!==date;});
     _joursOffData[s].push({date:date,mode:mode});
   });
+  _syncProdJoursOff();
   await saveJoursOff();
   renderJoursOff();
 }
 
 async function removeJourOff(shop,date){
   _joursOffData[shop]=_joursOffData[shop].filter(function(e){return e.date!==date;});
+  _syncProdJoursOff();
   await saveJoursOff();
   renderJoursOff();
 }
@@ -2798,6 +2823,7 @@ async function saveJoursOff(){
     });
   }catch(e){}
 }
+
 
 async function loadLogs(){
   var el=document.getElementById('logs-content');
@@ -3488,7 +3514,7 @@ function secPollStop(){
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
     if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}
-    if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
+    if(typeof _secPollTimer!=='undefined'&&_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
     if(_netInterval){clearInterval(_netInterval);_netInterval=null;}
     if(typeof cmdPollTimer!=='undefined'&&cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}
   } else {
