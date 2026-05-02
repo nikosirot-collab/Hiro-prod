@@ -677,7 +677,23 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
     <div class="section">
-      <div class="section-header"><span class="section-title">Historique des semaines</span></div>
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="section-title">Historique des semaines</span>
+      </div>
+      <!-- Bloc tendances -->
+      <div id="histo-tendances" style="display:none;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Tendances riz — 12 semaines</div>
+        <!-- Sélecteur magasin -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="tend-btn active" data-shop="all" onclick="tendSetShop('all',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
+          <button class="tend-btn" data-shop="dsm" onclick="tendSetShop('dsm',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">DSM</button>
+          <button class="tend-btn" data-shop="mgt" onclick="tendSetShop('mgt',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:11px;cursor:pointer;">MGT</button>
+          <button class="tend-btn" data-shop="paita" onclick="tendSetShop('paita',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:11px;cursor:pointer;">Paita</button>
+          <button class="tend-btn" data-shop="ville" onclick="tendSetShop('ville',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #7a3db8;background:none;color:#7a3db8;font-size:11px;cursor:pointer;">Ville</button>
+        </div>
+        <div id="histo-chart" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow:hidden;"></div>
+      </div>
+      <!-- Liste semaines -->
       <div id="historique-content" style="padding:8px 0;">
         <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger l'historique</div>
       </div>
@@ -1364,6 +1380,11 @@ async function loadHistorique() {
     return;
   }
 
+  // Stocker pour les graphiques
+  window._histoResults=results;
+  tendRender('all');
+  document.getElementById('histo-tendances').style.display='block';
+
   const byMonth={};
   results.forEach(({dateStr,hData})=>{
     const mKey=majorityMonth(new Date(dateStr));
@@ -1412,6 +1433,145 @@ async function loadHistorique() {
   });
   el.innerHTML=html;
 }
+
+// ── Tendances ──
+var _tendShop='all';
+
+function tendSetShop(shop,btn){
+  _tendShop=shop;
+  document.querySelectorAll('.tend-btn').forEach(function(b){
+    var active=b===btn;
+    var sc={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+    b.style.background=active?'#1a1916':'none';
+    b.style.color=active?'#fff':(sc[b.dataset.shop]||'var(--text)');
+  });
+  tendRender(shop);
+}
+
+function tendRender(shop){
+  var el=document.getElementById('histo-chart');
+  if(!el||!window._histoResults)return;
+  var results=window._histoResults;
+  var SHOP_LIST=['dsm','mgt','paita','ville'];
+  var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+
+  // Trier du plus ancien au plus récent
+  var sorted=[...results].sort((a,b)=>a.dateStr.localeCompare(b.dateStr));
+
+  // Calculer le total riz par semaine par magasin
+  var series={}; // {shop: [val, val, ...]}
+  SHOP_LIST.forEach(function(s){series[s]=[];});
+
+  sorted.forEach(function({dateStr,hData}){
+    SHOP_LIST.forEach(function(s){
+      var tot=0;
+      for(var di=0;di<7;di++){
+        var d=new Date(dateStr+'T00:00:00');d.setDate(d.getDate()+di);
+        var dStr=ds(d);
+        tot+=hData[dStr+'__'+s]||0;
+      }
+      series[s].push(tot);
+    });
+  });
+
+  var shopsToShow=shop==='all'?SHOP_LIST:[shop];
+  var n=sorted.length;
+  if(n===0){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:16px;">Pas assez de données</div>';return;}
+
+  // Dimensions SVG
+  var W=el.clientWidth||320;
+  var H=180;
+  var PAD={t:16,r:16,b:36,l:46};
+  var cW=W-PAD.l-PAD.r;
+  var cH=H-PAD.t-PAD.b;
+
+  // Min/max global
+  var allVals=[];
+  shopsToShow.forEach(function(s){series[s].forEach(function(v){if(v>0)allVals.push(v);});});
+  if(allVals.length===0){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:16px;">Pas assez de données</div>';return;}
+  var vMin=0;
+  var vMax=Math.ceil(Math.max.apply(null,allVals)/500)*500||1000;
+
+  var xPos=function(i){return PAD.l+i*(cW/(n-1||1));};
+  var yPos=function(v){return PAD.t+cH-(v-vMin)/(vMax-vMin)*cH;};
+
+  // Grilles horizontales
+  var gridSteps=4;
+  var gridLines='';
+  for(var gi=0;gi<=gridSteps;gi++){
+    var gv=vMin+(vMax-vMin)*gi/gridSteps;
+    var gy=yPos(gv);
+    gridLines+='<line x1="'+PAD.l+'" y1="'+gy+'" x2="'+(W-PAD.r)+'" y2="'+gy+'" stroke="#e8e6e2" stroke-width="1"/>';
+    gridLines+='<text x="'+(PAD.l-6)+'" y="'+(gy+4)+'" text-anchor="end" font-size="9" fill="#aaa">'+Math.round(gv)+'</text>';
+  }
+
+  // Labels X (semaines)
+  var xLabels='';
+  sorted.forEach(function({dateStr},i){
+    var d=new Date(dateStr+'T00:00:00');
+    var lbl=fmtS(d); // ex "12 jan"
+    if(n<=6||i%2===0||i===n-1){
+      xLabels+='<text x="'+xPos(i)+'" y="'+(H-6)+'" text-anchor="middle" font-size="9" fill="#aaa">'+lbl+'</text>';
+    }
+  });
+
+  // Courbes + points
+  var curves='';
+  shopsToShow.forEach(function(s){
+    var color=SHOP_COLORS[s];
+    var pts=series[s];
+    // Ligne
+    var path='';
+    pts.forEach(function(v,i){
+      var x=xPos(i),y=yPos(v);
+      path+=(i===0?'M':'L')+x.toFixed(1)+' '+y.toFixed(1)+' ';
+    });
+    curves+='<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    // Points
+    pts.forEach(function(v,i){
+      if(v===0)return;
+      var x=xPos(i),y=yPos(v);
+      curves+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="'+color+'" stroke="#fff" stroke-width="1.5"/>';
+    });
+  });
+
+  // Légende si "tous"
+  var legend='';
+  if(shop==='all'){
+    var lx=PAD.l;
+    SHOP_LIST.forEach(function(s){
+      legend+='<circle cx="'+(lx+5)+'" cy="10" r="4" fill="'+SHOP_COLORS[s]+'"/>';
+      legend+='<text x="'+(lx+13)+'" y="14" font-size="10" fill="#555">'+SHOP_LABELS[s]+'</text>';
+      lx+=50;
+    });
+  }
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:'+H+'px;display:block;">'
+    +'<g>'+gridLines+'</g>'
+    +'<g>'+curves+'</g>'
+    +'<g>'+xLabels+'</g>'
+    +(legend?'<g>'+legend+'</g>':'')
+    +'</svg>';
+
+  // Résumé texte sous le graphique
+  var summaryParts=[];
+  shopsToShow.forEach(function(s){
+    var pts=series[s].filter(function(v){return v>0;});
+    if(pts.length<2)return;
+    var last=pts[pts.length-1];
+    var prev=pts[pts.length-2];
+    var diff=last-prev;
+    var pct=Math.round(diff/prev*100);
+    var arrow=diff>0?'↗':diff<0?'↘':'→';
+    var col=diff>0?'#0d7a52':diff<0?'#e74c3c':'#888';
+    summaryParts.push('<span style="margin-right:12px;font-size:11px;"><span style="font-weight:700;color:'+SHOP_COLORS[s]+';">'+SHOP_LABELS[s]+'</span> <span style="color:'+col+';">'+arrow+' '+(diff>0?'+':'')+diff+' ('+(pct>0?'+':'')+pct+'%)</span></span>');
+  });
+  var summary=summaryParts.length>0?'<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">'+summaryParts.join('')+'</div>':'';
+
+  el.innerHTML=svg+summary;
+}
+
 
 function toggleHistMonth(mKey){
   const panel=document.getElementById('month-'+mKey);
