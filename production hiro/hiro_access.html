@@ -2577,9 +2577,24 @@ function _laboRenderCore(el){
         +'</div>';
     });
     if(chrSection){
-      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'
-        +'<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">CHR</div>'
-        +chrSection+'</div>';
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'        +'<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">CHR</div>'        +chrSection+'</div>';
+    }
+
+    // ── Bloc Pokés thon/saumon par magasin ──
+    var pokeSection='';
+    LABO_SHOPS.forEach(function(s){
+      var o=laboOrders[s];
+      if(!o) return;
+      var pt=o.pokethon!==undefined?parseInt(o.pokethon)||0:0;
+      var ps=o.pokesaumon!==undefined?parseInt(o.pokesaumon)||0:0;
+      if(pt===0&&ps===0) return;
+      var parts=[];
+      if(pt>0) parts.push('<span style="color:var(--dsm);font-weight:600;">Thon ×'+pt+'</span>');
+      if(ps>0) parts.push('<span style="color:var(--mgt);font-weight:600;">Saumon ×'+ps+'</span>');
+      pokeSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">'        +'<div style="font-size:12px;font-weight:700;color:'+LABO_COLORS[s]+';min-width:44px;">'+LABO_LABELS[s]+'</div>'        +'<div style="font-size:12px;color:var(--text);">'+parts.join(' · ')+'</div>'        +'</div>';
+    });
+    if(pokeSection){
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'        +'<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Pokés</div>'        +pokeSection+'</div>';
     }
 
     el.innerHTML=cards;
