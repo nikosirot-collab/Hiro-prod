@@ -599,27 +599,46 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
 
   <div id="page-securite" class="page">
     <div class="section">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <span class="section-title">Appareils connectés</span>
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="section-title">Sécurité</span>
         <button onclick="loadSecurite()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
       </div>
-      <!-- Monitoring Firebase + dernières connexions -->
+
+      <!-- Résumé statut temps réel -->
+      <div id="sec-summary" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Statut temps réel</div>
+        <div id="sec-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+          <div style="font-size:12px;color:var(--text-muted);padding:6px;">Chargement...</div>
+        </div>
+      </div>
+
+      <!-- Filtres interface -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);align-self:center;margin-right:4px;">Interface :</div>
+        <button class="sec-filter-iface active" data-iface="" onclick="secSetIface('',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
+        <button class="sec-filter-iface" data-iface="Commande" onclick="secSetIface('Commande',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">📦 Commandes</button>
+        <button class="sec-filter-iface" data-iface="Hiro Access" onclick="secSetIface('Hiro Access',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">👁 Access</button>
+        <button class="sec-filter-iface" data-iface="Hiro Labo" onclick="secSetIface('Hiro Labo',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🏭 Labo</button>
+        <button class="sec-filter-iface" data-iface="Hiro Prod" onclick="secSetIface('Hiro Prod',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🍱 Prod</button>
+      </div>
+
+      <!-- Appareils actifs -->
+      <div id="sec-devices" style="margin-bottom:16px;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
+
+      <!-- Historique 48h -->
+      <div style="margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">Historique — 48h</div>
+        </div>
+        <div id="sec-log" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div></div>
+      </div>
+
+      <!-- Monitoring Firebase -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
         <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Monitoring Firebase</div>
         <div id="monitoring-content">
           <div style="font-size:12px;color:var(--text-muted);">Vérification...</div>
         </div>
-      </div>
-
-      <div id="sec-devices" style="margin-bottom:24px;"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div></div>
-
-      <!-- Log connexions -->
-      <div style="margin-bottom:24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:600;">Historique des connexions</div>
-          <span style="font-size:11px;color:var(--text-muted);">48 dernières heures</span>
-        </div>
-        <div id="sec-log"><div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div></div>
       </div>
 
       <!-- Stockage Firebase estimé -->
@@ -2980,50 +2999,106 @@ async function loadSecurite(){
         browser:f.browser?f.browser.stringValue:''
       });
     });
-
-    // Filtrer les appareils inconnus de plus de 24h
+    // Filtrer appareils inconnus > 24h
     var DAY_MS=24*60*60*1000;
     entries=entries.filter(function(e){
       var isUnknown=!e.userName&&!e.shop&&!e.device;
       return !(isUnknown&&(now-e.ts)>DAY_MS);
     });
-    var groups={};
-    SEC_IFACE_ORDER.forEach(function(g){groups[g.key]=[];});
-    entries.forEach(function(e){
-      var k=e.iface;
-      if(!groups[k])groups[k]=[];
-      groups[k].push(e);
-    });
 
-    var html='';
-    SEC_IFACE_ORDER.forEach(function(g){
-      var list=groups[g.key]||[];
-      // Trier : en ligne d'abord, puis par ts desc
-      list.sort(function(a,b){return (b.isOnline-a.isOnline)||b.ts-a.ts;});
-      var onlineCount=list.filter(function(e){return e.isOnline;}).length;
+    // Stocker globalement pour le filtre
+    window._secData=entries;
 
-      html+='<div style="margin-bottom:20px;">';
-      // Header groupe
-      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--border);">'
-        +'<span style="font-size:13px;font-weight:700;color:var(--text);">'+g.label+'</span>'
-        +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+(onlineCount>0?'#e4f5ee':'#f0f0f0')+';color:'+(onlineCount>0?'#0d7a52':'#999')+';font-weight:600;">'
-        +(onlineCount>0?onlineCount+' en ligne':'hors ligne')+'</span>'
-        +'</div>';
+    // ── Résumé statut temps réel ──
+    _secRenderSummary(entries,now);
 
-      if(list.length===0){
-        html+='<div style="font-size:12px;color:var(--text-muted);padding:8px 4px;">Aucun appareil</div>';
-      } else {
-        list.forEach(function(e){html+=secDevCard(e);});
-      }
-      html+='</div>';
-    });
-
-    if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil connecté</div>';
-    el.innerHTML=html;
+    // Rendu appareils + historique
+    _secRender();
     loadSecLog();
     loadMonitoring();
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
+
+var _secFilterIface='';
+
+function secSetIface(val,btn){
+  _secFilterIface=val;
+  document.querySelectorAll('.sec-filter-iface').forEach(function(b){
+    var active=b===btn;
+    b.style.background=active?'#1a1916':'none';
+    b.style.color=active?'#fff':(b.dataset.iface==='Commande'?'#1a5fa8':'var(--text)');
+  });
+  _secRender();
+}
+
+function _secRenderSummary(entries,now){
+  var grid=document.getElementById('sec-summary-grid');
+  if(!grid)return;
+  var IFACE_LIST=[
+    {key:'Commande',  label:'📦 Commandes', color:'#1a5fa8'},
+    {key:'Hiro Access',label:'👁 Access',  color:'#555'},
+    {key:'Hiro Labo', label:'🏭 Labo',     color:'#555'},
+    {key:'Hiro Prod', label:'🍱 Prod',     color:'#1a1916'},
+  ];
+  var html='';
+  IFACE_LIST.forEach(function(g){
+    var list=entries.filter(function(e){return e.iface===g.key&&!e.disabled;});
+    var online=list.filter(function(e){return e.isOnline;}).length;
+    var total=list.length;
+    var latest=list.sort(function(a,b){return b.ts-a.ts;})[0];
+    var ago=latest?Math.round((now-latest.ts)/60000):null;
+    var agoStr=ago===null?'jamais':ago<1?'<1min':ago<60?ago+'min':ago<1440?Math.round(ago/60)+'h':Math.round(ago/1440)+'j';
+    var statusIcon=online>0?'🟢':'🔴';
+    var sub=online>0?(online+' en ligne'+(total>online?' / '+total:'')):'Hors ligne · '+agoStr;
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;">'
+      +'<span style="font-size:14px;">'+statusIcon+'</span>'
+      +'<div><div style="font-size:12px;font-weight:700;color:'+g.color+';">'+g.label+'</div>'
+      +'<div style="font-size:10px;color:var(--text-muted);">'+sub+'</div>'
+      +'</div></div>';
+  });
+  grid.innerHTML=html;
+}
+
+function _secRender(){
+  var el=document.getElementById('sec-devices');
+  if(!el||!window._secData)return;
+  var entries=window._secData;
+  var now=Date.now();
+
+  var filtered=_secFilterIface?entries.filter(function(e){return e.iface===_secFilterIface;}):entries;
+
+  var groups={};
+  SEC_IFACE_ORDER.forEach(function(g){groups[g.key]=[];});
+  filtered.forEach(function(e){
+    var k=e.iface;
+    if(!groups[k])groups[k]=[];
+    groups[k].push(e);
+  });
+
+  var html='';
+  SEC_IFACE_ORDER.forEach(function(g){
+    if(_secFilterIface&&g.key!==_secFilterIface)return;
+    var list=groups[g.key]||[];
+    list.sort(function(a,b){return (b.isOnline-a.isOnline)||b.ts-a.ts;});
+    var onlineCount=list.filter(function(e){return e.isOnline;}).length;
+    html+='<div style="margin-bottom:16px;">';
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--border);">'
+      +'<span style="font-size:13px;font-weight:700;color:var(--text);">'+g.label+'</span>'
+      +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:'+(onlineCount>0?'#e4f5ee':'#f0f0f0')+';color:'+(onlineCount>0?'#0d7a52':'#999')+';font-weight:600;">'
+      +(onlineCount>0?onlineCount+' en ligne':'hors ligne')+'</span>'
+      +'</div>';
+    if(list.length===0){
+      html+='<div style="font-size:12px;color:var(--text-muted);padding:8px 4px;">Aucun appareil</div>';
+    } else {
+      list.forEach(function(e){html+=secDevCard(e);});
+    }
+    html+='</div>';
+  });
+
+  if(!html)html='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Aucun appareil</div>';
+  el.innerHTML=html;
+}
+
 
 function parseUA(ua){
   if(!ua) return 'Appareil inconnu';
