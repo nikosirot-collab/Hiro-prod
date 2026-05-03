@@ -242,6 +242,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
   <div class="nav-tab" onclick="showPage('labo',this)">Commande</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
   <div class="nav-tab" onclick="showPage('cmd-histo',this);loadCmdHisto()">Histo. commandes</div>
+  <div class="nav-tab" onclick="showPage('nem-recap',this);loadNemRecap()">Nems / Sésame</div>
 </nav>
 
 <div class="week-bar">
@@ -390,6 +391,20 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <button onclick="cmdHistoChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
       </div>
       <div id="cmd-histo-content">
+        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE NEM / SÉSAME RECAP -->
+  <div id="page-nem-recap" class="page">
+    <div style="padding:8px 0;">
+      <div style="display:flex;align-items:center;gap:12px;padding:4px 0 12px;">
+        <button onclick="nemRecapChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">←</button>
+        <div id="nem-recap-date" style="flex:1;text-align:center;font-size:14px;font-weight:600;"></div>
+        <button onclick="nemRecapChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
+      </div>
+      <div id="nem-recap-content">
         <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>
       </div>
     </div>
@@ -1993,7 +2008,168 @@ async function loadCmdHisto(){
   }
 }
 
-// ── LOG DES MODIFICATIONS ──
+// ── NEM / SÉSAME RECAP ──
+var _nemRecapDate=(function(){
+  var d=new Date(TODAY_NC);
+  var dow=d.getDay();var diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff);return d;
+})();
+
+function nemRecapChangeDate(d){
+  _nemRecapDate.setDate(_nemRecapDate.getDate()+d*7);
+  loadNemRecap();
+}
+
+async function loadNemRecap(){
+  var el=document.getElementById('nem-recap-content');
+  var dateEl=document.getElementById('nem-recap-date');
+  if(!el)return;
+  var monday=new Date(_nemRecapDate);
+  var saturday=new Date(monday);saturday.setDate(saturday.getDate()+5);
+  var wLabel='Semaine du '+monday.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})+' au '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  if(dateEl)dateEl.textContent=wLabel;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
+
+  var shops=['dsm','mgt','paita','ville'];
+  var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var fields=['gnem','pnem','sesame'];
+  var fieldLabels={gnem:'Grand Nem',pnem:'Petit Nem',sesame:'Boul. Sésame'};
+
+  var days=[];
+  for(var i=0;i<6;i++){
+    var d2=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
+    days.push({date:d2,dStr:laboDs(d2),label:['Lun','Mar','Mer','Jeu','Ven','Sam'][i]});
+  }
+  var dStrs=days.map(function(d){return d.dStr;});
+
+  try{
+    var res=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
+    // allOrders[dStr][shop] = {gnem, pnem, sesame}
+    var allOrders={};
+    days.forEach(function(d){allOrders[d.dStr]={};shops.forEach(function(s){allOrders[d.dStr][s]={gnem:0,pnem:0,sesame:0};});});
+
+    if(res.ok){
+      var json=await res.json();
+      (json.documents||[]).forEach(function(doc){
+        var name=doc.name.split('/').pop();
+        var parts=name.split('_');
+        if(parts.length<3)return;
+        var docDate=parts[1],docShop=parts[2];
+        if(!dStrs.includes(docDate)||!shops.includes(docShop))return;
+        var isVal=doc.fields&&doc.fields.status&&doc.fields.status.stringValue==='validated';
+        fields.forEach(function(f){
+          var vkey='vqty_'+f;
+          var raw=0;
+          if(isVal&&doc.fields[vkey]&&doc.fields[vkey].integerValue!==undefined)
+            raw=parseInt(doc.fields[vkey].integerValue);
+          else if(doc.fields&&doc.fields[f]&&doc.fields[f].integerValue!==undefined)
+            raw=parseInt(doc.fields[f].integerValue);
+          allOrders[docDate][docShop][f]=raw;
+        });
+      });
+    }
+
+    // Totaux par shop et par produit sur la semaine
+    var weekTotals={};
+    shops.forEach(function(s){weekTotals[s]={gnem:0,pnem:0,sesame:0};});
+    var grandTotal={gnem:0,pnem:0,sesame:0};
+    days.forEach(function(day){
+      shops.forEach(function(s){
+        fields.forEach(function(f){
+          weekTotals[s][f]+=allOrders[day.dStr][s][f]||0;
+          grandTotal[f]+=allOrders[day.dStr][s][f]||0;
+        });
+      });
+    });
+
+    // ── RENDU ──
+    var thStyle='padding:8px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:#faf9f6;border-bottom:1px solid var(--border);text-align:center;';
+    var thLeft='padding:8px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:#faf9f6;border-bottom:1px solid var(--border);text-align:left;';
+    var tdStyle='padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);font-family:"DM Mono",monospace;font-size:14px;font-weight:600;';
+    var tdZero='padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);font-size:13px;color:var(--hint);';
+    var tdLabel='padding:7px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;';
+
+    var html='';
+
+    // ── TABLEAU RÉCAP SEMAINE ──
+    html+='<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">'
+      +'<div style="padding:10px 14px;background:var(--text);color:#fff;font-size:13px;font-weight:600;">📊 Total semaine</div>'
+      +'<div style="overflow-x:auto;">'
+      +'<table style="width:100%;border-collapse:collapse;background:var(--surface);">'
+      +'<thead><tr>'
+      +'<th style="'+thLeft+'">Magasin</th>'
+      +'<th style="'+thStyle+'">Grand Nem</th>'
+      +'<th style="'+thStyle+'">Petit Nem</th>'
+      +'<th style="'+thStyle+'">Boul. Sésame</th>'
+      +'</tr></thead><tbody>';
+
+    shops.forEach(function(s){
+      var t=weekTotals[s];
+      html+='<tr>'
+        +'<td style="'+tdLabel+'border-left:3px solid '+shopColors[s]+';padding-left:12px;"><span style="color:'+shopColors[s]+';font-size:12px;">'+shopLabels[s]+'</span></td>'
+        +(t.gnem>0?'<td style="'+tdStyle+'">'+t.gnem+'</td>':'<td style="'+tdZero+'">—</td>')
+        +(t.pnem>0?'<td style="'+tdStyle+'">'+t.pnem+'</td>':'<td style="'+tdZero+'">—</td>')
+        +(t.sesame>0?'<td style="'+tdStyle+'">'+t.sesame+'</td>':'<td style="'+tdZero+'">—</td>')
+        +'</tr>';
+    });
+    // Ligne total
+    html+='<tr style="background:#faf9f6;">'
+      +'<td style="'+tdLabel+'font-weight:700;font-size:12px;border-top:2px solid var(--border-s);">TOTAL</td>'
+      +'<td style="'+tdStyle+'border-top:2px solid var(--border-s);font-size:15px;color:var(--text);">'+grandTotal.gnem+'</td>'
+      +'<td style="'+tdStyle+'border-top:2px solid var(--border-s);font-size:15px;color:var(--text);">'+grandTotal.pnem+'</td>'
+      +'<td style="'+tdStyle+'border-top:2px solid var(--border-s);font-size:15px;color:var(--text);">'+grandTotal.sesame+'</td>'
+      +'</tr>';
+    html+='</tbody></table></div></div>';
+
+    // ── TABLEAU PAR JOUR ──
+    html+='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">'
+      +'<div style="padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);font-size:13px;font-weight:600;color:var(--text);">📅 Détail par jour</div>'
+      +'<div style="overflow-x:auto;">'
+      +'<table style="width:100%;border-collapse:collapse;background:var(--surface);">'
+      +'<thead><tr>'
+      +'<th style="'+thLeft+'min-width:60px;">Jour</th>';
+    shops.forEach(function(s){
+      html+='<th colspan="3" style="'+thStyle+'border-left:1px solid var(--border);color:'+shopColors[s]+';min-width:120px;">'+shopLabels[s]+'</th>';
+    });
+    html+='</tr><tr>'
+      +'<th style="'+thLeft+'background:#fff;border-bottom:1px solid var(--border);"></th>';
+    shops.forEach(function(s){
+      ['GN','PN','Sés'].forEach(function(lbl,i){
+        var bl=i===0?'border-left:1px solid var(--border);':'';
+        html+='<th style="'+thStyle+'background:#fff;'+bl+'font-size:10px;min-width:38px;">'+lbl+'</th>';
+      });
+    });
+    html+='</tr></thead><tbody>';
+
+    days.forEach(function(day,di){
+      // Vérifier si au moins une valeur existe ce jour
+      var hasAny=shops.some(function(s){return fields.some(function(f){return allOrders[day.dStr][s][f]>0;});});
+      var bg=hasAny?'':'background:#fafaf8;';
+      // Totaux du jour
+      var dayTot={gnem:0,pnem:0,sesame:0};
+      shops.forEach(function(s){fields.forEach(function(f){dayTot[f]+=allOrders[day.dStr][s][f]||0;});});
+
+      html+='<tr style="'+bg+'">'
+        +'<td style="'+tdLabel+(di===days.length-1?'border-bottom:none;':'')+'font-size:12px;">'+day.label+'<span style="display:block;font-size:10px;color:var(--hint);">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></td>';
+      shops.forEach(function(s){
+        fields.forEach(function(f,fi){
+          var v=allOrders[day.dStr][s][f]||0;
+          var bl=fi===0?'border-left:1px solid var(--border);':'';
+          var bb=di===days.length-1?'border-bottom:none;':'';
+          if(v>0) html+='<td style="'+tdStyle+bl+bb+'font-size:13px;">'+v+'</td>';
+          else    html+='<td style="'+tdZero+bl+bb+'">—</td>';
+        });
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+
+    el.innerHTML=html;
+  }catch(e){
+    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Erreur de chargement</div>';
+  }
+}
 var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-logs';
 var _LOG_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 
