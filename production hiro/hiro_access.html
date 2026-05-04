@@ -2322,55 +2322,68 @@ function laboRenderFicheRie(){
   var b='1px solid #bbb';
   var bBold='2px solid #888';
 
-  var thBase='padding:8px 6px;text-align:center;font-size:12px;font-weight:700;background:#e8e8e8;border:'+b+';';
-  var tdLabel='padding:6px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;vertical-align:middle;background:#e8e8e8;border:'+b+';';
-  var tdSub='padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;vertical-align:middle;background:#f2f2f2;border:'+b+';white-space:nowrap;';
-  var tdVal='padding:6px 4px;text-align:center;vertical-align:middle;font-size:15px;font-weight:700;font-family:DM Mono,monospace;border:'+b+';min-width:80px;';
+  var thBase='padding:8px 6px;text-align:center;font-size:12px;font-weight:700;background:#e0e0e0;border:'+b+';';
+  var tdLabelBase='font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;vertical-align:middle;background:#e0e0e0;border:'+b+';padding:6px 8px;';
+  var tdSubBase='font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;vertical-align:middle;background:#f0f0f0;border:'+b+';padding:4px 6px;white-space:nowrap;';
+  var tdValBase='text-align:center;vertical-align:middle;font-size:15px;font-weight:700;font-family:DM Mono,monospace;border:'+b+';';
 
   var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);">';
   html+='<div style="font-size:15px;font-weight:700;color:#e05a7a;">Rie</div>';
   html+='<div style="font-size:11px;color:var(--muted);">Récap desserts & divers</div></div>';
 
-  html+='<div style="overflow-x:auto;padding:12px;">';
-  html+='<table style="border-collapse:collapse;width:auto;">';
+  html+='<div style="padding:12px;">';
+  html+='<table style="border-collapse:collapse;width:100%;table-layout:fixed;">';
 
   // Header
   html+='<thead><tr>';
-  html+='<th style="'+thBase+'min-width:80px;" colspan="2"></th>';
+  html+='<th style="'+thBase+'width:90px;" colspan="2"></th>';
   shops.forEach(function(s){
-    html+='<th style="'+thBase+'color:'+shopColors[s]+';min-width:100px;border-left:'+bBold+';">'+shopLabels[s]+'</th>';
+    html+='<th style="'+thBase+'color:'+shopColors[s]+';border-left:'+bBold+';">'+shopLabels[s]+'</th>';
   });
   html+='</tr></thead><tbody>';
 
   rows.forEach(function(row){
-    if(row.subKeys){
+    if(row.subKeys && row.subKeys.length>1){
+      // Lignes avec 2 parfums : cellule shop divisée en 2 lignes internes via table imbriquée
+      html+='<tr>';
+      html+='<td style="'+tdLabelBase+'" rowspan="1">'+row.label+'</td>';
+      // Colonne sous-labels : 2 lignes empilées
+      html+='<td style="'+tdSubBase+'padding:0;"><table style="width:100%;border-collapse:collapse;height:100%;">';
       row.subKeys.forEach(function(sk,si){
-        html+='<tr>';
-        if(si===0){
-          html+='<td style="'+tdLabel+'" rowspan="'+row.subKeys.length+'">'+row.label+'</td>';
-        }
-        // sous-label variété (vide si null)
-        html+='<td style="'+tdSub+'">'+(sk.sub||'')+'</td>';
-        shops.forEach(function(s){
-          var v=getV(laboOrders[s],sk.key);
-          html+='<td style="'+tdVal+'border-left:'+bBold+';">'+(v>0?v:'')+'</td>';
-        });
-        html+='</tr>';
+        html+='<tr><td style="'+tdSubBase+'border:none;border-bottom:'+(si<row.subKeys.length-1?b:'none')+';display:table-cell;">'+sk.sub+'</td></tr>';
       });
+      html+='</table></td>';
+      // Cellules shops : chaque cellule divisée en 2 lignes internes
+      shops.forEach(function(s){
+        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:0;"><table style="width:100%;border-collapse:collapse;height:100%;">';
+        row.subKeys.forEach(function(sk,si){
+          var v=getV(laboOrders[s],sk.key);
+          html+='<tr><td style="'+tdValBase+'border:none;border-bottom:'+(si<row.subKeys.length-1?b:'none')+';padding:6px 4px;display:table-cell;">'+(v>0?v:'')+'</td></tr>';
+        });
+        html+='</table></td>';
+      });
+      html+='</tr>';
+    } else if(row.subKeys){
+      // Ligne simple (tiramisu, ananas, bao, sesame)
+      html+='<tr>';
+      html+='<td style="'+tdLabelBase+'">'+row.label+'</td>';
+      html+='<td style="'+tdSubBase+'"></td>';
+      shops.forEach(function(s){
+        var v=getV(laboOrders[s],row.subKeys[0].key);
+        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:8px 4px;">'+(v>0?v:'')+'</td>';
+      });
+      html+='</tr>';
     } else if(row.libre){
       html+='<tr>';
-      html+='<td style="'+tdLabel+'">'+row.label+'</td>';
-      html+='<td style="'+tdSub+'"></td>';
+      html+='<td style="'+tdLabelBase+'">'+row.label+'</td>';
+      html+='<td style="'+tdSubBase+'"></td>';
       shops.forEach(function(s){
         var items=getLibreItems(laboOrders[s],row.libre);
-        var inner='';
-        if(items.length>0){
-          inner=items.map(function(i){
-            return '<div style="font-size:11px;line-height:1.5;"><b>'+i.qty+'</b> '+i.name+'</div>';
-          }).join('');
-        }
-        html+='<td style="'+tdVal+'border-left:'+bBold+';padding:4px 8px;vertical-align:middle;">'+inner+'</td>';
+        var inner=items.map(function(i){
+          return '<div style="font-size:11px;line-height:1.6;"><b>'+i.qty+'</b> '+i.name+'</div>';
+        }).join('');
+        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:5px 8px;font-size:11px;font-weight:400;">'+inner+'</td>';
       });
       html+='</tr>';
     }
