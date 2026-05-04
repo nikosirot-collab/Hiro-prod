@@ -2386,6 +2386,14 @@ function laboRenderFicheRie(){
     } else if(row.libre){
       shops.forEach(function(s){
         var items=getLibreItems(laboOrders[s],row.libre);
+        // Pour la Ville : ajouter aussi les CHR fixes avec quantite > 0
+        if(s==='ville'){
+          var o=laboOrders[s]||{};
+          LABO_CHR_KEYS.forEach(function(k){
+            var val=o.status==='validated'&&o['vqty_'+k]!==undefined?parseInt(o['vqty_'+k])||0:(parseInt(o[k])||0);
+            if(val>0) items.push({name:LABO_CHR_NAMES[k],qty:val});
+          });
+        }
         var inner=items.map(function(i){ return '<b>'+i.qty+'</b> '+i.name; }).join('<br>');
         html+='<td style="'+cssValL+'border-left:'+bBold+';" colspan="2">'+inner+'</td>';
       });
