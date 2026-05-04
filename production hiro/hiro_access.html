@@ -427,6 +427,7 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <div class="labo-tab" onclick="laboShowShop('paita',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Paita</div>
         <div class="labo-tab" onclick="laboShowShop('ville',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Ville</div>
         <div class="labo-tab" onclick="laboShowShop('asia',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Asia</div>
+        <div class="labo-tab" onclick="laboShowShop('rie',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Rie</div>
       </div>
       <div id="labo-content"></div>
     </div>
@@ -2291,6 +2292,119 @@ async function laboValidate(shop){
   if(btn){btn.disabled=false;btn.textContent='✓ Valider la commande';}
 }
 
+function laboRenderFicheRie(){
+  var shops=['dsm','ville','mgt','paita'];
+  var shopLabels={dsm:'DSM',ville:'VILLE',mgt:'MGT',paita:'PAITA'};
+  var shopColors={dsm:'var(--dsm)',ville:'#7a3db8',mgt:'var(--mgt)',paita:'var(--paita)'};
+
+  // Récupère une valeur depuis une commande (validée ou non)
+  function getV(order,key){
+    if(!order) return 0;
+    if(order.status==='validated'&&order['vqty_'+key]!==undefined) return parseInt(order['vqty_'+key])||0;
+    return parseInt(order[key])||0;
+  }
+  // Récupère les items libres d'une section (tarte ou chr)
+  function getLibreItems(order,section){
+    if(!order) return [];
+    var str=order.vlibre||order.libre||'';
+    try{ var j=JSON.parse(str); return (j[section]||[]).filter(function(i){return i.name&&i.qty>0;}); }catch(e){ return []; }
+  }
+
+  // Définition des lignes
+  var rows=[
+    {label:'POE',subKeys:[{key:'poebanane',sub:'Banane'},{key:'poecitrouille',sub:'Citrouille'}]},
+    {label:'CHEESE',subKeys:[{key:'cheesemangue',sub:'Mangue'},{key:'cheeseframboise',sub:'Framboise'}]},
+    {label:'TIRAMISU',subKeys:[{key:'tiramisu',sub:null}]},
+    {label:'TARTE',libre:'tarte'},
+    {label:'ANANAS',subKeys:[{key:'ananas',sub:null}]},
+    {label:'BAO',subKeys:[{key:'banhbao',sub:null}]},
+    {label:'SESAME',subKeys:[{key:'sesame',sub:null}]},
+    {label:'AUTRE',libre:'chr'}
+  ];
+
+  var thStyle='padding:6px 8px;text-align:center;font-size:11px;font-weight:700;background:var(--bg);border-bottom:2px solid var(--border);';
+  var thLStyle='padding:6px 10px;text-align:left;font-size:11px;font-weight:700;background:var(--bg);border-bottom:2px solid var(--border);';
+
+  // Header
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">';
+  html+='<div style="font-size:16px;font-weight:700;color:#e05a7a">Rie — Récap desserts & divers</div>';
+  html+='<div style="font-size:11px;color:var(--muted);">Lecture depuis les fiches commandes</div></div>';
+
+  html+='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">';
+  // En-tête colonnes : colonne article + sous-produit + 4 shops
+  html+='<thead><tr>';
+  html+='<th style="'+thLStyle+'min-width:80px;">Article</th>';
+  html+='<th style="'+thLStyle+'min-width:70px;color:var(--muted);">Variété</th>';
+  shops.forEach(function(s){
+    html+='<th style="'+thStyle+'color:'+shopColors[s]+';min-width:56px;">'+shopLabels[s]+'</th>';
+  });
+  html+='<th style="'+thStyle+'color:var(--text);min-width:52px;border-left:2px solid var(--border);">Total</th>';
+  html+='</tr></thead><tbody>';
+
+  var tdS='padding:5px 8px;text-align:center;font-size:13px;font-weight:700;font-family:DM Mono,monospace;border-bottom:1px solid var(--border);';
+  var tdL='padding:5px 10px;font-size:12px;font-weight:600;border-bottom:1px solid var(--border);';
+  var tdSub='padding:5px 10px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);';
+
+  rows.forEach(function(row){
+    if(row.subKeys){
+      row.subKeys.forEach(function(sk,si){
+        var total=0;
+        var cells='';
+        shops.forEach(function(s){
+          var v=getV(laboOrders[s],sk.key);
+          total+=v;
+          var zero=v===0;
+          cells+='<td style="'+tdS+'color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':v)+'</td>';
+        });
+        var labelCell=si===0
+          ?'<td style="'+tdL+'vertical-align:middle;" rowspan="'+row.subKeys.length+'">'+row.label+'</td>'
+          :'';
+        var subCell='<td style="'+tdSub+'">'+(sk.sub||'')+'</td>';
+        var totalZero=total===0;
+        html+='<tr>'+labelCell+subCell+cells+'<td style="'+tdS+'border-left:2px solid var(--border);color:'+(totalZero?'var(--hint)':'#0d7a52')+';font-weight:700;">'+(totalZero?'—':total)+'</td></tr>';
+      });
+    } else if(row.libre){
+      // Collecter tous les items libres de cette section par shop
+      var allNames={};
+      shops.forEach(function(s){
+        getLibreItems(laboOrders[s],row.libre).forEach(function(i){
+          if(!allNames[i.name]) allNames[i.name]=[];
+          allNames[i.name][s]=i.qty;
+        });
+      });
+      var names=Object.keys(allNames);
+      if(names.length===0){
+        // Ligne vide
+        var cells='';
+        shops.forEach(function(){cells+='<td style="'+tdS+'color:var(--hint);">—</td>';});
+        html+='<tr><td style="'+tdL+'">'+row.label+'</td><td style="'+tdSub+'"></td>'+cells+'<td style="'+tdS+'border-left:2px solid var(--border);color:var(--hint);">—</td></tr>';
+      } else {
+        names.forEach(function(name,ni){
+          var total=0;
+          var cells='';
+          shops.forEach(function(s){
+            var v=(allNames[name][s])||0;
+            total+=v;
+            var zero=v===0;
+            cells+='<td style="'+tdS+'color:'+(zero?'var(--hint)':'var(--text)')+';">'+(zero?'—':v)+'</td>';
+          });
+          var labelCell=ni===0
+            ?'<td style="'+tdL+'vertical-align:middle;" rowspan="'+names.length+'">'+row.label+'</td>'
+            :'';
+          var totalZero=total===0;
+          html+='<tr>'+labelCell+'<td style="'+tdSub+'font-size:10px;">'+name+'</td>'+cells+'<td style="'+tdS+'border-left:2px solid var(--border);color:'+(totalZero?'var(--hint)':'#0d7a52')+';font-weight:700;">'+(totalZero?'—':total)+'</td></tr>';
+        });
+      }
+    }
+  });
+
+  html+='</tbody></table></div>';
+  html+='<div style="padding:8px 14px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);">Données lues en temps réel depuis les fiches commandes des magasins</div>';
+  html+='</div>';
+  return html;
+}
+
 function laboRenderFiche(shop,order){
   ensureValidCSS();
   var color=LABO_COLORS[shop];
@@ -2769,8 +2883,9 @@ function _laboRenderCore(el){
     }
 
     el.innerHTML=cards;
+  }else if(laboCurrentShop==='rie'){
+    el.innerHTML=laboRenderFicheRie();
   }else{
-    el.innerHTML=laboRenderFiche(laboCurrentShop,laboOrders[laboCurrentShop]);
   }
 } // fin _laboRenderCore
 
