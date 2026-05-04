@@ -2336,7 +2336,13 @@ function laboRenderFicheRie(){
   html+='<div style="font-size:11px;color:var(--muted);">Récap desserts & divers</div></div>';
 
   html+='<div style="padding:12px;">';
-  html+='<table style="border-collapse:collapse;width:100%;">';
+  html+='<table style="border-collapse:collapse;width:100%;table-layout:fixed;">';
+  html+='<colgroup>';
+  html+='<col style="width:90px">';
+  // 4 shops × 2 cols = 8 cols qui se partagent le reste
+  var pct=Math.floor(100/8)+'%';
+  shops.forEach(function(){ html+='<col style="width:'+pct+'"><col style="width:'+pct+'">'; });
+  html+='</colgroup>';
 
   // ── Ligne header ──
   // Pour les lignes à 2 parfums : chaque shop = 2 sous-colonnes
