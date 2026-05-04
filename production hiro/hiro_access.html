@@ -2355,25 +2355,12 @@ function laboRenderFicheRie(){
   // Détecter les rows multi
   var isMulti={}; // par row index
   rows.forEach(function(row,ri){ isMulti[ri]=row.subKeys&&row.subKeys.length>1; });
-  // Tous les rows multi ont le même nombre de sous-colonnes par shop (2)
-  // On fait un header à 2 niveaux
-
-  // Niveau 1
+  // Header 1 niveau uniquement
   html+='<thead>';
   html+='<tr>';
-  html+='<th style="'+cssTh+'" rowspan="2"></th>'; // colonne article
+  html+='<th style="'+cssTh+'"></th>';
   shops.forEach(function(s){
-    // colspan 2 car on va toujours avoir 2 sous-cols (on utilisera colspan sur les lignes simples)
-    html+='<th style="'+cssTh+'color:'+shopColors[s]+';border-left:'+bBold+';border-bottom:none;" colspan="2">'+shopLabels[s]+'</th>';
-  });
-  html+='</tr>';
-  // Niveau 2 : sous-labels (on prend les subs du premier row multi)
-  var firstMulti=rows.find(function(r){return r.subKeys&&r.subKeys.length>1;});
-  html+='<tr>';
-  shops.forEach(function(s){
-    firstMulti.subKeys.forEach(function(sk,si){
-      html+='<th style="'+cssThSub+(si===0?'border-left:'+bBold+';':'')+'">'+sk.sub+'</th>';
-    });
+    html+='<th style="'+cssTh+'color:'+shopColors[s]+';border-left:'+bBold+';" colspan="2">'+shopLabels[s]+'</th>';
   });
   html+='</tr>';
   html+='</thead><tbody>';
@@ -2383,15 +2370,15 @@ function laboRenderFicheRie(){
     html+='<td style="'+cssLabel+'">'+row.label+'</td>';
 
     if(row.subKeys&&row.subKeys.length>1){
-      // 2 sous-colonnes par shop
+      // 2 sous-colonnes par shop, nom du parfum en petit dans la cellule
       shops.forEach(function(s){
         row.subKeys.forEach(function(sk,si){
           var v=getV(laboOrders[s],sk.key);
-          html+='<td style="'+cssVal+(si===0?'border-left:'+bBold+';':'')+'">'+(v>0?v:'')+'</td>';
+          html+='<td style="'+cssVal+(si===0?'border-left:'+bBold+';':'')+';padding:4px;">'            +'<div style="font-size:9px;font-weight:600;color:#999;text-transform:uppercase;margin-bottom:2px;">'+sk.sub+'</div>'            +'<div style="font-size:15px;font-weight:700;">'+(v>0?v:'')+'</div>'            +'</td>';
         });
       });
     } else if(row.subKeys){
-      // 1 seule valeur → colspan 2
+      // 1 seule valeur -> colspan 2
       shops.forEach(function(s){
         var v=getV(laboOrders[s],row.subKeys[0].key);
         html+='<td style="'+cssVal+'border-left:'+bBold+';" colspan="2">'+(v>0?v:'')+'</td>';
