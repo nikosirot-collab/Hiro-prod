@@ -2883,6 +2883,7 @@ function _laboRenderCore(el){
   }else if(laboCurrentShop==='rie'){
     el.innerHTML=laboRenderFicheRie();
   }else{
+    el.innerHTML=laboRenderFiche(laboCurrentShop,laboOrders[laboCurrentShop]);
   }
 } // fin _laboRenderCore
 
