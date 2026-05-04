@@ -2793,7 +2793,7 @@ async function laboFetchFish(){
       var cached=localStorage.getItem(cacheKey);
       if(cached){
         var c=JSON.parse(cached);
-        if(Date.now()-c.ts<300000&&Object.keys(c.data).length>0){
+        if(Date.now()-c.ts<30000&&Object.keys(c.data).length>0){
           Object.assign(laboFishData,c.data);
           // Recharger en arrière-plan quand même
           fetch(_API+'/week_'+monStr+'?key='+_KEY).then(function(res){
