@@ -2308,24 +2308,24 @@ function laboRenderFicheRie(){
     try{ var j=JSON.parse(str); return (j[section]||[]).filter(function(i){return i.name&&i.qty>0;}); }catch(e){ return []; }
   }
 
-  // Lignes : label + liste de {key, sub} ou section libre
   var rows=[
-    {label:'POE',      subKeys:[{key:'poebanane',sub:'Banane'},{key:'poecitrouille',sub:'Citrouille'}]},
-    {label:'CHEESE',   subKeys:[{key:'cheesemangue',sub:'Mangue'},{key:'cheeseframboise',sub:'Framboise'}]},
-    {label:'TIRAMISU', subKeys:[{key:'tiramisu',sub:''}]},
+    {label:'POE',      subKeys:[{key:'poebanane',sub:'BANANE'},{key:'poecitrouille',sub:'CITROUILLE'}]},
+    {label:'CHEESE',   subKeys:[{key:'cheesemangue',sub:'MANGUE'},{key:'cheeseframboise',sub:'FRAMBOISE'}]},
+    {label:'TIRAMISU', subKeys:[{key:'tiramisu',sub:null}]},
     {label:'TARTE',    libre:'tarte'},
-    {label:'ANANAS',   subKeys:[{key:'ananas',sub:''}]},
-    {label:'BAO',      subKeys:[{key:'banhbao',sub:''}]},
-    {label:'SESAME',   subKeys:[{key:'sesame',sub:''}]},
+    {label:'ANANAS',   subKeys:[{key:'ananas',sub:null}]},
+    {label:'BAO',      subKeys:[{key:'banhbao',sub:null}]},
+    {label:'SESAME',   subKeys:[{key:'sesame',sub:null}]},
     {label:'AUTRE',    libre:'chr'}
   ];
 
-  // Styles cellules
-  var borderColor='#999';
-  var cellStyle='border:1px solid '+borderColor+';text-align:center;padding:0;font-family:DM Mono,monospace;';
-  var cellInner='display:flex;align-items:center;justify-content:center;min-height:38px;font-size:15px;font-weight:700;';
-  var subCellInner='display:flex;align-items:center;justify-content:center;min-height:32px;font-size:13px;font-weight:700;';
-  var labelStyle='border:1px solid '+borderColor+';padding:6px 10px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;vertical-align:middle;background:#f0f0f0;';
+  var b='1px solid #bbb';
+  var bBold='2px solid #888';
+
+  var thBase='padding:8px 6px;text-align:center;font-size:12px;font-weight:700;background:#e8e8e8;border:'+b+';';
+  var tdLabel='padding:6px 10px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;vertical-align:middle;background:#e8e8e8;border:'+b+';';
+  var tdSub='padding:5px 8px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;vertical-align:middle;background:#f2f2f2;border:'+b+';white-space:nowrap;';
+  var tdVal='padding:6px 4px;text-align:center;vertical-align:middle;font-size:15px;font-weight:700;font-family:DM Mono,monospace;border:'+b+';min-width:80px;';
 
   var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);">';
@@ -2333,75 +2333,50 @@ function laboRenderFicheRie(){
   html+='<div style="font-size:11px;color:var(--muted);">Récap desserts & divers</div></div>';
 
   html+='<div style="overflow-x:auto;padding:12px;">';
-  html+='<table style="border-collapse:collapse;width:100%;table-layout:fixed;">';
+  html+='<table style="border-collapse:collapse;width:auto;">';
 
-  // Colonne widths
-  html+='<colgroup>';
-  html+='<col style="width:90px">';   // label article
-  html+='<col style="width:70px">';   // sous-label (variété)
-  shops.forEach(function(){ html+='<col style="width:80px"><col style="width:80px">'; }); // 2 cols par shop (col1 + col2 vide pour écriture)
-  html+='</colgroup>';
-
-  // Header shops — chaque shop prend 2 colonnes
-  html+='<thead>';
-  html+='<tr>';
-  html+='<th style="'+labelStyle+'border-right:2px solid '+borderColor+'" colspan="2"></th>';
+  // Header
+  html+='<thead><tr>';
+  html+='<th style="'+thBase+'min-width:80px;" colspan="2"></th>';
   shops.forEach(function(s){
-    html+='<th style="'+labelStyle+'color:'+shopColors[s]+';border-left:2px solid '+borderColor+'" colspan="2">'+shopLabels[s]+'</th>';
+    html+='<th style="'+thBase+'color:'+shopColors[s]+';min-width:100px;border-left:'+bBold+';">'+shopLabels[s]+'</th>';
   });
-  html+='</tr></thead>';
-
-  html+='<tbody>';
+  html+='</tr></thead><tbody>';
 
   rows.forEach(function(row){
-    // Construire les sous-lignes
-    var subLines=[];
     if(row.subKeys){
-      row.subKeys.forEach(function(sk){ subLines.push({sub:sk.sub,key:sk.key,libre:null}); });
-    } else if(row.libre){
-      subLines.push({sub:'',key:null,libre:{section:row.libre},libreByShop:true});
-    }
-
-    subLines.forEach(function(sl,si){
-      html+='<tr>';
-      // Cellule label (rowspan sur toutes les sous-lignes)
-      if(si===0){
-        html+='<td style="'+labelStyle+'vertical-align:middle;background:#e8e8e8;" rowspan="'+subLines.length+'">'+row.label+'</td>';
-      }
-      // Cellule sous-label (variété)
-      var subTxt=sl.sub||'';
-      html+='<td style="'+labelStyle+'font-size:10px;font-weight:600;background:#f5f5f5;border-left:2px solid '+borderColor+';">'+subTxt+'</td>';
-      // Cellules par shop (2 colonnes : valeur + colonne libre)
-      shops.forEach(function(s){
-        var v=0;
-        if(sl.libreByShop){
-          // Afficher les items empilés verticalement dans la cellule
-          var items=getLibreItems(laboOrders[s],sl.libre.section);
-          if(items.length===0){
-            html+='<td style="'+cellStyle+'border-left:2px solid '+borderColor+'"><div style="'+cellInner+'color:var(--hint);"></div></td>';
-          } else {
-            var inner=items.map(function(i){
-              return '<div style="font-size:11px;font-weight:700;line-height:1.3;text-align:center;">'+i.qty+' <span style="font-weight:500;font-size:10px;">'+i.name+'</span></div>';
-            }).join('');
-            html+='<td style="'+cellStyle+'border-left:2px solid '+borderColor+';padding:4px 6px;" colspan="2"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:38px;gap:2px;">'+inner+'</div></td>';
-            return; // skip la 2e colonne (déjà colspan=2)
-          }
-          html+='<td style="'+cellStyle+'border-left:1px dashed #ccc;"><div style="'+subCellInner+'"></div></td>';
-        } else if(sl.key){
-          v=getV(laboOrders[s],sl.key);
+      row.subKeys.forEach(function(sk,si){
+        html+='<tr>';
+        if(si===0){
+          html+='<td style="'+tdLabel+'" rowspan="'+row.subKeys.length+'">'+row.label+'</td>';
         }
-        var zero=v===0;
-        var valDisplay=zero?'':String(v);
-        html+='<td style="'+cellStyle+'border-left:2px solid '+borderColor+'"><div style="'+cellInner+'color:'+(zero?'var(--hint)':'var(--text)')+';">'+valDisplay+'</div></td>';
-        html+='<td style="'+cellStyle+'border-left:1px dashed #ccc;"><div style="'+subCellInner+'"></div></td>';
+        // sous-label variété (vide si null)
+        html+='<td style="'+tdSub+'">'+(sk.sub||'')+'</td>';
+        shops.forEach(function(s){
+          var v=getV(laboOrders[s],sk.key);
+          html+='<td style="'+tdVal+'border-left:'+bBold+';">'+(v>0?v:'')+'</td>';
+        });
+        html+='</tr>';
+      });
+    } else if(row.libre){
+      html+='<tr>';
+      html+='<td style="'+tdLabel+'">'+row.label+'</td>';
+      html+='<td style="'+tdSub+'"></td>';
+      shops.forEach(function(s){
+        var items=getLibreItems(laboOrders[s],row.libre);
+        var inner='';
+        if(items.length>0){
+          inner=items.map(function(i){
+            return '<div style="font-size:11px;line-height:1.5;"><b>'+i.qty+'</b> '+i.name+'</div>';
+          }).join('');
+        }
+        html+='<td style="'+tdVal+'border-left:'+bBold+';padding:4px 8px;vertical-align:middle;">'+inner+'</td>';
       });
       html+='</tr>';
-    });
+    }
   });
 
-  html+='</tbody></table></div>';
-  html+='<div style="padding:6px 14px 10px;font-size:11px;color:var(--muted);">Valeurs lues depuis les fiches commandes · colonne droite disponible pour annotations</div>';
-  html+='</div>';
+  html+='</tbody></table></div></div>';
   return html;
 }
 
