@@ -2359,16 +2359,7 @@ function laboRenderFicheRie(){
     if(row.subKeys){
       row.subKeys.forEach(function(sk){ subLines.push({sub:sk.sub,key:sk.key,libre:null}); });
     } else if(row.libre){
-      // Collecter tous les noms distincts à travers les shops
-      var allNames={};
-      shops.forEach(function(s){
-        getLibreItems(laboOrders[s],row.libre).forEach(function(i){
-          allNames[i.name]=true;
-        });
-      });
-      var names=Object.keys(allNames);
-      if(names.length===0) names=[''];
-      names.forEach(function(n){ subLines.push({sub:n,key:null,libre:{section:row.libre,name:n}}); });
+      subLines.push({sub:'',key:null,libre:{section:row.libre},libreByShop:true});
     }
 
     subLines.forEach(function(sl,si){
@@ -2383,12 +2374,21 @@ function laboRenderFicheRie(){
       // Cellules par shop (2 colonnes : valeur + colonne libre)
       shops.forEach(function(s){
         var v=0;
-        if(sl.key){
-          v=getV(laboOrders[s],sl.key);
-        } else if(sl.libre&&sl.libre.name){
+        if(sl.libreByShop){
+          // Afficher les items empilés verticalement dans la cellule
           var items=getLibreItems(laboOrders[s],sl.libre.section);
-          var found=items.filter(function(i){return i.name===sl.libre.name;});
-          v=found.length>0?found[0].qty:0;
+          if(items.length===0){
+            html+='<td style="'+cellStyle+'border-left:2px solid '+borderColor+'"><div style="'+cellInner+'color:var(--hint);"></div></td>';
+          } else {
+            var inner=items.map(function(i){
+              return '<div style="font-size:11px;font-weight:700;line-height:1.3;text-align:center;">'+i.qty+' <span style="font-weight:500;font-size:10px;">'+i.name+'</span></div>';
+            }).join('');
+            html+='<td style="'+cellStyle+'border-left:2px solid '+borderColor+';padding:4px 6px;" colspan="2"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:38px;gap:2px;">'+inner+'</div></td>';
+            return; // skip la 2e colonne (déjà colspan=2)
+          }
+          html+='<td style="'+cellStyle+'border-left:1px dashed #ccc;"><div style="'+subCellInner+'"></div></td>';
+        } else if(sl.key){
+          v=getV(laboOrders[s],sl.key);
         }
         var zero=v===0;
         var valDisplay=zero?'':String(v);
