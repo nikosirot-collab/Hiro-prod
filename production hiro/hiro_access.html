@@ -2311,21 +2311,24 @@ function laboRenderFicheRie(){
   var rows=[
     {label:'POE',      subKeys:[{key:'poebanane',sub:'BANANE'},{key:'poecitrouille',sub:'CITROUILLE'}]},
     {label:'CHEESE',   subKeys:[{key:'cheesemangue',sub:'MANGUE'},{key:'cheeseframboise',sub:'FRAMBOISE'}]},
-    {label:'TIRAMISU', subKeys:[{key:'tiramisu',sub:null}]},
+    {label:'TIRAMISU', subKeys:[{key:'tiramisu',sub:''}]},
     {label:'TARTE',    libre:'tarte'},
-    {label:'ANANAS',   subKeys:[{key:'ananas',sub:null}]},
-    {label:'BAO',      subKeys:[{key:'banhbao',sub:null}]},
-    {label:'SESAME',   subKeys:[{key:'sesame',sub:null}]},
+    {label:'ANANAS',   subKeys:[{key:'ananas',sub:''}]},
+    {label:'BAO',      subKeys:[{key:'banhbao',sub:''}]},
+    {label:'SESAME',   subKeys:[{key:'sesame',sub:''}]},
     {label:'AUTRE',    libre:'chr'}
   ];
 
   var b='1px solid #bbb';
   var bBold='2px solid #888';
+  var bgH='background:#e0e0e0;';
+  var bgS='background:#f0f0f0;';
 
-  var thBase='padding:8px 6px;text-align:center;font-size:12px;font-weight:700;background:#e0e0e0;border:'+b+';';
-  var tdLabelBase='font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;text-align:center;vertical-align:middle;background:#e0e0e0;border:'+b+';padding:6px 8px;';
-  var tdSubBase='font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;text-align:center;vertical-align:middle;background:#f0f0f0;border:'+b+';padding:4px 6px;white-space:nowrap;';
-  var tdValBase='text-align:center;vertical-align:middle;font-size:15px;font-weight:700;font-family:DM Mono,monospace;border:'+b+';';
+  var cssTh  ='border:'+b+';padding:8px 6px;text-align:center;font-size:12px;font-weight:700;'+bgH;
+  var cssThSub='border:'+b+';padding:5px 4px;text-align:center;font-size:9px;font-weight:700;text-transform:uppercase;'+bgS;
+  var cssLabel='border:'+b+';padding:6px 10px;text-align:center;vertical-align:middle;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;'+bgH;
+  var cssVal  ='border:'+b+';padding:8px 4px;text-align:center;vertical-align:middle;font-size:15px;font-weight:700;font-family:DM Mono,monospace;';
+  var cssValL ='border:'+b+';padding:6px 10px;text-align:center;vertical-align:middle;font-size:11px;line-height:1.7;';
 
   var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">';
   html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);">';
@@ -2333,60 +2336,69 @@ function laboRenderFicheRie(){
   html+='<div style="font-size:11px;color:var(--muted);">Récap desserts & divers</div></div>';
 
   html+='<div style="padding:12px;">';
-  html+='<table style="border-collapse:collapse;width:100%;table-layout:fixed;">';
+  html+='<table style="border-collapse:collapse;width:100%;">';
 
-  // Header
-  html+='<thead><tr>';
-  html+='<th style="'+thBase+'width:90px;" colspan="2"></th>';
+  // ── Ligne header ──
+  // Pour les lignes à 2 parfums : chaque shop = 2 sous-colonnes
+  // Pour les autres : chaque shop = 1 colonne
+  // On fait 2 niveaux de header
+
+  // Niveau 1 : label vide + shops (colspan 2 pour les multi, 1 pour les autres)
+  // Niveau 2 : sous-labels parfums
+
+  // Détecter les rows multi
+  var isMulti={}; // par row index
+  rows.forEach(function(row,ri){ isMulti[ri]=row.subKeys&&row.subKeys.length>1; });
+  // Tous les rows multi ont le même nombre de sous-colonnes par shop (2)
+  // On fait un header à 2 niveaux
+
+  // Niveau 1
+  html+='<thead>';
+  html+='<tr>';
+  html+='<th style="'+cssTh+'" rowspan="2"></th>'; // colonne article
   shops.forEach(function(s){
-    html+='<th style="'+thBase+'color:'+shopColors[s]+';border-left:'+bBold+';">'+shopLabels[s]+'</th>';
+    // colspan 2 car on va toujours avoir 2 sous-cols (on utilisera colspan sur les lignes simples)
+    html+='<th style="'+cssTh+'color:'+shopColors[s]+';border-left:'+bBold+';border-bottom:none;" colspan="2">'+shopLabels[s]+'</th>';
   });
-  html+='</tr></thead><tbody>';
+  html+='</tr>';
+  // Niveau 2 : sous-labels (on prend les subs du premier row multi)
+  var firstMulti=rows.find(function(r){return r.subKeys&&r.subKeys.length>1;});
+  html+='<tr>';
+  shops.forEach(function(s){
+    firstMulti.subKeys.forEach(function(sk,si){
+      html+='<th style="'+cssThSub+(si===0?'border-left:'+bBold+';':'')+'">'+sk.sub+'</th>';
+    });
+  });
+  html+='</tr>';
+  html+='</thead><tbody>';
 
   rows.forEach(function(row){
-    if(row.subKeys && row.subKeys.length>1){
-      // Lignes avec 2 parfums : cellule shop divisée en 2 lignes internes via table imbriquée
-      html+='<tr>';
-      html+='<td style="'+tdLabelBase+'" rowspan="1">'+row.label+'</td>';
-      // Colonne sous-labels : 2 lignes empilées
-      html+='<td style="'+tdSubBase+'padding:0;"><table style="width:100%;border-collapse:collapse;height:100%;">';
-      row.subKeys.forEach(function(sk,si){
-        html+='<tr><td style="'+tdSubBase+'border:none;border-bottom:'+(si<row.subKeys.length-1?b:'none')+';display:table-cell;">'+sk.sub+'</td></tr>';
-      });
-      html+='</table></td>';
-      // Cellules shops : chaque cellule divisée en 2 lignes internes
+    html+='<tr>';
+    html+='<td style="'+cssLabel+'">'+row.label+'</td>';
+
+    if(row.subKeys&&row.subKeys.length>1){
+      // 2 sous-colonnes par shop
       shops.forEach(function(s){
-        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:0;"><table style="width:100%;border-collapse:collapse;height:100%;">';
         row.subKeys.forEach(function(sk,si){
           var v=getV(laboOrders[s],sk.key);
-          html+='<tr><td style="'+tdValBase+'border:none;border-bottom:'+(si<row.subKeys.length-1?b:'none')+';padding:6px 4px;display:table-cell;">'+(v>0?v:'')+'</td></tr>';
+          html+='<td style="'+cssVal+(si===0?'border-left:'+bBold+';':'')+'">'+(v>0?v:'')+'</td>';
         });
-        html+='</table></td>';
       });
-      html+='</tr>';
     } else if(row.subKeys){
-      // Ligne simple (tiramisu, ananas, bao, sesame)
-      html+='<tr>';
-      html+='<td style="'+tdLabelBase+'">'+row.label+'</td>';
-      html+='<td style="'+tdSubBase+'"></td>';
+      // 1 seule valeur → colspan 2
       shops.forEach(function(s){
         var v=getV(laboOrders[s],row.subKeys[0].key);
-        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:8px 4px;">'+(v>0?v:'')+'</td>';
+        html+='<td style="'+cssVal+'border-left:'+bBold+';" colspan="2">'+(v>0?v:'')+'</td>';
       });
-      html+='</tr>';
     } else if(row.libre){
-      html+='<tr>';
-      html+='<td style="'+tdLabelBase+'">'+row.label+'</td>';
-      html+='<td style="'+tdSubBase+'"></td>';
       shops.forEach(function(s){
         var items=getLibreItems(laboOrders[s],row.libre);
-        var inner=items.map(function(i){
-          return '<div style="font-size:11px;line-height:1.6;"><b>'+i.qty+'</b> '+i.name+'</div>';
-        }).join('');
-        html+='<td style="'+tdValBase+'border-left:'+bBold+';padding:5px 8px;font-size:11px;font-weight:400;">'+inner+'</td>';
+        var inner=items.map(function(i){ return '<b>'+i.qty+'</b> '+i.name; }).join('<br>');
+        html+='<td style="'+cssValL+'border-left:'+bBold+';" colspan="2">'+inner+'</td>';
       });
-      html+='</tr>';
     }
+
+    html+='</tr>';
   });
 
   html+='</tbody></table></div></div>';
