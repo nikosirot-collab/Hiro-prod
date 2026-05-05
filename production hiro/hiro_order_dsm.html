@@ -1331,6 +1331,7 @@ function renderRizSemaine(monday){
     const rollKey=dStr+'__r__'+SHOP;
     const rollCalc=getRollsFromRiz(val,isDim);
     const rollVal=_rizData[rollKey]!==undefined?_rizData[rollKey]:rollCalc;
+    const isLocked=isRollLocked(dStr);
     const bg=isToday?'background:var(--today);':'';
     // Badge jour off
     const _isOff=_JOURS_OFF.indexOf(dStr)!==-1;
@@ -1353,7 +1354,7 @@ function renderRizSemaine(monday){
         </div>
       </td>
       <td style="padding:6px 8px;text-align:center;">
-        ${isDim?'<span style="color:var(--text-muted);font-size:12px;">—</span>':isRollLocked('${dStr}')?`
+        ${isDim?'<span style="color:var(--text-muted);font-size:12px;">—</span>':isLocked?`
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
           <span style="font-size:14px;font-weight:700;font-family:monospace;">${rollVal||rollCalc||0}</span>
           <span style="font-size:9px;color:#e74c3c;font-weight:600;">🔒 Délai dépassé</span>
@@ -1394,7 +1395,7 @@ function isRollLocked(dStr){
   // Lendemain → verrouillé après 19h30
   if(dStr===dsRiz(tomorrowNC)){
     const h=ncNow.getHours(),m=ncNow.getMinutes();
-    return h>19||(h===19&&m>=30);
+    return h>=14;
   }
   // Surlendemain et au-delà → modifiable
   return false;
