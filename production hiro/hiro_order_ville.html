@@ -1430,15 +1430,18 @@ function renderRizSemaine(monday){
         </div>
       </td>
       <td style="padding:6px 8px;text-align:center;">
-        ${isDim?'<span style="color:var(--text-muted);font-size:12px;">—</span>':`
+        ${isDim?'<span style="color:var(--text-muted);font-size:12px;">—</span>':isRollLocked('${dStr}')?`
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span style="font-size:14px;font-weight:700;font-family:monospace;">${rollVal||rollCalc||0}</span>
+          <span style="font-size:9px;color:#e74c3c;font-weight:600;">🔒 Délai dépassé</span>
+        </div>`:`
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
-          <button onclick="adjRoll('${dStr}',${rollVal},-10)" ${isRollLocked('${dStr}')?'disabled style="opacity:0.4;cursor:not-allowed;"':''} style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">−</button>
+          <button onclick="adjRoll('${dStr}',${rollVal},-10)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">−</button>
           <input type="number" min="0" max="100" step="10" value="${rollVal||''}" placeholder="${rollCalc||0}"
             style="width:60px;text-align:center;padding:4px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-weight:700;font-family:monospace;${rollVal!==rollCalc&&rollVal>0?'border-color:orange;color:orange;':''}"
             onchange="setRollSemaine('${dStr}',this.value)"
-            ${isRollLocked('${dStr}')?'disabled style="opacity:0.4;cursor:not-allowed;"':''}
             id="roll-inp-${dStr}">
-          <button onclick="adjRoll('${dStr}',${rollVal},10)" ${isRollLocked('${dStr}')?'disabled style="opacity:0.4;cursor:not-allowed;"':''} style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">+</button>
+          <button onclick="adjRoll('${dStr}',${rollVal},10)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">+</button>
         </div>`}
       </td>
       <td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-muted);">${bacs}</td>
