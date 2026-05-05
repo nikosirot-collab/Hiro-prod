@@ -1411,7 +1411,14 @@ async function setRollSemaine(dStr,val){
   const fsKey=key.replace(/__/g,'--');
   _rizData[key]=v;
   const inp=document.getElementById('roll-inp-'+dStr);
-  if(inp){inp.value=v||'';inp.style.borderColor=v>0?'orange':'';inp.style.color=v>0?'orange':'';}
+  if(inp){
+    const isDimInp=new Date(dStr+'T00:00:00').getDay()===0;
+    const rollCalcInp=getRollsFromRiz(_rizData[dStr+'__'+SHOP]||0,isDimInp);
+    const isOverride=v>0&&v!==rollCalcInp;
+    inp.value=v||'';
+    inp.style.borderColor=isOverride?'orange':'';
+    inp.style.color=isOverride?'orange':'';
+  }
   try{
     const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
       method:'PATCH',
