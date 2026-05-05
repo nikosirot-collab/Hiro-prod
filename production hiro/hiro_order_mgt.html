@@ -1376,17 +1376,13 @@ function isRollLocked(dStr){
   const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
   const todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
   const tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
-  const targetDate=new Date(dStr+'T00:00:00');
-  // Jours passés → verrouillé
-  if(targetDate<todayNC) return true;
-  // Jour actuel → toujours modifiable
-  if(dStr===dsRiz(todayNC)) return false;
-  // Lendemain → verrouillé après 19h30
-  if(dStr===dsRiz(tomorrowNC)){
-    const h=ncNow.getHours(),m=ncNow.getMinutes();
-    return h>=14;
-  }
-  // Surlendemain et au-delà → modifiable
+  const todayStr=dsRiz(todayNC);
+  const tomorrowStr=dsRiz(tomorrowNC);
+  // Jours passés et jour actuel (heure Nouméa) -> verrouillé
+  if(dStr<=todayStr) return true;
+  // Lendemain -> verrouillé après 14h heure Nouméa
+  if(dStr===tomorrowStr) return ncNow.getHours()>=14;
+  // Surlendemain et au-delà -> modifiable
   return false;
 }
 function adjRoll(dStr,current,delta){
