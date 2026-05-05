@@ -260,7 +260,7 @@ loadJoursOff();
 <tr><td class="td-product">Poulpe</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('plp',-1)">&#8722;</button><input class="qty-inp" id="q-plp" type="number" min="0" value="0" onchange="setQ('plp',this.value)"><button class="qty-btn" onclick="adj('plp',1)">+</button></div></td></tr>
 <tr><td class="td-product">Rouleaux printemps</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('rouleaux',-1)">&#8722;</button><input class="qty-inp" id="q-rouleaux" type="number" min="0" value="0" onchange="setQ('rouleaux',this.value)"><button class="qty-btn" onclick="adj('rouleaux',1)">+</button></div></td></tr>
 <tr><td class="td-product">Riz <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(indicatif)</span></td><td class="td-qty"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="q-rizprod-display" style="font-size:15px;font-weight:700;font-family:monospace;color:var(--text-muted);">—</span><span style="font-size:10px;color:var(--text-muted);">→ Riz semaine</span></div></td></tr>
-<tr><td class="td-product">Rolls</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('villerolls',-1)">&#8722;</button><input class="qty-inp" id="q-villerolls" type="number" min="0" value="0" onchange="setQ('villerolls',this.value)"><button class="qty-btn" onclick="adj('villerolls',1)">+</button></div></td></tr>
+<tr><td class="td-product">Rolls <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(indicatif)</span></td><td class="td-qty"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="q-villerolls-display" style="font-size:15px;font-weight:700;font-family:monospace;color:var(--text-muted);">—</span><span style="font-size:10px;color:var(--text-muted);">→ Riz semaine</span></div></td></tr>
 <tr><td class="td-product">Poke thon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokethon',-1)">&#8722;</button><input class="qty-inp" id="q-pokethon" type="number" min="0" value="0" onchange="setQ('pokethon',this.value)"><button class="qty-btn" onclick="adj('pokethon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poke saumon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokesaumon',-1)">&#8722;</button><input class="qty-inp" id="q-pokesaumon" type="number" min="0" value="0" onchange="setQ('pokesaumon',this.value)"><button class="qty-btn" onclick="adj('pokesaumon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Tataki</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('tataki',-1)">&#8722;</button><input class="qty-inp" id="q-tataki" type="number" min="0" value="0" onchange="setQ('tataki',this.value)"><button class="qty-btn" onclick="adj('tataki',1)">+</button></div></td></tr></tbody></table><div class="riz-note">Le riz est pré-rempli depuis Hiro Prod · modifiable</div></div></div></div></div>
@@ -409,7 +409,16 @@ async function loadRiz(){
     if(rizVal>0){
       const el=document.getElementById('q-rizprod-display');
       if(el){el.textContent=rizVal||'—';el.style.color=rizVal>0?ACCENT:'var(--text-muted)';}
-      qty['rizprod']=rizVal;updateCount();
+      qty['rizprod']=rizVal;
+      // Mettre à jour l'affichage indicatif des rolls
+      const rollDisp=document.getElementById('q-villerolls-display');
+      if(rollDisp){
+        const dStrToday=ds(new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000));
+        const rollV=(_rizData&&_rizData[dStrToday+'__r__ville'])!==undefined?_rizData[dStrToday+'__r__ville']:20;
+        rollDisp.textContent=rollV;
+        rollDisp.style.color=ACCENT;
+      }
+      updateCount();
       // Sauvegarder en cache
       try{localStorage.setItem(cacheKey,JSON.stringify({val:rizVal,ts:Date.now()}));}catch(e){}
     }
@@ -1407,7 +1416,7 @@ function renderRizSemaine(monday){
     const bacs=val>0?(val/250).toFixed(1):'—';
     const isDim=d.getDay()===0;
     const rollKey=dStr+'__r__'+SHOP;
-    const rollCalc=getRollsFromRiz(val,isDim);
+    const rollCalc=SHOP==='ville'?(isDim?0:20):getRollsFromRiz(val,isDim);
     const rollVal=_rizData[rollKey]!==undefined?_rizData[rollKey]:rollCalc;
     const isLocked=isRollLocked(dStr);
     const bg=isToday?'background:var(--today);':'';
@@ -1491,7 +1500,7 @@ async function setRollSemaine(dStr,val){
   const inp=document.getElementById('roll-inp-'+dStr);
   if(inp){
     const isDimInp=new Date(dStr+'T00:00:00').getDay()===0;
-    const rollCalcInp=getRollsFromRiz(_rizData[dStr+'__'+SHOP]||0,isDimInp);
+    const rollCalcInp=SHOP==='ville'?(isDimInp?0:20):getRollsFromRiz(_rizData[dStr+'__'+SHOP]||0,isDimInp);
     const isOverride=v>0&&v!==rollCalcInp;
     inp.value=v||'';
     inp.style.borderColor=isOverride?'orange':'';
