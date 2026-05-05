@@ -383,7 +383,7 @@ async function loadRiz(){
     if(cached){
       try{
         var c=JSON.parse(cached);
-        if(Date.now()-c.ts<600000&&c.val>0){
+        if(Date.now()-c.ts<30000&&c.val>0){
           var el=document.getElementById('q-rizprod');
           if(el&&!el.classList.contains('active')){
             el.value=c.val;el.placeholder=c.val;
