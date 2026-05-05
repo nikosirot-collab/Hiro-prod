@@ -1441,6 +1441,25 @@ function laboPRow(name,val){
     +'</div>';
 }
 
+function laboIsFishLocked(dateStr){
+  var now=new Date();
+  var ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var ncHour=ncNow.getHours();
+  var ncMin=ncNow.getMinutes();
+  var ncDay=ncNow.getDay();
+  var afterCutoff=ncHour>9||(ncHour===9&&ncMin>=30);
+  var todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+  var tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
+  var targetDate=new Date(dateStr+'T00:00:00');
+  if(targetDate<=todayNC) return true;
+  if(laboDs(targetDate)===laboDs(tomorrowNC)&&afterCutoff) return true;
+  if(targetDate.getDay()===1){
+    if(ncDay===6&&afterCutoff) return true;
+    if(ncDay===0) return true;
+  }
+  return false;
+}
+
 function laboGetFish(shop,field){
   var dStr=laboDs(laboDate);
   var key=dStr+'__f__'+shop+'__'+field;
@@ -1449,8 +1468,11 @@ function laboGetFish(shop,field){
     var di=dow===0?6:dow-1;
     return laboFishData[key]!==undefined?laboFishData[key]:getTamago(shop,di);
   }
-  // Chercher dans laboFishData d'abord, puis calculer depuis le riz
+  // Chercher dans laboFishData d'abord
   if(laboFishData[key]!==undefined) return laboFishData[key];
+  // Si jour figé et clé absente : ne pas recalculer (le Prod n'a pas encore écrit les clés)
+  if(laboIsFishLocked(dStr)) return 0;
+  // Jour libre : calculer depuis le riz
   var rizKey=dStr+'__'+shop;
   var riz=laboFishData[rizKey]||0;
   var fd=getFish(shop,riz);

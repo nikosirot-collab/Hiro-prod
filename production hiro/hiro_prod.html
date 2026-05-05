@@ -1092,7 +1092,20 @@ function subscribeWeek(){
       for(let di=0;di<7;di++){
         const d=dayOf(weekOff,di);
         const dStr=ds(d);
-        if(!isFishLocked(dStr)){
+        if(isFishLocked(dStr)){
+          // Jour figé : écrire les clés __f__ si absentes (pour que l'Access les lise)
+          ['dsm','mgt','paita','ville'].forEach(shop=>{
+            const riz=getV(dStr,shop);
+            const fd=getFish(shop,riz,isFete);
+            if(fd){
+              ['t','s','a'].forEach(f=>{
+                const fk=dStr+'__f__'+shop+'__'+f;
+                if(data[fk]===undefined) data[fk]=fd[f]||0;
+              });
+            }
+          });
+        } else {
+          // Jour libre : recalcul normal sauf override manuel
           ['dsm','mgt','paita','ville'].forEach(shop=>{
             const riz=getV(dStr,shop);
             const fd=getFish(shop,riz,isFete);
