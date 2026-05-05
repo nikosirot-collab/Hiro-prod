@@ -259,7 +259,7 @@ loadJoursOff();
 <tr><td class="td-product">Thon mariné</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('thon',-1)">&#8722;</button><input class="qty-inp" id="q-thon" type="number" min="0" value="0" onchange="setQ('thon',this.value)"><button class="qty-btn" onclick="adj('thon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poulpe</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('plp',-1)">&#8722;</button><input class="qty-inp" id="q-plp" type="number" min="0" value="0" onchange="setQ('plp',this.value)"><button class="qty-btn" onclick="adj('plp',1)">+</button></div></td></tr>
 <tr><td class="td-product">Rouleaux printemps</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('rouleaux',-1)">&#8722;</button><input class="qty-inp" id="q-rouleaux" type="number" min="0" value="0" onchange="setQ('rouleaux',this.value)"><button class="qty-btn" onclick="adj('rouleaux',1)">+</button></div></td></tr>
-<tr><td class="td-product">Riz</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('rizprod',-1)">&#8722;</button><input class="qty-inp" id="q-rizprod" type="number" min="0" value="0" placeholder="Auto" onchange="setQ('rizprod',this.value)"><button class="qty-btn" onclick="adj('rizprod',1)">+</button></div></td></tr>
+<tr><td class="td-product">Riz <span style="font-size:10px;color:var(--text-muted);font-weight:400;">(indicatif)</span></td><td class="td-qty"><div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="q-rizprod-display" style="font-size:15px;font-weight:700;font-family:monospace;color:var(--text-muted);">—</span><span style="font-size:10px;color:var(--text-muted);">→ Riz semaine</span></div></td></tr>
 <tr><td class="td-product">Rolls</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('villerolls',-1)">&#8722;</button><input class="qty-inp" id="q-villerolls" type="number" min="0" value="0" onchange="setQ('villerolls',this.value)"><button class="qty-btn" onclick="adj('villerolls',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poke thon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokethon',-1)">&#8722;</button><input class="qty-inp" id="q-pokethon" type="number" min="0" value="0" onchange="setQ('pokethon',this.value)"><button class="qty-btn" onclick="adj('pokethon',1)">+</button></div></td></tr>
 <tr><td class="td-product">Poke saumon</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pokesaumon',-1)">&#8722;</button><input class="qty-inp" id="q-pokesaumon" type="number" min="0" value="0" onchange="setQ('pokesaumon',this.value)"><button class="qty-btn" onclick="adj('pokesaumon',1)">+</button></div></td></tr>
@@ -407,8 +407,9 @@ async function loadRiz(){
     const dStr=ds(tomorrow);
     const rizVal=data[dStr+'__'+SHOP]||0;
     if(rizVal>0){
-      const el=document.getElementById('q-rizprod');
-      if(el){el.value=rizVal;el.placeholder=rizVal;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;qty['rizprod']=rizVal;updateCount();}
+      const el=document.getElementById('q-rizprod-display');
+      if(el){el.textContent=rizVal||'—';el.style.color=rizVal>0?ACCENT:'var(--text-muted)';}
+      qty['rizprod']=rizVal;updateCount();
       // Sauvegarder en cache
       try{localStorage.setItem(cacheKey,JSON.stringify({val:rizVal,ts:Date.now()}));}catch(e){}
     }
