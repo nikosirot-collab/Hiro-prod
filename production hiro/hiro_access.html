@@ -639,7 +639,7 @@ function setThonFormule(f){
   document.getElementById('btn-formule-base').style.color=f==='base'?'#fff':'var(--dsm)';
   document.getElementById('btn-formule-standard').style.background=f==='standard'?'var(--dsm)':'transparent';
   document.getElementById('btn-formule-standard').style.color=f==='standard'?'#fff':'var(--dsm)';
-  renderWeek();
+  render();
 }
 function fb(x){return x===0?'0':x%1===0?String(x):x.toFixed(1);}
 
