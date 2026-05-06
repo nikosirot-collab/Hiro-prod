@@ -1606,7 +1606,10 @@ async function laboAddArticle(shop){
   if(!qty||!name)return;
 
   var order=laboOrders[shop];
-  if(!order)return;
+  if(!order){
+    laboOrders[shop]={shop:shop,date:laboDs(laboDate),ts:Date.now()};
+    order=laboOrders[shop];
+  }
   var isValidated=order.status==='validated';
 
   // Chercher si l'article correspond à un existant
@@ -2491,7 +2494,13 @@ function laboRenderFiche(shop,order){
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
       +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
       +'<span class="valid-status-pending">En attente</span>'
-      +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Commande non recue</div></div>';
+      +'</div>'
+      +'<div style="padding:12px;text-align:center;color:var(--hint);font-size:13px;border-bottom:1px solid var(--border);">Commande non reçue</div>'
+      +'<div style="padding:12px 16px;display:flex;gap:8px;">'
+      +'<input id="addqty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
+      +'<input id="addname-'+shop+'" type="text" placeholder="Article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;" onkeydown="if(event.key===\'Enter\')laboAddArticle(\''+shop+'\')">'  
+      +'<button onclick="laboAddArticle(\''+shop+'\')" style="padding:8px 14px;border-radius:8px;border:none;background:'+color+';color:#fff;font-size:13px;font-weight:600;cursor:pointer;">+</button>'
+      +'</div></div>';
   }
 
   var isValidated=order.status==='validated' && !_laboEditing.has(shop);
