@@ -2053,9 +2053,9 @@ async function loadNemRecap(){
   if(dateEl)dateEl.textContent=wLabel;
   el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
 
-  var shops=['dsm','mgt','paita','ville'];
-  var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-  var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var shops=['dsm','mgt','paita','ville','asia'];
+  var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
+  var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8',asia:'#c8860a'};
   var fields=['gnem','pnem','sesame'];
   var fieldLabels={gnem:'Grand Nem',pnem:'Petit Nem',sesame:'Boul. Sésame'};
 
@@ -2449,6 +2449,18 @@ function laboRenderFiche(shop,order){
     html+='<div>'
       +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Salade</div>';
     LABO_SALADE.forEach(function(p){
+      var cur=asiaOrder[p.key]||0;
+      html+='<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;">'
+        +'<input type="number" min="0" value="'+cur+'" onchange="laboPatchQty(\'asia\',\''+p.key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+    // Section Tapas — Grand nem, Petit nem, Boule de sésames
+    var ASIA_TAPAS=[{key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},{key:'sesame',name:'Boul. Sésame'}];
+    html+='<div>'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Tapas</div>';
+    ASIA_TAPAS.forEach(function(p){
       var cur=asiaOrder[p.key]||0;
       html+='<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;">'
         +'<input type="number" min="0" value="'+cur+'" onchange="laboPatchQty(\'asia\',\''+p.key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
