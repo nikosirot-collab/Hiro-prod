@@ -490,6 +490,11 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
         <b>Règle :</b> 700–800 tranches = 20–25 kg · +800 tranches = 25 kg · 1000+ tranches = 30–35 kg de thon.<br>
         <b>Note Charles :</b> Ajouter 5 kg en plus quand Charles coupe beaucoup de chutes et qu'il y a des petites longes de thon.
       </div>
+      <div style="margin:10px 0 8px 0;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--text-muted);font-weight:600;">Formule kg :</span>
+        <button id="btn-formule-base" onclick="setThonFormule('base')" style="padding:4px 14px;border-radius:20px;border:2px solid var(--dsm);background:var(--dsm);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Formule de base</button>
+        <button id="btn-formule-standard" onclick="setThonFormule('standard')" style="padding:4px 14px;border-radius:20px;border:2px solid var(--dsm);background:transparent;color:var(--dsm);font-size:12px;font-weight:700;cursor:pointer;">Formule standard</button>
+      </div>
       <div class="tbl-wrap">
         <table>
           <thead>
@@ -976,9 +981,27 @@ function getTamago(shop, di) {
 }
 function thonKg(tranches) {
   if (!tranches||tranches<=0) return '—';
-  if (tranches<=800) return '20–25';
-  if (tranches<=1000) return '25';
-  return '30–35';
+  if (tranches<=800) return '20–25 kg';
+  if (tranches<=1000) return '25 kg';
+  return '30–35 kg';
+}
+function thonKgStandard(tranches) {
+  if (!tranches||tranches<=0) return '—';
+  const kg = tranches * 0.022 / 0.85;
+  const arrondi = Math.ceil(kg / 5) * 5;
+  return arrondi + ' kg';
+}
+let _thonFormule = 'base'; // 'base' ou 'standard'
+function getThonKg(tranches) {
+  return _thonFormule === 'standard' ? thonKgStandard(tranches) : thonKg(tranches);
+}
+function setThonFormule(f) {
+  _thonFormule = f;
+  document.getElementById('btn-formule-base').style.background = f==='base' ? 'var(--dsm)' : 'transparent';
+  document.getElementById('btn-formule-base').style.color = f==='base' ? '#fff' : 'var(--dsm)';
+  document.getElementById('btn-formule-standard').style.background = f==='standard' ? 'var(--dsm)' : 'transparent';
+  document.getElementById('btn-formule-standard').style.color = f==='standard' ? '#fff' : 'var(--dsm)';
+  renderWeek();
 }
 function fb(x) { return x===0?'0':x%1===0?String(x):x.toFixed(1); }
 
@@ -1908,7 +1931,7 @@ function render() {
         },0);
         const hasLun = ['dsm','mgt','paita','ville'].some(s=>vLun[s]>0);
         const totalSam = tDim + tLun;
-        const kgSam = totalSam > 0 ? thonKg(totalSam) : '—';
+        const kgSam = totalSam > 0 ? getThonKg(totalSam) : '—';
         // Met à jour la ligne samedi
         const el = document.getElementById('thon-sat-detail');
         if(el) el.innerHTML = `Dim : <span class="val-thon">${tDim||'—'}</span> tranches
@@ -1934,7 +1957,7 @@ function render() {
       const vNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
       const fdNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s],isFete);});
       const tNext = (fdNext.dsm?.t||0)+(fdNext.mgt?.t||0)+(fdNext.paita?.t||0)+(fdNext.ville?.t||0);
-      const kgNext = thonKg(tNext);
+      const kgNext = getThonKg(tNext);
       thonRow = `<tr>
         <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
         <td class="${dc2} val-thon">${fdNext.dsm?.t||'—'}</td>
@@ -2004,7 +2027,7 @@ function render() {
     <td class="td-total val-thon">${totFS.paita.t}</td>
     <td class="td-total val-thon">${totFS.ville.t}</td>
     <td class="td-blue-total">${totThonTranches}</td>
-    <td class="td-blue-total">${thonKg(Math.round(totThonTranches/7))}/jour</td>
+    <td class="td-blue-total">${getThonKg(Math.round(totThonTranches/7))}/jour</td>
   </tr>`;
 
   document.getElementById('foot-total').innerHTML=`<tr>

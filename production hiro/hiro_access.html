@@ -369,6 +369,11 @@ if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-scree
       <b>Règle :</b> 700–800 tranches = 20–25 kg · +800 = 25 kg · 1000+ = 30–35 kg<br>
       <b>Note Charles :</b> +5 kg quand beaucoup de chutes et petites longes de thon.
     </div>
+    <div style="margin:10px 0 8px 0;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:var(--text-muted);font-weight:600;">Formule kg :</span>
+      <button id="btn-formule-base" onclick="setThonFormule('base')" style="padding:4px 14px;border-radius:20px;border:2px solid var(--dsm);background:var(--dsm);color:#fff;font-size:12px;font-weight:700;cursor:pointer;">Formule de base</button>
+      <button id="btn-formule-standard" onclick="setThonFormule('standard')" style="padding:4px 14px;border-radius:20px;border:2px solid var(--dsm);background:transparent;color:var(--dsm);font-size:12px;font-weight:700;cursor:pointer;">Formule standard</button>
+    </div>
     <div class="tbl-wrap"><table>
       <thead><tr>
         <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
@@ -617,6 +622,24 @@ function thonKg(t){
   if(t<=800)return'20–25 kg';
   if(t<=1000)return'25 kg';
   return'30–35 kg';
+}
+function thonKgStandard(t){
+  if(!t||t<=0)return'—';
+  const kg=t*0.022/0.85;
+  const arrondi=Math.ceil(kg/5)*5;
+  return arrondi+' kg';
+}
+let _thonFormule='base';
+function getThonKg(t){
+  return _thonFormule==='standard'?thonKgStandard(t):thonKg(t);
+}
+function setThonFormule(f){
+  _thonFormule=f;
+  document.getElementById('btn-formule-base').style.background=f==='base'?'var(--dsm)':'transparent';
+  document.getElementById('btn-formule-base').style.color=f==='base'?'#fff':'var(--dsm)';
+  document.getElementById('btn-formule-standard').style.background=f==='standard'?'var(--dsm)':'transparent';
+  document.getElementById('btn-formule-standard').style.color=f==='standard'?'#fff':'var(--dsm)';
+  renderWeek();
 }
 function fb(x){return x===0?'0':x%1===0?String(x):x.toFixed(1);}
 
@@ -1006,7 +1029,7 @@ function render(){
         const elTot=document.getElementById('thon-sat-total');
         if(elTot) elTot.textContent=totSam||'—';
         const elKg=document.getElementById('thon-sat-kg');
-        if(elKg) elKg.textContent=thonKg(totSam);
+        if(elKg) elKg.textContent=getThonKg(totSam);
       });
     } else {
       const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
@@ -1020,7 +1043,7 @@ function render(){
         <td class="${dc2} vt2">${fdNext.paita?.t||'—'}</td>
         <td class="${dc2} vt2">${fdNext.ville?.t||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
-        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${thonKg(tNext)}</td>
+        <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${getThonKg(tNext)}</td>
       </tr>`;
     }
     thonTbl+=thonTblRow;
