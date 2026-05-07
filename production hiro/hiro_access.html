@@ -2580,7 +2580,7 @@ function laboRenderFiche(shop,order){
     {key:'rizprod',name:'Riz',val:_v('rizprod')||laboGetRiz(shop)}
   ];
   if(shop==='ville'){
-    rightItems.push({key:'villerolls',name:'Rolls',val:_v('villerolls')});
+    var _dStrVille=laboDs(laboDate); rightItems.push({key:'villerolls',name:'Rolls',val:_v('villerolls')||getR(_dStrVille,'ville')});
   } else {
     rightItems.push({key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))});
   }
