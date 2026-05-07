@@ -2753,7 +2753,7 @@ function laboPrint(){
     // Poisson
     var poissonRows=pRow('Thon',fv('t'))+pRow('Saumon',fv('s'))+pRow('Aburi',fv('a'))+pRow('Tamago',laboGetFish(shop,'tamago'));
     poissonRows+=pRow('Riz',v('rizprod')||laboGetRiz(shop));
-    if(shop==='ville') poissonRows+=pRow('Rolls',v('villerolls'));
+    if(shop==='ville'){var dStrV=laboDs(laboDate);var villeR=getR(dStrV,'ville');poissonRows+='<tr><td style="padding:2px 6px;font-size:10px;">Rolls</td><td style="padding:2px 6px;font-size:10px;font-weight:700;text-align:right;">'+(villeR||'—')+'</td></tr>';}
     else poissonRows+=pRow('Roll',isVal&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop));
     poissonRows+=pRow('Poke thon',v('pokethon'))+pRow('Poke saumon',v('pokesaumon'));
     if(shop!=='ville') poissonRows+=pRow('Gyoza',v('gyoza'));
