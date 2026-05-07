@@ -987,7 +987,7 @@ function thonKg(tranches) {
 }
 function thonKgStandard(tranches) {
   if (!tranches||tranches<=0) return '—';
-  const kg = tranches * 0.022 / 0.85;
+  const kg = tranches * 0.0267;
   const arrondi = Math.ceil(kg / 5) * 5;
   return arrondi + ' kg';
 }

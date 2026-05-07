@@ -625,7 +625,7 @@ function thonKg(t){
 }
 function thonKgStandard(t){
   if(!t||t<=0)return'—';
-  const kg=t*0.022/0.85;
+  const kg=t*0.0267;
   const arrondi=Math.ceil(kg/5)*5;
   return arrondi+' kg';
 }
