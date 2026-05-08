@@ -197,43 +197,7 @@ body::before{
 .global-card-value.gold{color:var(--gold);}
 .global-card-value .small{font-size:18px;color:var(--text-2);}
 .global-card-sub{font-size:11px;color:var(--text-2);font-weight:300;}
-/* CHART */
-.chart-wrap{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:10px;padding:24px 28px;margin-bottom:40px;
-}
-.chart-title{
-  font-family:'DM Mono',monospace;font-size:9px;
-  color:var(--text-3);letter-spacing:2px;text-transform:uppercase;
-  margin-bottom:24px;
-}
-.chart-grid{display:flex;flex-direction:column;gap:18px;}
-.chart-row{display:flex;align-items:center;gap:14px;}
-.chart-cat-label{
-  font-family:'DM Mono',monospace;font-size:10px;
-  color:var(--text-2);width:100px;flex-shrink:0;text-align:right;
-  letter-spacing:.5px;
-}
-.chart-bars{display:flex;gap:5px;flex:1;align-items:flex-end;height:36px;}
-.chart-bar-grp{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
-.chart-bar{
-  width:100%;border-radius:3px 3px 0 0;min-height:2px;
-  transition:height .5s cubic-bezier(.4,0,.2,1),opacity .2s;
-  cursor:default;
-}
-.chart-bar:hover{opacity:.75;}
-.chart-bar-val{
-  font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3);
-}
-.chart-legend{
-  display:flex;gap:16px;flex-wrap:wrap;
-  margin-top:18px;padding-top:14px;border-top:1px solid var(--border);
-}
-.chart-legend-item{
-  display:flex;align-items:center;gap:7px;
-  font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);
-}
-.chart-legend-dot{width:8px;height:8px;border-radius:2px;}
+
 
 
 /* ── SECTION TITLE ── */
@@ -255,70 +219,93 @@ body::before{
 }
 
 /* ── SHOPS GRID ── */
-.shops-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:12px;
+.carousel-scene{
+  perspective:1200px;
   margin-bottom:40px;
+  position:relative;
+  height:420px;
+}
+.carousel-3d{
+  width:100%;height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.4,0,.2,1);
 }
 .shop-card{
+  position:absolute;
+  width:320px;
+  left:50%;
+  top:0;
+  margin-left:-160px;
   background:var(--surface);
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:12px;
   overflow:hidden;
-  transition:border-color .2s,transform .2s;
+  transform-style:preserve-3d;
+  transition:all .6s cubic-bezier(.4,0,.2,1);
+  cursor:pointer;
+  backface-visibility:hidden;
+}
+.shop-card.miss-card{border-color:#ff5c7a20;}
+.shop-card.active{
+  border-color:var(--border2);
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
   cursor:default;
 }
-.shop-card:hover{border-color:var(--border2);transform:translateY(-2px);}
-.shop-card.miss-card{border-color:#ff5c7a20;}
 .shop-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;
+  padding:16px 20px;
   border-bottom:1px solid var(--border);
-  position:relative;
-  overflow:hidden;
+  position:relative;overflow:hidden;
 }
 .shop-header::before{
-  content:'';
-  position:absolute;left:0;top:0;bottom:0;
-  width:3px;
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
 }
 .shop-card-dsm .shop-header::before{background:var(--dsm);}
 .shop-card-mgt .shop-header::before{background:var(--mgt);}
 .shop-card-paita .shop-header::before{background:var(--paita);}
 .shop-card-ville .shop-header::before{background:var(--ville);}
 .shop-name{
-  font-family:'Inter',sans-serif;
-  font-size:13px;font-weight:600;
-  letter-spacing:.5px;
-  padding-left:8px;
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+  letter-spacing:.5px;padding-left:8px;
 }
-.shop-total{
-  font-family:'DM Mono',monospace;
-  font-size:11px;color:var(--text-2);
-}
-.shop-rows{padding:10px 18px 14px;}
+.shop-total{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-2);}
+.shop-rows{padding:10px 20px 16px;max-height:320px;overflow-y:auto;}
+.shop-rows::-webkit-scrollbar{width:3px;}
+.shop-rows::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 .shop-row{
   display:flex;justify-content:space-between;align-items:baseline;
-  padding:4px 0;
-  border-bottom:1px solid var(--border);
-  gap:8px;
+  padding:4px 0;border-bottom:1px solid var(--border);gap:8px;
 }
 .shop-row:last-child{border-bottom:none;}
 .shop-row-name{font-size:12px;color:var(--text-2);font-weight:300;}
 .shop-row-qty{
-  font-family:'DM Mono',monospace;
-  font-size:12px;font-weight:500;
-  color:var(--text);
-  min-width:28px;text-align:right;
+  font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  color:var(--text);min-width:28px;text-align:right;
 }
 .shop-miss-msg{
-  padding:14px 18px;
-  font-family:'DM Mono',monospace;
-  font-size:11px;color:var(--miss);
-  letter-spacing:.5px;
-  opacity:.7;
+  padding:14px 20px;font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--miss);letter-spacing:.5px;opacity:.7;
 }
+.carousel-nav{
+  display:flex;align-items:center;justify-content:center;
+  gap:16px;margin-top:12px;
+}
+.carousel-btn{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text-2);font-size:16px;
+  width:36px;height:36px;border-radius:50%;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;
+}
+.carousel-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface2);}
+.carousel-dots{display:flex;gap:8px;}
+.carousel-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--border2);cursor:pointer;
+  transition:all .2s;
+}
+.carousel-dot.active{background:var(--gold);width:18px;border-radius:3px;}
 
 /* ── SYNTH TABLE ── */
 .table-wrap{
@@ -483,20 +470,19 @@ body::before{
 
     <!-- Global KPIs -->
     <div class="global-grid fade-in" id="globalGrid"></div>
-
-    <!-- Chart -->
-    <div class="section-title fade-in">
-      <span class="section-title-text">Répartition par catégorie</span>
-      <div class="section-title-line"></div>
-    </div>
-    <div class="chart-wrap fade-in" id="chartWrap"></div>
-
     <!-- Boutiques -->
     <div class="section-title fade-in">
       <span class="section-title-text">Commandes par boutique</span>
       <div class="section-title-line"></div>
     </div>
-    <div class="shops-grid fade-in" id="shopsGrid"></div>
+    <div class="carousel-scene fade-in">
+      <div class="carousel-3d" id="carousel3d"></div>
+    </div>
+    <div class="carousel-nav">
+      <button class="carousel-btn" onclick="carouselPrev()">&#8592;</button>
+      <div class="carousel-dots" id="carouselDots"></div>
+      <button class="carousel-btn" onclick="carouselNext()">&#8594;</button>
+    </div>
 
     <!-- Synthèse -->
     <div class="section-title fade-in">
@@ -644,42 +630,20 @@ function renderReport(dateStr, results){
       <div class="global-card-sub">${boutiquesOk} boutique${boutiquesOk>1?'s':''}</div>
     </div>`).join('');
 
-  // Chart par catégorie x boutique
-  const SHOP_COLORS = {'dsm':'#4a9eff','mgt':'#ff8f4a','paita':'#b47fff','ville':'#ff5c7a'};
-  // max pour normaliser les barres
-  const allBarVals = [];
-  catTotaux.forEach(cat=>{
-    SHOPS.forEach(s=>{
-      allBarVals.push(cat.keys.reduce((sum,k)=>sum+(orders[s.id]?.[k]||0),0));
-    });
-  });
-  const maxVal = Math.max(...allBarVals, 1);
 
-  let chartHtml = '<div class="chart-title">Unités par catégorie & boutique</div><div class="chart-grid">';
-  catTotaux.forEach(cat=>{
-    chartHtml += '<div class="chart-row"><div class="chart-cat-label">'+cat.label+'</div><div class="chart-bars">';
-    SHOPS.forEach(s=>{
-      const val = cat.keys.reduce((sum,k)=>sum+(orders[s.id]?.[k]||0),0);
-      const pct = Math.round((val/maxVal)*100);
-      chartHtml += `<div class="chart-bar-grp">
-        <div class="chart-bar-val">${val||''}</div>
-        <div class="chart-bar" style="height:${Math.max(pct*.32,val?2:0)}px;background:${SHOP_COLORS[s.id]};"></div>
-      </div>`;
-    });
-    chartHtml += '</div></div>';
-  });
-  chartHtml += '</div><div class="chart-legend">';
-  SHOPS.forEach(s=>{
-    chartHtml += `<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${SHOP_COLORS[s.id]}"></div>${s.label}</div>`;
-  });
-  chartHtml += '</div>';
-  document.getElementById('chartWrap').innerHTML = chartHtml;
 
-  // Shop cards
-  const sg=document.getElementById('shopsGrid'); sg.innerHTML='';
-  results.forEach(({shop,order})=>{
+  // Carousel 3D
+  const carousel = document.getElementById('carousel3d');
+  carousel.innerHTML='';
+  const dots = document.getElementById('carouselDots');
+  dots.innerHTML='';
+  let _carouselIdx = 0;
+  const _cards = [];
+
+  results.forEach(({shop,order},idx)=>{
     const c=document.createElement('div');
     c.className=`shop-card shop-card-${shop.id}${order?'':' miss-card'}`;
+    c.onclick=()=>{ if(idx!==_carouselIdx) setCarousel(idx); };
     let total=0,rows='';
     if(order){
       CATEGORIES.forEach(cat=>cat.keys.forEach(k=>{
@@ -697,8 +661,40 @@ function renderReport(dateStr, results){
       ${order
         ?`<div class="shop-rows">${rows||'<div style="padding:8px 0;font-size:11px;color:var(--text-3);font-family:DM Mono,monospace">Commande vide</div>'}</div>`
         :`<div class="shop-miss-msg">✗ Pas de commande</div>`}`;
-    sg.appendChild(c);
+    carousel.appendChild(c);
+    _cards.push(c);
+
+    // dot
+    const dot=document.createElement('div');
+    dot.className='carousel-dot'+(idx===0?' active':'');
+    dot.onclick=()=>setCarousel(idx);
+    dots.appendChild(dot);
   });
+
+  function setCarousel(idx){
+    _carouselIdx=idx;
+    const n=_cards.length;
+    const angleStep=360/n;
+    const radius=340;
+    _cards.forEach((card,i)=>{
+      const angle=(i-idx)*angleStep;
+      const rad=angle*Math.PI/180;
+      const x=Math.sin(rad)*radius;
+      const z=Math.cos(rad)*radius-radius;
+      const scale=0.72+0.28*Math.cos(rad);
+      const opacity=i===idx?1:0.45+0.25*Math.cos(rad);
+      card.style.transform=`translateX(${x}px) translateZ(${z}px) scale(${scale})`;
+      card.style.opacity=opacity;
+      card.style.zIndex=Math.round(scale*10);
+      card.classList.toggle('active',i===idx);
+    });
+    document.querySelectorAll('.carousel-dot').forEach((d,i)=>{
+      d.classList.toggle('active',i===idx);
+    });
+  }
+  window.carouselNext=()=>setCarousel((_carouselIdx+1)%_cards.length);
+  window.carouselPrev=()=>setCarousel((_carouselIdx-1+_cards.length)%_cards.length);
+  setCarousel(0);
 
   // Synthèse table
   const table=document.getElementById('synthTable');
