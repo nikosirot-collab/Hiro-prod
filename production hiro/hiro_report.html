@@ -3,347 +3,187 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hiro Report — Rapport IA</title>
+<title>Report — Rapport IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0f0e;
-    --surface: #151817;
-    --surface2: #1c201e;
-    --border: #2a2f2d;
-    --accent: #00e87a;
-    --accent2: #00b85f;
-    --text: #eef2f0;
-    --text-muted: #7a8a82;
-    --text-dim: #3d4a44;
-    --dsm: #3b9eff;
-    --mgt: #ff8c42;
-    --paita: #c97dff;
-    --ville: #ff5c7a;
-    --warn: #ffd166;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; }
-  body {
-    font-family: 'Syne', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #eeecea;
+  --border: #dddbd6;
+  --text: #1a1916;
+  --text-muted: #8a877e;
+  --text-dim: #c5c2bb;
+  --dsm: #1a5fa8;
+  --mgt: #c45e00;
+  --paita: #7c3aed;
+  --ville: #c41a3a;
+  --ok: #0d7a52;
+  --missing: #c41a3a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-  /* ── HEADER ── */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 28px 16px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 100;
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .logo-mark {
-    width: 32px; height: 32px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; font-weight: 800; color: #000;
-    letter-spacing: -0.5px;
-  }
-  .logo-text { font-size: 15px; font-weight: 700; letter-spacing: 0.5px; }
-  .logo-sub { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-top: 1px; }
+/* HEADER */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 24px;background:var(--text);color:#f5f4f0;
+  position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-mark{
+  width:28px;height:28px;background:#f5f4f0;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:var(--text);
+}
+.logo-title{font-size:14px;font-weight:700;letter-spacing:0.5px;}
+.logo-sub{font-size:10px;color:#8a877e;font-family:'DM Mono',monospace;margin-top:1px;}
+.clock{font-family:'DM Mono',monospace;font-size:11px;color:#8a877e;}
 
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .date-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text-muted);
-    background: var(--surface);
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-  }
+/* TOOLBAR */
+.toolbar{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:14px 24px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.date-label{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;white-space:nowrap;}
+.date-input{
+  background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:13px;
+  padding:7px 11px;border-radius:7px;cursor:pointer;outline:none;
+  transition:border-color .2s;
+}
+.date-input:focus{border-color:var(--text);}
+.date-input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5;}
+.btn-load{
+  display:flex;align-items:center;gap:7px;
+  background:var(--text);color:#f5f4f0;border:none;
+  padding:8px 18px;border-radius:7px;font-family:'Syne',sans-serif;
+  font-size:13px;font-weight:700;cursor:pointer;
+  transition:opacity .15s,transform .1s;letter-spacing:.3px;
+}
+.btn-load:hover{opacity:.85;}
+.btn-load:active{transform:scale(.97);}
+.btn-load:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.sep{flex:1;}
+.nav-dates{display:flex;gap:6px;}
+.nav-btn{
+  background:var(--bg);border:1px solid var(--border);color:var(--text-muted);
+  font-family:'DM Mono',monospace;font-size:11px;
+  padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.nav-btn:hover{border-color:var(--text);color:var(--text);}
 
-  /* ── MAIN ── */
-  .main { padding: 28px; max-width: 900px; margin: 0 auto; }
+/* MAIN */
+.main{padding:20px 24px;max-width:1100px;margin:0 auto;}
 
-  /* ── DATE SELECTOR ── */
-  .date-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
-    flex-wrap: wrap;
-  }
-  .date-label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
-  .date-input {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  .date-input:focus { border-color: var(--accent); }
-  .date-input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.status-date{font-size:15px;font-weight:700;}
+.status-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  font-family:'DM Mono',monospace;border:1px solid transparent;
+}
+.chip.ok{background:#e4f5ee;color:var(--ok);border-color:#b6e8d0;}
+.chip.missing{background:#fde8ec;color:var(--missing);border-color:#f5b8c4;}
+.chip-dot{width:5px;height:5px;border-radius:50%;}
 
-  /* ── AUTO TRIGGER ── */
-  .auto-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 28px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-  }
-  .auto-label { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; flex: 1; }
-  .auto-time {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 6px 10px;
-    border-radius: 7px;
-    outline: none;
-    width: 80px;
-    transition: border-color 0.2s;
-  }
-  .auto-time:focus { border-color: var(--accent); }
-  .toggle {
-    position: relative;
-    width: 40px; height: 22px;
-    cursor: pointer;
-  }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute; inset: 0;
-    background: var(--border);
-    border-radius: 22px;
-    transition: background 0.2s;
-  }
-  .slider::before {
-    content: '';
-    position: absolute;
-    width: 16px; height: 16px;
-    left: 3px; top: 3px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    transition: transform 0.2s, background 0.2s;
-  }
-  .toggle input:checked + .slider { background: var(--accent2); }
-  .toggle input:checked + .slider::before { transform: translateX(18px); background: #000; }
+/* GLOBAL CARDS */
+.global-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;margin-bottom:24px;
+}
+.global-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.global-card-label{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-bottom:6px;}
+.global-card-value{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;}
+.global-card-sub{font-size:10px;color:var(--text-muted);margin-top:4px;font-family:'DM Mono',monospace;}
 
-  /* ── BTN GENERATE ── */
-  .btn-generate {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--accent);
-    color: #000;
-    border: none;
-    padding: 13px 24px;
-    border-radius: 10px;
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 32px;
-    letter-spacing: 0.3px;
-  }
-  .btn-generate:hover { background: #00ff88; }
-  .btn-generate:active { transform: scale(0.98); }
-  .btn-generate:disabled {
-    background: var(--surface2);
-    color: var(--text-muted);
-    cursor: not-allowed;
-    transform: none;
-  }
-  .btn-icon { font-size: 18px; }
+/* SECTION TITLE */
+.section-title{
+  font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);
+  letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
+.cat-badge{
+  display:inline-block;padding:1px 7px;border-radius:4px;
+  font-size:10px;font-family:'DM Mono',monospace;font-weight:500;
+  background:var(--surface2);color:var(--text-muted);margin-left:6px;vertical-align:middle;
+}
 
-  /* ── LOADING ── */
-  .loading-box {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-    padding: 48px 20px;
-    text-align: center;
-  }
-  .loading-box.active { display: flex; }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-muted); }
-  .loading-step { font-size: 13px; color: var(--text); font-weight: 600; }
+/* SHOPS GRID */
+.shops-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:12px;margin-bottom:28px;
+}
+.shop-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.shop-card.missing-card{border-color:#f5b8c4;background:#fffafb;}
+.shop-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;border-bottom:1px solid var(--border);
+}
+.shop-name{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;letter-spacing:.3px;}
+.shop-color-bar{width:3px;height:14px;border-radius:2px;}
+.shop-total{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text-muted);}
+.shop-rows{padding:8px 14px 10px;}
+.shop-row{
+  display:flex;justify-content:space-between;align-items:baseline;
+  padding:3px 0;border-bottom:1px solid var(--surface2);font-size:12px;gap:8px;
+}
+.shop-row:last-child{border-bottom:none;}
+.shop-row-name{color:var(--text-muted);}
+.shop-row-qty{font-family:'DM Mono',monospace;font-weight:600;color:var(--text);min-width:24px;text-align:right;}
+.shop-missing-msg{padding:12px 14px;font-size:12px;color:var(--missing);font-family:'DM Mono',monospace;}
 
-  /* ── REPORT CARD ── */
-  .report-card {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    overflow: hidden;
-    animation: fadeUp 0.4s ease;
-    margin-bottom: 32px;
-  }
-  .report-card.active { display: block; }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+/* SYNTHÈSE TABLE */
+.synth-table{
+  width:100%;border-collapse:collapse;background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  margin-bottom:28px;font-size:12px;
+}
+.synth-table thead tr{background:var(--surface2);}
+.synth-table th{
+  padding:9px 12px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;
+  font-weight:500;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;
+  border-bottom:1px solid var(--border);
+}
+.synth-table th.num{text-align:right;}
+.synth-table td{padding:7px 12px;border-bottom:1px solid var(--surface2);color:var(--text);}
+.synth-table td.num{text-align:right;font-family:'DM Mono',monospace;font-weight:600;}
+.synth-table td.total-col{font-family:'DM Mono',monospace;font-weight:700;font-size:13px;}
+.synth-table tr:last-child td{border-bottom:none;}
+.synth-table tr:hover td{background:var(--bg);}
+.zero{color:var(--text-dim)!important;font-weight:400!important;}
+.synth-table tfoot td{
+  background:var(--surface2);font-weight:700;
+  border-top:2px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;
+}
 
-  .report-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface2);
-  }
-  .report-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
-  .report-dot {
-    width: 8px; height: 8px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-  .report-ts {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text-muted);
-  }
+/* LOADING / EMPTY / ERROR */
+.loading-box{display:none;flex-direction:column;align-items:center;gap:14px;padding:60px 20px;text-align:center;}
+.loading-box.active{display:flex;}
+.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-txt{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
+.empty{text-align:center;padding:60px 20px;color:var(--text-muted);}
+.empty-icon{font-size:36px;margin-bottom:10px;}
+.empty-txt{font-size:13px;line-height:1.6;}
+.error-box{display:none;background:#fde8ec;border:1px solid #f5b8c4;border-radius:9px;
+  padding:13px 16px;font-size:13px;color:var(--missing);font-family:'DM Mono',monospace;margin-bottom:20px;}
+.error-box.active{display:block;}
 
-  .report-body {
-    padding: 24px 20px;
-    font-size: 14px;
-    line-height: 1.75;
-    color: var(--text);
-    white-space: pre-wrap;
-  }
-  .report-body strong { color: var(--accent); font-weight: 700; }
-
-  /* ── DATA GRID ── */
-  .data-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .shop-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    transition: border-color 0.2s;
-  }
-  .shop-card:hover { border-color: var(--accent2); }
-  .shop-name {
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .shop-dot { width: 6px; height: 6px; border-radius: 50%; }
-  .shop-items { font-size: 12px; color: var(--text-muted); line-height: 1.8; }
-  .shop-total {
-    margin-top: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    font-family: 'DM Mono', monospace;
-    color: var(--text);
-    border-top: 1px solid var(--border);
-    padding-top: 8px;
-  }
-  .no-order { color: var(--text-dim); font-size: 11px; font-family: 'DM Mono', monospace; }
-  .shop-card.missing { border-color: #ff5c7a44; background: #ff5c7a08; }
-
-  /* ── SECTION TITLE ── */
-  .section-title {
-    font-size: 10px;
-    font-family: 'DM Mono', monospace;
-    color: var(--text-muted);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* ── ERROR ── */
-  .error-box {
-    display: none;
-    background: #ff5c7a12;
-    border: 1px solid #ff5c7a44;
-    border-radius: 10px;
-    padding: 16px 20px;
-    font-size: 13px;
-    color: #ff5c7a;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 24px;
-  }
-  .error-box.active { display: block; }
-
-  /* ── EMPTY STATE ── */
-  .empty {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-  }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-text { font-size: 13px; line-height: 1.6; }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+@media(max-width:600px){
+  .header,.toolbar,.main{padding-left:16px;padding-right:16px;}
+  .shops-grid{grid-template-columns:1fr 1fr;}
+  .global-grid{grid-template-columns:repeat(3,1fr);}
+  .synth-table{font-size:11px;}
+  .sep{display:none;}
+}
 </style>
 </head>
 <body>
@@ -352,401 +192,251 @@
   <div class="logo">
     <div class="logo-mark">H</div>
     <div>
-      <div class="logo-text">HIRO REPORT</div>
-      <div class="logo-sub">rapport IA quotidien</div>
+      <div class="logo-title">HIRO REPORT</div>
+      <div class="logo-sub">synthèse quotidienne</div>
     </div>
   </div>
-  <div class="header-right">
-    <div class="date-badge" id="clockBadge">—</div>
+  <div class="clock" id="clockEl">—</div>
+</div>
+
+<div class="toolbar">
+  <span class="date-label">DATE</span>
+  <input type="date" class="date-input" id="reportDate">
+  <div class="nav-dates">
+    <button class="nav-btn" onclick="shiftDay(-1)">← Veille</button>
+    <button class="nav-btn" onclick="setToday()">Aujourd'hui</button>
+    <button class="nav-btn" onclick="shiftDay(1)">Lendemain →</button>
   </div>
+  <div class="sep"></div>
+  <button class="btn-load" id="btnLoad" onclick="loadReport()">↻ Charger</button>
 </div>
 
 <div class="main">
-
-  <!-- Date selector -->
-  <div class="date-row">
-    <span class="date-label">DATE DU RAPPORT</span>
-    <input type="date" class="date-input" id="reportDate">
-  </div>
-
-  <!-- Auto trigger -->
-  <div class="auto-row">
-    <div>
-      <div style="font-size:13px;font-weight:600;margin-bottom:2px;">Rapport automatique</div>
-      <div class="auto-label" id="autoStatus">Désactivé — configurez une heure et activez</div>
-    </div>
-    <input type="time" class="auto-time" id="autoTime" value="17:00">
-    <label class="toggle">
-      <input type="checkbox" id="autoToggle" onchange="toggleAuto()">
-      <span class="slider"></span>
-    </label>
-  </div>
-
-  <!-- Generate button -->
-  <button class="btn-generate" id="btnGenerate" onclick="generateReport()">
-    <span class="btn-icon">⚡</span>
-    Générer le rapport IA
-  </button>
-
-  <!-- Error -->
   <div class="error-box" id="errorBox"></div>
-
-  <!-- Loading -->
   <div class="loading-box" id="loadingBox">
     <div class="spinner"></div>
-    <div class="loading-step" id="loadingStep">Lecture des commandes…</div>
-    <div class="loading-text">analyse en cours par l'agent IA</div>
+    <div class="loading-txt">Chargement des commandes…</div>
   </div>
 
-  <!-- Data preview -->
-  <div id="dataPreview" style="display:none">
-    <div class="section-title">COMMANDES PAR POINT DE VENTE</div>
-    <div class="data-grid" id="dataGrid"></div>
-  </div>
-
-  <!-- AI Report -->
-  <div class="report-card" id="reportCard">
-    <div class="report-header">
-      <div class="report-title">
-        <div class="report-dot"></div>
-        ANALYSE IA
-      </div>
-      <div class="report-ts" id="reportTs"></div>
+  <div id="reportContent" style="display:none">
+    <div class="status-bar">
+      <div class="status-date" id="statusDate"></div>
+      <div class="status-chips" id="statusChips"></div>
     </div>
-    <div class="report-body" id="reportBody"></div>
+    <div class="section-title">VUE D'ENSEMBLE</div>
+    <div class="global-grid" id="globalGrid"></div>
+    <div class="section-title">COMMANDES PAR BOUTIQUE</div>
+    <div class="shops-grid" id="shopsGrid"></div>
+    <div class="section-title">SYNTHÈSE PRODUITS <span class="cat-badge">toutes boutiques</span></div>
+    <table class="synth-table" id="synthTable"></table>
   </div>
 
-  <!-- Empty state initial -->
   <div class="empty" id="emptyState">
-    <div class="empty-icon">📊</div>
-    <div class="empty-text">Sélectionnez une date et cliquez sur<br>« Générer le rapport IA » pour commencer.</div>
+    <div class="empty-icon">📋</div>
+    <div class="empty-txt">Sélectionnez une date et cliquez sur <strong>Charger</strong>.</div>
   </div>
-
 </div>
 
 <script>
-// ── UNREGISTER SERVICE WORKER (interfère avec api.anthropic.com) ──
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-}
-
-// ── CONFIG ──
 const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-const _PROJECT = 'hiro-sushi-nc';
-const _BASE = `https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents`;
+const _BASE = 'https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents';
+
 const SHOPS = [
-  { id: 'dsm',   label: 'DSM',   color: '#3b9eff' },
-  { id: 'mgt',   label: 'MGT',   color: '#ff8c42' },
-  { id: 'paita', label: 'Paita', color: '#c97dff' },
-  { id: 'ville', label: 'Ville', color: '#ff5c7a' }
+  { id:'dsm',   label:'DSM',   color:'#1a5fa8' },
+  { id:'mgt',   label:'MGT',   color:'#c45e00' },
+  { id:'paita', label:'Paita', color:'#7c3aed' },
+  { id:'ville', label:'Ville', color:'#c41a3a' }
 ];
+
+const CATEGORIES = [
+  { label:'Salades & Entrées', keys:['bo','sin','thai','thon','plp','rouleaux','tataki'] },
+  { label:'Riz & Poke',        keys:['rizprod','pokethon','pokesaumon'] },
+  { label:'Rolls',             keys:['villerolls'] },
+  { label:'Desserts',          keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'] },
+  { label:'Tapas',             keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'] }
+];
+
 const PRODUCT_NAMES = {
-  bo:'Bun Bò', sin:'Singapour', thon:'Thon mariné', thai:'Thaï',
-  plp:'Poulpe', rouleaux:'Rouleau', rizprod:'Riz',
-  pokethon:'Poke thon', pokesaumon:'Poke saumon', tataki:'Tataki',
-  tiramisu:'Tiramisu', ananas:'Ananas', poebanane:'Poe banane',
-  poecitrouille:'Poe citrouille', cheesemangue:'Cheese mangue',
-  cheeseframboise:'Cheese framboise', gyoza:'Gyoza',
-  gnem:'Grand nem', pnem:'Petit nem', sesame:'Sésame', banhbao:'Banh Bao',
-  villerolls:'Rolls (Ville)'
+  bo:'Bun Bò', sin:'Singapour', thai:'Thaï', thon:'Thon mariné',
+  plp:'Poulpe', rouleaux:'Rouleau', tataki:'Tataki',
+  rizprod:'Riz', pokethon:'Poke thon', pokesaumon:'Poke saumon',
+  villerolls:'Rolls', tiramisu:'Tiramisu', ananas:'Ananas',
+  poebanane:'Poe banane', poecitrouille:'Poe citrouille',
+  cheesemangue:'Cheese mangue', cheeseframboise:'Cheese framboise',
+  gyoza:'Gyoza', siumai:'Siu Mai', gnem:'Grand nem', pnem:'Petit nem',
+  sesame:'Sésame', banhbao:'Banh Bao', samossa:'Samossa', brochettes:'Brochettes'
 };
 
-let _autoTimer = null;
-
-// ── CLOCK ──
-function updateClock() {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Pacific/Noumea' }));
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('clockBadge').textContent = `NC ${h}:${m}`;
+// Clock
+function updateClock(){
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
+  document.getElementById('clockEl').textContent =
+    'NC '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
 }
-setInterval(updateClock, 10000);
-updateClock();
+setInterval(updateClock,10000); updateClock();
 
-// ── DEFAULT DATE (today NC) ──
-(function() {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Pacific/Noumea' }));
-  const y = now.getFullYear();
-  const m = String(now.getMonth()+1).padStart(2,'0');
-  const d = String(now.getDate()).padStart(2,'0');
-  document.getElementById('reportDate').value = `${y}-${m}-${d}`;
-})();
+// Date helpers
+function todayNC(){
+  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
+  return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+}
+function setToday(){ document.getElementById('reportDate').value=todayNC(); loadReport(); }
+function shiftDay(n){
+  const v=document.getElementById('reportDate').value;
+  if(!v) return;
+  const d=new Date(v+'T12:00:00'); d.setDate(d.getDate()+n);
+  document.getElementById('reportDate').value=d.toISOString().split('T')[0];
+  loadReport();
+}
+document.getElementById('reportDate').value=todayNC();
 
-// ── AUTO TOGGLE ──
-function toggleAuto() {
-  const enabled = document.getElementById('autoToggle').checked;
-  const timeVal = document.getElementById('autoTime').value;
-  if (_autoTimer) clearInterval(_autoTimer);
-  if (!enabled) {
-    document.getElementById('autoStatus').textContent = 'Désactivé — configurez une heure et activez';
-    return;
+// Fetch
+async function fetchOrder(dateStr, shopId){
+  const res = await fetch(`${_BASE}/hiro-orders/order_${dateStr}_${shopId}?key=${_KEY}`);
+  if(!res.ok) return null;
+  const json = await res.json();
+  if(!json.fields) return null;
+  const o={};
+  Object.entries(json.fields).forEach(([k,v])=>{
+    if(v.integerValue!==undefined) o[k]=parseInt(v.integerValue);
+    else if(v.stringValue!==undefined) o[k]=v.stringValue;
+  });
+  return o;
+}
+
+// Load
+async function loadReport(){
+  const dateStr=document.getElementById('reportDate').value;
+  if(!dateStr){ showError('Veuillez sélectionner une date.'); return; }
+  setLoading(true); hideError();
+  document.getElementById('reportContent').style.display='none';
+  document.getElementById('emptyState').style.display='none';
+  try{
+    const results=await Promise.all(SHOPS.map(s=>fetchOrder(dateStr,s.id).then(o=>({shop:s,order:o}))));
+    setLoading(false);
+    renderReport(dateStr,results);
+  }catch(err){
+    setLoading(false);
+    showError('Erreur réseau : '+err.message);
   }
-  document.getElementById('autoStatus').textContent = `Rapport automatique à ${timeVal} (heure NC)`;
-  _autoTimer = setInterval(() => {
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Pacific/Noumea' }));
-    const hm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    if (hm === timeVal) generateReport();
-  }, 30000);
 }
 
-// ── FETCH ORDER ──
-async function fetchOrder(dateStr, shopId) {
-  const docId = `order_${dateStr}_${shopId}`;
-  const url = `${_BASE}/hiro-orders/${docId}?key=${_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const json = await res.json();
-  if (!json.fields) return null;
-  const order = {};
-  Object.entries(json.fields).forEach(([k,v]) => {
-    if (v.integerValue !== undefined) order[k] = parseInt(v.integerValue);
-    else if (v.stringValue !== undefined) order[k] = v.stringValue;
+// Render
+function renderReport(dateStr, results){
+  // Date label
+  const d=new Date(dateStr+'T12:00:00');
+  const dl=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('statusDate').textContent=dl.charAt(0).toUpperCase()+dl.slice(1);
+
+  // Chips
+  document.getElementById('statusChips').innerHTML=results.map(({shop,order})=>
+    `<div class="chip ${order?'ok':'missing'}">
+      <div class="chip-dot" style="background:${order?'#0d7a52':'#c41a3a'}"></div>
+      ${shop.label}
+    </div>`
+  ).join('');
+
+  // Calculs globaux
+  const orders={};
+  results.forEach(({shop,order})=>{ orders[shop.id]=order; });
+  const totaux={};
+  const allKeys=Object.keys(PRODUCT_NAMES);
+  allKeys.forEach(k=>{ totaux[k]=0; });
+  let grandTotal=0, boutiquesOk=0;
+  results.forEach(({order})=>{
+    if(!order) return;
+    boutiquesOk++;
+    allKeys.forEach(k=>{ const q=order[k]||0; totaux[k]+=q; grandTotal+=q; });
   });
-  return order;
-}
-
-// ── FETCH PRODUCTION (week doc) ──
-async function fetchProduction(dateStr) {
-  // Find monday of that week
-  const d = new Date(dateStr + 'T12:00:00');
-  const day = d.getDay();
-  const diff = (day === 0 ? -6 : 1 - day);
-  d.setDate(d.getDate() + diff);
-  const monday = d.toISOString().split('T')[0];
-  const url = `${_BASE}/hiro-production/week_${monday}?key=${_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  const json = await res.json();
-  if (!json.fields) return null;
-  const data = {};
-  Object.entries(json.fields).forEach(([k,v]) => {
-    if (v.integerValue !== undefined) data[k] = parseInt(v.integerValue);
-    else if (v.stringValue !== undefined) data[k] = v.stringValue;
-    else if (v.doubleValue !== undefined) data[k] = parseFloat(v.doubleValue);
+  let topProd='',topQty=0;
+  Object.entries(totaux).forEach(([k,v])=>{
+    if(k!=='rizprod'&&v>topQty){ topQty=v; topProd=PRODUCT_NAMES[k]||k; }
   });
-  return { data, monday };
-}
 
-// ── BUILD DATA PREVIEW ──
-function buildDataPreview(orders, dateStr) {
-  const grid = document.getElementById('dataGrid');
-  grid.innerHTML = '';
-  SHOPS.forEach(shop => {
-    const order = orders[shop.id];
-    const card = document.createElement('div');
-    card.className = 'shop-card' + (order ? '' : ' missing');
-    let inner = `<div class="shop-name"><div class="shop-dot" style="background:${shop.color}"></div>${shop.label}</div>`;
-    if (!order) {
-      inner += `<div class="no-order">Aucune commande</div>`;
-    } else {
-      let rows = '';
-      let total = 0;
-      Object.entries(PRODUCT_NAMES).forEach(([k, name]) => {
-        const qty = order[k] || 0;
-        if (qty > 0) {
-          rows += `<div style="display:flex;justify-content:space-between;gap:8px;">
-            <span>${name}</span>
-            <span style="font-family:'DM Mono',monospace;font-weight:500;color:var(--text);">${qty}</span>
-          </div>`;
-          total += qty;
-        }
+  // Global cards
+  document.getElementById('globalGrid').innerHTML=`
+    <div class="global-card">
+      <div class="global-card-label">TOTAL ARTICLES</div>
+      <div class="global-card-value">${grandTotal}</div>
+      <div class="global-card-sub">toutes boutiques</div>
+    </div>
+    <div class="global-card">
+      <div class="global-card-label">BOUTIQUES</div>
+      <div class="global-card-value">${boutiquesOk}<span style="font-size:14px;color:var(--text-muted)"> / 4</span></div>
+      <div class="global-card-sub">ont commandé</div>
+    </div>
+    <div class="global-card">
+      <div class="global-card-label">TOP PRODUIT</div>
+      <div class="global-card-value" style="font-size:16px;margin-top:4px;">${topProd||'—'}</div>
+      <div class="global-card-sub">${topQty>0?topQty+' unités':''}</div>
+    </div>
+    <div class="global-card">
+      <div class="global-card-label">RIZ TOTAL</div>
+      <div class="global-card-value">${totaux['rizprod']||0}</div>
+      <div class="global-card-sub">portions</div>
+    </div>
+  `;
+
+  // Shop cards
+  const sg=document.getElementById('shopsGrid');
+  sg.innerHTML='';
+  results.forEach(({shop,order})=>{
+    const card=document.createElement('div');
+    card.className='shop-card'+(order?'':' missing-card');
+    let shopTotal=0, rows='';
+    if(order){
+      CATEGORIES.forEach(cat=>{
+        cat.keys.forEach(k=>{
+          const qty=order[k]||0;
+          if(qty>0){
+            rows+=`<div class="shop-row"><span class="shop-row-name">${PRODUCT_NAMES[k]||k}</span><span class="shop-row-qty">${qty}</span></div>`;
+            shopTotal+=qty;
+          }
+        });
       });
-      inner += `<div class="shop-items">${rows || '<span style="color:var(--text-dim)">Commande vide</span>'}</div>`;
-      inner += `<div class="shop-total">Total : ${total}</div>`;
+      // libres
+      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${i.name}</span><span class="shop-row-qty">${i.qty}</span></div>`;shopTotal+=i.qty;});});}catch(e){}}
     }
-    card.innerHTML = inner;
-    grid.appendChild(card);
+    card.innerHTML=`
+      <div class="shop-header">
+        <div class="shop-name"><div class="shop-color-bar" style="background:${shop.color}"></div>${shop.label}</div>
+        <div class="shop-total">${order?shopTotal+' art.':'—'}</div>
+      </div>
+      ${order
+        ?`<div class="shop-rows">${rows||'<div style="padding:8px 0;font-size:11px;color:var(--text-dim);font-family:DM Mono,monospace">Commande vide</div>'}</div>`
+        :`<div class="shop-missing-msg">✗ Pas de commande</div>`
+      }`;
+    sg.appendChild(card);
   });
-  document.getElementById('dataPreview').style.display = 'block';
-}
 
-// ── FORMAT DATE ──
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T12:00:00');
-  return d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-}
-
-// ── GENERATE REPORT ──
-async function generateReport() {
-  const dateStr = document.getElementById('reportDate').value;
-  if (!dateStr) { showError('Veuillez sélectionner une date.'); return; }
-
-  setLoading(true, 'Lecture des commandes…');
-  hideError();
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('reportCard').classList.remove('active');
-  document.getElementById('dataPreview').style.display = 'none';
-
-  try {
-    // 1. Fetch all orders
-    setLoadingStep('Récupération des commandes (DSM, MGT, Paita, Ville)…');
-    const orderResults = await Promise.all(
-      SHOPS.map(s => fetchOrder(dateStr, s.id).then(o => ({ shop: s, order: o })))
-    );
-    const orders = {};
-    orderResults.forEach(({ shop, order }) => { orders[shop.id] = order; });
-
-    // 2. Fetch production
-    setLoadingStep('Lecture des données de production…');
-    const prodResult = await fetchProduction(dateStr);
-
-    // 3. Build data preview
-    buildDataPreview(orders, dateStr);
-
-    // 4. Build context for AI
-    setLoadingStep('Analyse IA en cours…');
-    const context = buildAIContext(dateStr, orders, prodResult);
-
-    // 5. Call Claude API
-    const report = await callClaudeAPI(context, dateStr);
-
-    // 6. Display
-    setLoading(false);
-    displayReport(report);
-
-  } catch (err) {
-    setLoading(false);
-    showError('Erreur : ' + (err.message || err));
-  }
-}
-
-// ── BUILD AI CONTEXT ──
-function buildAIContext(dateStr, orders, prodResult) {
-  const lines = [];
-  lines.push(`=== RAPPORT DU ${formatDate(dateStr)} ===\n`);
-
-  lines.push('--- COMMANDES PAR POINT DE VENTE ---');
-  let totalGlobal = 0;
-  const totauxParShop = {};
-  const totauxParProduit = {};
-
-  SHOPS.forEach(shop => {
-    const order = orders[shop.id];
-    if (!order) {
-      lines.push(`${shop.label}: AUCUNE COMMANDE ENREGISTRÉE`);
-      totauxParShop[shop.id] = 0;
-      return;
-    }
-    lines.push(`\n${shop.label}:`);
-    let shopTotal = 0;
-    Object.entries(PRODUCT_NAMES).forEach(([k, name]) => {
-      const qty = order[k] || 0;
-      if (qty > 0) {
-        lines.push(`  ${name}: ${qty}`);
-        shopTotal += qty;
-        totauxParProduit[name] = (totauxParProduit[name] || 0) + qty;
-      }
+  // Synthèse table
+  const table=document.getElementById('synthTable');
+  let thead=`<thead><tr><th>Produit</th><th>Catégorie</th>${SHOPS.map(s=>`<th class="num" style="color:${s.color}">${s.label}</th>`).join('')}<th class="num">TOTAL</th></tr></thead>`;
+  let tbody='<tbody>';
+  const ft=[0,0,0,0]; let fg=0;
+  CATEGORIES.forEach(cat=>{
+    cat.keys.forEach(k=>{
+      const qs=SHOPS.map(s=>(orders[s.id]?.[k])||0);
+      const tot=qs.reduce((a,b)=>a+b,0);
+      if(tot===0) return;
+      qs.forEach((q,i)=>{ ft[i]+=q; }); fg+=tot;
+      tbody+=`<tr><td>${PRODUCT_NAMES[k]||k}</td><td style="color:var(--text-muted);font-size:11px;">${cat.label}</td>${qs.map(q=>`<td class="num${q===0?' zero':''}">${q||'—'}</td>`).join('')}<td class="num total-col">${tot}</td></tr>`;
     });
-    totauxParShop[shop.id] = shopTotal;
-    totalGlobal += shopTotal;
-    lines.push(`  → TOTAL: ${shopTotal}`);
   });
+  tbody+='</tbody>';
+  const tfoot=`<tfoot><tr><td colspan="2">TOTAL</td>${ft.map(t=>`<td class="num">${t}</td>`).join('')}<td class="num">${fg}</td></tr></tfoot>`;
+  table.innerHTML=thead+tbody+tfoot;
 
-  lines.push(`\nTOTAL GLOBAL COMMANDES: ${totalGlobal}`);
-
-  lines.push('\n--- TOP PRODUITS (toutes boutiques) ---');
-  Object.entries(totauxParProduit)
-    .sort((a,b) => b[1]-a[1])
-    .slice(0,10)
-    .forEach(([name, qty]) => lines.push(`  ${name}: ${qty}`));
-
-  if (prodResult && prodResult.data) {
-    lines.push('\n--- DONNÉES DE PRODUCTION (semaine) ---');
-    const d = prodResult.data;
-    // Extract riz data for the target date
-    const dayOfWeek = new Date(dateStr + 'T12:00:00').getDay();
-    // 0=Sun,1=Mon,...,6=Sat
-    const days = ['dim','lun','mar','mer','jeu','ven','sam'];
-    const dayKey = days[dayOfWeek];
-    lines.push(`Jour concerné dans la semaine: ${dayKey}`);
-    // Look for keys matching the date
-    const relevantKeys = Object.entries(d).filter(([k]) => k.includes(dateStr) || k.startsWith(dayKey));
-    if (relevantKeys.length > 0) {
-      relevantKeys.forEach(([k,v]) => lines.push(`  ${k}: ${v}`));
-    } else {
-      lines.push('  (données du jour non trouvées dans le document semaine)');
-      // Show some prod keys as overview
-      const sample = Object.entries(d).slice(0,15);
-      sample.forEach(([k,v]) => lines.push(`  ${k}: ${v}`));
-    }
-  } else {
-    lines.push('\n--- PRODUCTION: aucune donnée trouvée pour cette période ---');
-  }
-
-  return lines.join('\n');
+  document.getElementById('reportContent').style.display='block';
 }
 
-// ── CALL CLAUDE API ──
-async function callClaudeAPI(context, dateStr) {
-  const systemPrompt = `Tu es l'agent IA de Hiro Sushi, un restaurant japonais en Nouvelle-Calédonie.
-Tu analyses les données quotidiennes de commandes et de production pour générer un rapport concis et utile pour le gérant.
-Réponds toujours en français. Sois direct, factuel et utile. Utilise des emojis avec modération pour structurer.
-Mets en évidence les points importants, les manquants, et donne une conclusion actionnable.`;
-
-  const userPrompt = `Voici les données du jour. Génère un rapport clair avec :
-1. Un résumé des commandes par boutique (points forts, manquants)
-2. Les produits les plus demandés aujourd'hui
-3. Un point sur la production si les données sont disponibles
-4. Une conclusion avec les points d'attention pour demain
-
-DONNÉES :
-${context}`;
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    cache: 'no-store',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }]
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `API error ${response.status}`);
-  }
-
-  const data = await response.json();
-  const text = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('');
-  return text;
+// Helpers
+function setLoading(a){
+  document.getElementById('loadingBox').className=a?'loading-box active':'loading-box';
+  document.getElementById('btnLoad').disabled=a;
 }
-
-// ── DISPLAY REPORT ──
-function displayReport(text) {
-  const now = new Date();
-  const ts = now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
-  document.getElementById('reportTs').textContent = `Généré à ${ts}`;
-
-  // Render with basic bold markdown
-  const rendered = text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>');
-  document.getElementById('reportBody').innerHTML = rendered;
-  document.getElementById('reportCard').classList.add('active');
-}
-
-// ── UI HELPERS ──
-function setLoading(active, step) {
-  document.getElementById('loadingBox').className = active ? 'loading-box active' : 'loading-box';
-  document.getElementById('btnGenerate').disabled = active;
-  if (step) document.getElementById('loadingStep').textContent = step;
-}
-function setLoadingStep(text) {
-  document.getElementById('loadingStep').textContent = text;
-}
-function showError(msg) {
-  const el = document.getElementById('errorBox');
-  el.textContent = msg;
-  el.className = 'error-box active';
-}
-function hideError() {
-  document.getElementById('errorBox').className = 'error-box';
-}
+function showError(m){ const e=document.getElementById('errorBox'); e.textContent=m; e.className='error-box active'; }
+function hideError(){ document.getElementById('errorBox').className='error-box'; }
 </script>
 </body>
 </html>
