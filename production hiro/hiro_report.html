@@ -265,6 +265,7 @@ body::before{
 .shop-card-mgt .shop-header::before{background:var(--mgt);}
 .shop-card-paita .shop-header::before{background:var(--paita);}
 .shop-card-ville .shop-header::before{background:var(--ville);}
+.shop-card-asia .shop-header::before{background:#a3e635;}
 .shop-name{
   font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
   letter-spacing:.5px;padding-left:8px;
@@ -510,7 +511,8 @@ const SHOPS = [
   { id:'dsm',   label:'DSM',   color:'#4a9eff' },
   { id:'mgt',   label:'MGT',   color:'#ff8f4a' },
   { id:'paita', label:'Paita', color:'#b47fff' },
-  { id:'ville', label:'Ville', color:'#ff5c7a' }
+  { id:'ville', label:'Ville', color:'#ff5c7a' },
+  { id:'asia',  label:'Asia',  color:'#a3e635' }
 ];
 
 const CATEGORIES = [
@@ -584,11 +586,15 @@ async function fetchRolls(dateStr){
   if(!j.fields) return {};
   const rolls={};
   SHOPS.forEach(s=>{
-    const key=`${dateStr}__r__${s.id}`;
-    const v=j.fields[key];
+    // Essayer les deux formats de clé possibles
+    const key1=`${dateStr}__r__${s.id}`;
+    const key2=`${dateStr}__r__${s.id}__auto`;
+    const v=j.fields[key1]||j.fields[key2];
     if(v&&v.integerValue!==undefined) rolls[s.id]=parseInt(v.integerValue);
+    else if(v&&v.doubleValue!==undefined) rolls[s.id]=Math.round(parseFloat(v.doubleValue));
     else rolls[s.id]=0;
   });
+  console.log('Rolls fetched:', rolls);
   return rolls;
 }
 
@@ -605,8 +611,14 @@ async function loadReport(){
       fetchRolls(dateStr)
     ]);
     // Injecter les rolls dans chaque order
+    // Asia n'a pas d'interface de commande -> créer un order virtuel avec juste les rolls
     results.forEach(({shop,order})=>{
-      if(order) order['rolls']=rolls[shop.id]||0;
+      if(order){
+        order['rolls']=rolls[shop.id]||0;
+      } else if(shop.id==='asia' && rolls['asia']>0){
+        // order virtuel pour Asia (rolls uniquement)
+        results.find(r=>r.shop.id==='asia').order = { rolls: rolls['asia'] };
+      }
     });
     setLoading(false);
     renderReport(dateStr,results);
