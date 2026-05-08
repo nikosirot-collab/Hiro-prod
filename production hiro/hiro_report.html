@@ -5,202 +5,412 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Report — Rapport IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f5f4f0;
-  --surface: #ffffff;
-  --surface2: #eeecea;
-  --border: #dddbd6;
-  --text: #1a1916;
-  --text-muted: #8a877e;
-  --text-dim: #c5c2bb;
-  --dsm: #1a5fa8;
-  --mgt: #c45e00;
-  --paita: #7c3aed;
-  --ville: #c41a3a;
-  --ok: #0d7a52;
-  --missing: #c41a3a;
+  --bg:       #0a0a0a;
+  --bg2:      #111111;
+  --surface:  #161616;
+  --surface2: #1e1e1e;
+  --border:   #2a2a2a;
+  --border2:  #333333;
+  --text:     #f0ede8;
+  --text-2:   #a0998f;
+  --text-3:   #4a4540;
+  --accent:   #f0ede8;
+  --gold:     #c9a96e;
+  --gold2:    #e8c98a;
+  --dsm:      #4a9eff;
+  --mgt:      #ff8f4a;
+  --paita:    #b47fff;
+  --ville:    #ff5c7a;
+  --ok:       #4caf82;
+  --miss:     #ff5c7a;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;}
-body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
 
-/* HEADER */
+/* ── NOISE TEXTURE ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.6;
+}
+
+/* ── HEADER ── */
 .header{
+  position:sticky;top:0;z-index:200;
   display:flex;align-items:center;justify-content:space-between;
-  padding:16px 24px;background:var(--text);color:#f5f4f0;
-  position:sticky;top:0;z-index:100;
+  padding:0 32px;height:60px;
+  background:rgba(10,10,10,.92);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
 }
-.logo{display:flex;align-items:center;gap:10px;}
+.logo{display:flex;align-items:center;gap:14px;}
 .logo-mark{
-  width:28px;height:28px;background:#f5f4f0;border-radius:6px;
+  width:30px;height:30px;
+  border:1px solid var(--border2);
+  border-radius:6px;
   display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:800;color:var(--text);
+  font-family:'Playfair Display',serif;
+  font-size:15px;font-weight:900;
+  color:var(--gold);
+  letter-spacing:-0.5px;
 }
-.logo-title{font-size:14px;font-weight:700;letter-spacing:0.5px;}
-.logo-sub{font-size:10px;color:#8a877e;font-family:'DM Mono',monospace;margin-top:1px;}
-.clock{font-family:'DM Mono',monospace;font-size:11px;color:#8a877e;}
+.logo-title{
+  font-family:'Playfair Display',serif;
+  font-size:15px;font-weight:700;
+  color:var(--text);letter-spacing:.5px;
+}
+.logo-sub{
+  font-family:'DM Mono',monospace;
+  font-size:9px;color:var(--text-2);
+  letter-spacing:2px;text-transform:uppercase;
+  margin-top:1px;
+}
+.header-right{display:flex;align-items:center;gap:16px;}
+.clock{
+  font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--text-2);
+  letter-spacing:1px;
+}
+.header-divider{width:1px;height:18px;background:var(--border);}
 
-/* TOOLBAR */
+/* ── TOOLBAR ── */
 .toolbar{
   display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding:14px 24px;background:var(--surface);
+  padding:14px 32px;
+  background:var(--bg2);
   border-bottom:1px solid var(--border);
 }
-.date-label{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;white-space:nowrap;}
+.date-label{
+  font-family:'DM Mono',monospace;
+  font-size:9px;color:var(--text-3);
+  letter-spacing:2px;text-transform:uppercase;
+}
 .date-input{
-  background:var(--bg);border:1px solid var(--border);color:var(--text);
-  font-family:'DM Mono',monospace;font-size:13px;
-  padding:7px 11px;border-radius:7px;cursor:pointer;outline:none;
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'DM Mono',monospace;font-size:12px;
+  padding:8px 12px;border-radius:6px;
+  cursor:pointer;outline:none;
   transition:border-color .2s;
+  letter-spacing:.5px;
 }
-.date-input:focus{border-color:var(--text);}
-.date-input::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.5;}
-.btn-load{
-  display:flex;align-items:center;gap:7px;
-  background:var(--text);color:#f5f4f0;border:none;
-  padding:8px 18px;border-radius:7px;font-family:'Syne',sans-serif;
-  font-size:13px;font-weight:700;cursor:pointer;
-  transition:opacity .15s,transform .1s;letter-spacing:.3px;
-}
-.btn-load:hover{opacity:.85;}
-.btn-load:active{transform:scale(.97);}
-.btn-load:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-.sep{flex:1;}
+.date-input:focus{border-color:var(--gold);}
+.date-input::-webkit-calendar-picker-indicator{filter:invert(.4);cursor:pointer;}
 .nav-dates{display:flex;gap:6px;}
 .nav-btn{
-  background:var(--bg);border:1px solid var(--border);color:var(--text-muted);
-  font-family:'DM Mono',monospace;font-size:11px;
-  padding:6px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;
-  transition:all .15s;
+  background:transparent;
+  border:1px solid var(--border);
+  color:var(--text-2);
+  font-family:'DM Mono',monospace;font-size:10px;
+  padding:7px 12px;border-radius:6px;cursor:pointer;
+  transition:all .15s;letter-spacing:.5px;white-space:nowrap;
 }
-.nav-btn:hover{border-color:var(--text);color:var(--text);}
+.nav-btn:hover{border-color:var(--border2);color:var(--text);background:var(--surface);}
+.sep{flex:1;}
+.btn-load{
+  display:flex;align-items:center;gap:8px;
+  background:var(--text);color:var(--bg);
+  border:none;padding:9px 20px;border-radius:6px;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+  cursor:pointer;transition:opacity .15s,transform .1s;
+  letter-spacing:.3px;
+}
+.btn-load:hover{opacity:.88;}
+.btn-load:active{transform:scale(.97);}
+.btn-load:disabled{opacity:.3;cursor:not-allowed;transform:none;}
 
-/* MAIN */
-.main{padding:20px 24px;max-width:1100px;margin:0 auto;}
+/* ── MAIN ── */
+.main{padding:28px 32px;max-width:1120px;margin:0 auto;position:relative;z-index:1;}
 
-/* STATUS BAR */
-.status-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
-.status-date{font-size:15px;font-weight:700;}
-.status-chips{display:flex;gap:6px;flex-wrap:wrap;}
+/* ── STATUS BAR ── */
+.status-bar{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;
+  margin-bottom:32px;
+  padding-bottom:24px;
+  border-bottom:1px solid var(--border);
+}
+.status-date-wrap{}
+.status-eyebrow{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:2.5px;text-transform:uppercase;
+  margin-bottom:6px;
+}
+.status-date{
+  font-family:'Playfair Display',serif;
+  font-size:28px;font-weight:700;
+  color:var(--text);line-height:1;
+}
+.status-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .chip{
-  display:flex;align-items:center;gap:5px;
-  padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;
-  font-family:'DM Mono',monospace;border:1px solid transparent;
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:500;
+  letter-spacing:.5px;border:1px solid transparent;
+  transition:opacity .2s;
 }
-.chip.ok{background:#e4f5ee;color:var(--ok);border-color:#b6e8d0;}
-.chip.missing{background:#fde8ec;color:var(--missing);border-color:#f5b8c4;}
+.chip.ok{background:#4caf8210;color:var(--ok);border-color:#4caf8230;}
+.chip.miss{background:#ff5c7a10;color:var(--miss);border-color:#ff5c7a30;}
 .chip-dot{width:5px;height:5px;border-radius:50%;}
 
-/* GLOBAL CARDS */
+/* ── GLOBAL CARDS ── */
 .global-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-  gap:10px;margin-bottom:24px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--border);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:40px;
 }
-.global-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
-.global-card-label{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-bottom:6px;}
-.global-card-value{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;line-height:1;}
-.global-card-sub{font-size:10px;color:var(--text-muted);margin-top:4px;font-family:'DM Mono',monospace;}
+.global-card{
+  background:var(--surface);
+  padding:22px 24px;
+  transition:background .2s;
+}
+.global-card:hover{background:var(--surface2);}
+.global-card-eyebrow{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.global-card-value{
+  font-family:'Playfair Display',serif;
+  font-size:42px;font-weight:900;
+  color:var(--text);line-height:1;
+  margin-bottom:6px;
+}
+.global-card-value.gold{color:var(--gold);}
+.global-card-value .small{font-size:18px;color:var(--text-2);}
+.global-card-sub{font-size:11px;color:var(--text-2);font-weight:300;}
 
-/* SECTION TITLE */
+/* ── SECTION TITLE ── */
 .section-title{
-  font-size:10px;font-family:'DM Mono',monospace;color:var(--text-muted);
-  letter-spacing:1.5px;text-transform:uppercase;
-  margin-bottom:12px;display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:16px;
 }
-.section-title::after{content:'';flex:1;height:1px;background:var(--border);}
-.cat-badge{
-  display:inline-block;padding:1px 7px;border-radius:4px;
-  font-size:10px;font-family:'DM Mono',monospace;font-weight:500;
-  background:var(--surface2);color:var(--text-muted);margin-left:6px;vertical-align:middle;
+.section-title-text{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:2.5px;text-transform:uppercase;
+  white-space:nowrap;
+}
+.section-title-line{flex:1;height:1px;background:var(--border);}
+.section-title-badge{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:1px;
+  padding:2px 8px;border:1px solid var(--border);border-radius:3px;
+  white-space:nowrap;
 }
 
-/* SHOPS GRID */
+/* ── SHOPS GRID ── */
 .shops-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-  gap:12px;margin-bottom:28px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;
+  margin-bottom:40px;
 }
-.shop-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.shop-card.missing-card{border-color:#f5b8c4;background:#fffafb;}
+.shop-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  transition:border-color .2s,transform .2s;
+  cursor:default;
+}
+.shop-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+.shop-card.miss-card{border-color:#ff5c7a20;}
 .shop-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:11px 14px;border-bottom:1px solid var(--border);
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
 }
-.shop-name{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;letter-spacing:.3px;}
-.shop-color-bar{width:3px;height:14px;border-radius:2px;}
-.shop-total{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--text-muted);}
-.shop-rows{padding:8px 14px 10px;}
+.shop-header::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;
+  width:3px;
+}
+.shop-card-dsm .shop-header::before{background:var(--dsm);}
+.shop-card-mgt .shop-header::before{background:var(--mgt);}
+.shop-card-paita .shop-header::before{background:var(--paita);}
+.shop-card-ville .shop-header::before{background:var(--ville);}
+.shop-name{
+  font-family:'Inter',sans-serif;
+  font-size:13px;font-weight:600;
+  letter-spacing:.5px;
+  padding-left:8px;
+}
+.shop-total{
+  font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--text-2);
+}
+.shop-rows{padding:10px 18px 14px;}
 .shop-row{
   display:flex;justify-content:space-between;align-items:baseline;
-  padding:3px 0;border-bottom:1px solid var(--surface2);font-size:12px;gap:8px;
+  padding:4px 0;
+  border-bottom:1px solid var(--border);
+  gap:8px;
 }
 .shop-row:last-child{border-bottom:none;}
-.shop-row-name{color:var(--text-muted);}
-.shop-row-qty{font-family:'DM Mono',monospace;font-weight:600;color:var(--text);min-width:24px;text-align:right;}
-.shop-missing-msg{padding:12px 14px;font-size:12px;color:var(--missing);font-family:'DM Mono',monospace;}
+.shop-row-name{font-size:12px;color:var(--text-2);font-weight:300;}
+.shop-row-qty{
+  font-family:'DM Mono',monospace;
+  font-size:12px;font-weight:500;
+  color:var(--text);
+  min-width:28px;text-align:right;
+}
+.shop-miss-msg{
+  padding:14px 18px;
+  font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--miss);
+  letter-spacing:.5px;
+  opacity:.7;
+}
 
-/* SYNTHÈSE TABLE */
+/* ── SYNTH TABLE ── */
+.table-wrap{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:40px;
+}
 .synth-table{
-  width:100%;border-collapse:collapse;background:var(--surface);
-  border:1px solid var(--border);border-radius:10px;overflow:hidden;
-  margin-bottom:28px;font-size:12px;
+  width:100%;border-collapse:collapse;
+  font-size:12px;
 }
 .synth-table thead tr{background:var(--surface2);}
 .synth-table th{
-  padding:9px 12px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;
-  font-weight:500;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;
+  padding:11px 16px;text-align:left;
+  font-family:'DM Mono',monospace;font-size:9px;
+  font-weight:500;color:var(--text-3);
+  letter-spacing:2px;text-transform:uppercase;
   border-bottom:1px solid var(--border);
 }
 .synth-table th.num{text-align:right;}
-.synth-table td{padding:7px 12px;border-bottom:1px solid var(--surface2);color:var(--text);}
-.synth-table td.num{text-align:right;font-family:'DM Mono',monospace;font-weight:600;}
-.synth-table td.total-col{font-family:'DM Mono',monospace;font-weight:700;font-size:13px;}
-.synth-table tr:last-child td{border-bottom:none;}
-.synth-table tr:hover td{background:var(--bg);}
-.zero{color:var(--text-dim)!important;font-weight:400!important;}
+.synth-table td{
+  padding:9px 16px;
+  border-bottom:1px solid var(--border);
+  color:var(--text);font-weight:300;
+  transition:background .15s;
+}
+.synth-table tbody tr:hover td{background:var(--surface2);}
+.synth-table tbody tr:last-child td{border-bottom:none;}
+.synth-table td.num{
+  text-align:right;
+  font-family:'DM Mono',monospace;
+  font-weight:500;
+}
+.synth-table td.total-col{
+  font-family:'DM Mono',monospace;
+  font-weight:600;font-size:13px;
+  color:var(--text);
+}
+.zero{color:var(--text-3)!important;font-weight:300!important;}
 .synth-table tfoot td{
-  background:var(--surface2);font-weight:700;
-  border-top:2px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;
+  padding:11px 16px;
+  background:var(--surface2);
+  border-top:1px solid var(--border2);
+  font-family:'DM Mono',monospace;
+  font-size:11px;font-weight:600;
+  color:var(--text);
+}
+.synth-table tfoot td.num{text-align:right;}
+.cat-row td{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;
+  background:var(--bg2)!important;
+  padding:7px 16px;border-bottom:1px solid var(--border);
 }
 
-/* LOADING / EMPTY / ERROR */
-.loading-box{display:none;flex-direction:column;align-items:center;gap:14px;padding:60px 20px;text-align:center;}
+/* ── LOADING / EMPTY / ERROR ── */
+.loading-box{
+  display:none;flex-direction:column;align-items:center;
+  gap:16px;padding:80px 20px;text-align:center;
+}
 .loading-box.active{display:flex;}
-.spinner{width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--text);border-radius:50%;animation:spin .7s linear infinite;}
+.spinner{
+  width:28px;height:28px;
+  border:1px solid var(--border);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
 @keyframes spin{to{transform:rotate(360deg);}}
-.loading-txt{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
-.empty{text-align:center;padding:60px 20px;color:var(--text-muted);}
-.empty-icon{font-size:36px;margin-bottom:10px;}
-.empty-txt{font-size:13px;line-height:1.6;}
-.error-box{display:none;background:#fde8ec;border:1px solid #f5b8c4;border-radius:9px;
-  padding:13px 16px;font-size:13px;color:var(--missing);font-family:'DM Mono',monospace;margin-bottom:20px;}
+.loading-txt{
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--text-3);letter-spacing:1px;
+}
+.empty{text-align:center;padding:80px 20px;}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.3;}
+.empty-txt{
+  font-size:13px;color:var(--text-2);
+  font-weight:300;line-height:1.7;
+}
+.error-box{
+  display:none;
+  background:#ff5c7a0a;border:1px solid #ff5c7a25;
+  border-radius:8px;padding:13px 16px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--miss);letter-spacing:.3px;
+  margin-bottom:20px;
+}
 .error-box.active{display:block;}
 
-@media(max-width:600px){
+/* ── ANIMATIONS ── */
+.fade-in{animation:fadeIn .35s ease forwards;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:700px){
   .header,.toolbar,.main{padding-left:16px;padding-right:16px;}
+  .global-grid{grid-template-columns:1fr 1fr;}
   .shops-grid{grid-template-columns:1fr 1fr;}
-  .global-grid{grid-template-columns:repeat(3,1fr);}
-  .synth-table{font-size:11px;}
+  .status-date{font-size:20px;}
+  .global-card-value{font-size:30px;}
   .sep{display:none;}
+}
+@media(max-width:420px){
+  .shops-grid{grid-template-columns:1fr;}
+  .global-grid{grid-template-columns:1fr 1fr;}
 }
 </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <div class="header">
   <div class="logo">
     <div class="logo-mark">H</div>
     <div>
-      <div class="logo-title">HIRO REPORT</div>
-      <div class="logo-sub">synthèse quotidienne</div>
+      <div class="logo-title">Hiro Report</div>
+      <div class="logo-sub">Synthèse quotidienne</div>
     </div>
   </div>
-  <div class="clock" id="clockEl">—</div>
+  <div class="header-right">
+    <div class="clock" id="clockEl">——:——</div>
+    <div class="header-divider"></div>
+    <div class="clock" style="color:var(--text-3);">NC</div>
+  </div>
 </div>
 
+<!-- TOOLBAR -->
 <div class="toolbar">
-  <span class="date-label">DATE</span>
+  <span class="date-label">Date</span>
   <input type="date" class="date-input" id="reportDate">
   <div class="nav-dates">
     <button class="nav-btn" onclick="shiftDay(-1)">← Veille</button>
@@ -208,44 +418,68 @@ body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-he
     <button class="nav-btn" onclick="shiftDay(1)">Lendemain →</button>
   </div>
   <div class="sep"></div>
-  <button class="btn-load" id="btnLoad" onclick="loadReport()">↻ Charger</button>
+  <button class="btn-load" id="btnLoad" onclick="loadReport()">
+    Charger
+  </button>
 </div>
 
+<!-- MAIN -->
 <div class="main">
   <div class="error-box" id="errorBox"></div>
+
   <div class="loading-box" id="loadingBox">
     <div class="spinner"></div>
     <div class="loading-txt">Chargement des commandes…</div>
   </div>
 
   <div id="reportContent" style="display:none">
-    <div class="status-bar">
-      <div class="status-date" id="statusDate"></div>
+
+    <!-- Status -->
+    <div class="status-bar fade-in">
+      <div class="status-date-wrap">
+        <div class="status-eyebrow">Rapport du</div>
+        <div class="status-date" id="statusDate"></div>
+      </div>
       <div class="status-chips" id="statusChips"></div>
     </div>
-    <div class="section-title">VUE D'ENSEMBLE</div>
-    <div class="global-grid" id="globalGrid"></div>
-    <div class="section-title">COMMANDES PAR BOUTIQUE</div>
-    <div class="shops-grid" id="shopsGrid"></div>
-    <div class="section-title">SYNTHÈSE PRODUITS <span class="cat-badge">toutes boutiques</span></div>
-    <table class="synth-table" id="synthTable"></table>
+
+    <!-- Global KPIs -->
+    <div class="global-grid fade-in" id="globalGrid"></div>
+
+    <!-- Boutiques -->
+    <div class="section-title fade-in">
+      <span class="section-title-text">Commandes par boutique</span>
+      <div class="section-title-line"></div>
+    </div>
+    <div class="shops-grid fade-in" id="shopsGrid"></div>
+
+    <!-- Synthèse -->
+    <div class="section-title fade-in">
+      <span class="section-title-text">Synthèse produits</span>
+      <div class="section-title-line"></div>
+      <span class="section-title-badge">toutes boutiques</span>
+    </div>
+    <div class="table-wrap fade-in">
+      <table class="synth-table" id="synthTable"></table>
+    </div>
+
   </div>
 
   <div class="empty" id="emptyState">
-    <div class="empty-icon">📋</div>
-    <div class="empty-txt">Sélectionnez une date et cliquez sur <strong>Charger</strong>.</div>
+    <div class="empty-icon">◈</div>
+    <div class="empty-txt">Sélectionnez une date<br>et cliquez sur <strong>Charger</strong></div>
   </div>
 </div>
 
 <script>
-const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+const _KEY  = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _BASE = 'https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents';
 
 const SHOPS = [
-  { id:'dsm',   label:'DSM',   color:'#1a5fa8' },
-  { id:'mgt',   label:'MGT',   color:'#c45e00' },
-  { id:'paita', label:'Paita', color:'#7c3aed' },
-  { id:'ville', label:'Ville', color:'#c41a3a' }
+  { id:'dsm',   label:'DSM',   color:'#4a9eff' },
+  { id:'mgt',   label:'MGT',   color:'#ff8f4a' },
+  { id:'paita', label:'Paita', color:'#b47fff' },
+  { id:'ville', label:'Ville', color:'#ff5c7a' }
 ];
 
 const CATEGORIES = [
@@ -256,7 +490,7 @@ const CATEGORIES = [
   { label:'Tapas',             keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'] }
 ];
 
-const PRODUCT_NAMES = {
+const P = {
   bo:'Bun Bò', sin:'Singapour', thai:'Thaï', thon:'Thon mariné',
   plp:'Poulpe', rouleaux:'Rouleau', tataki:'Tataki',
   rizprod:'Riz', pokethon:'Poke thon', pokesaumon:'Poke saumon',
@@ -269,21 +503,20 @@ const PRODUCT_NAMES = {
 
 // Clock
 function updateClock(){
-  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
-  document.getElementById('clockEl').textContent =
-    'NC '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const n=new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
+  document.getElementById('clockEl').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
 }
 setInterval(updateClock,10000); updateClock();
 
 // Date helpers
 function todayNC(){
-  const now = new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
-  return now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  const n=new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
 }
 function setToday(){ document.getElementById('reportDate').value=todayNC(); loadReport(); }
 function shiftDay(n){
-  const v=document.getElementById('reportDate').value;
-  if(!v) return;
+  const v=document.getElementById('reportDate').value; if(!v) return;
   const d=new Date(v+'T12:00:00'); d.setDate(d.getDate()+n);
   document.getElementById('reportDate').value=d.toISOString().split('T')[0];
   loadReport();
@@ -292,12 +525,12 @@ document.getElementById('reportDate').value=todayNC();
 
 // Fetch
 async function fetchOrder(dateStr, shopId){
-  const res = await fetch(`${_BASE}/hiro-orders/order_${dateStr}_${shopId}?key=${_KEY}`);
+  const res=await fetch(`${_BASE}/hiro-orders/order_${dateStr}_${shopId}?key=${_KEY}`);
   if(!res.ok) return null;
-  const json = await res.json();
-  if(!json.fields) return null;
+  const j=await res.json();
+  if(!j.fields) return null;
   const o={};
-  Object.entries(json.fields).forEach(([k,v])=>{
+  Object.entries(j.fields).forEach(([k,v])=>{
     if(v.integerValue!==undefined) o[k]=parseInt(v.integerValue);
     else if(v.stringValue!==undefined) o[k]=v.stringValue;
   });
@@ -315,117 +548,117 @@ async function loadReport(){
     const results=await Promise.all(SHOPS.map(s=>fetchOrder(dateStr,s.id).then(o=>({shop:s,order:o}))));
     setLoading(false);
     renderReport(dateStr,results);
-  }catch(err){
+  }catch(e){
     setLoading(false);
-    showError('Erreur réseau : '+err.message);
+    showError('Erreur réseau : '+e.message);
   }
 }
 
 // Render
 function renderReport(dateStr, results){
-  // Date label
   const d=new Date(dateStr+'T12:00:00');
   const dl=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   document.getElementById('statusDate').textContent=dl.charAt(0).toUpperCase()+dl.slice(1);
 
   // Chips
   document.getElementById('statusChips').innerHTML=results.map(({shop,order})=>
-    `<div class="chip ${order?'ok':'missing'}">
-      <div class="chip-dot" style="background:${order?'#0d7a52':'#c41a3a'}"></div>
+    `<div class="chip ${order?'ok':'miss'}">
+      <div class="chip-dot" style="background:${order?'var(--ok)':'var(--miss)'}"></div>
       ${shop.label}
     </div>`
   ).join('');
 
-  // Calculs globaux
-  const orders={};
-  results.forEach(({shop,order})=>{ orders[shop.id]=order; });
-  const totaux={};
-  const allKeys=Object.keys(PRODUCT_NAMES);
-  allKeys.forEach(k=>{ totaux[k]=0; });
+  // Calculs
+  const orders={}; results.forEach(({shop,order})=>{ orders[shop.id]=order; });
+  const totaux={}; const allKeys=Object.keys(P); allKeys.forEach(k=>totaux[k]=0);
   let grandTotal=0, boutiquesOk=0;
   results.forEach(({order})=>{
-    if(!order) return;
-    boutiquesOk++;
+    if(!order) return; boutiquesOk++;
     allKeys.forEach(k=>{ const q=order[k]||0; totaux[k]+=q; grandTotal+=q; });
   });
-  let topProd='',topQty=0;
-  Object.entries(totaux).forEach(([k,v])=>{
-    if(k!=='rizprod'&&v>topQty){ topQty=v; topProd=PRODUCT_NAMES[k]||k; }
-  });
+  let topK='',topV=0;
+  Object.entries(totaux).forEach(([k,v])=>{ if(k!=='rizprod'&&v>topV){topV=v;topK=k;} });
 
-  // Global cards
+  // KPI cards
   document.getElementById('globalGrid').innerHTML=`
     <div class="global-card">
-      <div class="global-card-label">TOTAL ARTICLES</div>
-      <div class="global-card-value">${grandTotal}</div>
+      <div class="global-card-eyebrow">Total articles</div>
+      <div class="global-card-value gold">${grandTotal}</div>
       <div class="global-card-sub">toutes boutiques</div>
     </div>
     <div class="global-card">
-      <div class="global-card-label">BOUTIQUES</div>
-      <div class="global-card-value">${boutiquesOk}<span style="font-size:14px;color:var(--text-muted)"> / 4</span></div>
+      <div class="global-card-eyebrow">Boutiques</div>
+      <div class="global-card-value">${boutiquesOk}<span class="small"> / 4</span></div>
       <div class="global-card-sub">ont commandé</div>
     </div>
     <div class="global-card">
-      <div class="global-card-label">TOP PRODUIT</div>
-      <div class="global-card-value" style="font-size:16px;margin-top:4px;">${topProd||'—'}</div>
-      <div class="global-card-sub">${topQty>0?topQty+' unités':''}</div>
+      <div class="global-card-eyebrow">Top produit</div>
+      <div class="global-card-value" style="font-size:20px;padding-top:8px;">${topK?P[topK]:'—'}</div>
+      <div class="global-card-sub">${topV>0?topV+' unités':''}</div>
     </div>
     <div class="global-card">
-      <div class="global-card-label">RIZ TOTAL</div>
+      <div class="global-card-eyebrow">Riz total</div>
       <div class="global-card-value">${totaux['rizprod']||0}</div>
       <div class="global-card-sub">portions</div>
     </div>
   `;
 
   // Shop cards
-  const sg=document.getElementById('shopsGrid');
-  sg.innerHTML='';
+  const sg=document.getElementById('shopsGrid'); sg.innerHTML='';
   results.forEach(({shop,order})=>{
-    const card=document.createElement('div');
-    card.className='shop-card'+(order?'':' missing-card');
-    let shopTotal=0, rows='';
+    const c=document.createElement('div');
+    c.className=`shop-card shop-card-${shop.id}${order?'':' miss-card'}`;
+    let total=0,rows='';
     if(order){
-      CATEGORIES.forEach(cat=>{
-        cat.keys.forEach(k=>{
-          const qty=order[k]||0;
-          if(qty>0){
-            rows+=`<div class="shop-row"><span class="shop-row-name">${PRODUCT_NAMES[k]||k}</span><span class="shop-row-qty">${qty}</span></div>`;
-            shopTotal+=qty;
-          }
-        });
-      });
-      // libres
-      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${i.name}</span><span class="shop-row-qty">${i.qty}</span></div>`;shopTotal+=i.qty;});});}catch(e){}}
+      CATEGORIES.forEach(cat=>cat.keys.forEach(k=>{
+        const q=order[k]||0; if(!q) return;
+        rows+=`<div class="shop-row"><span class="shop-row-name">${P[k]||k}</span><span class="shop-row-qty">${q}</span></div>`;
+        total+=q;
+      }));
+      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${i.name}</span><span class="shop-row-qty">${i.qty}</span></div>`;total+=i.qty;});});}catch(e){}}
     }
-    card.innerHTML=`
+    c.innerHTML=`
       <div class="shop-header">
-        <div class="shop-name"><div class="shop-color-bar" style="background:${shop.color}"></div>${shop.label}</div>
-        <div class="shop-total">${order?shopTotal+' art.':'—'}</div>
+        <div class="shop-name">${shop.label}</div>
+        <div class="shop-total">${order?total+' art.':'—'}</div>
       </div>
       ${order
-        ?`<div class="shop-rows">${rows||'<div style="padding:8px 0;font-size:11px;color:var(--text-dim);font-family:DM Mono,monospace">Commande vide</div>'}</div>`
-        :`<div class="shop-missing-msg">✗ Pas de commande</div>`
-      }`;
-    sg.appendChild(card);
+        ?`<div class="shop-rows">${rows||'<div style="padding:8px 0;font-size:11px;color:var(--text-3);font-family:DM Mono,monospace">Commande vide</div>'}</div>`
+        :`<div class="shop-miss-msg">✗ Pas de commande</div>`}`;
+    sg.appendChild(c);
   });
 
   // Synthèse table
   const table=document.getElementById('synthTable');
-  let thead=`<thead><tr><th>Produit</th><th>Catégorie</th>${SHOPS.map(s=>`<th class="num" style="color:${s.color}">${s.label}</th>`).join('')}<th class="num">TOTAL</th></tr></thead>`;
-  let tbody='<tbody>';
-  const ft=[0,0,0,0]; let fg=0;
+  let html=`<thead><tr>
+    <th>Produit</th>
+    ${SHOPS.map(s=>`<th class="num" style="color:${s.color}">${s.label}</th>`).join('')}
+    <th class="num">Total</th>
+  </tr></thead><tbody>`;
+  const ft=SHOPS.map(()=>0); let fg=0;
   CATEGORIES.forEach(cat=>{
-    cat.keys.forEach(k=>{
+    const catRows=cat.keys.map(k=>{
       const qs=SHOPS.map(s=>(orders[s.id]?.[k])||0);
       const tot=qs.reduce((a,b)=>a+b,0);
-      if(tot===0) return;
-      qs.forEach((q,i)=>{ ft[i]+=q; }); fg+=tot;
-      tbody+=`<tr><td>${PRODUCT_NAMES[k]||k}</td><td style="color:var(--text-muted);font-size:11px;">${cat.label}</td>${qs.map(q=>`<td class="num${q===0?' zero':''}">${q||'—'}</td>`).join('')}<td class="num total-col">${tot}</td></tr>`;
+      return {k,qs,tot};
+    }).filter(r=>r.tot>0);
+    if(!catRows.length) return;
+    html+=`<tr class="cat-row"><td colspan="${2+SHOPS.length}">${cat.label}</td></tr>`;
+    catRows.forEach(({k,qs,tot})=>{
+      qs.forEach((q,i)=>ft[i]+=q); fg+=tot;
+      html+=`<tr>
+        <td style="padding-left:24px">${P[k]||k}</td>
+        ${qs.map(q=>`<td class="num${q===0?' zero':''}">${q||'—'}</td>`).join('')}
+        <td class="num total-col">${tot}</td>
+      </tr>`;
     });
   });
-  tbody+='</tbody>';
-  const tfoot=`<tfoot><tr><td colspan="2">TOTAL</td>${ft.map(t=>`<td class="num">${t}</td>`).join('')}<td class="num">${fg}</td></tr></tfoot>`;
-  table.innerHTML=thead+tbody+tfoot;
+  html+=`</tbody><tfoot><tr>
+    <td>Total</td>
+    ${ft.map(t=>`<td class="num">${t}</td>`).join('')}
+    <td class="num">${fg}</td>
+  </tr></tfoot>`;
+  table.innerHTML=html;
 
   document.getElementById('reportContent').style.display='block';
 }
