@@ -574,36 +574,40 @@ async function fetchOrder(dateStr, shopId){
 }
 
 // Fetch rolls depuis hiro-production (clé: YYYY-MM-DD__r__shop)
+// Paliers rolls (identique à hiro_prod)
+const RTBL=[{r:0,v:0},{r:500,v:60},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
+function calcRolls(riz,isDim){
+  if(isDim||!riz||riz<=0) return 0;
+  let v=0; for(const row of RTBL){if(riz>=row.r)v=row.v;else break;} return v;
+}
+
 async function fetchRolls(dateStr){
-  // Calcul du lundi sans UTC (évite le décalage fuseau NC)
   const parts=dateStr.split('-');
   const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-  const day=d.getDay(); // 0=dim,1=lun,...
-  const diff=(day===0?-6:1-day);
+  const isDim=d.getDay()===0;
+  const diff=(d.getDay()===0?-6:1-d.getDay());
   d.setDate(d.getDate()+diff);
-  const yy=d.getFullYear();
-  const mm=String(d.getMonth()+1).padStart(2,'0');
-  const dd=String(d.getDate()).padStart(2,'0');
-  const monday=`${yy}-${mm}-${dd}`;
-  console.log('Fetching rolls for week:', monday, 'date:', dateStr);
+  const monday=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const url=`${_BASE}/hiro-production/week_${monday}?key=${_KEY}`;
   const res=await fetch(url);
-  if(!res.ok){ console.log('Prod doc not found:', res.status); return {}; }
+  if(!res.ok) return {};
   const j=await res.json();
-  if(!j.fields){ console.log('No fields in prod doc'); return {}; }
-  // Log toutes les clés du doc pour debug
-  const allKeys=Object.keys(j.fields).filter(k=>k.includes('__r__'));
-  console.log('Roll keys in doc:', allKeys.slice(0,10));
+  if(!j.fields) return {};
   const rolls={};
   SHOPS.forEach(s=>{
-    const key1=`${dateStr}--r--${s.id}`;
-    const key2=`${dateStr}--r--${s.id}--auto`;
-    const v=j.fields[key1]||j.fields[key2];
-    if(v&&v.integerValue!==undefined) rolls[s.id]=parseInt(v.integerValue);
-    else if(v&&v.doubleValue!==undefined) rolls[s.id]=Math.round(parseFloat(v.doubleValue));
-    else rolls[s.id]=0;
+    // 1. Override manuel
+    const vm=j.fields[`${dateStr}--r--${s.id}`];
+    if(vm&&vm.integerValue!==undefined){ rolls[s.id]=parseInt(vm.integerValue); return; }
+    if(vm&&vm.doubleValue!==undefined){ rolls[s.id]=Math.round(parseFloat(vm.doubleValue)); return; }
+    // 2. Ville et Asia : rolls directs seulement
+    if(s.id==='ville'||s.id==='asia'){ rolls[s.id]=0; return; }
+    // 3. DSM/MGT/Paita : calculer depuis le riz
+    const vr=j.fields[`${dateStr}--${s.id}`];
+    let riz=0;
+    if(vr&&vr.integerValue!==undefined) riz=parseInt(vr.integerValue);
+    else if(vr&&vr.doubleValue!==undefined) riz=Math.round(parseFloat(vr.doubleValue));
+    rolls[s.id]=calcRolls(riz,isDim);
   });
-  console.log('Rolls fetched:', rolls);
   return rolls;
 }
 
