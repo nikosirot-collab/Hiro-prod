@@ -596,8 +596,8 @@ async function fetchRolls(dateStr){
   console.log('Roll keys in doc:', allKeys.slice(0,10));
   const rolls={};
   SHOPS.forEach(s=>{
-    const key1=`${dateStr}__r__${s.id}`;
-    const key2=`${dateStr}__r__${s.id}__auto`;
+    const key1=`${dateStr}--r--${s.id}`;
+    const key2=`${dateStr}--r--${s.id}--auto`;
     const v=j.fields[key1]||j.fields[key2];
     if(v&&v.integerValue!==undefined) rolls[s.id]=parseInt(v.integerValue);
     else if(v&&v.doubleValue!==undefined) rolls[s.id]=Math.round(parseFloat(v.doubleValue));
