@@ -514,11 +514,13 @@ const SHOPS = [
 ];
 
 const CATEGORIES = [
-  { label:'Salades & Entrées', keys:['bo','sin','thai','thon','plp','rouleaux','tataki'] },
-  { label:'Riz & Poke',        keys:['rizprod','pokethon','pokesaumon'] },
-  { label:'Rolls',             keys:['villerolls'] },
-  { label:'Desserts',          keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'] },
-  { label:'Tapas',             keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'] }
+  { label:'Salades',  keys:['bo','sin','thai','thon'] },
+  { label:'Rouleaux', keys:['rouleaux','plp','tataki'] },
+  { label:'Riz',      keys:['rizprod'] },
+  { label:'Poke',     keys:['pokethon','pokesaumon'] },
+  { label:'Rolls',    keys:['rolls','villerolls'] },
+  { label:'Desserts', keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'] },
+  { label:'Tapas',    keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'] }
 ];
 
 const P = {
@@ -641,11 +643,13 @@ function renderReport(dateStr, results){
 
   // Totaux par catégorie (KPI cards)
   const CAT_KPI = [
-    { label:'Salades',  keys:['bo','sin','thai','thon','plp','rouleaux','tataki'], color:'var(--gold)' },
-    { label:'Riz & Poke', keys:['rizprod','pokethon','pokesaumon'], color:'#4a9eff' },
-    { label:'Rolls',    keys:['villerolls'], color:'#b47fff' },
-    { label:'Desserts', keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'], color:'#ff8f4a' },
-    { label:'Tapas',    keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'], color:'var(--ok)' }
+    { label:'Salades',  keys:['bo','sin','thai','thon'],                                                            color:'var(--gold)' },
+    { label:'Rouleaux', keys:['rouleaux','tataki','plp'],                                                           color:'#ff8f4a' },
+    { label:'Riz',      keys:['rizprod'],                                                                           color:'#4a9eff' },
+    { label:'Poke',     keys:['pokethon','pokesaumon'],                                                             color:'#4affcf' },
+    { label:'Rolls',    keys:['rolls','villerolls'],                                                                color:'#b47fff' },
+    { label:'Desserts', keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'],    color:'#ff5c7a' },
+    { label:'Tapas',    keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'],            color:'var(--ok)' }
   ];
   const catTotaux = CAT_KPI.map(cat=>({
     ...cat,
