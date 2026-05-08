@@ -425,6 +425,13 @@
 </div>
 
 <script>
+// ── UNREGISTER SERVICE WORKER (interfère avec api.anthropic.com) ──
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+
 // ── CONFIG ──
 const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _PROJECT = 'hiro-sushi-nc';
@@ -689,6 +696,7 @@ ${context}`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
+    cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
