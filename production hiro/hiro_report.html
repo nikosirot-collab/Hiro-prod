@@ -575,19 +575,27 @@ async function fetchOrder(dateStr, shopId){
 
 // Fetch rolls depuis hiro-production (clé: YYYY-MM-DD__r__shop)
 async function fetchRolls(dateStr){
-  // Trouver le lundi de la semaine
-  const d=new Date(dateStr+'T12:00:00');
-  const day=d.getDay(); const diff=(day===0?-6:1-day);
+  // Calcul du lundi sans UTC (évite le décalage fuseau NC)
+  const parts=dateStr.split('-');
+  const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  const day=d.getDay(); // 0=dim,1=lun,...
+  const diff=(day===0?-6:1-day);
   d.setDate(d.getDate()+diff);
-  const monday=d.toISOString().split('T')[0];
+  const yy=d.getFullYear();
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  const monday=`${yy}-${mm}-${dd}`;
+  console.log('Fetching rolls for week:', monday, 'date:', dateStr);
   const url=`${_BASE}/hiro-production/week_${monday}?key=${_KEY}`;
   const res=await fetch(url);
-  if(!res.ok) return {};
+  if(!res.ok){ console.log('Prod doc not found:', res.status); return {}; }
   const j=await res.json();
-  if(!j.fields) return {};
+  if(!j.fields){ console.log('No fields in prod doc'); return {}; }
+  // Log toutes les clés du doc pour debug
+  const allKeys=Object.keys(j.fields).filter(k=>k.includes('__r__'));
+  console.log('Roll keys in doc:', allKeys.slice(0,10));
   const rolls={};
   SHOPS.forEach(s=>{
-    // Essayer les deux formats de clé possibles
     const key1=`${dateStr}__r__${s.id}`;
     const key2=`${dateStr}__r__${s.id}__auto`;
     const v=j.fields[key1]||j.fields[key2];
