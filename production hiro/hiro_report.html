@@ -221,22 +221,22 @@ body::before{
 /* ── SHOPS GRID ── */
 .carousel-scene{
   perspective:1200px;
-  margin-bottom:40px;
+  margin-bottom:56px;
   position:relative;
-  height:420px;
 }
 .carousel-3d{
-  width:100%;height:100%;
+  width:100%;
   position:relative;
   transform-style:preserve-3d;
-  transition:transform .6s cubic-bezier(.4,0,.2,1);
+  min-height:200px;
+  transition:height .4s ease;
 }
 .shop-card{
   position:absolute;
-  width:320px;
+  width:340px;
   left:50%;
   top:0;
-  margin-left:-160px;
+  margin-left:-170px;
   background:var(--surface);
   border:1px solid var(--border);
   border-radius:12px;
@@ -270,7 +270,7 @@ body::before{
   letter-spacing:.5px;padding-left:8px;
 }
 .shop-total{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-2);}
-.shop-rows{padding:10px 20px 16px;max-height:320px;overflow-y:auto;}
+.shop-rows{padding:10px 20px 16px;}
 .shop-rows::-webkit-scrollbar{width:3px;}
 .shop-rows::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 .shop-row{
@@ -525,7 +525,7 @@ const P = {
   bo:'Bun Bò', sin:'Singapour', thai:'Thaï', thon:'Thon mariné',
   plp:'Poulpe', rouleaux:'Rouleau', tataki:'Tataki',
   rizprod:'Riz', pokethon:'Poke thon', pokesaumon:'Poke saumon',
-  villerolls:'Rolls', tiramisu:'Tiramisu', ananas:'Ananas',
+  rolls:'Rolls', villerolls:'Rolls (Ville)', tiramisu:'Tiramisu', ananas:'Ananas',
   poebanane:'Poe banane', poecitrouille:'Poe citrouille',
   cheesemangue:'Cheese mangue', cheeseframboise:'Cheese framboise',
   gyoza:'Gyoza', siumai:'Siu Mai', gnem:'Grand nem', pnem:'Petit nem',
@@ -554,7 +554,7 @@ function shiftDay(n){
 }
 document.getElementById('reportDate').value=todayNC();
 
-// Fetch
+// Fetch order
 async function fetchOrder(dateStr, shopId){
   const res=await fetch(`${_BASE}/hiro-orders/order_${dateStr}_${shopId}?key=${_KEY}`);
   if(!res.ok) return null;
@@ -568,6 +568,28 @@ async function fetchOrder(dateStr, shopId){
   return o;
 }
 
+// Fetch rolls depuis hiro-production (clé: YYYY-MM-DD__r__shop)
+async function fetchRolls(dateStr){
+  // Trouver le lundi de la semaine
+  const d=new Date(dateStr+'T12:00:00');
+  const day=d.getDay(); const diff=(day===0?-6:1-day);
+  d.setDate(d.getDate()+diff);
+  const monday=d.toISOString().split('T')[0];
+  const url=`${_BASE}/hiro-production/week_${monday}?key=${_KEY}`;
+  const res=await fetch(url);
+  if(!res.ok) return {};
+  const j=await res.json();
+  if(!j.fields) return {};
+  const rolls={};
+  SHOPS.forEach(s=>{
+    const key=`${dateStr}__r__${s.id}`;
+    const v=j.fields[key];
+    if(v&&v.integerValue!==undefined) rolls[s.id]=parseInt(v.integerValue);
+    else rolls[s.id]=0;
+  });
+  return rolls;
+}
+
 // Load
 async function loadReport(){
   const dateStr=document.getElementById('reportDate').value;
@@ -576,7 +598,14 @@ async function loadReport(){
   document.getElementById('reportContent').style.display='none';
   document.getElementById('emptyState').style.display='none';
   try{
-    const results=await Promise.all(SHOPS.map(s=>fetchOrder(dateStr,s.id).then(o=>({shop:s,order:o}))));
+    const [results, rolls]=await Promise.all([
+      Promise.all(SHOPS.map(s=>fetchOrder(dateStr,s.id).then(o=>({shop:s,order:o})))),
+      fetchRolls(dateStr)
+    ]);
+    // Injecter les rolls dans chaque order
+    results.forEach(({shop,order})=>{
+      if(order) order['rolls']=rolls[shop.id]||0;
+    });
     setLoading(false);
     renderReport(dateStr,results);
   }catch(e){
@@ -675,7 +704,7 @@ function renderReport(dateStr, results){
     _carouselIdx=idx;
     const n=_cards.length;
     const angleStep=360/n;
-    const radius=340;
+    const radius=360;
     _cards.forEach((card,i)=>{
       const angle=(i-idx)*angleStep;
       const rad=angle*Math.PI/180;
@@ -691,7 +720,19 @@ function renderReport(dateStr, results){
     document.querySelectorAll('.carousel-dot').forEach((d,i)=>{
       d.classList.toggle('active',i===idx);
     });
+    // Adapter la hauteur de la scène à la carte active
+    const activeCard = _cards[idx];
+    const h = activeCard.offsetHeight;
+    if(h>0) carousel.style.height = h+'px';
   }
+  // Recalcul hauteur après chargement complet
+  function resizeCarousel(){
+    if(_cards[_carouselIdx]) {
+      carousel.style.height = _cards[_carouselIdx].offsetHeight+'px';
+    }
+  }
+  window.addEventListener('resize', resizeCarousel);
+  setTimeout(resizeCarousel, 100);
   window.carouselNext=()=>setCarousel((_carouselIdx+1)%_cards.length);
   window.carouselPrev=()=>setCarousel((_carouselIdx-1+_cards.length)%_cards.length);
   setCarousel(0);
