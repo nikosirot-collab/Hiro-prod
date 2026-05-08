@@ -516,8 +516,9 @@ const SHOPS = [
 ];
 
 const CATEGORIES = [
-  { label:'Salades',  keys:['bo','sin','thai','thon'] },
-  { label:'Rouleaux', keys:['rouleaux','plp','tataki'] },
+  { label:'Salades',  keys:['bo','sin','thai','thon','plp'] },
+  { label:'Rouleaux', keys:['rouleaux'] },
+  { label:'Tataki',   keys:['tataki'] },
   { label:'Riz',      keys:['rizprod'] },
   { label:'Poke',     keys:['pokethon','pokesaumon'] },
   { label:'Rolls',    keys:['rolls','villerolls'] },
@@ -655,8 +656,9 @@ function renderReport(dateStr, results){
 
   // Totaux par catégorie (KPI cards)
   const CAT_KPI = [
-    { label:'Salades',  keys:['bo','sin','thai','thon'],                                                            color:'var(--gold)' },
-    { label:'Rouleaux', keys:['rouleaux','tataki','plp'],                                                           color:'#ff8f4a' },
+    { label:'Salades',  keys:['bo','sin','thai','thon','plp'],                                                      color:'var(--gold)' },
+    { label:'Rouleaux', keys:['rouleaux'],                                                                          color:'#ff8f4a' },
+    { label:'Tataki',   keys:['tataki'],                                                                            color:'#e879f9' },
     { label:'Riz',      keys:['rizprod'],                                                                           color:'#4a9eff' },
     { label:'Poke',     keys:['pokethon','pokesaumon'],                                                             color:'#4affcf' },
     { label:'Rolls',    keys:['rolls','villerolls'],                                                                color:'#b47fff' },
