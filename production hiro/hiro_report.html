@@ -197,6 +197,44 @@ body::before{
 .global-card-value.gold{color:var(--gold);}
 .global-card-value .small{font-size:18px;color:var(--text-2);}
 .global-card-sub{font-size:11px;color:var(--text-2);font-weight:300;}
+/* CHART */
+.chart-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:24px 28px;margin-bottom:40px;
+}
+.chart-title{
+  font-family:'DM Mono',monospace;font-size:9px;
+  color:var(--text-3);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:24px;
+}
+.chart-grid{display:flex;flex-direction:column;gap:18px;}
+.chart-row{display:flex;align-items:center;gap:14px;}
+.chart-cat-label{
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--text-2);width:100px;flex-shrink:0;text-align:right;
+  letter-spacing:.5px;
+}
+.chart-bars{display:flex;gap:5px;flex:1;align-items:flex-end;height:36px;}
+.chart-bar-grp{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.chart-bar{
+  width:100%;border-radius:3px 3px 0 0;min-height:2px;
+  transition:height .5s cubic-bezier(.4,0,.2,1),opacity .2s;
+  cursor:default;
+}
+.chart-bar:hover{opacity:.75;}
+.chart-bar-val{
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3);
+}
+.chart-legend{
+  display:flex;gap:16px;flex-wrap:wrap;
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--border);
+}
+.chart-legend-item{
+  display:flex;align-items:center;gap:7px;
+  font-family:'DM Mono',monospace;font-size:10px;color:var(--text-2);
+}
+.chart-legend-dot{width:8px;height:8px;border-radius:2px;}
+
 
 /* ── SECTION TITLE ── */
 .section-title{
@@ -446,6 +484,13 @@ body::before{
     <!-- Global KPIs -->
     <div class="global-grid fade-in" id="globalGrid"></div>
 
+    <!-- Chart -->
+    <div class="section-title fade-in">
+      <span class="section-title-text">Répartition par catégorie</span>
+      <div class="section-title-line"></div>
+    </div>
+    <div class="chart-wrap fade-in" id="chartWrap"></div>
+
     <!-- Boutiques -->
     <div class="section-title fade-in">
       <span class="section-title-text">Commandes par boutique</span>
@@ -579,29 +624,56 @@ function renderReport(dateStr, results){
   let topK='',topV=0;
   Object.entries(totaux).forEach(([k,v])=>{ if(k!=='rizprod'&&v>topV){topV=v;topK=k;} });
 
-  // KPI cards
-  document.getElementById('globalGrid').innerHTML=`
+  // Totaux par catégorie (KPI cards)
+  const CAT_KPI = [
+    { label:'Salades',  keys:['bo','sin','thai','thon','plp','rouleaux','tataki'], color:'var(--gold)' },
+    { label:'Riz & Poke', keys:['rizprod','pokethon','pokesaumon'], color:'#4a9eff' },
+    { label:'Rolls',    keys:['villerolls'], color:'#b47fff' },
+    { label:'Desserts', keys:['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'], color:'#ff8f4a' },
+    { label:'Tapas',    keys:['gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'], color:'var(--ok)' }
+  ];
+  const catTotaux = CAT_KPI.map(cat=>({
+    ...cat,
+    total: cat.keys.reduce((s,k)=>s+totaux[k],0)
+  }));
+
+  document.getElementById('globalGrid').innerHTML = catTotaux.map(cat=>`
     <div class="global-card">
-      <div class="global-card-eyebrow">Total articles</div>
-      <div class="global-card-value gold">${grandTotal}</div>
-      <div class="global-card-sub">toutes boutiques</div>
-    </div>
-    <div class="global-card">
-      <div class="global-card-eyebrow">Boutiques</div>
-      <div class="global-card-value">${boutiquesOk}<span class="small"> / 4</span></div>
-      <div class="global-card-sub">ont commandé</div>
-    </div>
-    <div class="global-card">
-      <div class="global-card-eyebrow">Top produit</div>
-      <div class="global-card-value" style="font-size:20px;padding-top:8px;">${topK?P[topK]:'—'}</div>
-      <div class="global-card-sub">${topV>0?topV+' unités':''}</div>
-    </div>
-    <div class="global-card">
-      <div class="global-card-eyebrow">Riz total</div>
-      <div class="global-card-value">${totaux['rizprod']||0}</div>
-      <div class="global-card-sub">portions</div>
-    </div>
-  `;
+      <div class="global-card-eyebrow">${cat.label}</div>
+      <div class="global-card-value" style="color:${cat.color}">${cat.total}</div>
+      <div class="global-card-sub">${boutiquesOk} boutique${boutiquesOk>1?'s':''}</div>
+    </div>`).join('');
+
+  // Chart par catégorie x boutique
+  const SHOP_COLORS = {'dsm':'#4a9eff','mgt':'#ff8f4a','paita':'#b47fff','ville':'#ff5c7a'};
+  // max pour normaliser les barres
+  const allBarVals = [];
+  catTotaux.forEach(cat=>{
+    SHOPS.forEach(s=>{
+      allBarVals.push(cat.keys.reduce((sum,k)=>sum+(orders[s.id]?.[k]||0),0));
+    });
+  });
+  const maxVal = Math.max(...allBarVals, 1);
+
+  let chartHtml = '<div class="chart-title">Unités par catégorie & boutique</div><div class="chart-grid">';
+  catTotaux.forEach(cat=>{
+    chartHtml += '<div class="chart-row"><div class="chart-cat-label">'+cat.label+'</div><div class="chart-bars">';
+    SHOPS.forEach(s=>{
+      const val = cat.keys.reduce((sum,k)=>sum+(orders[s.id]?.[k]||0),0);
+      const pct = Math.round((val/maxVal)*100);
+      chartHtml += `<div class="chart-bar-grp">
+        <div class="chart-bar-val">${val||''}</div>
+        <div class="chart-bar" style="height:${Math.max(pct*.32,val?2:0)}px;background:${SHOP_COLORS[s.id]};"></div>
+      </div>`;
+    });
+    chartHtml += '</div></div>';
+  });
+  chartHtml += '</div><div class="chart-legend">';
+  SHOPS.forEach(s=>{
+    chartHtml += `<div class="chart-legend-item"><div class="chart-legend-dot" style="background:${SHOP_COLORS[s.id]}"></div>${s.label}</div>`;
+  });
+  chartHtml += '</div>';
+  document.getElementById('chartWrap').innerHTML = chartHtml;
 
   // Shop cards
   const sg=document.getElementById('shopsGrid'); sg.innerHTML='';
