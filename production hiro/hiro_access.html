@@ -2823,7 +2823,11 @@ function laboPrint(){
     +'@page{size:A4 landscape;margin:10mm}'
     +'*{box-sizing:border-box;}'
     +'body{font-family:system-ui,sans-serif;margin:0;padding:0;}'
+    +'@media print{.no-print{display:none!important;}}'
     +'</style></head><body>'
+    +'<div class="no-print" style="text-align:right;padding:6px 8px 0;">'
+    +'<button onclick="window.close()" style="padding:5px 14px;border:1px solid #ccc;border-radius:6px;cursor:pointer;font-size:12px;background:#f5f5f5;">← Retour</button>'
+    +'</div>'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;border-bottom:2px solid #1a1916;padding-bottom:6px;">'
     +'<div style="font-size:16px;font-weight:700;">Commandes Hiro Sushi</div>'
     +'<div style="font-size:12px;color:#666;">Livraison : '+dateLabel+'</div>'
@@ -2831,7 +2835,7 @@ function laboPrint(){
     +'<div style="display:flex;gap:0;height:calc(100vh - 50px);">'
     +cols.join('')
     +'</div>'
-    +'<script>window.onload=function(){window.print();}<\/script>'
+    +'<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>'
     +'</body></html>';
 
   var win=window.open('','_blank');
@@ -2872,14 +2876,17 @@ function laboPrintSalade(){
 
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
     +'<title>Salade '+dateLabel+'</title>'
-    +'<style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box;}body{font-family:system-ui,sans-serif;margin:0;padding:0;}</style>'
+    +'<style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box;}body{font-family:system-ui,sans-serif;margin:0;padding:0;}@media print{.no-print{display:none!important;}}</style>'
     +'</head><body>'
+    +'<div class="no-print" style="text-align:right;padding:6px 8px 0;">'
+    +'<button onclick="window.close()" style="padding:5px 14px;border:1px solid #ccc;border-radius:6px;cursor:pointer;font-size:12px;background:#f5f5f5;">← Retour</button>'
+    +'</div>'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;border-bottom:3px solid #1a1916;padding-bottom:8px;">'
     +'<div style="font-size:20px;font-weight:800;">🥗 Salade — Hiro Sushi</div>'
     +'<div style="font-size:14px;color:#666;">Livraison : '+dateLabel+'</div>'
     +'</div>'
     +'<div style="display:flex;gap:0;">'+cols.join('')+'</div>'
-    +'<script>window.onload=function(){window.print();}<\/script>'
+    +'<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>'
     +'</body></html>';
 
   var win=window.open('','_blank');

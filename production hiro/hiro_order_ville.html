@@ -783,18 +783,32 @@ async function loadRecap(){
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
 
+    // Poids saisis par Access (toujours dans vlibre.poids)
+    var _poids={};
+    try{if(d.vlibre){var _lv=JSON.parse(d.vlibre);if(_lv.poids)_poids=_lv.poids;}}catch(e){}
+
     // Plats chauds
     var platsRows='';
     platsRows+=getV('gyoza')>0?rR('Gyoza',getV('gyoza')):'';
     platsRows+=getV('siumai')>0?rR('Siu Mai',getV('siumai')):'';
-    if(libreStr){try{var lp2=JSON.parse(libreStr);if(lp2.plats){lp2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+=rR(i.name,i.qty);});}}catch(e){}}
+    if(libreStr){try{var lp2=JSON.parse(libreStr);if(lp2.plats){lp2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+      var k='plat_'+i.name;
+      var pds=_poids[k]||0;
+      var nm=pds?(i.name+' <span style="font-size:10px;font-weight:400;color:#7a3db8;background:#f3eefe;border-radius:4px;padding:1px 5px;">'+pds+' kg</span>'):i.name;
+      platsRows+='<div class="recap-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">'+nm+'</div></div>';
+    });}}catch(e){}}
     if(!platsRows) platsRows='<div class="recap-row"><div class="recap-qty zero">—</div><div class="recap-name zero">Aucun</div></div>';
 
     var CHR_NAMES={"chr_farce_wonton":"FARCE wonton","chr_salades":"Salades","chr_concombres":"Concombres","chr_carottes":"Carottes","chr_oignons_secs":"Oignons secs","chr_oignons_verts":"Oignons verts","chr_ail":"Ail","chr_vinaigre_blanc":"Vinaigre blanc","chr_nuoc_mam":"Nuoc mam","chr_vetsin":"Vetsin","chr_poivre":"Poivre","chr_maggie":"Maggie","chr_sel":"Sel","chr_citron":"Citron","chr_curry_japonais":"Curry japonais","chr_curry":"Curry","chr_soyou_poisson":"Soyou poisson","chr_soyou_sachet_rouge":"Soyou sachet rouge","chr_soyou_yamasa_bouteilles":"Soyou YAMASA","chr_wasabi":"Wasabi","chr_gingembre":"Gingembre","chr_navet":"Navet","chr_panko":"Panko","chr_nori":"Nori","chr_sesames_grilles":"Sésames grillés","chr_sauce_cacahuete":"Sauce cacahuète","chr_sauce_huitres":"Sauce huîtres","chr_sauce_bbq":"Sauce BBQ","chr_ketchup":"Ketchup","chr_sweet_chili":"Sweet chili","chr_huile_sesames":"Huile sésames","chr_beurre":"Beurre","chr_oeufs":"Oeufs","chr_bull_dog_teriyaki":"Bull dog teriyaki","chr_mirin":"Mirin","chr_bombe_graisse":"Bombe graisse","chr_ito_sugar_free_600_ml":"Ito SF 600ml","chr_ito_sugar_free_300ml":"Ito SF 300ml","chr_ito_lychee":"Ito lychee","chr_ito_peach":"Ito peach","chr_ito_citron":"Ito citron"};
+    var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes','chr_oignons_secs'];
     var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
     var chrContent='';
     ALL_KEYS.filter(function(k){return k.startsWith('chr_');}).forEach(function(k){
-      var v=getV(k); if(v>0) chrContent+=rR(CHR_NAMES[k]||k,v);
+      var v=getV(k); if(v>0){
+        var nm=CHR_NAMES[k]||k;
+        if(CHR_POIDS_KEYS.indexOf(k)!==-1&&_poids[k])nm+=' <span style="font-size:10px;font-weight:400;color:#7a3db8;background:#f3eefe;border-radius:4px;padding:1px 5px;">'+_poids[k]+' kg</span>';
+        chrContent+='<div class="recap-row"><div class="recap-qty">'+v+'</div><div class="recap-name" style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">'+nm+'</div></div>';
+      }
     });
     if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+=rR(i.name,i.qty);});}}catch(e){}}
     if(chrContent) chrRows=chrContent;
