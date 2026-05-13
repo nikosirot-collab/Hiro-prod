@@ -815,9 +815,6 @@ async function loadHistorique(){
         // CHR
         var chrRows='';
         if(_lparsed&&_lparsed.chr){_lparsed.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}
-        if(IS_VILLE){
-          LABO_CHR_KEYS&&LABO_CHR_KEYS.forEach(function(k){var val=getV(k)||getV('vqty_'+k);if(val>0)chrRows+='<div class="rh-row"><div class="rh-qty">'+val+'</div><div class="rh-name">'+(LABO_CHR_NAMES&&LABO_CHR_NAMES[k]?LABO_CHR_NAMES[k]:k)+'</div></div>';});
-        }
         // Plats chauds Ville
         var platsRows='';
         if(IS_VILLE){
