@@ -159,9 +159,10 @@ async function checkOrderPwd(){
   var v=document.getElementById('pwd-input').value;
   var hash=await _getOrderHash();
   if(!hash){document.getElementById('pwd-error').style.display='block';return;}
-  if(await _sha256(v)===hash){document.getElementById('login-screen').style.display='none';}
+  if(await _sha256(v)===hash){localStorage.setItem('hiro-order-hash-mgt',hash);document.getElementById('login-screen').style.display='none';}
   else{document.getElementById('pwd-error').style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();}
 }
+(async function(){var stored=localStorage.getItem('hiro-order-hash-mgt');if(!stored)return;var hash=await _getOrderHash();if(hash&&stored===hash)document.getElementById('login-screen').style.display='none';})();
 </script>
 
 <script>

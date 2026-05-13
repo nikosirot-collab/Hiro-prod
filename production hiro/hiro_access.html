@@ -207,7 +207,7 @@ const _PWD='1af5a601'; // hiro2026
 function checkPwd(){
   const v=document.getElementById('pwd-input').value;
   if(_h(v)===_PWD){
-    sessionStorage.setItem('hiro-ok','1');
+    localStorage.setItem('hiro-ok','1');
     document.getElementById('login-screen').style.display='none';
   } else {
     document.getElementById('pwd-error').style.display='block';
@@ -215,7 +215,7 @@ function checkPwd(){
     document.getElementById('pwd-input').focus();
   }
 }
-if(sessionStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
+if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
 </script>
 
 <header class="hdr">
@@ -3197,7 +3197,7 @@ if(!navigator.onLine){
       if(chkRes&&chkRes.ok){
         var chkJson=await chkRes.json();
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          sessionStorage.clear();
+          localStorage.removeItem('hiro-ok');
           document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Acces desactive<br><small style='color:#888;'>Contactez administrateur</small></div></div>";
           return;
         }
