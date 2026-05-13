@@ -298,7 +298,7 @@ function renderShopCard(shop){
     poissonRows += mkRow('Poke thon',   getVal(order,'pokethon'));
     poissonRows += mkRow('Poke saumon', getVal(order,'pokesaumon'));
     poissonRows += mkRow('Gyoza',       getVal(order,'gyoza'));
-    if(shop==='dsm') poissonRows += mkRow('Poulet citron', getVal(order,'pouletcitron'));
+    if(shop==='dsm') poissonRows += mkRow('Poulet citron', getVal(order,'vqty_pouletfrit')||getVal(order,'pouletfrit'));
   }
 
   // PLATS CHAUDS (Ville)
