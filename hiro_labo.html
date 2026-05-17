@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="fr">
+<!-- hiro_labo.html -->
+<head>
+<meta charset="UTF-8">
+<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
+<link rel="manifest" href="/Hiro-prod/production%20hiro/manifest-labo.json">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiro Labo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-s:#c8c5ba;
+  --text:#1a1916;--muted:#6b6860;--hint:#a09d96;
+  --dsm:#1a5fa8;--mgt:#0d7a52;--paita:#b84a1a;--ville:#7a3db8;
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;padding-bottom:28px;}
+
+.hdr{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.hdr-title{font-size:15px;font-weight:500;}
+.hdr-sub{font-size:10px;color:#999;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#3db87a;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:#aaa;}
+
+.date-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 1rem;display:flex;align-items:center;gap:12px;}
+.date-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border-s);background:none;cursor:pointer;font-size:17px;color:var(--text);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
+.date-lbl{flex:1;text-align:center;font-size:14px;font-weight:600;text-transform:capitalize;}
+
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;position:sticky;top:52px;z-index:99;}
+.nav-tab{flex:1;padding:12px 8px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;text-align:center;-webkit-tap-highlight-color:transparent;transition:color .15s;}
+.nav-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text);}
+
+.page{display:none;}.page.active{display:block;}
+.main{padding:12px;max-width:760px;margin:0 auto;}
+
+/* ── COMMANDE : grille boutiques ── */
+.shops-grid{display:flex;flex-direction:column;gap:12px;}
+@media(min-width:600px){.shops-grid{display:grid;grid-template-columns:1fr 1fr;}}
+
+.shop-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.shop-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;}
+.shop-name{font-size:15px;font-weight:700;}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.badge-ok {background:#e4f5ee;color:#0d7a52;}
+.badge-wait{background:#fef3e2;color:#b07000;}
+.badge-val {background:#e4f5ee;color:#0d7a52;}
+.shop-time{font-size:10px;color:var(--muted);margin-right:6px;}
+
+/* Sections internes */
+.section{border-top:1px solid var(--border);}
+.sec-title{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--hint);padding:5px 10px;background:#faf9f6;}
+.item-row{display:flex;align-items:baseline;padding:3px 10px 3px 10px;gap:8px;border-top:1px solid var(--border);}
+.item-row:first-of-type{border-top:none;}
+.item-qty{font-size:16px;font-weight:700;font-family:'DM Mono',monospace;min-width:28px;text-align:right;flex-shrink:0;}
+.item-name{font-size:11px;font-weight:500;line-height:1.3;}
+.item-libre{display:flex;align-items:baseline;padding:3px 10px;gap:8px;border-top:1px solid var(--border);background:#fef9f0;}
+.item-libre .item-qty{color:var(--ville);}
+.no-cmd{padding:14px;text-align:center;color:var(--hint);font-size:12px;font-style:italic;border-top:1px solid var(--border);}
+
+/* ── RIZ & ROLL ── */
+.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.rr-card.total{border-color:var(--border-s);background:#faf9f6;}
+.rr-head{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--border);}
+.rr-shop{font-size:15px;font-weight:700;}
+.rr-body{display:grid;grid-template-columns:repeat(3,1fr);}
+.rr-cell{padding:12px 8px;border-right:1px solid var(--border);text-align:center;}
+.rr-cell:last-child{border-right:none;}
+.rr-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+.rr-val{font-size:24px;font-weight:700;font-family:'DM Mono',monospace;}
+.rr-val.dim{color:var(--hint);font-size:16px;font-weight:400;}
+.rr-sub{font-size:10px;color:var(--hint);margin-top:2px;}
+.dim-banner{background:#fef3e2;border:1px solid #e6c070;border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:13px;color:#7a4f00;}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <img class="logo" src="data:image/jpeg;base64,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" alt="Hiro">
+    <div><div class="hdr-title">Hiro Labo</div><div class="hdr-sub">Lecture seule</div></div>
+  </div>
+  <div class="live-badge"><div class="live-dot"></div><span>Live</span></div>
+</header>
+
+<div class="date-bar">
+  <button class="date-btn" onclick="changeDate(-1)">&#8592;</button>
+  <div class="date-lbl" id="date-lbl">&#8212;</div>
+  <button class="date-btn" onclick="changeDate(1)">&#8594;</button>
+</div>
+
+<nav class="nav">
+  <div class="nav-tab active" onclick="showPage('cmd',this)">Commande</div>
+  <div class="nav-tab" onclick="showPage('rizroll',this)">Riz &amp; Roll</div>
+</nav>
+
+<div id="page-cmd" class="page active"><div class="main" id="content-cmd"></div></div>
+<div id="page-rizroll" class="page"><div class="main" id="content-rizroll"></div></div>
+
+<script>
+var _API = 'https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents';
+var _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+// Ordre identique à l'impression Access
+var SHOPS  = ['paita','dsm','mgt','ville'];
+var LABELS = {dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+var COLORS = {dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'var(--ville)'};
+
+var SALADE = [
+  {key:'bo',name:'Bun Bo'},{key:'sin',name:'Singapour'},{key:'thon',name:'Thon mariné'},
+  {key:'thai',name:'Thaï'},{key:'plp',name:'Poulpe'},{key:'rouleaux',name:'Rouleau'},
+  {key:'tataki',name:'Tataki'}
+];
+var DESSERT = [
+  {key:'tiramisu',name:'Tiramisu'},{key:'ananas',name:'Ananas'},
+  {key:'poebanane',name:'Poe banane'},{key:'poecitrouille',name:'Poe citrouille'},
+  {key:'cheesemangue',name:'Cheese mangue'},{key:'cheeseframboise',name:'Cheese framboise'}
+];
+var TAPAS = [
+  {key:'gyoza',name:'Gyoza'},{key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'sesame',name:'Sésame'},{key:'banhbao',name:'Banh Bao'}
+];
+var TAPAS_VILLE = [
+  {key:'gnem',name:'Grand nem'},{key:'pnem',name:'Petit nem'},
+  {key:'sesame',name:'Sésame'},{key:'banhbao',name:'Banh Bao'},{key:'samossa',name:'Samossa'}
+];
+var CHR_KEYS  = [
+  'chr_salades','chr_farce_wonton','chr_concombres','chr_carottes',
+  'chr_oignons_secs','chr_oignons_verts','chr_ail','chr_vinaigre_blanc',
+  'chr_nuoc_mam','chr_vetsin','chr_poivre','chr_maggie','chr_sel','chr_citron',
+  'chr_curry_japonais','chr_curry','chr_soyou_poisson','chr_soyou_sachet_rouge',
+  'chr_soyou_yamasa_bouteilles','chr_wasabi','chr_gingembre','chr_navet',
+  'chr_panko','chr_nori','chr_sesames_grilles','chr_sauce_cacahuete',
+  'chr_sauce_huitres','chr_sauce_bbq','chr_ketchup','chr_sweet_chili',
+  'chr_huile_sesames','chr_beurre','chr_oeufs','chr_bull_dog_teriyaki',
+  'chr_mirin','chr_bombe_graisse',
+  'chr_ito_sugar_free_600_ml','chr_ito_sugar_free_300ml',
+  'chr_ito_lychee','chr_ito_peach','chr_ito_citron'
+];
+var CHR_NAMES = {
+  'chr_salades':'Salades','chr_farce_wonton':'Farce wonton',
+  'chr_concombres':'Concombres','chr_carottes':'Carottes',
+  'chr_oignons_secs':'Oignons secs','chr_oignons_verts':'Oignons verts',
+  'chr_ail':'Ail','chr_vinaigre_blanc':'Vinaigre blanc',
+  'chr_nuoc_mam':'Nuoc mam','chr_vetsin':'Vetsin','chr_poivre':'Poivre',
+  'chr_maggie':'Maggie','chr_sel':'Sel','chr_citron':'Citron',
+  'chr_curry_japonais':'Curry japonais','chr_curry':'Curry',
+  'chr_soyou_poisson':'Soyou poisson','chr_soyou_sachet_rouge':'Soyou rouge',
+  'chr_soyou_yamasa_bouteilles':'Soyou YAMASA','chr_wasabi':'Wasabi',
+  'chr_gingembre':'Gingembre','chr_navet':'Navet','chr_panko':'Panko',
+  'chr_nori':'Nori','chr_sesames_grilles':'Sésames grillés',
+  'chr_sauce_cacahuete':'Sauce cacahuète','chr_sauce_huitres':'Sauce huîtres',
+  'chr_sauce_bbq':'Sauce BBQ','chr_ketchup':'Ketchup',
+  'chr_sweet_chili':'Sweet chili','chr_huile_sesames':'Huile sésames',
+  'chr_beurre':'Beurre','chr_oeufs':'Oeufs','chr_bull_dog_teriyaki':'Bull dog',
+  'chr_mirin':'Mirin','chr_bombe_graisse':'Bombe graisse',
+  'chr_ito_sugar_free_600_ml':'Ito SF 600ml','chr_ito_sugar_free_300ml':'Ito SF 300ml',
+  'chr_ito_lychee':'Ito lychee','chr_ito_peach':'Ito peach','chr_ito_citron':'Ito citron'
+};
+
+var RTBL = [{r:0,v:0},{r:500,v:60},{r:750,v:60},{r:1000,v:60},{r:1250,v:70},{r:1500,v:80},{r:2000,v:100}];
+function computeRolls(riz, isDim) {
+  if (isDim || !riz || riz <= 0) return 0;
+  var v = 0;
+  for (var i = 0; i < RTBL.length; i++) { if (riz >= RTBL[i].r) v = RTBL[i].v; else break; }
+  return v;
+}
+
+// ── DATE (GMT+11) ──
+function ncNow(){ var n=new Date(); return new Date(n.getTime()+n.getTimezoneOffset()*60000+11*3600000); }
+function getTomorrow(){ var nc=ncNow(); nc.setDate(nc.getDate()+1); return nc; }
+function ds(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtFull(d){ return d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}); }
+function fmtTime(ts){ return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+function getMondayStr(d){
+  var dow=d.getDay(), diff=dow===0?-6:1-dow;
+  var m=new Date(d.getFullYear(),d.getMonth(),d.getDate()+diff);
+  return ds(m);
+}
+
+var currentDate = getTomorrow();
+var ordersData  = {};
+var fishData    = {};
+var _poll       = null;
+
+document.getElementById('date-lbl').textContent = fmtFull(currentDate);
+
+function changeDate(delta){
+  currentDate.setDate(currentDate.getDate()+delta);
+  document.getElementById('date-lbl').textContent = fmtFull(currentDate);
+  ordersData={}; fishData={};
+  startPolling();
+}
+function showPage(p,el){
+  document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active');});
+  document.querySelectorAll('.nav-tab').forEach(function(x){x.classList.remove('active');});
+  document.getElementById('page-'+p).classList.add('active');
+  el.classList.add('active');
+  renderAll();
+}
+
+// ── GETTERS ──
+function getVal(order, key){
+  if(!order) return 0;
+  if(order.status==='validated' && order['vqty_'+key]!==undefined)
+    return parseInt(order['vqty_'+key])||0;
+  return parseInt(order[key])||0;
+}
+
+// Tamago : calcul par jour si pas de valeur explicite > 0 dans Firestore
+function getTamagoDefault(shop){
+  var dow = currentDate.getDay();        // 0=Dim,1=Lun,...,6=Sam
+  var di  = dow===0 ? 6 : dow-1;        // 0=Lun,...,6=Dim
+  if(shop==='dsm'||shop==='paita') return di===6 ? 0 : 1;
+  if(shop==='mgt') return [0,2,4,5].indexOf(di)!==-1 ? 1 : 0;
+  return 0;
+}
+function getFish(shop, field){
+  var key = ds(currentDate)+'__f__'+shop+'__'+field;
+  if(field==='tamago'){
+    // N'utiliser la valeur Firestore que si c'est un override positif explicite
+    var stored = fishData[key];
+    if(stored!==undefined && stored>0) return stored;
+    return getTamagoDefault(shop);
+  }
+  return fishData[key]||0;
+}
+function getRiz(shop){ return fishData[ds(currentDate)+'__'+shop]||0; }
+function getRoll(shop){
+  var dStr=ds(currentDate);
+  var manual=fishData[dStr+'__r__'+shop];
+  if(manual!==undefined) return manual;
+  return computeRolls(getRiz(shop), currentDate.getDay()===0);
+}
+
+// ── RENDER SECTION (seulement items > 0) ──
+function mkSection(title, rows){
+  if(!rows) return '';
+  return '<div class="section"><div class="sec-title">'+title+'</div>'+rows+'</div>';
+}
+function mkRow(name, val, libre){
+  if(!val||val===0) return '';
+  var cls = libre ? 'item-libre' : 'item-row';
+  return '<div class="'+cls+'"><div class="item-qty">'+val+'</div><div class="item-name">'+name+'</div></div>';
+}
+
+// ── RENDER CARTE BOUTIQUE ──
+function renderShopCard(shop){
+  var order  = ordersData[shop];
+  var color  = COLORS[shop];
+  var label  = LABELS[shop];
+  var isVille = shop==='ville';
+
+  // Header
+  var isVal = order && order.status==='validated';
+  var hasOrder = order && (order.ts || isVal);
+  var ts = hasOrder ? (order.ts||order.validatedAt||0) : 0;
+  var badgeHtml = !hasOrder
+    ? '<span class="badge badge-wait">En attente</span>'
+    : (isVal
+        ? '<span class="badge badge-val">&#10003; Validée</span>'
+        : '<span class="badge badge-ok">Reçue</span>'
+      );
+  var timeHtml = ts ? '<span class="shop-time">'+fmtTime(ts)+'</span>' : '';
+  var headRight = '<div style="display:flex;align-items:center;gap:0;">'+timeHtml+badgeHtml+'</div>';
+  var cardHead = '<div class="shop-head" style="border-bottom:3px solid '+color+';">'+
+    '<div class="shop-name" style="color:'+color+'">'+label+'</div>'+headRight+'</div>';
+
+  if(!hasOrder){
+    return '<div class="shop-card">'+cardHead+'<div class="no-cmd">Commande non reçue</div></div>';
+  }
+
+  var libreStr = order.vlibre||order.libre||'';
+  var libreObj = {};
+  try{ libreObj=JSON.parse(libreStr); }catch(e){}
+
+  // SALADE
+  var saladeRows = SALADE.map(function(p){ return mkRow(p.name,getVal(order,p.key)); }).join('');
+
+  // POISSON / RIZ / ROLL
+  var poissonRows = '';
+  poissonRows += mkRow('Thon',   getFish(shop,'t'));
+  poissonRows += mkRow('Saumon', getFish(shop,'s'));
+  poissonRows += mkRow('Aburi',  getFish(shop,'a'));
+  poissonRows += mkRow('Tamago', getFish(shop,'tamago'));
+  var riz = getVal(order,'rizprod')||getRiz(shop);
+  poissonRows += mkRow('Riz', riz);
+  if(isVille){
+    poissonRows += mkRow('Rolls', getVal(order,'villerolls')||getRoll(shop));
+  } else {
+    poissonRows += mkRow('Roll', getRoll(shop));
+    poissonRows += mkRow('Poke thon',   getVal(order,'pokethon'));
+    poissonRows += mkRow('Poke saumon', getVal(order,'pokesaumon'));
+    poissonRows += mkRow('Gyoza',       getVal(order,'gyoza'));
+    if(shop==='dsm') poissonRows += mkRow('Poulet citron', getVal(order,'vqty_pouletfrit')||getVal(order,'pouletfrit'));
+  }
+
+  // PLATS CHAUDS (Ville)
+  var platsRows = '';
+  if(isVille){
+    platsRows += mkRow('Gyoza',   getVal(order,'gyoza'));
+    platsRows += mkRow('Siu Mai', getVal(order,'siumai'));
+    if(libreObj.plats) libreObj.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+      platsRows += mkRow(i.name, i.qty, true);
+    });
+  }
+
+  // TAPAS
+  var tapasList = isVille ? TAPAS_VILLE : TAPAS;
+  var tapasRows = tapasList.map(function(p){ return mkRow(p.name,getVal(order,p.key)); }).join('');
+
+  // DESSERT
+  var dessertRows = DESSERT.map(function(p){ return mkRow(p.name,getVal(order,p.key)); }).join('');
+  if(libreObj.tarte) libreObj.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+    dessertRows += mkRow(i.name, i.qty, true);
+  });
+
+  // CHR (fixes)
+  var chrRows = '';
+  CHR_KEYS.forEach(function(k){ chrRows += mkRow(CHR_NAMES[k]||k, getVal(order,k)); });
+  // CHR libres
+  if(libreObj.chr) libreObj.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+    chrRows += mkRow(i.name, i.qty, true);
+  });
+
+  // Note
+  var noteHtml = order.note
+    ? '<div style="padding:7px 10px;font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);">'+order.note+'</div>'
+    : '';
+
+  return '<div class="shop-card">'+
+    cardHead+
+    mkSection('Salade', saladeRows)+
+    mkSection('Poisson / Riz / Roll', poissonRows)+
+    (platsRows ? mkSection('Plats chauds', platsRows) : '')+
+    (tapasRows ? mkSection('Tapas', tapasRows) : '')+
+    (dessertRows ? mkSection('Dessert', dessertRows) : '')+
+    (chrRows ? mkSection('CHR', chrRows) : '')+
+    noteHtml+
+    '</div>';
+}
+
+// ── RENDER COMMANDE ──
+function renderCmd(){
+  var el = document.getElementById('content-cmd');
+  var html = '<div class="shops-grid">';
+  SHOPS.forEach(function(s){ html += renderShopCard(s); });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ── RENDER RIZ & ROLL ──
+function renderRizRoll(){
+  var el = document.getElementById('content-rizroll');
+  var isDim = currentDate.getDay()===0;
+  var html = '';
+  if(isDim) html += '<div class="dim-banner">&#128204; Dimanche — pas de rolls</div>';
+
+  var totalRiz=0, totalRolls=0;
+  var allShops=['dsm','mgt','paita','ville'];
+  allShops.forEach(function(s){
+    var riz  = getRiz(s);
+    var rolls= getRoll(s);
+    var bacs = riz>0 ? Math.round(riz/250*10)/10 : 0;
+    totalRiz+=riz; totalRolls+=rolls;
+    var color=COLORS[s], label=LABELS[s];
+    html += '<div class="rr-card">'+
+      '<div class="rr-head">'+
+        '<div class="rr-shop" style="color:'+color+'">'+label+'</div>'+
+        (riz>0?'<div style="font-size:11px;color:var(--muted);">Riz saisi</div>':'<div style="font-size:11px;color:var(--hint);">En attente</div>')+
+      '</div>'+
+      '<div class="rr-body">'+
+        '<div class="rr-cell"><div class="rr-label">Riz boules</div><div class="rr-val'+(riz===0?' dim':'')+'">'+( riz||'—')+'</div></div>'+
+        '<div class="rr-cell"><div class="rr-label">Bacs</div><div class="rr-val'+(bacs===0?' dim':'')+'">'+( bacs||'—')+'</div></div>'+
+        '<div class="rr-cell"><div class="rr-label">Rolls</div>'+
+          (isDim&&s!=='ville'
+            ? '<div class="rr-val dim">—</div><div class="rr-sub">Dim.</div>'
+            : '<div class="rr-val'+(rolls===0?' dim':'')+'">'+( rolls||'—')+'</div>'
+          )+
+        '</div>'+
+      '</div></div>';
+  });
+
+  var totBacs = totalRiz>0 ? Math.round(totalRiz/250*10)/10 : 0;
+  html += '<div class="rr-card total">'+
+    '<div class="rr-head"><div class="rr-shop">Total</div></div>'+
+    '<div class="rr-body">'+
+      '<div class="rr-cell"><div class="rr-label">Riz total</div><div class="rr-val'+(totalRiz===0?' dim':'')+'">'+( totalRiz||'—')+'</div></div>'+
+      '<div class="rr-cell"><div class="rr-label">Bacs total</div><div class="rr-val'+(totBacs===0?' dim':'')+'">'+( totBacs||'—')+'</div></div>'+
+      '<div class="rr-cell"><div class="rr-label">Rolls total</div><div class="rr-val'+(totalRolls===0?' dim':'')+'">'+( totalRolls||'—')+'</div></div>'+
+    '</div></div>';
+  el.innerHTML = html;
+}
+
+function renderAll(){
+  renderCmd();
+  renderRizRoll();
+}
+
+// ── FETCH ──
+async function fetchFishData(){
+  try{
+    var monStr = getMondayStr(currentDate);
+    var nxt = new Date(currentDate.getFullYear(),currentDate.getMonth(),currentDate.getDate()+7);
+    var monNext = getMondayStr(nxt);
+    var weeks = monNext!==monStr ? [monStr,monNext] : [monStr];
+    for(var i=0;i<weeks.length;i++){
+      var res=await fetch(_API+'/hiro-production/week_'+weeks[i]+'?key='+_KEY);
+      if(res.ok){
+        var json=await res.json();
+        if(json.fields) Object.entries(json.fields).forEach(function(e){
+          var k=e[0].replace(/--/g,'__'), v=e[1];
+          if(v.integerValue!==undefined) fishData[k]=parseInt(v.integerValue);
+          else if(v.doubleValue!==undefined) fishData[k]=parseFloat(v.doubleValue);
+        });
+      }
+    }
+  }catch(e){}
+}
+async function fetchOrders(){
+  var dStr=ds(currentDate);
+  var shops=['dsm','mgt','paita','ville'];
+  await Promise.all(shops.map(async function(s){
+    try{
+      var res=await fetch(_API+'/hiro-orders/order_'+dStr+'_'+s+'?key='+_KEY);
+      if(res.ok){
+        var json=await res.json(); var d={};
+        if(json.fields) Object.entries(json.fields).forEach(function(e){
+          var k=e[0],v=e[1];
+          if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
+          else if(v.stringValue!==undefined) d[k]=v.stringValue;
+          else if(v.booleanValue!==undefined) d[k]=v.booleanValue;
+        });
+        ordersData[s]=d;
+      }
+    }catch(e){}
+  }));
+  renderAll();
+}
+function startPolling(){
+  if(_poll) clearInterval(_poll);
+  fetchFishData().then(function(){ fetchOrders(); });
+  _poll=setInterval(fetchOrders,8000);
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js').catch(function(){});
+}
+startPolling();
+</script>
+
+<!-- PRESENCE PING -->
+<script>
+(function(){
+  var _PA='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
+  var _PK='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+  var _id=localStorage.getItem('hiro-dev-id')||'dev-'+Math.random().toString(36).substr(2,9);
+  localStorage.setItem('hiro-dev-id',_id);
+  function _ua(){var ua=navigator.userAgent;if(/CriOS/.test(ua))return'Chrome';if(/Chrome/.test(ua))return'Chrome';if(/Firefox/.test(ua))return'Firefox';if(/Safari/.test(ua))return'Safari';return'';}
+  function _dev(){var ua=navigator.userAgent,w=window.screen.width,t='ontouchstart'in window;if(/iPad/.test(ua)||(t&&w>=768))return'iPad';if(/iPhone/.test(ua))return'iPhone';if(/Android/.test(ua)&&t&&w<768)return'Android Phone';if(/Android/.test(ua)&&t)return'Android Tablet';if(/Macintosh/.test(ua))return'Mac';if(/Windows/.test(ua))return'PC Windows';return'Inconnu';}
+  async function ping(){
+    try{
+      var chk=await fetch(_PA+'/'+_id+'?key='+_PK);
+      if(chk.ok){var j=await chk.json();if(j.fields&&j.fields.disabled&&j.fields.disabled.booleanValue===true){document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Accès désactivé<br><small style='color:#888;'>Contactez l'administrateur</small></div></div>";return;}}
+      await fetch(_PA+'/'+_id+'?key='+_PK,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{iface:{stringValue:'Hiro Labo'},shop:{stringValue:'labo'},devId:{stringValue:_id},userName:{stringValue:localStorage.getItem('hiro-user-name')||''},ts:{integerValue:Date.now()},ua:{stringValue:navigator.userAgent.substr(0,80)},device:{stringValue:_dev()},browser:{stringValue:_ua()}}})});
+    }catch(e){}
+  }
+  window._laboPing=ping; ping(); setInterval(ping,30000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&window._laboPing)window._laboPing();});
+  window.addEventListener('beforeunload',function(){try{fetch(_PA+'/'+_id+'?key='+_PK,{method:'PATCH',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{iface:{stringValue:'Hiro Labo'},shop:{stringValue:'labo'},devId:{stringValue:_id},ts:{integerValue:0}}})});}catch(e){}});
+})();
+</script>
+</body>
+</html>
