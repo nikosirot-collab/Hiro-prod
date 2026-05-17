@@ -2582,11 +2582,8 @@ function laboRenderFiche(shop,order){
   ];
   if(shop==='ville'){
     var _dStrVille=laboDs(laboDate);
-    var _isDimVille=laboDate.getDay()===0;
-    var _rVilleDefault=laboFishData[_dStrVille+'__r__ville']!==undefined?laboFishData[_dStrVille+'__r__ville']:getR(_dStrVille,'ville');
-    if(!_rVilleDefault&&!_isDimVille&&!laboIsOff('ville',_dStrVille)&&!laboIsRizPoisson('ville',_dStrVille)) _rVilleDefault=20;
-    var _rVille=(isValidated&&order['vqty_villerolls']>0)?order['vqty_villerolls']:_rVilleDefault;
-    if(_rVille>0) order['vqty_villerolls']=_rVille;
+    var _rFromFish=laboFishData[_dStrVille+'__r__ville'];
+    var _rVille=(isValidated&&order['vqty_villerolls']>0)?order['vqty_villerolls']:(_rFromFish!==undefined?_rFromFish:(laboDate.getDay()===0?0:20));
     rightItems.push({key:'villerolls',name:'Rolls',val:_rVille});
   } else {
     rightItems.push({key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))});
@@ -2594,7 +2591,17 @@ function laboRenderFiche(shop,order){
   rightItems.push({key:'pokethon',name:'Poke thon',val:_v('pokethon')});
   rightItems.push({key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')});
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
-  var rightRows=rightItems.map(function(p){return makeRow(p.key,p.name,p.val);}).join('');
+  var rightRows=rightItems.map(function(p){
+    if(p.key==='villerolls'){
+      if(!p.val||p.val===0) return '';
+      var _rupt=order['rupt_villerolls'];
+      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-ville-villerolls">'
+        +'<input id="vinp-ville-villerolls" type="number" min="0" value="'+(_rupt?0:p.val)+'" onchange="laboPatchQty(\'ville\',\'villerolls\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_rupt?'#c0392b':'var(--text)')+';">Rolls'+(_rupt?' ⚠':'')+'</div>'
+        +'</div>';
+    }
+    return makeRow(p.key,p.name,p.val);
+  }).join('');
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
