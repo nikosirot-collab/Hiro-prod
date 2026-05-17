@@ -2583,8 +2583,10 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     var _dStrVille=laboDs(laboDate);
     var _isDimVille=laboDate.getDay()===0;
-    var _rVille=_v('villerolls')||(laboFishData[_dStrVille+'__r__ville']!==undefined?laboFishData[_dStrVille+'__r__ville']:getR(_dStrVille,'ville'));
-    if(!_rVille&&!_isDimVille&&!laboIsOff('ville',_dStrVille)&&!laboIsRizPoisson('ville',_dStrVille)) _rVille=20;
+    var _rVilleDefault=laboFishData[_dStrVille+'__r__ville']!==undefined?laboFishData[_dStrVille+'__r__ville']:getR(_dStrVille,'ville');
+    if(!_rVilleDefault&&!_isDimVille&&!laboIsOff('ville',_dStrVille)&&!laboIsRizPoisson('ville',_dStrVille)) _rVilleDefault=20;
+    var _rVille=(isValidated&&order['vqty_villerolls']>0)?order['vqty_villerolls']:_rVilleDefault;
+    if(_rVille>0) order['vqty_villerolls']=_rVille;
     rightItems.push({key:'villerolls',name:'Rolls',val:_rVille});
   } else {
     rightItems.push({key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))});
