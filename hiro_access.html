@@ -1445,6 +1445,7 @@ function laboChangeDate(d){
   document.getElementById('labo-date-label').textContent=laboFmt(laboDate);
   laboOrders={};laboFishData={};
   laboFetch();
+  laboFetchFish().then(function(){laboRender();});
 }
 
 function laboGoToShop(shop){
@@ -2581,7 +2582,9 @@ function laboRenderFiche(shop,order){
   ];
   if(shop==='ville'){
     var _dStrVille=laboDs(laboDate);
+    var _isDimVille=laboDate.getDay()===0;
     var _rVille=_v('villerolls')||(laboFishData[_dStrVille+'__r__ville']!==undefined?laboFishData[_dStrVille+'__r__ville']:getR(_dStrVille,'ville'));
+    if(!_rVille&&!_isDimVille&&!laboIsOff('ville',_dStrVille)&&!laboIsRizPoisson('ville',_dStrVille)) _rVille=20;
     rightItems.push({key:'villerolls',name:'Rolls',val:_rVille});
   } else {
     rightItems.push({key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))});
