@@ -2583,7 +2583,7 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     var _dStrVille=laboDs(laboDate);
     var _rFromFish=laboFishData[_dStrVille+'__r__ville'];
-    var _rVille=(isValidated&&order['vqty_villerolls']>0)?order['vqty_villerolls']:(_rFromFish!==undefined?_rFromFish:(laboDate.getDay()===0?0:20));
+    var _rVille=(isValidated&&order['vqty_villerolls']>0)?order['vqty_villerolls']:(_rFromFish>0?_rFromFish:(laboDate.getDay()===0?0:20));
     rightItems.push({key:'villerolls',name:'Rolls',val:_rVille});
   } else {
     rightItems.push({key:'roll',name:'Roll',val:(isValidated&&order['vqty_roll']!==undefined&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop))});
