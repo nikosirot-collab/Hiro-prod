@@ -3008,7 +3008,7 @@ function _laboRenderCore(el){
           if(val>0) items.push(LABO_CHR_NAMES[k]+' ×'+val);
         });
       }
-      var _ls=o.libre||o.vlibre||'';
+      var _ls=o.vlibre||o.libre||'';
       if(_ls){try{var lc=JSON.parse(_ls);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){items.push(i.name+' ×'+i.qty);});}}catch(e){}}
       if(items.length===0) return;
       chrSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);">'
