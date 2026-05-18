@@ -1,0 +1,7 @@
+# Fichiers locaux de travail — ne pas tracker à la racine
+# Les fichiers servis par GitHub Pages sont dans production hiro/
+*.html
+*.js
+*.json
+*.png
+CLAUDE.md
