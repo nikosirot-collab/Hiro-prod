@@ -5,13 +5,6 @@
 <link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
 <link rel="manifest" href="/Hiro-prod/production%20hiro/manifest.json">
 <meta name="theme-color" content="#1a1a1a">
-
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
-<link rel="manifest" href="/Hiro-prod/production%20hiro/manifest.json">
-<meta name="theme-color" content="#1a1a1a">
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -2318,8 +2311,8 @@ function cmdRenderFiche(shop, order){
   var libreStr=order.vlibre||order.libre||'';
   if(libreStr){try{var lt=JSON.parse(libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   // Tapas
-  var tapasKeys=shop==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
-  var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
+  var tapasKeys=shop==='ville'?['gnem','pnem','sesame','banhbao','samossa','brochettes']:['gyoza','gnem','pnem','sesame','banhbao'];
+  var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao',samossa:'Samossa',brochettes:'Brochettes'};
   var tapasRows=tapasKeys.map(function(k){return cmdRow(tapasNames[k],getVal(k));}).join('');
   // CHR
   var chrContent='';
@@ -2371,8 +2364,8 @@ function exportCmdExcel(){
   var orders=window._cmdOrders||{};
   var shops=['dsm','mgt','paita','ville'];
   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-  var keys=['bo','sin','thon','thai','plp','rouleaux','rizprod','villerolls','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao'];
-  var names={bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleau',rizprod:'Riz',villerolls:'Rolls (Ville)',pokethon:'Poke thon',pokesaumon:'Poke saumon',tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
+  var keys=['bo','sin','thon','thai','plp','rouleaux','rizprod','villerolls','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'];
+  var names={bo:'Bun Bò',sin:'Singapour',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Rouleau',rizprod:'Riz',villerolls:'Rolls (Ville)',pokethon:'Poke thon',pokesaumon:'Poke saumon',tataki:'Tataki',tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao',samossa:'Samossa',brochettes:'Brochettes'};
   
   // Construire CSV
   var rows=[];
@@ -2447,8 +2440,8 @@ function exportCmdPDF(){
     var midRows=pdfRow('Riz',o.rizprod||0)+(s==='ville'?pdfRow('Rolls',o.villerolls||0):'')+pdfRow('Poke thon',o.pokethon||0)+pdfRow('Poke saumon',o.pokesaumon||0);
     var dessertRows=_CMD_DESSERT.map(function(p){return pdfRow(p.name,o[p.key]||0);}).join('');
     if(o.libre){try{var lt=JSON.parse(o.libre);if(lt.tarte)lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+=pdfRow(i.name,i.qty);});}catch(e){}}
-    var tapasKeys=s==='ville'?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
-    var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao'};
+    var tapasKeys=s==='ville'?['gnem','pnem','sesame','banhbao','samossa','brochettes']:['gyoza','gnem','pnem','sesame','banhbao'];
+    var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao',samossa:'Samossa',brochettes:'Brochettes'};
     var tapasRows=tapasKeys.map(function(k){return pdfRow(tapasNames[k],o[k]||0);}).join('');
     var chrRows='';
     if(s==='ville'){_CMD_CHR_KEYS.forEach(function(k){var v=o[k]||0;if(v>0)chrRows+=pdfRow(_CMD_CHR_NAMES[k],v);});}
@@ -2579,8 +2572,6 @@ async function loadCommandes(){
 </script>
 <script>
 // ── SÉCURITÉ ──
-var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
-
 async function loadSecLog(){
   var el=document.getElementById('sec-log');
   if(!el)return;
