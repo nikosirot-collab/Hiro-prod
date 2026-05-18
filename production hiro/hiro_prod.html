@@ -1956,14 +1956,16 @@ function render() {
       const dNext = dayOf(weekOff, di+1); const dsNext = ds(dNext);
       const vNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
       const fdNext = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s],isFete);});
-      const tNext = (fdNext.dsm?.t||0)+(fdNext.mgt?.t||0)+(fdNext.paita?.t||0)+(fdNext.ville?.t||0);
+      const getThonVal = s => { const mk=dsNext+'__f__'+s+'__t'; return data[mk]!==undefined?data[mk]:(fdNext[s]?.t||0); };
+      const tDsm=getThonVal('dsm'), tMgt=getThonVal('mgt'), tPaita=getThonVal('paita'), tVille=getThonVal('ville');
+      const tNext = tDsm+tMgt+tPaita+tVille;
       const kgNext = getThonKg(tNext);
       thonRow = `<tr>
         <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-        <td class="${dc2} val-thon">${fdNext.dsm?.t||'—'}</td>
-        <td class="${dc2} val-thon">${fdNext.mgt?.t||'—'}</td>
-        <td class="${dc2} val-thon">${fdNext.paita?.t||'—'}</td>
-        <td class="${dc2} val-thon">${fdNext.ville?.t||'—'}</td>
+        <td class="${dc2} val-thon">${tDsm||'—'}</td>
+        <td class="${dc2} val-thon">${tMgt||'—'}</td>
+        <td class="${dc2} val-thon">${tPaita||'—'}</td>
+        <td class="${dc2} val-thon">${tVille||'—'}</td>
         <td class="${dc2} val-mono" style="font-weight:600">${tNext||'—'}</td>
         <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${kgNext}</td>
       </tr>`;
