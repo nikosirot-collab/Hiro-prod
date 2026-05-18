@@ -23,6 +23,52 @@
   --fete:#fef3e2;--fete-b:#d4900a;
   --r:10px;--r-sm:7px;
 }
+body.dark {
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --border: #2a2a2a;
+  --border-s: #3a3a3a;
+  --text: #f0ede8;
+  --muted: #8a8680;
+  --hint: #6a6660;
+  --dsm: #5590d8;
+  --dsm-l: #0d3060;
+  --dsm-d: #3a6ab0;
+  --mgt-l: #0d3020;
+  --mgt-d: #0a4028;
+  --paita-l: #201008;
+  --paita-d: #5a2008;
+  --today: #0d3020;
+  --today-b: #0d7a52;
+  --fete: #2a1c00;
+  --fete-b: #c8a000;
+}
+/* Surcharges dark pour couleurs hardcodées */
+body.dark .hdr { background: #1a1916; }
+body.dark .nav { background: var(--surface); }
+body.dark .week-bar { background: var(--surface); }
+body.dark th { background: #222222 !important; }
+body.dark .td-day { background: #222222 !important; }
+body.dark .td-tot { background: #252525 !important; }
+body.dark .fete-tag, body.dark .tag-fete { color: #c8a000; }
+body.dark .note { color: #c8a000; }
+body.dark .valid-qty-inp:focus { background: var(--surface); }
+body.dark .valid-row.rupture,
+body.dark .valid-qty-inp.rupture { background: #2a0808 !important; }
+body.dark .valid-btn-rupt { background: #2a0808; border-color: #5a3030; }
+body.dark .valid-status-validated { background: #001f0c !important; }
+body.dark .valid-status-pending { background: #2a1800 !important; }
+/* Fonds clairs générés en JS */
+body.dark [style*="background:#faf9f6"] { background: #222222 !important; }
+body.dark [style*="background:#f5f5f5"] { background: #222222 !important; }
+body.dark [style*="background:#f0f0f0"] { background: #252525 !important; }
+body.dark [style*="background:#f0efe9"] { background: #252525 !important; }
+body.dark [style*="background:#fafaf8"] { background: #1e1e1e !important; }
+body.dark [style*="background:#fff8e1"] { background: #2a2200 !important; }
+body.dark [style*="background:#fef9f0"] { background: #1e1800 !important; }
+body.dark [style*="background:#fef3e2"] { background: #2a1800 !important; }
+body.dark [style*="background:#e4f5ee"] { background: #001f0c !important; }
+body.dark [style*="background:#fde8e8"] { background: #2a0808 !important; }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
 
@@ -230,6 +276,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     <span id="sync-status" style="font-size:11px;color:#7fcf7f;">● Live</span>
     <span id="clock"></span>
     <span class="readonly-badge">LECTURE</span>
+    <button id="theme-toggle" onclick="toggleTheme()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Mode sombre">🌙</button>
     <button onclick="this.style.transform='rotate(360deg)';this.style.transition='transform .5s';setTimeout(function(){location.reload();},300)" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Recharger">↻</button>
   </div>
 </header>
@@ -3399,6 +3446,24 @@ document.addEventListener('visibilitychange', function(){
     if(window._sendPing) window._sendPing();
   }
 });
+</script>
+
+<script>
+function toggleTheme(){
+  var isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('hiro-theme',isDark?'dark':'light');
+  var btn=document.getElementById('theme-toggle');
+  if(btn) btn.textContent=isDark?'☀':'🌙';
+}
+(function(){
+  var saved=localStorage.getItem('hiro-theme');
+  var prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches;
+  if(saved==='dark'||(!saved&&prefersDark)){
+    document.body.classList.add('dark');
+    var btn=document.getElementById('theme-toggle');
+    if(btn) btn.textContent='☀';
+  }
+})();
 </script>
 
 </body>
