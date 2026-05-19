@@ -3076,6 +3076,7 @@ async function laboFetchFish(){
               Object.entries(json.fields).forEach(function(e){
                 var dk=e[0].replace(/--/g,'__');
                 if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
+                else if(e[1].booleanValue!==undefined)laboFishData[dk]=e[1].booleanValue;
               });
               try{localStorage.setItem(cacheKey,JSON.stringify({data:Object.assign({},laboFishData),ts:Date.now()}));}catch(e){}
             }
@@ -3091,6 +3092,7 @@ async function laboFetchFish(){
         Object.entries(json.fields).forEach(function(e){
           var dk=e[0].replace(/--/g,'__');
           if(e[1].integerValue!==undefined)laboFishData[dk]=parseInt(e[1].integerValue);
+          else if(e[1].booleanValue!==undefined)laboFishData[dk]=e[1].booleanValue;
         });
         // Recalculer le poisson pour les jours non verrouillés
         _laboRecalcFish(monStr);
