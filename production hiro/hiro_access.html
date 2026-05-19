@@ -2596,7 +2596,7 @@ function laboRenderFiche(shop,order){
   var fmtT=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
   // CHR avec champ poids
-  var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes','chr_oignons_secs'];
+  var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes','chr_oignons_secs','pouletfrit'];
 
   function makeRow(key,name,val){
     var vqty=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:val;
@@ -2643,6 +2643,7 @@ function laboRenderFiche(shop,order){
   rightItems.push({key:'pokethon',name:'Poke thon',val:_v('pokethon')});
   rightItems.push({key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')});
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
+  if(shop==='dsm') rightItems.push({key:'pouletfrit',name:'Poulet frit',val:_v('pouletfrit')});
   var rightRows=rightItems.map(function(p){
     if(p.key==='villerolls'){
       if(!p.val||p.val===0) return '';
@@ -2748,22 +2749,6 @@ function laboRenderFiche(shop,order){
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
     +'<div>'+colTitle('Tapas')+tapasRows+'</div>'+'</div>'
     +'<div>'+colTitle('CHR')+chrRows+'</div>';
-
-  // Poulet frit DSM
-  if(shop==='dsm'){
-    var _pfQty=isValidated&&order['vqty_pouletfrit']!==undefined?order['vqty_pouletfrit']:(order['pouletfrit']||0);
-    var _pfPoids='';
-    try{var _lppf=JSON.parse(order.vlibre||order.libre||'{}');if(_lppf.poids&&_lppf.poids['pouletfrit'])_pfPoids=_lppf.poids['pouletfrit'];}catch(e){}
-    var pfSection='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'
-      +'<input type="number" min="0" value="'+_pfQty+'" onchange="laboPatchQty(\'dsm\',\'pouletfrit\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
-      +'<div style="font-size:12px;font-weight:500;flex:1;">Poulet frit</div>'
-      +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
-      +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+_pfPoids+'" onchange="laboPatchPoids(\'dsm\',\'pouletfrit\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
-      +'<span style="font-size:10px;color:var(--muted);">kg</span>'
-      +'</div>'
-      +'</div>';
-    bottomSection+='<div>'+colTitle('Poulet frit')+pfSection+'</div>';
-  }
 
   var validateBtn=!isValidated
     ?'<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">'
