@@ -1099,13 +1099,15 @@ function render(){
       const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
       const vNext={};['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=getV(dsNext,s);});
       const fdNext={};['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s]);});
-      const tNext=(fdNext.dsm?.t||0)+(fdNext.mgt?.t||0)+(fdNext.paita?.t||0)+(fdNext.ville?.t||0);
+      const getThonVal=s=>{const mk=dsNext+'__f__'+s+'__t';return data[mk]!==undefined?data[mk]:(fdNext[s]?.t||0);};
+      const tDsm=getThonVal('dsm'),tMgt=getThonVal('mgt'),tPaita=getThonVal('paita'),tVille=getThonVal('ville');
+      const tNext=tDsm+tMgt+tPaita+tVille;
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
-        <td class="${dc2} vt2">${fdNext.dsm?.t||'—'}</td>
-        <td class="${dc2} vt2">${fdNext.mgt?.t||'—'}</td>
-        <td class="${dc2} vt2">${fdNext.paita?.t||'—'}</td>
-        <td class="${dc2} vt2">${fdNext.ville?.t||'—'}</td>
+        <td class="${dc2} vt2">${tDsm||'—'}</td>
+        <td class="${dc2} vt2">${tMgt||'—'}</td>
+        <td class="${dc2} vt2">${tPaita||'—'}</td>
+        <td class="${dc2} vt2">${tVille||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
         <td class="${dc2}" style="font-weight:600;color:var(--dsm)">${getThonKg(tNext)}</td>
       </tr>`;
