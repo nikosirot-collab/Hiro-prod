@@ -1844,6 +1844,30 @@ async function laboPatchPoids(shop,key,val){
   }catch(e){}
 }
 
+function laboTogglePlatDeduction(shop,key,grams,btnEl){
+  var inp=document.getElementById('poids-inp-'+shop+'-'+key);
+  if(!inp)return;
+  var isActive=btnEl.dataset.active==='1';
+  var siblings=btnEl.parentNode.querySelectorAll('[data-plat-btn]');
+  siblings.forEach(function(sib){
+    if(sib!==btnEl&&sib.dataset.active==='1'){
+      var cur=parseFloat(inp.value)||0;
+      inp.value=Math.round((cur+parseInt(sib.dataset.grams)/1000)*10)/10;
+      sib.dataset.active='0';sib.style.background='var(--surface)';sib.style.color='var(--text)';sib.style.borderColor='var(--border)';
+    }
+  });
+  if(isActive){
+    var cur=parseFloat(inp.value)||0;
+    inp.value=Math.round((cur+grams/1000)*10)/10;
+    btnEl.dataset.active='0';btnEl.style.background='var(--surface)';btnEl.style.color='var(--text)';btnEl.style.borderColor='var(--border)';
+  }else{
+    var cur=parseFloat(inp.value)||0;
+    inp.value=Math.round((cur-grams/1000)*10)/10;
+    btnEl.dataset.active='1';btnEl.style.background='#1a5fa8';btnEl.style.color='#fff';btnEl.style.borderColor='#1a5fa8';
+  }
+  laboPatchPoids(shop,key,inp.value);
+}
+
 async function laboPatchLibreChr(shop,idx,val){
   var order=laboOrders[shop];
   if(!order)return;
@@ -2596,7 +2620,7 @@ function laboRenderFiche(shop,order){
   var fmtT=function(ts){return new Date(parseInt(ts)).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});};
 
   // CHR avec champ poids
-  var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes','chr_oignons_secs','pouletfrit'];
+  var CHR_POIDS_KEYS=['chr_farce_wonton','chr_salades','chr_concombres','chr_carottes','chr_oignons_secs'];
 
   function makeRow(key,name,val){
     var vqty=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:val;
@@ -2651,6 +2675,24 @@ function laboRenderFiche(shop,order){
       return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-ville-villerolls">'
         +'<input id="vinp-ville-villerolls" type="number" min="0" value="'+(_rupt?0:p.val)+'" onchange="laboPatchQty(\'ville\',\'villerolls\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_rupt?'#c0392b':'var(--text)')+';">Rolls'+(_rupt?' ⚠':'')+'</div>'
+        +'</div>';
+    }
+    if(p.key==='pouletfrit'){
+      var _pfQty=isValidated&&order['vqty_pouletfrit']!==undefined?order['vqty_pouletfrit']:p.val;
+      if(!_pfQty&&_pfQty!==0)_pfQty=0;
+      var _pfRupt=order['rupt_pouletfrit'];
+      var _pfPoids='';
+      try{var _lppf=JSON.parse(order.vlibre||order.libre||'{}');if(_lppf.poids&&_lppf.poids['pouletfrit'])_pfPoids=_lppf.poids['pouletfrit'];}catch(e){}
+      var _btnS='padding:2px 5px;font-size:9px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--surface);color:var(--text);white-space:nowrap;';
+      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-pouletfrit">'
+        +'<input id="vinp-'+shop+'-pouletfrit" type="number" min="0" value="'+(_pfRupt?0:_pfQty)+'" onchange="laboPatchQty(\''+shop+'\',\'pouletfrit\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_pfRupt?'#c0392b':'var(--text)')+';">Poulet frit'+(_pfRupt?' ⚠':'')+'</div>'
+        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+        +'<button data-plat-btn="1" data-active="0" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\'pouletfrit\',700,this)" style="'+_btnS+'">Pt plat</button>'
+        +'<button data-plat-btn="1" data-active="0" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\'pouletfrit\',800,this)" style="'+_btnS+'">Gd plat</button>'
+        +'<input id="poids-inp-'+shop+'-pouletfrit" type="number" min="0" step="0.1" placeholder="kg" value="'+_pfPoids+'" onchange="laboPatchPoids(\''+shop+'\',\'pouletfrit\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
+        +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+        +'</div>'
         +'</div>';
     }
     return makeRow(p.key,p.name,p.val);
@@ -2723,7 +2765,7 @@ function laboRenderFiche(shop,order){
         var noPoids=['gyoza','siumai'];
         var showPoids=noPoids.indexOf(p.key)===-1;
         var poidsVal=showPoids?(_poids[p.key]||p.poids||''):'';
-        return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'          +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'          +(showPoids?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'          +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'          +'<span style="font-size:10px;color:var(--muted);">kg</span>'          +'</div>':'')          +'</div>';
+        return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'          +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'          +(showPoids?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'          +'<button data-plat-btn="1" data-active="0" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',700,this)" style="padding:2px 5px;font-size:9px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--surface);color:var(--text);white-space:nowrap;">Pt plat</button>'          +'<button data-plat-btn="1" data-active="0" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',800,this)" style="padding:2px 5px;font-size:9px;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:var(--surface);color:var(--text);white-space:nowrap;">Gd plat</button>'          +'<input id="poids-inp-'+shop+'-'+p.key+'" type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'          +'<span style="font-size:10px;color:var(--muted);">kg</span>'          +'</div>':'')          +'</div>';
       }).join('');
     }else{
       platsColRows='<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
