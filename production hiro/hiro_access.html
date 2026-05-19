@@ -2688,7 +2688,6 @@ function laboRenderFiche(shop,order){
         +'<input id="vinp-'+shop+'-pouletfrit" type="number" min="0" value="'+(_pfRupt?0:_pfQty)+'" onchange="laboPatchQty(\''+shop+'\',\'pouletfrit\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_pfRupt?'#c0392b':'var(--text)')+';">Poulet frit'+(_pfRupt?' ⚠':'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
-        +'<button data-plat-btn="1" data-active="0" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\'pouletfrit\',700,this)" style="'+_btnS+'">Pt plat</button>'
         +'<button data-plat-btn="1" data-active="0" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\'pouletfrit\',800,this)" style="'+_btnS+'">Gd plat</button>'
         +'<input id="poids-inp-'+shop+'-pouletfrit" type="number" min="0" step="0.1" placeholder="kg" value="'+_pfPoids+'" onchange="laboPatchPoids(\''+shop+'\',\'pouletfrit\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
         +'<span style="font-size:10px;color:var(--muted);">kg</span>'
