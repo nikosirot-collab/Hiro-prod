@@ -669,7 +669,8 @@ function renderFoursView(){
     // Section nouvelle commande
     let cmdSec='';
     if(arts.length){
-      cmdSec='<div class="sec-label">Nouvelle commande</div><div class="cmd-form">';
+      const joursHint=four.jours&&four.jours.length?'<span style="text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px;color:var(--dsm);">'+four.jours.join(' · ')+'</span>':'';
+      cmdSec='<div class="sec-label">Nouvelle commande'+joursHint+'</div><div class="cmd-form">';
       arts.forEach(function(a){
         cmdSec+='<div class="cmd-art-line">'+
           '<span class="cmd-art-name">'+esc(a.nom)+'<span class="cmd-art-unite"> · '+esc(a.unite)+'</span></span>'+
@@ -721,9 +722,7 @@ function renderFoursView(){
     html+='<div class="four-card" id="fv-four-card-'+four.id+'">'+
       '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
       '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
-      '<div><div style="display:flex;align-items:center;gap:6px;"><span class="four-name">'+esc(four.nom)+'</span>'+badge+'</div>'+
-      (four.jours&&four.jours.length?'<div class="fv-jours">'+four.jours.join(' · ')+'</div>':'')+
-      '</div>'+
+      '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
       '</div></div>'+
       '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
       stockSec+cmdSec+pendingSec+histSec+
