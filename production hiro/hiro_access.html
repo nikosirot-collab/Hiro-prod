@@ -2990,9 +2990,9 @@ function laboPrintSalade(){
 function laboRender(){
   var el=document.getElementById('labo-content');
   if(!el)return;
-  // Ne pas re-render si un input d'ajout est en cours de saisie
+  // Ne pas re-render si un input est en cours de saisie dans le labo
   var activeEl=document.activeElement;
-  if(activeEl&&(activeEl.id.indexOf('addqty-')===0||activeEl.id.indexOf('addname-')===0))return;
+  if(activeEl&&activeEl.closest&&activeEl.closest('#labo-content')&&(activeEl.tagName==='INPUT'||activeEl.tagName==='TEXTAREA'))return;
   // Attendre les jours off si pas encore chargés
   if(!_laboJoursOffLoaded){
     _laboJoursOffReady.then(function(){_laboRenderCore(el);});
