@@ -35,16 +35,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .main{padding:1rem;}
 .page{display:none;}.page.active{display:block;}
 
-/* BOUTON NOUVEAU */
+/* BOUTON NOUVEAU FOURNISSEUR */
 .btn-new{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dsm);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;-webkit-tap-highlight-color:transparent;}
 
 /* FORMULAIRE NOUVEAU */
 .new-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
 
-/* FOURNISSEUR CARD (niveau 1) */
+/* FOURNISSEUR CARD */
 .four-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
-.four-head{display:flex;align-items:center;padding:11px 14px;gap:8px;-webkit-tap-highlight-color:transparent;}
-.four-head-info{display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;}
+.four-head{display:flex;align-items:center;padding:11px 14px;gap:8px;}
+.four-head-info{display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .four-arrow{font-size:11px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
 .four-arrow.open{transform:rotate(180deg);}
 .four-name{font-size:13px;font-weight:600;}
@@ -52,30 +52,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .four-actions{display:flex;gap:4px;flex-shrink:0;}
 .four-body{border-top:1px solid var(--border);}
 
-/* CATÉGORIE (niveau 2) */
-.cat-block{border-bottom:1px solid var(--border);}
-.cat-head{display:flex;align-items:center;padding:8px 14px 8px 18px;gap:8px;-webkit-tap-highlight-color:transparent;}
-.cat-head-info{display:flex;align-items:center;gap:6px;flex:1;cursor:pointer;}
-.cat-arrow{font-size:10px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
-.cat-arrow.open{transform:rotate(180deg);}
-.cat-name{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.cat-count{font-size:10px;color:var(--hint);font-family:'DM Mono',monospace;}
-.cat-actions{display:flex;gap:4px;flex-shrink:0;}
-
-/* ARTICLE ROW (niveau 3) */
-.art-row{display:flex;align-items:center;gap:8px;padding:7px 14px 7px 34px;border-bottom:1px solid var(--border);}
+/* ARTICLE ROW */
+.art-row{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 22px;border-bottom:1px solid var(--border);}
 .art-info{flex:1;min-width:0;}
 .art-name{font-size:13px;}
 .art-meta{font-size:11px;color:var(--muted);margin-top:1px;}
 .art-actions{display:flex;gap:4px;flex-shrink:0;}
 
-/* BOUTONS D'AJOUT */
-.btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:7px 14px 7px 34px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
-.btn-add-cat{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 18px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+/* BOUTON AJOUTER ARTICLE */
+.btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 22px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
 
-/* FORMULAIRES D'AJOUT */
-.art-add-form{padding:10px 14px 10px 34px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
-.cat-add-form{padding:10px 14px 10px 18px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
+/* FORMULAIRE AJOUT ARTICLE */
+.art-add-form{padding:10px 14px 10px 22px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
 .form-row{display:flex;gap:8px;}
 .f-inp,.f-sel{flex:1;padding:7px 10px;border:1px solid var(--border-s);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;min-width:0;}
 .f-inp:focus,.f-sel:focus{border-color:var(--dsm);background:#fff;}
@@ -101,12 +89,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .badge-wip{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;padding:3px 10px;border-radius:20px;margin-bottom:16px;}
 .empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
-/* VUE FOURNISSEURS (onglet) */
+/* VUE FOURNISSEURS */
 .fv-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
 .fv-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);background:#faf9f6;}
 .fv-item{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
 .fv-item:last-child{border-bottom:none;}
-.fv-cat{font-size:11px;color:var(--hint);margin-left:6px;}
 .fv-unite{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 7px;flex-shrink:0;}
 </style>
 </head>
@@ -222,11 +209,9 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],categories:[],articles:[],cf_categories:[],cf_articles:[]};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[]};
 const closedFours=new Set();
-const closedCats=new Set();
 const closedFoursCF=new Set();
-const closedCatsCF=new Set();
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -255,12 +240,12 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[fours,cats,arts,cfCats,cfArts]=await Promise.all([
-    fbLoad('fournisseurs'),fbLoad('categories'),fbLoad('articles'),
-    fbLoad('cf-categories'),fbLoad('cf-articles')
+  const[fours,arts,cfFours,cfArts]=await Promise.all([
+    fbLoad('fournisseurs'),fbLoad('articles'),
+    fbLoad('cf-fournisseurs'),fbLoad('cf-articles')
   ]);
-  S.fournisseurs=fours;S.categories=cats;S.articles=arts;
-  S.cf_categories=cfCats;S.cf_articles=cfArts;
+  S.fournisseurs=fours;S.articles=arts;
+  S.cf_fournisseurs=cfFours;S.cf_articles=cfArts;
   renderAll();
 }
 function renderAll(){renderStock();renderCF();renderFoursView();}
@@ -282,65 +267,36 @@ function showPage(id,tab){
 })();
 
 // ════════════════════════════════
-// STOCK — rendu 3 niveaux
+// STOCK
 // ════════════════════════════════
 function renderStock(){
   const el=document.getElementById('stock-content');
   let html='';
   S.fournisseurs.forEach(function(four){
-    const fourCats=S.categories.filter(function(c){return c.fournisseurId===four.id;});
-    const isOpen=!closedFours.has(four.id);
-    html+=renderFourCard(four,fourCats,isOpen);
+    const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
+    html+=renderFourCard(four,arts,!closedFours.has(four.id));
   });
   if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
 }
 
-function renderFourCard(four,cats,isOpen){
-  const bodyStyle=isOpen?'':'display:none;';
-  const arrowClass=isOpen?'four-arrow open':'four-arrow';
-  const totalArts=cats.reduce(function(n,c){return n+S.articles.filter(function(a){return a.categorieId===c.id;}).length;},0);
-  const catsHtml=cats.map(function(cat){
-    const arts=S.articles.filter(function(a){return a.categorieId===cat.id;});
-    return renderCatBlock(cat,arts,!closedCats.has(cat.id));
-  }).join('');
+function renderFourCard(four,arts,isOpen){
+  const artRows=arts.map(function(a){return renderArtRow(a);}).join('');
   return'<div class="four-card" id="four-card-'+four.id+'">'+
     '<div class="four-head" id="four-head-'+four.id+'">'+
     '<div class="four-head-info" onclick="toggleFour(\''+four.id+'\')">'+
-    '<span class="'+arrowClass+'" id="four-arrow-'+four.id+'">&#8964;</span>'+
+    '<span class="four-arrow'+(isOpen?' open':'')+'" id="four-arrow-'+four.id+'">&#8964;</span>'+
     '<span class="four-name">'+esc(four.nom)+'</span>'+
-    '<span class="four-count">'+totalArts+'</span>'+
+    '<span class="four-count">'+arts.length+'</span>'+
     '</div>'+
     '<div class="four-actions">'+
     '<button class="btn-ic" onclick="editFourName(\''+four.id+'\')" title="Renommer">✎</button>'+
     '<button class="btn-ic del" onclick="deleteFour(\''+four.id+'\')" title="Supprimer">✕</button>'+
     '</div></div>'+
-    '<div class="four-body" id="four-body-'+four.id+'" style="'+bodyStyle+'">'+
-    catsHtml+
-    '<div id="cat-add-form-'+four.id+'" class="cat-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-cat" id="cat-add-btn-'+four.id+'" onclick="showAddCatInFour(\''+four.id+'\')">+ Nouvelle catégorie</button>'+
-    '</div></div>';
-}
-
-function renderCatBlock(cat,arts,isOpen){
-  const bodyStyle=isOpen?'':'display:none;';
-  const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
-  const artRows=arts.map(function(a){return renderArtRow(a);}).join('');
-  return'<div class="cat-block" id="cat-block-'+cat.id+'">'+
-    '<div class="cat-head" id="cat-head-'+cat.id+'">'+
-    '<div class="cat-head-info" onclick="toggleCat(\''+cat.id+'\')">'+
-    '<span class="'+arrowClass+'" id="cat-arrow-'+cat.id+'">&#8964;</span>'+
-    '<span class="cat-name">'+esc(cat.nom)+'</span>'+
-    '<span class="cat-count">'+arts.length+'</span>'+
-    '</div>'+
-    '<div class="cat-actions">'+
-    '<button class="btn-ic" onclick="editCatName(\''+cat.id+'\')" title="Renommer">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteCat(\''+cat.id+'\')" title="Supprimer">✕</button>'+
-    '</div></div>'+
-    '<div id="cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    '<div class="four-body" id="four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
     artRows+
-    '<div id="art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-art" id="art-add-btn-'+cat.id+'" onclick="showAddArtInCat(\''+cat.id+'\')">+ Ajouter un article</button>'+
+    '<div id="art-add-form-'+four.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="art-add-btn-'+four.id+'" onclick="showAddArt(\''+four.id+'\')">+ Ajouter un article</button>'+
     '</div></div>';
 }
 
@@ -356,18 +312,11 @@ function renderArtRow(a){
     '</div></div>';
 }
 
-// ── Toggles Stock ──
 function toggleFour(id){
   const body=document.getElementById('four-body-'+id),arrow=document.getElementById('four-arrow-'+id);
   if(!body)return;
   if(closedFours.has(id)){closedFours.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
   else{closedFours.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
-}
-function toggleCat(id){
-  const body=document.getElementById('cat-body-'+id),arrow=document.getElementById('cat-arrow-'+id);
-  if(!body)return;
-  if(closedCats.has(id)){closedCats.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
-  else{closedCats.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
 }
 
 // ── FOURNISSEURS CRUD (Stock) ──
@@ -385,7 +334,7 @@ async function addFour(){
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   S.fournisseurs.push({id:uid(),nom});
   await fbSave('fournisseurs',S.fournisseurs);
-  hideNewFourForm();renderStock();renderCF();renderFoursView();
+  hideNewFourForm();renderStock();renderFoursView();
 }
 function editFourName(id){
   const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
@@ -405,107 +354,47 @@ async function saveFourName(id){
   const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
   S.fournisseurs[idx].nom=nom;
   await fbSave('fournisseurs',S.fournisseurs);
-  renderStock();renderCF();renderFoursView();
+  renderStock();renderFoursView();
 }
 async function deleteFour(id){
   const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
-  const hasCats=S.categories.some(function(c){return c.fournisseurId===id;});
-  const msg=hasCats?'Supprimer "'+four.nom+'" ? Ses catégories resteront mais seront orphelines.':'Supprimer le fournisseur "'+four.nom+'" ?';
+  const hasArts=S.articles.some(function(a){return a.fournisseurId===id;});
+  const msg=hasArts?'Supprimer "'+four.nom+'" ? Ses articles perdront leur fournisseur.':'Supprimer le fournisseur "'+four.nom+'" ?';
   if(!confirm(msg))return;
   S.fournisseurs=S.fournisseurs.filter(function(f){return f.id!==id;});
   await fbSave('fournisseurs',S.fournisseurs);
-  renderStock();renderCF();renderFoursView();
-}
-
-// ── CATÉGORIES CRUD (Stock) ──
-function showAddCatInFour(fourId){
-  const form=document.getElementById('cat-add-form-'+fourId);
-  const btn=document.getElementById('cat-add-btn-'+fourId);
-  if(!form)return;
-  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
-  if(btn)btn.style.display='none';
-  form.innerHTML=
-    '<div class="form-row">'+
-    '<input class="f-inp" id="acf-inp-'+fourId+'" type="text" placeholder="Nom de la catégorie"'+
-    ' onkeydown="if(event.key===\'Enter\')addCatInFour(\''+fourId+'\');if(event.key===\'Escape\')hideAddCatInFour(\''+fourId+'\');">'+
-    '</div><div class="form-btns">'+
-    '<button class="btn-cancel" onclick="hideAddCatInFour(\''+fourId+'\')">Annuler</button>'+
-    '<button class="btn-save" onclick="addCatInFour(\''+fourId+'\')">Créer</button>'+
-    '</div>';
-  document.getElementById('acf-inp-'+fourId).focus();
-}
-function hideAddCatInFour(fourId){
-  const form=document.getElementById('cat-add-form-'+fourId);
-  const btn=document.getElementById('cat-add-btn-'+fourId);
-  if(form){form.style.display='none';form.innerHTML='';}
-  if(btn)btn.style.display='flex';
-}
-async function addCatInFour(fourId){
-  const nom=document.getElementById('acf-inp-'+fourId).value.trim();
-  if(!nom){document.getElementById('acf-inp-'+fourId).focus();return;}
-  S.categories.push({id:uid(),nom,fournisseurId:fourId});
-  await fbSave('categories',S.categories);
-  renderStock();renderFoursView();
-}
-function editCatName(id){
-  const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
-  const head=document.getElementById('cat-head-'+id);
-  head.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
-    '<input class="e-inp" id="ecn-'+id+'" type="text" value="'+esc(cat.nom)+'" '+
-    'onkeydown="if(event.key===\'Enter\')saveCatName(\''+id+'\');if(event.key===\'Escape\')renderStock();">'+
-    '<button class="btn-ic ok" onclick="saveCatName(\''+id+'\')">✓</button>'+
-    '<button class="btn-ic" onclick="renderStock()">✕</button>'+
-    '</div>';
-  document.getElementById('ecn-'+id).focus();
-}
-async function saveCatName(id){
-  const inp=document.getElementById('ecn-'+id);
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.categories.findIndex(function(c){return c.id===id;});if(idx===-1)return;
-  S.categories[idx].nom=nom;
-  await fbSave('categories',S.categories);
-  renderStock();renderFoursView();
-}
-async function deleteCat(id){
-  const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
-  const hasArts=S.articles.some(function(a){return a.categorieId===id;});
-  const msg=hasArts?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
-  if(!confirm(msg))return;
-  S.categories=S.categories.filter(function(c){return c.id!==id;});
-  await fbSave('categories',S.categories);
   renderStock();renderFoursView();
 }
 
 // ── ARTICLES CRUD (Stock) ──
-function showAddArtInCat(catId){
-  const form=document.getElementById('art-add-form-'+catId);
-  const btn=document.getElementById('art-add-btn-'+catId);
+function showAddArt(fourId){
+  const form=document.getElementById('art-add-form-'+fourId);
+  const btn=document.getElementById('art-add-btn-'+fourId);
   if(!form)return;
   form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
   if(btn)btn.style.display='none';
   form.innerHTML=
     '<div class="form-row">'+
-    '<input class="f-inp" id="aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
-    '<select class="f-sel" id="aan-unite-'+catId+'" style="max-width:110px;">'+
+    '<input class="f-inp" id="aan-nom-'+fourId+'" type="text" placeholder="Nom de l\'article">'+
+    '<select class="f-sel" id="aan-unite-'+fourId+'" style="max-width:110px;">'+
     '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
     '</select></div><div class="form-btns">'+
-    '<button class="btn-cancel" onclick="hideAddArtInCat(\''+catId+'\')">Annuler</button>'+
-    '<button class="btn-save" onclick="addArtInCat(\''+catId+'\')">Ajouter</button>'+
+    '<button class="btn-cancel" onclick="hideAddArt(\''+fourId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addArt(\''+fourId+'\')">Ajouter</button>'+
     '</div>';
-  document.getElementById('aan-nom-'+catId).focus();
+  document.getElementById('aan-nom-'+fourId).focus();
 }
-function hideAddArtInCat(catId){
-  const form=document.getElementById('art-add-form-'+catId);
-  const btn=document.getElementById('art-add-btn-'+catId);
+function hideAddArt(fourId){
+  const form=document.getElementById('art-add-form-'+fourId);
+  const btn=document.getElementById('art-add-btn-'+fourId);
   if(form){form.style.display='none';form.innerHTML='';}
   if(btn)btn.style.display='flex';
 }
-async function addArtInCat(catId){
-  const nom=document.getElementById('aan-nom-'+catId).value.trim();
-  if(!nom){document.getElementById('aan-nom-'+catId).focus();return;}
-  const unite=document.getElementById('aan-unite-'+catId).value;
-  S.articles.push({id:uid(),nom,unite,categorieId:catId});
+async function addArt(fourId){
+  const nom=document.getElementById('aan-nom-'+fourId).value.trim();
+  if(!nom){document.getElementById('aan-nom-'+fourId).focus();return;}
+  const unite=document.getElementById('aan-unite-'+fourId).value;
+  S.articles.push({id:uid(),nom,unite,fournisseurId:fourId});
   await fbSave('articles',S.articles);
   renderStock();renderFoursView();
 }
@@ -544,65 +433,36 @@ async function deleteArt(id){
 }
 
 // ════════════════════════════════
-// CF — rendu 3 niveaux
+// CF
 // ════════════════════════════════
 function renderCF(){
   const el=document.getElementById('cf-content');
   let html='';
-  S.fournisseurs.forEach(function(four){
-    const fourCats=S.cf_categories.filter(function(c){return c.fournisseurId===four.id;});
-    const isOpen=!closedFoursCF.has(four.id);
-    html+=renderFourCardCF(four,fourCats,isOpen);
+  S.cf_fournisseurs.forEach(function(four){
+    const arts=S.cf_articles.filter(function(a){return a.fournisseurId===four.id;});
+    html+=renderFourCardCF(four,arts,!closedFoursCF.has(four.id));
   });
   if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
 }
 
-function renderFourCardCF(four,cats,isOpen){
-  const bodyStyle=isOpen?'':'display:none;';
-  const arrowClass=isOpen?'four-arrow open':'four-arrow';
-  const totalArts=cats.reduce(function(n,c){return n+S.cf_articles.filter(function(a){return a.categorieId===c.id;}).length;},0);
-  const catsHtml=cats.map(function(cat){
-    const arts=S.cf_articles.filter(function(a){return a.categorieId===cat.id;});
-    return renderCatBlockCF(cat,arts,!closedCatsCF.has(cat.id));
-  }).join('');
+function renderFourCardCF(four,arts,isOpen){
+  const artRows=arts.map(function(a){return renderArtRowCF(a);}).join('');
   return'<div class="four-card" id="cf-four-card-'+four.id+'">'+
     '<div class="four-head" id="cf-four-head-'+four.id+'">'+
     '<div class="four-head-info" onclick="toggleFourCF(\''+four.id+'\')">'+
-    '<span class="'+arrowClass+'" id="cf-four-arrow-'+four.id+'">&#8964;</span>'+
+    '<span class="four-arrow'+(isOpen?' open':'')+'" id="cf-four-arrow-'+four.id+'">&#8964;</span>'+
     '<span class="four-name">'+esc(four.nom)+'</span>'+
-    '<span class="four-count">'+totalArts+'</span>'+
+    '<span class="four-count">'+arts.length+'</span>'+
     '</div>'+
     '<div class="four-actions">'+
     '<button class="btn-ic" onclick="editFourNameCF(\''+four.id+'\')" title="Renommer">✎</button>'+
     '<button class="btn-ic del" onclick="deleteFourCF(\''+four.id+'\')" title="Supprimer">✕</button>'+
     '</div></div>'+
-    '<div class="four-body" id="cf-four-body-'+four.id+'" style="'+bodyStyle+'">'+
-    catsHtml+
-    '<div id="cf-cat-add-form-'+four.id+'" class="cat-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-cat" id="cf-cat-add-btn-'+four.id+'" onclick="showAddCatInFourCF(\''+four.id+'\')">+ Nouvelle catégorie</button>'+
-    '</div></div>';
-}
-
-function renderCatBlockCF(cat,arts,isOpen){
-  const bodyStyle=isOpen?'':'display:none;';
-  const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
-  const artRows=arts.map(function(a){return renderArtRowCF(a);}).join('');
-  return'<div class="cat-block" id="cf-cat-block-'+cat.id+'">'+
-    '<div class="cat-head" id="cf-cat-head-'+cat.id+'">'+
-    '<div class="cat-head-info" onclick="toggleCatCF(\''+cat.id+'\')">'+
-    '<span class="'+arrowClass+'" id="cf-cat-arrow-'+cat.id+'">&#8964;</span>'+
-    '<span class="cat-name">'+esc(cat.nom)+'</span>'+
-    '<span class="cat-count">'+arts.length+'</span>'+
-    '</div>'+
-    '<div class="cat-actions">'+
-    '<button class="btn-ic" onclick="editCatNameCF(\''+cat.id+'\')" title="Renommer">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteCatCF(\''+cat.id+'\')" title="Supprimer">✕</button>'+
-    '</div></div>'+
-    '<div id="cf-cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    '<div class="four-body" id="cf-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
     artRows+
-    '<div id="cf-art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-art" id="cf-art-add-btn-'+cat.id+'" onclick="showAddArtInCatCF(\''+cat.id+'\')">+ Ajouter un article</button>'+
+    '<div id="cf-art-add-form-'+four.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="cf-art-add-btn-'+four.id+'" onclick="showAddArtCF(\''+four.id+'\')">+ Ajouter un article</button>'+
     '</div></div>';
 }
 
@@ -618,18 +478,11 @@ function renderArtRowCF(a){
     '</div></div>';
 }
 
-// ── Toggles CF ──
 function toggleFourCF(id){
   const body=document.getElementById('cf-four-body-'+id),arrow=document.getElementById('cf-four-arrow-'+id);
   if(!body)return;
   if(closedFoursCF.has(id)){closedFoursCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
   else{closedFoursCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
-}
-function toggleCatCF(id){
-  const body=document.getElementById('cf-cat-body-'+id),arrow=document.getElementById('cf-cat-arrow-'+id);
-  if(!body)return;
-  if(closedCatsCF.has(id)){closedCatsCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
-  else{closedCatsCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
 }
 
 // ── FOURNISSEURS CRUD (CF) ──
@@ -645,12 +498,12 @@ function hideNewFourFormCF(){
 async function addFourCF(){
   const inp=document.getElementById('cf-new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.fournisseurs.push({id:uid(),nom});
-  await fbSave('fournisseurs',S.fournisseurs);
-  hideNewFourFormCF();renderStock();renderCF();renderFoursView();
+  S.cf_fournisseurs.push({id:uid(),nom});
+  await fbSave('cf-fournisseurs',S.cf_fournisseurs);
+  hideNewFourFormCF();renderCF();
 }
 function editFourNameCF(id){
-  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const four=S.cf_fournisseurs.find(function(f){return f.id===id;});if(!four)return;
   const head=document.getElementById('cf-four-head-'+id);
   head.innerHTML=
     '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
@@ -664,110 +517,50 @@ function editFourNameCF(id){
 async function saveFourNameCF(id){
   const inp=document.getElementById('cf-efn-'+id);
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
-  S.fournisseurs[idx].nom=nom;
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderStock();renderCF();renderFoursView();
+  const idx=S.cf_fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  S.cf_fournisseurs[idx].nom=nom;
+  await fbSave('cf-fournisseurs',S.cf_fournisseurs);
+  renderCF();
 }
 async function deleteFourCF(id){
-  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
-  const hasCats=S.cf_categories.some(function(c){return c.fournisseurId===id;});
-  const msg=hasCats?'Supprimer "'+four.nom+'" ? Ses catégories resteront mais seront orphelines.':'Supprimer le fournisseur "'+four.nom+'" ?';
+  const four=S.cf_fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const hasArts=S.cf_articles.some(function(a){return a.fournisseurId===id;});
+  const msg=hasArts?'Supprimer "'+four.nom+'" ? Ses articles perdront leur fournisseur.':'Supprimer le fournisseur "'+four.nom+'" ?';
   if(!confirm(msg))return;
-  S.fournisseurs=S.fournisseurs.filter(function(f){return f.id!==id;});
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderStock();renderCF();renderFoursView();
-}
-
-// ── CATÉGORIES CRUD (CF) ──
-function showAddCatInFourCF(fourId){
-  const form=document.getElementById('cf-cat-add-form-'+fourId);
-  const btn=document.getElementById('cf-cat-add-btn-'+fourId);
-  if(!form)return;
-  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
-  if(btn)btn.style.display='none';
-  form.innerHTML=
-    '<div class="form-row">'+
-    '<input class="f-inp" id="cf-acf-inp-'+fourId+'" type="text" placeholder="Nom de la catégorie"'+
-    ' onkeydown="if(event.key===\'Enter\')addCatInFourCF(\''+fourId+'\');if(event.key===\'Escape\')hideAddCatInFourCF(\''+fourId+'\');">'+
-    '</div><div class="form-btns">'+
-    '<button class="btn-cancel" onclick="hideAddCatInFourCF(\''+fourId+'\')">Annuler</button>'+
-    '<button class="btn-save" onclick="addCatInFourCF(\''+fourId+'\')">Créer</button>'+
-    '</div>';
-  document.getElementById('cf-acf-inp-'+fourId).focus();
-}
-function hideAddCatInFourCF(fourId){
-  const form=document.getElementById('cf-cat-add-form-'+fourId);
-  const btn=document.getElementById('cf-cat-add-btn-'+fourId);
-  if(form){form.style.display='none';form.innerHTML='';}
-  if(btn)btn.style.display='flex';
-}
-async function addCatInFourCF(fourId){
-  const nom=document.getElementById('cf-acf-inp-'+fourId).value.trim();
-  if(!nom){document.getElementById('cf-acf-inp-'+fourId).focus();return;}
-  S.cf_categories.push({id:uid(),nom,fournisseurId:fourId});
-  await fbSave('cf-categories',S.cf_categories);
-  renderCF();
-}
-function editCatNameCF(id){
-  const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
-  const head=document.getElementById('cf-cat-head-'+id);
-  head.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
-    '<input class="e-inp" id="cf-ecn-'+id+'" type="text" value="'+esc(cat.nom)+'" '+
-    'onkeydown="if(event.key===\'Enter\')saveCatNameCF(\''+id+'\');if(event.key===\'Escape\')renderCF();">'+
-    '<button class="btn-ic ok" onclick="saveCatNameCF(\''+id+'\')">✓</button>'+
-    '<button class="btn-ic" onclick="renderCF()">✕</button>'+
-    '</div>';
-  document.getElementById('cf-ecn-'+id).focus();
-}
-async function saveCatNameCF(id){
-  const inp=document.getElementById('cf-ecn-'+id);
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.cf_categories.findIndex(function(c){return c.id===id;});if(idx===-1)return;
-  S.cf_categories[idx].nom=nom;
-  await fbSave('cf-categories',S.cf_categories);
-  renderCF();
-}
-async function deleteCatCF(id){
-  const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
-  const hasArts=S.cf_articles.some(function(a){return a.categorieId===id;});
-  const msg=hasArts?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
-  if(!confirm(msg))return;
-  S.cf_categories=S.cf_categories.filter(function(c){return c.id!==id;});
-  await fbSave('cf-categories',S.cf_categories);
+  S.cf_fournisseurs=S.cf_fournisseurs.filter(function(f){return f.id!==id;});
+  await fbSave('cf-fournisseurs',S.cf_fournisseurs);
   renderCF();
 }
 
 // ── ARTICLES CRUD (CF) ──
-function showAddArtInCatCF(catId){
-  const form=document.getElementById('cf-art-add-form-'+catId);
-  const btn=document.getElementById('cf-art-add-btn-'+catId);
+function showAddArtCF(fourId){
+  const form=document.getElementById('cf-art-add-form-'+fourId);
+  const btn=document.getElementById('cf-art-add-btn-'+fourId);
   if(!form)return;
   form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
   if(btn)btn.style.display='none';
   form.innerHTML=
     '<div class="form-row">'+
-    '<input class="f-inp" id="cf-aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
-    '<select class="f-sel" id="cf-aan-unite-'+catId+'" style="max-width:110px;">'+
+    '<input class="f-inp" id="cf-aan-nom-'+fourId+'" type="text" placeholder="Nom de l\'article">'+
+    '<select class="f-sel" id="cf-aan-unite-'+fourId+'" style="max-width:110px;">'+
     '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
     '</select></div><div class="form-btns">'+
-    '<button class="btn-cancel" onclick="hideAddArtInCatCF(\''+catId+'\')">Annuler</button>'+
-    '<button class="btn-save" onclick="addArtInCatCF(\''+catId+'\')">Ajouter</button>'+
+    '<button class="btn-cancel" onclick="hideAddArtCF(\''+fourId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addArtCF(\''+fourId+'\')">Ajouter</button>'+
     '</div>';
-  document.getElementById('cf-aan-nom-'+catId).focus();
+  document.getElementById('cf-aan-nom-'+fourId).focus();
 }
-function hideAddArtInCatCF(catId){
-  const form=document.getElementById('cf-art-add-form-'+catId);
-  const btn=document.getElementById('cf-art-add-btn-'+catId);
+function hideAddArtCF(fourId){
+  const form=document.getElementById('cf-art-add-form-'+fourId);
+  const btn=document.getElementById('cf-art-add-btn-'+fourId);
   if(form){form.style.display='none';form.innerHTML='';}
   if(btn)btn.style.display='flex';
 }
-async function addArtInCatCF(catId){
-  const nom=document.getElementById('cf-aan-nom-'+catId).value.trim();
-  if(!nom){document.getElementById('cf-aan-nom-'+catId).focus();return;}
-  const unite=document.getElementById('cf-aan-unite-'+catId).value;
-  S.cf_articles.push({id:uid(),nom,unite,categorieId:catId});
+async function addArtCF(fourId){
+  const nom=document.getElementById('cf-aan-nom-'+fourId).value.trim();
+  if(!nom){document.getElementById('cf-aan-nom-'+fourId).focus();return;}
+  const unite=document.getElementById('cf-aan-unite-'+fourId).value;
+  S.cf_articles.push({id:uid(),nom,unite,fournisseurId:fourId});
   await fbSave('cf-articles',S.cf_articles);
   renderCF();
 }
@@ -806,7 +599,7 @@ async function deleteArtCF(id){
 }
 
 // ════════════════════════════════
-// VUE FOURNISSEURS (onglet auto)
+// VUE FOURNISSEURS (onglet)
 // ════════════════════════════════
 function renderFoursView(){
   const view=document.getElementById('fours-view');if(!view)return;
@@ -816,24 +609,13 @@ function renderFoursView(){
       '<div class="placeholder-desc">Ajoutez des articles dans l\'onglet Stock pour les voir apparaître ici.</div></div>';
     return;
   }
-  const groups={};
-  S.fournisseurs.forEach(function(f){groups[f.id]={nom:f.nom,items:[]};});
-  groups['__none__']={nom:'Sans fournisseur',items:[]};
-  S.articles.forEach(function(a){
-    const cat=S.categories.find(function(c){return c.id===a.categorieId;});
-    const fourId=(cat&&cat.fournisseurId&&groups[cat.fournisseurId])?cat.fournisseurId:'__none__';
-    groups[fourId].items.push({a,cat});
-  });
   let html='';
-  Object.entries(groups).forEach(function(entry){
-    const g=entry[1];
-    if(!g.items.length)return;
-    html+='<div class="fv-block"><div class="fv-title">'+esc(g.nom)+'</div>';
-    g.items.forEach(function(item){
-      html+='<div class="fv-item">'+
-        '<span>'+esc(item.a.nom)+(item.cat?'<span class="fv-cat">'+esc(item.cat.nom)+'</span>':'')+'</span>'+
-        '<span class="fv-unite">'+esc(item.a.unite)+'</span>'+
-        '</div>';
+  S.fournisseurs.forEach(function(f){
+    const arts=S.articles.filter(function(a){return a.fournisseurId===f.id;});
+    if(!arts.length)return;
+    html+='<div class="fv-block"><div class="fv-title">'+esc(f.nom)+'</div>';
+    arts.forEach(function(a){
+      html+='<div class="fv-item"><span>'+esc(a.nom)+'</span><span class="fv-unite">'+esc(a.unite)+'</span></div>';
     });
     html+='</div>';
   });
