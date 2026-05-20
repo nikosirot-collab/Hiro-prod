@@ -35,10 +35,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .main{padding:1rem;}
 .page{display:none;}.page.active{display:block;}
 
-/* BOUTON NOUVEAU FOURNISSEUR */
+/* BOUTON NOUVEAU */
 .btn-new{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dsm);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;-webkit-tap-highlight-color:transparent;}
-
-/* FORMULAIRE NOUVEAU */
 .new-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
 
 /* FOURNISSEUR CARD */
@@ -57,12 +55,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .art-info{flex:1;min-width:0;}
 .art-name{font-size:13px;}
 .art-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+.art-qte{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 8px;flex-shrink:0;}
 .art-actions{display:flex;gap:4px;flex-shrink:0;}
 
-/* BOUTON AJOUTER ARTICLE */
+/* BOUTON / FORMULAIRE ARTICLE */
 .btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 22px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
-
-/* FORMULAIRE AJOUT ARTICLE */
 .art-add-form{padding:10px 14px 10px 22px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
 .form-row{display:flex;gap:8px;}
 .f-inp,.f-sel{flex:1;padding:7px 10px;border:1px solid var(--border-s);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;min-width:0;}
@@ -71,12 +68,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .form-btns{display:flex;gap:8px;justify-content:flex-end;}
 .btn-save{padding:7px 18px;border-radius:var(--r-sm);border:none;background:var(--text);color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
 .btn-cancel{padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--border-s);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-
-/* INLINE EDIT */
 .e-inp,.e-sel{flex:1;padding:5px 8px;border:1px solid var(--dsm);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);outline:none;min-width:0;}
 .e-sel{appearance:none;-webkit-appearance:none;}
-
-/* BOUTONS ICÔNES */
 .btn-ic{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .btn-ic.del{color:#c0392b;border-color:#e0b0b0;}
 .btn-ic.ok{background:var(--mgt);color:#fff;border-color:var(--mgt);}
@@ -89,12 +82,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .badge-wip{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;padding:3px 10px;border-radius:20px;margin-bottom:16px;}
 .empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
-/* VUE FOURNISSEURS */
-.fv-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
-.fv-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);background:#faf9f6;}
-.fv-item{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
-.fv-item:last-child{border-bottom:none;}
-.fv-unite{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 7px;flex-shrink:0;}
+/* VUE FOURNISSEURS — sections */
+.sec-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:7px 14px 5px;background:#faf9f6;border-bottom:1px solid var(--border);}
+
+/* Stock réel */
+.stock-line{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.stock-line:last-of-type{border-bottom:none;}
+.stock-qte{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 8px;flex-shrink:0;}
+
+/* Formulaire commande */
+.cmd-form{padding:10px 14px;border-bottom:1px solid var(--border);}
+.cmd-art-line{display:flex;align-items:center;justify-content:space-between;padding:4px 0;}
+.cmd-art-name{font-size:13px;flex:1;}
+.cmd-art-unite{font-size:11px;color:var(--hint);margin-left:4px;}
+.cmd-inp{width:64px;padding:5px 8px;border:1px solid var(--border-s);border-radius:var(--r-sm);font-size:13px;font-family:'DM Mono',monospace;text-align:right;background:var(--bg);color:var(--text);outline:none;}
+.cmd-inp:focus{border-color:var(--dsm);background:#fff;}
+
+/* Lignes commandes */
+.cmd-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);font-size:12px;}
+.cmd-row:last-child{border-bottom:none;}
+.cmd-date{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace;flex-shrink:0;min-width:36px;}
+.cmd-detail{flex:1;color:var(--muted);line-height:1.4;}
+.cmd-received{font-size:11px;font-weight:500;color:var(--mgt);flex-shrink:0;}
+.btn-recu{padding:5px 12px;border-radius:var(--r-sm);border:none;background:var(--mgt);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -209,13 +219,17 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[]};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[]};
 const closedFours=new Set();
 const closedFoursCF=new Set();
+const closedFoursFV=new Set();
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
+function getStock(artId){const s=S.stocks.find(function(x){return x.articleId===artId;});return s?s.qte:0;}
+function today(){return new Date().toISOString().split('T')[0];}
 
 // ── Firestore ──
 async function fbLoad(doc){
@@ -240,12 +254,14 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[fours,arts,cfFours,cfArts]=await Promise.all([
+  const[fours,arts,cfFours,cfArts,stocks,commandes]=await Promise.all([
     fbLoad('fournisseurs'),fbLoad('articles'),
-    fbLoad('cf-fournisseurs'),fbLoad('cf-articles')
+    fbLoad('cf-fournisseurs'),fbLoad('cf-articles'),
+    fbLoad('stocks'),fbLoad('commandes')
   ]);
   S.fournisseurs=fours;S.articles=arts;
   S.cf_fournisseurs=cfFours;S.cf_articles=cfArts;
+  S.stocks=stocks;S.commandes=commandes;
   renderAll();
 }
 function renderAll(){renderStock();renderCF();renderFoursView();}
@@ -301,11 +317,13 @@ function renderFourCard(four,arts,isOpen){
 }
 
 function renderArtRow(a){
+  const qte=getStock(a.id);
   return'<div class="art-row" id="art-row-'+a.id+'">'+
     '<div class="art-info">'+
     '<div class="art-name">'+esc(a.nom)+'</div>'+
     (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
+    '<span class="art-qte">×'+qte+'</span>'+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteArt(\''+a.id+'\')">✕</button>'+
@@ -445,7 +463,6 @@ function renderCF(){
   if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
 }
-
 function renderFourCardCF(four,arts,isOpen){
   const artRows=arts.map(function(a){return renderArtRowCF(a);}).join('');
   return'<div class="four-card" id="cf-four-card-'+four.id+'">'+
@@ -465,7 +482,6 @@ function renderFourCardCF(four,arts,isOpen){
     '<button class="btn-add-art" id="cf-art-add-btn-'+four.id+'" onclick="showAddArtCF(\''+four.id+'\')">+ Ajouter un article</button>'+
     '</div></div>';
 }
-
 function renderArtRowCF(a){
   return'<div class="art-row" id="cf-art-row-'+a.id+'">'+
     '<div class="art-info">'+
@@ -477,15 +493,12 @@ function renderArtRowCF(a){
     '<button class="btn-ic del" onclick="deleteArtCF(\''+a.id+'\')">✕</button>'+
     '</div></div>';
 }
-
 function toggleFourCF(id){
   const body=document.getElementById('cf-four-body-'+id),arrow=document.getElementById('cf-four-arrow-'+id);
   if(!body)return;
   if(closedFoursCF.has(id)){closedFoursCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
   else{closedFoursCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
 }
-
-// ── FOURNISSEURS CRUD (CF) ──
 function showNewFourFormCF(){
   document.getElementById('cf-new-four-form').style.display='flex';
   document.getElementById('cf-new-four-btn').style.display='none';
@@ -531,8 +544,6 @@ async function deleteFourCF(id){
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
   renderCF();
 }
-
-// ── ARTICLES CRUD (CF) ──
 function showAddArtCF(fourId){
   const form=document.getElementById('cf-art-add-form-'+fourId);
   const btn=document.getElementById('cf-art-add-btn-'+fourId);
@@ -599,27 +610,131 @@ async function deleteArtCF(id){
 }
 
 // ════════════════════════════════
-// VUE FOURNISSEURS (onglet)
+// VUE FOURNISSEURS — commandes + stock
 // ════════════════════════════════
 function renderFoursView(){
   const view=document.getElementById('fours-view');if(!view)return;
-  if(!S.articles.length){
+  if(!S.fournisseurs.length){
     view.innerHTML='<div class="placeholder"><div class="placeholder-icon">🚚</div>'+
-      '<div class="placeholder-title">Aucun article</div>'+
-      '<div class="placeholder-desc">Ajoutez des articles dans l\'onglet Stock pour les voir apparaître ici.</div></div>';
+      '<div class="placeholder-title">Aucun fournisseur</div>'+
+      '<div class="placeholder-desc">Ajoutez des fournisseurs dans l\'onglet Stock pour commencer.</div></div>';
     return;
   }
   let html='';
-  S.fournisseurs.forEach(function(f){
-    const arts=S.articles.filter(function(a){return a.fournisseurId===f.id;});
-    if(!arts.length)return;
-    html+='<div class="fv-block"><div class="fv-title">'+esc(f.nom)+'</div>';
-    arts.forEach(function(a){
-      html+='<div class="fv-item"><span>'+esc(a.nom)+'</span><span class="fv-unite">'+esc(a.unite)+'</span></div>';
-    });
-    html+='</div>';
+  S.fournisseurs.forEach(function(four){
+    const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
+    const isOpen=!closedFoursFV.has(four.id);
+    const pending=S.commandes.filter(function(c){return c.fournisseurId===four.id&&c.status==='pending';});
+    const badge=pending.length?'<span style="font-size:10px;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;border-radius:20px;padding:1px 7px;margin-left:6px;font-weight:600;">'+pending.length+' en att.</span>':'';
+
+    // Section stock réel
+    let stockSec='<div class="sec-label">Stock réel</div>';
+    if(!arts.length){
+      stockSec+='<div class="empty-msg">Aucun article pour ce fournisseur.</div>';
+    }else{
+      arts.forEach(function(a){
+        stockSec+='<div class="stock-line"><span>'+esc(a.nom)+'</span>'+
+          '<span class="stock-qte">×'+getStock(a.id)+' '+esc(a.unite)+'</span></div>';
+      });
+    }
+
+    // Section nouvelle commande
+    let cmdSec='';
+    if(arts.length){
+      cmdSec='<div class="sec-label">Nouvelle commande</div><div class="cmd-form">';
+      arts.forEach(function(a){
+        cmdSec+='<div class="cmd-art-line">'+
+          '<span class="cmd-art-name">'+esc(a.nom)+'<span class="cmd-art-unite"> · '+esc(a.unite)+'</span></span>'+
+          '<input class="cmd-inp" id="cmd-inp-'+four.id+'-'+a.id+'" type="number" min="0" placeholder="0">'+
+          '</div>';
+      });
+      cmdSec+='<div class="form-btns" style="margin-top:10px;">'+
+        '<button class="btn-save" onclick="passerCommande(\''+four.id+'\')">Passer la commande</button>'+
+        '</div></div>';
+    }
+
+    // Section en attente
+    let pendingSec='';
+    if(pending.length){
+      pendingSec='<div class="sec-label">En attente</div>';
+      pending.forEach(function(cmd){
+        const detail=cmd.lignes.map(function(l){
+          const art=S.articles.find(function(a){return a.id===l.articleId;});
+          return(art?esc(art.nom):'?')+' ×'+l.qte;
+        }).join(', ');
+        pendingSec+='<div class="cmd-row">'+
+          '<span class="cmd-date">'+fmtDate(cmd.date)+'</span>'+
+          '<span class="cmd-detail">'+detail+'</span>'+
+          '<button class="btn-recu" onclick="marquerRecu(\''+cmd.id+'\')">Reçu ✓</button>'+
+          '</div>';
+      });
+    }
+
+    // Section historique
+    const received=S.commandes
+      .filter(function(c){return c.fournisseurId===four.id&&c.status==='received';})
+      .sort(function(a,b){return b.date.localeCompare(a.date);});
+    let histSec='';
+    if(received.length){
+      histSec='<div class="sec-label">Historique</div>';
+      received.forEach(function(cmd){
+        const detail=cmd.lignes.map(function(l){
+          const art=S.articles.find(function(a){return a.id===l.articleId;});
+          return(art?esc(art.nom):'?')+' ×'+l.qte;
+        }).join(', ');
+        histSec+='<div class="cmd-row">'+
+          '<span class="cmd-date">'+fmtDate(cmd.date)+'</span>'+
+          '<span class="cmd-detail">'+detail+'</span>'+
+          '<span class="cmd-received">✓ reçu</span>'+
+          '</div>';
+      });
+    }
+
+    html+='<div class="four-card" id="fv-four-card-'+four.id+'">'+
+      '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
+      '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
+      '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
+      '</div></div>'+
+      '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
+      stockSec+cmdSec+pendingSec+histSec+
+      '</div></div>';
   });
-  view.innerHTML=html||'<div class="empty-msg">Aucun article à afficher.</div>';
+  view.innerHTML=html;
+}
+
+function toggleFourFV(id){
+  const body=document.getElementById('fv-four-body-'+id),arrow=document.getElementById('fv-four-arrow-'+id);
+  if(!body)return;
+  if(closedFoursFV.has(id)){closedFoursFV.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  else{closedFoursFV.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+}
+
+async function passerCommande(fourId){
+  const arts=S.articles.filter(function(a){return a.fournisseurId===fourId;});
+  const lignes=[];
+  arts.forEach(function(a){
+    const inp=document.getElementById('cmd-inp-'+fourId+'-'+a.id);
+    const qte=inp?parseInt(inp.value)||0:0;
+    if(qte>0)lignes.push({articleId:a.id,qte:qte});
+  });
+  if(!lignes.length)return;
+  S.commandes.push({id:uid(),fournisseurId:fourId,date:today(),status:'pending',lignes:lignes});
+  await fbSave('commandes',S.commandes);
+  renderFoursView();
+}
+
+async function marquerRecu(cmdId){
+  const cmd=S.commandes.find(function(c){return c.id===cmdId;});if(!cmd)return;
+  cmd.lignes.forEach(function(l){
+    const idx=S.stocks.findIndex(function(s){return s.articleId===l.articleId;});
+    if(idx>=0){S.stocks[idx].qte+=l.qte;}
+    else{S.stocks.push({articleId:l.articleId,qte:l.qte});}
+  });
+  const ci=S.commandes.findIndex(function(c){return c.id===cmdId;});
+  S.commandes[ci].status='received';
+  await Promise.all([fbSave('stocks',S.stocks),fbSave('commandes',S.commandes)]);
+  renderFoursView();
+  renderStock();
 }
 
 loadAll();
