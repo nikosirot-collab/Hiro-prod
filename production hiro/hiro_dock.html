@@ -151,6 +151,7 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-tab active" onclick="showPage('stock',this)">Stock</div>
+  <div class="nav-tab" onclick="showPage('cf',this)">CF</div>
   <div class="nav-tab" onclick="showPage('fournisseurs',this)">Fournisseurs</div>
   <div class="nav-tab" onclick="showPage('sorties',this)">Sorties</div>
   <div class="nav-tab" onclick="showPage('asia',this)">Asia</div>
@@ -202,6 +203,47 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
 
   </div>
 
+  <!-- PAGE CF -->
+  <div id="page-cf" class="page">
+
+    <div id="cf-new-cat-form" class="new-cat-form" style="display:none;">
+      <div class="form-row">
+        <input class="f-inp" id="cf-new-cat-inp" type="text" placeholder="Nom de la catégorie"
+          onkeydown="if(event.key==='Enter')addCatCF();if(event.key==='Escape')hideNewCatFormCF();">
+      </div>
+      <div class="form-btns">
+        <button class="btn-cancel" onclick="hideNewCatFormCF()">Annuler</button>
+        <button class="btn-save" onclick="addCatCF()">Créer</button>
+      </div>
+    </div>
+    <button class="btn-new-cat" id="cf-new-cat-btn" onclick="showNewCatFormCF()">+ Nouvelle catégorie</button>
+
+    <div id="cf-content"></div>
+
+    <div class="sec-card" style="margin-top:6px;">
+      <div class="sec-head" onclick="toggleSec('cf-fours')">
+        <span class="sec-title">Gérer les fournisseurs</span>
+        <span class="sec-count" id="cf-fours-count">0</span>
+        <span class="sec-arrow" id="cf-fours-arrow">&#8964;</span>
+      </div>
+      <div class="sec-body" id="sec-cf-fours" style="display:none;">
+        <div id="cf-fours-list"></div>
+        <div id="cf-fours-add-form" class="add-form" style="display:none;">
+          <div class="form-row">
+            <input class="f-inp" id="cf-four-new-inp" type="text" placeholder="Nom du fournisseur"
+              onkeydown="if(event.key==='Enter')addFourCF();if(event.key==='Escape')hideAddFourCF();">
+          </div>
+          <div class="form-btns">
+            <button class="btn-cancel" onclick="hideAddFourCF()">Annuler</button>
+            <button class="btn-save" onclick="addFourCF()">Ajouter</button>
+          </div>
+        </div>
+        <button class="btn-add-row" id="cf-fours-add-btn" onclick="showAddFourCF()">+ Ajouter un fournisseur</button>
+      </div>
+    </div>
+
+  </div>
+
   <!-- PAGE FOURNISSEURS -->
   <div id="page-fournisseurs" class="page">
     <div id="fours-view"></div>
@@ -236,8 +278,9 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={categories:[],fournisseurs:[],articles:[]};
-const closedCats=new Set(); // catégories repliées
+const S={categories:[],fournisseurs:[],articles:[],cf_categories:[],cf_articles:[]};
+const closedCats=new Set();
+const closedCatsCF=new Set();
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -265,11 +308,16 @@ async function fbSave(doc,arr){
 // ── Init ──
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[cats,fours,arts]=await Promise.all([fbLoad('categories'),fbLoad('fournisseurs'),fbLoad('articles')]);
+  document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
+  const[cats,fours,arts,cfCats,cfArts]=await Promise.all([
+    fbLoad('categories'),fbLoad('fournisseurs'),fbLoad('articles'),
+    fbLoad('cf-categories'),fbLoad('cf-articles')
+  ]);
   S.categories=cats;S.fournisseurs=fours;S.articles=arts;
+  S.cf_categories=cfCats;S.cf_articles=cfArts;
   renderAll();
 }
-function renderAll(){renderStock();renderFours();renderFoursView();}
+function renderAll(){renderStock();renderFours();renderFoursView();renderCF();renderFoursCF();}
 
 // ── Nav ──
 function showPage(id,tab){
@@ -546,7 +594,7 @@ async function addFour(){
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   S.fournisseurs.push({id:uid(),nom});
   await fbSave('fournisseurs',S.fournisseurs);
-  hideAddFour();renderFours();
+  hideAddFour();renderFours();renderFoursCF();
 }
 function editFour(id){
   const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
@@ -565,16 +613,18 @@ async function saveFour(id){
   const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
   S.fournisseurs[idx].nom=nom;
   await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderStock();renderFoursView();
+  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
 }
 async function deleteFour(id){
   const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
-  const used=S.articles.some(function(a){return a.fournisseurId===id;});
+  const usedStock=S.articles.some(function(a){return a.fournisseurId===id;});
+  const usedCF=S.cf_articles.some(function(a){return a.fournisseurId===id;});
+  const used=usedStock||usedCF;
   const msg=used?'Supprimer "'+f.nom+'" ? Il est utilisé par des articles.':'Supprimer le fournisseur "'+f.nom+'" ?';
   if(!confirm(msg))return;
   S.fournisseurs=S.fournisseurs.filter(function(x){return x.id!==id;});
   await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderStock();renderFoursView();
+  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
 }
 
 // ════════════════════════════════
@@ -610,6 +660,271 @@ function renderFoursView(){
     html+='</div>';
   });
   view.innerHTML=html||'<div class="empty-msg">Aucun article associé à un fournisseur.</div>';
+}
+
+// ════════════════════════════════
+// CF — vue par catégorie
+// ════════════════════════════════
+function renderCF(){
+  const el=document.getElementById('cf-content');
+  let html='';
+  S.cf_categories.forEach(function(cat){
+    const catArts=S.cf_articles.filter(function(a){return a.categorieId===cat.id;});
+    const isOpen=!closedCatsCF.has(cat.id);
+    html+=renderCatCardCF(cat,catArts,isOpen);
+  });
+  const noCatArts=S.cf_articles.filter(function(a){
+    return !a.categorieId||!S.cf_categories.find(function(c){return c.id===a.categorieId;});
+  });
+  if(noCatArts.length){
+    const isOpen=!closedCatsCF.has('__none_cf__');
+    html+=renderCatCardCF({id:'__none_cf__',nom:'Sans catégorie'},noCatArts,isOpen,true);
+  }
+  if(!html) html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucune catégorie — créez-en une pour commencer.</div>';
+  el.innerHTML=html;
+}
+
+function renderCatCardCF(cat,arts,isOpen,noEdit){
+  const bodyStyle=isOpen?'':'display:none;';
+  const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
+  const artRows=arts.map(function(a){return renderArtRowCF(a);}).join('');
+  const editBtns=noEdit?'':
+    '<div class="cat-actions">'+
+    '<button class="btn-ic" onclick="editCatNameCF(\''+cat.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteCatCF(\''+cat.id+'\')" title="Supprimer">✕</button>'+
+    '</div>';
+  const addArtBtn=noEdit?'':
+    '<div id="cf-art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="cf-art-add-btn-'+cat.id+'" onclick="showAddArtInCatCF(\''+cat.id+'\')">+ Ajouter un article</button>';
+  return'<div class="cat-card" id="cf-cat-card-'+cat.id+'">'+
+    '<div class="cat-head" id="cf-cat-head-'+cat.id+'">'+
+    '<div class="cat-head-info" onclick="toggleCatCF(\''+cat.id+'\')">'+
+    '<span class="'+arrowClass+'" id="cf-cat-arrow-'+cat.id+'">&#8964;</span>'+
+    '<span class="cat-name-text">'+esc(cat.nom)+'</span>'+
+    '<span class="cat-count-badge">'+arts.length+'</span>'+
+    '</div>'+editBtns+
+    '</div>'+
+    '<div class="cat-body" id="cf-cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    artRows+addArtBtn+
+    '</div></div>';
+}
+
+function renderArtRowCF(a){
+  const four=S.fournisseurs.find(function(f){return f.id===a.fournisseurId;});
+  const fourStr=four?'<span class="art-four">'+esc(four.nom)+'</span>':'';
+  const meta=[a.unite,fourStr].filter(Boolean).join(' · ');
+  return'<div class="art-row" id="cf-art-row-'+a.id+'">'+
+    '<div class="art-info">'+
+    '<div class="art-name">'+esc(a.nom)+'</div>'+
+    (meta?'<div class="art-meta">'+meta+'</div>':'')+
+    '</div>'+
+    '<div class="art-actions">'+
+    '<button class="btn-ic" onclick="editArtCF(\''+a.id+'\')">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteArtCF(\''+a.id+'\')">✕</button>'+
+    '</div></div>';
+}
+
+function toggleCatCF(id){
+  const body=document.getElementById('cf-cat-body-'+id);
+  const arrow=document.getElementById('cf-cat-arrow-'+id);
+  if(!body)return;
+  if(closedCatsCF.has(id)){
+    closedCatsCF.delete(id);
+    body.style.display='block';
+    if(arrow)arrow.classList.add('open');
+  }else{
+    closedCatsCF.add(id);
+    body.style.display='none';
+    if(arrow)arrow.classList.remove('open');
+  }
+}
+
+// CF CATÉGORIES — CRUD
+function showNewCatFormCF(){
+  document.getElementById('cf-new-cat-form').style.display='flex';
+  document.getElementById('cf-new-cat-btn').style.display='none';
+  const inp=document.getElementById('cf-new-cat-inp');inp.value='';inp.focus();
+}
+function hideNewCatFormCF(){
+  document.getElementById('cf-new-cat-form').style.display='none';
+  document.getElementById('cf-new-cat-btn').style.display='flex';
+}
+async function addCatCF(){
+  const inp=document.getElementById('cf-new-cat-inp');
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  S.cf_categories.push({id:uid(),nom});
+  await fbSave('cf-categories',S.cf_categories);
+  hideNewCatFormCF();renderCF();
+}
+function editCatNameCF(id){
+  const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
+  const head=document.getElementById('cf-cat-head-'+id);
+  head.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<input class="e-inp" id="cf-ecn-'+id+'" type="text" value="'+esc(cat.nom)+'" '+
+    'onkeydown="if(event.key===\'Enter\')saveCatNameCF(\''+id+'\');if(event.key===\'Escape\')renderCF();">'+
+    '<button class="btn-ic ok" onclick="saveCatNameCF(\''+id+'\')">✓</button>'+
+    '<button class="btn-ic" onclick="renderCF()">✕</button>'+
+    '</div>';
+  document.getElementById('cf-ecn-'+id).focus();
+}
+async function saveCatNameCF(id){
+  const inp=document.getElementById('cf-ecn-'+id);
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  const idx=S.cf_categories.findIndex(function(c){return c.id===id;});if(idx===-1)return;
+  S.cf_categories[idx].nom=nom;
+  await fbSave('cf-categories',S.cf_categories);
+  renderCF();
+}
+async function deleteCatCF(id){
+  const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
+  const used=S.cf_articles.some(function(a){return a.categorieId===id;});
+  const msg=used?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
+  if(!confirm(msg))return;
+  S.cf_categories=S.cf_categories.filter(function(c){return c.id!==id;});
+  await fbSave('cf-categories',S.cf_categories);
+  renderCF();
+}
+
+// CF ARTICLES — ajout dans catégorie
+function showAddArtInCatCF(catId){
+  const form=document.getElementById('cf-art-add-form-'+catId);
+  const btn=document.getElementById('cf-art-add-btn-'+catId);
+  if(!form)return;
+  form.style.display='flex';
+  form.style.flexDirection='column';
+  form.style.gap='8px';
+  if(btn)btn.style.display='none';
+  form.innerHTML=
+    '<div class="form-row">'+
+    '<input class="f-inp" id="cf-aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
+    '<select class="f-sel" id="cf-aan-unite-'+catId+'" style="max-width:110px;">'+
+    '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
+    '</select></div>'+
+    '<div class="form-row">'+
+    '<select class="f-sel" id="cf-aan-four-'+catId+'">'+foursOpts('')+'</select>'+
+    '</div>'+
+    '<div class="form-btns">'+
+    '<button class="btn-cancel" onclick="hideAddArtInCatCF(\''+catId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addArtInCatCF(\''+catId+'\')">Ajouter</button>'+
+    '</div>';
+  document.getElementById('cf-aan-nom-'+catId).focus();
+}
+function hideAddArtInCatCF(catId){
+  const form=document.getElementById('cf-art-add-form-'+catId);
+  const btn=document.getElementById('cf-art-add-btn-'+catId);
+  if(form){form.style.display='none';form.innerHTML='';}
+  if(btn)btn.style.display='flex';
+}
+async function addArtInCatCF(catId){
+  const nom=document.getElementById('cf-aan-nom-'+catId).value.trim();
+  if(!nom){document.getElementById('cf-aan-nom-'+catId).focus();return;}
+  const unite=document.getElementById('cf-aan-unite-'+catId).value;
+  const fournisseurId=document.getElementById('cf-aan-four-'+catId).value||null;
+  const categorieId=catId==='__none_cf__'?null:catId;
+  S.cf_articles.push({id:uid(),nom,unite,categorieId,fournisseurId});
+  await fbSave('cf-articles',S.cf_articles);
+  renderCF();
+}
+
+// CF ARTICLES — édition inline
+function editArtCF(id){
+  const a=S.cf_articles.find(function(x){return x.id===id;});if(!a)return;
+  const row=document.getElementById('cf-art-row-'+id);
+  row.style.flexWrap='wrap';
+  row.innerHTML=
+    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
+    '<input class="e-inp" id="cf-ea-nom-'+id+'" type="text" value="'+esc(a.nom)+'" placeholder="Nom">'+
+    '<select class="e-sel" id="cf-ea-unite-'+id+'" style="max-width:110px;flex-shrink:0;">'+
+    '<option value="Carton"'+(a.unite==='Carton'?' selected':'')+'>Carton</option>'+
+    '<option value="Paquet"'+(a.unite==='Paquet'?' selected':'')+'>Paquet</option>'+
+    '</select></div>'+
+    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
+    '<select class="e-sel" id="cf-ea-four-'+id+'">'+foursOpts(a.fournisseurId)+'</select>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">'+
+    '<button class="btn-cancel" onclick="renderCF()">Annuler</button>'+
+    '<button class="btn-save" onclick="saveArtCF(\''+id+'\')">Enregistrer</button>'+
+    '</div>';
+  document.getElementById('cf-ea-nom-'+id).focus();
+}
+async function saveArtCF(id){
+  const nom=document.getElementById('cf-ea-nom-'+id).value.trim();
+  if(!nom){document.getElementById('cf-ea-nom-'+id).focus();return;}
+  const unite=document.getElementById('cf-ea-unite-'+id).value;
+  const fournisseurId=document.getElementById('cf-ea-four-'+id).value||null;
+  const idx=S.cf_articles.findIndex(function(a){return a.id===id;});if(idx===-1)return;
+  S.cf_articles[idx]={...S.cf_articles[idx],nom,unite,fournisseurId};
+  await fbSave('cf-articles',S.cf_articles);
+  renderCF();
+}
+async function deleteArtCF(id){
+  const a=S.cf_articles.find(function(x){return x.id===id;});if(!a)return;
+  if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
+  S.cf_articles=S.cf_articles.filter(function(x){return x.id!==id;});
+  await fbSave('cf-articles',S.cf_articles);
+  renderCF();
+}
+
+// CF FOURNISSEURS — section gestion (partagée avec Stock)
+function renderFoursCF(){
+  const el=document.getElementById('cf-fours-list');if(!el)return;
+  document.getElementById('cf-fours-count').textContent=S.fournisseurs.length;
+  if(!S.fournisseurs.length){el.innerHTML='<div class="empty-msg">Aucun fournisseur</div>';return;}
+  el.innerHTML=S.fournisseurs.map(function(f){
+    return'<div class="item-row" id="cf-four-row-'+f.id+'">'+
+    '<span class="item-name">'+esc(f.nom)+'</span>'+
+    '<div class="item-actions">'+
+    '<button class="btn-ic" onclick="editFourCF(\''+f.id+'\')">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteFourCF(\''+f.id+'\')">✕</button>'+
+    '</div></div>';
+  }).join('');
+}
+function showAddFourCF(){
+  document.getElementById('cf-fours-add-form').style.display='flex';
+  document.getElementById('cf-fours-add-btn').style.display='none';
+  const inp=document.getElementById('cf-four-new-inp');inp.value='';inp.focus();
+}
+function hideAddFourCF(){
+  document.getElementById('cf-fours-add-form').style.display='none';
+  document.getElementById('cf-fours-add-btn').style.display='flex';
+}
+async function addFourCF(){
+  const inp=document.getElementById('cf-four-new-inp');
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  S.fournisseurs.push({id:uid(),nom});
+  await fbSave('fournisseurs',S.fournisseurs);
+  hideAddFourCF();renderFours();renderFoursCF();
+}
+function editFourCF(id){
+  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
+  document.getElementById('cf-four-row-'+id).innerHTML=
+    '<input class="e-inp" id="cf-ef-'+id+'" type="text" value="'+esc(f.nom)+'" style="flex:1;" '+
+    'onkeydown="if(event.key===\'Enter\')saveFourCF(\''+id+'\');if(event.key===\'Escape\')renderFoursCF();">'+
+    '<div class="item-actions">'+
+    '<button class="btn-ic ok" onclick="saveFourCF(\''+id+'\')">✓</button>'+
+    '<button class="btn-ic" onclick="renderFoursCF()">✕</button>'+
+    '</div>';
+  document.getElementById('cf-ef-'+id).focus();
+}
+async function saveFourCF(id){
+  const inp=document.getElementById('cf-ef-'+id);
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  S.fournisseurs[idx].nom=nom;
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
+}
+async function deleteFourCF(id){
+  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
+  const usedStock=S.articles.some(function(a){return a.fournisseurId===id;});
+  const usedCF=S.cf_articles.some(function(a){return a.fournisseurId===id;});
+  const used=usedStock||usedCF;
+  const msg=used?'Supprimer "'+f.nom+'" ? Il est utilisé par des articles.':'Supprimer le fournisseur "'+f.nom+'" ?';
+  if(!confirm(msg))return;
+  S.fournisseurs=S.fournisseurs.filter(function(x){return x.id!==id;});
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
 }
 
 loadAll();
