@@ -374,13 +374,21 @@ async function addFour(){
 }
 function editFourName(id){
   const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const current=four.jours||[];
+  const days=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const chips=days.map(function(d){
+    return'<span class="jour-chip'+(current.indexOf(d)>=0?' on':'')+'" onclick="toggleJour(this)">'+d+'</span>';
+  }).join('');
   const head=document.getElementById('four-head-'+id);
   head.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<div style="display:flex;flex-direction:column;gap:8px;flex:1;padding:4px 0;">'+
+    '<div style="display:flex;align-items:center;gap:8px;">'+
     '<input class="e-inp" id="efn-'+id+'" type="text" value="'+esc(four.nom)+'" '+
     'onkeydown="if(event.key===\'Enter\')saveFourName(\''+id+'\');if(event.key===\'Escape\')renderStock();">'+
     '<button class="btn-ic ok" onclick="saveFourName(\''+id+'\')">✓</button>'+
     '<button class="btn-ic" onclick="renderStock()">✕</button>'+
+    '</div>'+
+    '<div class="jours-row" id="efn-jours-'+id+'">'+chips+'</div>'+
     '</div>';
   document.getElementById('efn-'+id).focus();
 }
@@ -388,7 +396,9 @@ async function saveFourName(id){
   const inp=document.getElementById('efn-'+id);
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  const jours=[...document.querySelectorAll('#efn-jours-'+id+' .jour-chip.on')].map(function(c){return c.textContent.trim();});
   S.fournisseurs[idx].nom=nom;
+  S.fournisseurs[idx].jours=jours;
   await fbSave('fournisseurs',S.fournisseurs);
   renderStock();renderFoursView();
 }
