@@ -82,6 +82,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .badge-wip{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;padding:3px 10px;border-radius:20px;margin-bottom:16px;}
 .empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
+/* JOURS DE LIVRAISON */
+.jours-row{display:flex;flex-wrap:wrap;gap:4px;}
+.jour-chip{font-size:11px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;border:1px solid var(--border-s);color:var(--muted);background:var(--bg);cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+.jour-chip.on{background:var(--dsm-l);color:var(--dsm);border-color:var(--dsm);}
+.fv-jours{font-size:11px;color:var(--hint);margin-top:1px;}
+
 /* VUE FOURNISSEURS — sections */
 .sec-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:7px 14px 5px;background:#faf9f6;border-bottom:1px solid var(--border);}
 
@@ -159,6 +165,15 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
       <div class="form-row">
         <input class="f-inp" id="new-four-inp" type="text" placeholder="Nom du fournisseur"
           onkeydown="if(event.key==='Enter')addFour();if(event.key==='Escape')hideNewFourForm();">
+      </div>
+      <div class="jours-row" id="new-four-jours">
+        <span class="jour-chip" onclick="toggleJour(this)">Lun</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Mar</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Mer</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Jeu</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Ven</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Sam</span>
+        <span class="jour-chip" onclick="toggleJour(this)">Dim</span>
       </div>
       <div class="form-btns">
         <button class="btn-cancel" onclick="hideNewFourForm()">Annuler</button>
@@ -343,14 +358,17 @@ function showNewFourForm(){
   document.getElementById('new-four-btn').style.display='none';
   const inp=document.getElementById('new-four-inp');inp.value='';inp.focus();
 }
+function toggleJour(el){el.classList.toggle('on');}
 function hideNewFourForm(){
   document.getElementById('new-four-form').style.display='none';
   document.getElementById('new-four-btn').style.display='flex';
+  document.querySelectorAll('#new-four-jours .jour-chip').forEach(function(c){c.classList.remove('on');});
 }
 async function addFour(){
   const inp=document.getElementById('new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.fournisseurs.push({id:uid(),nom});
+  const jours=[...document.querySelectorAll('#new-four-jours .jour-chip.on')].map(function(c){return c.textContent.trim();});
+  S.fournisseurs.push({id:uid(),nom,jours});
   await fbSave('fournisseurs',S.fournisseurs);
   hideNewFourForm();renderStock();renderFoursView();
 }
@@ -693,7 +711,9 @@ function renderFoursView(){
     html+='<div class="four-card" id="fv-four-card-'+four.id+'">'+
       '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
       '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
-      '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
+      '<div><div style="display:flex;align-items:center;gap:6px;"><span class="four-name">'+esc(four.nom)+'</span>'+badge+'</div>'+
+      (four.jours&&four.jours.length?'<div class="fv-jours">'+four.jours.join(' · ')+'</div>':'')+
+      '</div>'+
       '</div></div>'+
       '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
       stockSec+cmdSec+pendingSec+histSec+
