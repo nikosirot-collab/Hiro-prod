@@ -14,6 +14,7 @@ const PRECACHE_URLS = [
   BASE + 'hiro_order_ville.html',
   BASE + 'hiro_labo.html',
   BASE + 'hiro_report.html',
+  BASE + 'hiro_dock.html',
 ];
 
 // ── Installation ──
