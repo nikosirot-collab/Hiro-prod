@@ -35,27 +35,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .main{padding:1rem;}
 .page{display:none;}.page.active{display:block;}
 
-/* SECTION CARD */
-.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden;}
-.sec-head{display:flex;align-items:center;gap:8px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
-.sec-title{font-size:13px;font-weight:600;flex:1;}
-.sec-count{font-size:11px;font-family:'DM Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--muted);}
-.sec-arrow{font-size:13px;color:var(--hint);transition:transform .2s;}
-.sec-arrow.open{transform:rotate(180deg);}
-.sec-body{border-top:1px solid var(--border);}
+/* BOUTON NOUVELLE CATÉGORIE */
+.btn-new-cat{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dsm);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;-webkit-tap-highlight-color:transparent;}
 
-/* ITEM ROW */
-.item-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--border);}
-.item-row:last-child{border-bottom:none;}
-.item-name{font-size:13px;}
-.item-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.item-actions{display:flex;gap:4px;flex-shrink:0;margin-left:auto;}
-.btn-ic{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
-.btn-ic.del{color:#c0392b;border-color:#e0b0b0;}
-.btn-ic.ok{background:var(--mgt);color:#fff;border-color:var(--mgt);}
+/* FORMULAIRE NOUVELLE CATÉGORIE */
+.new-cat-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
 
-/* FORMS */
-.add-form{padding:10px 14px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
+/* CATEGORY CARD */
+.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.cat-head{display:flex;align-items:center;padding:11px 14px;gap:8px;-webkit-tap-highlight-color:transparent;}
+.cat-head-info{display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;}
+.cat-arrow{font-size:11px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
+.cat-arrow.open{transform:rotate(180deg);}
+.cat-name-text{font-size:13px;font-weight:600;}
+.cat-count-badge{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace;}
+.cat-actions{display:flex;gap:4px;flex-shrink:0;}
+.cat-body{border-top:1px solid var(--border);}
+
+/* ARTICLE ROW */
+.art-row{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 28px;border-bottom:1px solid var(--border);}
+.art-row:last-of-type{border-bottom:none;}
+.art-info{flex:1;min-width:0;}
+.art-name{font-size:13px;}
+.art-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+.art-four{color:var(--dsm);}
+.art-actions{display:flex;gap:4px;flex-shrink:0;}
+
+/* BOUTON AJOUTER ARTICLE DANS CAT */
+.btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 28px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+
+/* FORMULAIRE AJOUT ARTICLE */
+.art-add-form{padding:10px 14px 10px 28px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
 .form-row{display:flex;gap:8px;}
 .f-inp,.f-sel{flex:1;padding:7px 10px;border:1px solid var(--border-s);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;min-width:0;}
 .f-inp:focus,.f-sel:focus{border-color:var(--dsm);background:#fff;}
@@ -63,13 +73,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .form-btns{display:flex;gap:8px;justify-content:flex-end;}
 .btn-save{padding:7px 18px;border-radius:var(--r-sm);border:none;background:var(--text);color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;}
 .btn-cancel{padding:7px 12px;border-radius:var(--r-sm);border:1px solid var(--border-s);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.btn-add-row{display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;font-size:13px;color:var(--dsm);font-weight:500;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
 
 /* INLINE EDIT */
 .e-inp,.e-sel{flex:1;padding:5px 8px;border:1px solid var(--dsm);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);outline:none;min-width:0;}
 .e-sel{appearance:none;-webkit-appearance:none;}
 
-.empty-msg{padding:18px 14px;font-size:13px;color:var(--hint);text-align:center;}
+/* SECTION FOURNISSEURS (bas de page) */
+.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.sec-head{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
+.sec-title{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted);flex:1;text-transform:uppercase;}
+.sec-count{font-size:11px;font-family:'DM Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--muted);}
+.sec-arrow{font-size:11px;color:var(--hint);transition:transform .2s;}
+.sec-arrow.open{transform:rotate(180deg);}
+.sec-body{border-top:1px solid var(--border);}
+.item-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);}
+.item-row:last-child{border-bottom:none;}
+.item-name{font-size:13px;flex:1;}
+.item-actions{display:flex;gap:4px;}
+.btn-ic{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.btn-ic.del{color:#c0392b;border-color:#e0b0b0;}
+.btn-ic.ok{background:var(--mgt);color:#fff;border-color:var(--mgt);}
+.btn-add-row{display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;font-size:13px;color:var(--dsm);font-weight:500;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+.add-form{padding:10px 14px;flex-direction:column;gap:8px;border-top:1px solid var(--border);}
+.empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
 /* PLACEHOLDER */
 .placeholder{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem 1.5rem;text-align:center;}
@@ -135,37 +161,30 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
   <!-- PAGE STOCK -->
   <div id="page-stock" class="page active">
 
-    <!-- Catégories -->
-    <div class="sec-card">
-      <div class="sec-head" onclick="toggleSec('cats')">
-        <span class="sec-title">Catégories</span>
-        <span class="sec-count" id="cats-count">0</span>
-        <span class="sec-arrow open" id="cats-arrow">&#8964;</span>
+    <!-- Bouton / formulaire nouvelle catégorie -->
+    <div id="new-cat-form" class="new-cat-form" style="display:none;">
+      <div class="form-row">
+        <input class="f-inp" id="new-cat-inp" type="text" placeholder="Nom de la catégorie"
+          onkeydown="if(event.key==='Enter')addCat();if(event.key==='Escape')hideNewCatForm();">
       </div>
-      <div class="sec-body" id="sec-cats">
-        <div id="cats-list"></div>
-        <div id="cats-add-form" class="add-form" style="display:none;">
-          <div class="form-row">
-            <input class="f-inp" id="cat-new-inp" type="text" placeholder="Nom de la catégorie"
-              onkeydown="if(event.key==='Enter')addCat();if(event.key==='Escape')hideAddCat();">
-          </div>
-          <div class="form-btns">
-            <button class="btn-cancel" onclick="hideAddCat()">Annuler</button>
-            <button class="btn-save" onclick="addCat()">Ajouter</button>
-          </div>
-        </div>
-        <button class="btn-add-row" id="cats-add-btn" onclick="showAddCat()">+ Ajouter une catégorie</button>
+      <div class="form-btns">
+        <button class="btn-cancel" onclick="hideNewCatForm()">Annuler</button>
+        <button class="btn-save" onclick="addCat()">Créer</button>
       </div>
     </div>
+    <button class="btn-new-cat" id="new-cat-btn" onclick="showNewCatForm()">+ Nouvelle catégorie</button>
 
-    <!-- Fournisseurs -->
-    <div class="sec-card">
+    <!-- Catégories avec articles -->
+    <div id="stock-content"></div>
+
+    <!-- Gérer les fournisseurs -->
+    <div class="sec-card" style="margin-top:6px;">
       <div class="sec-head" onclick="toggleSec('fours')">
-        <span class="sec-title">Fournisseurs</span>
+        <span class="sec-title">Gérer les fournisseurs</span>
         <span class="sec-count" id="fours-count">0</span>
-        <span class="sec-arrow open" id="fours-arrow">&#8964;</span>
+        <span class="sec-arrow" id="fours-arrow">&#8964;</span>
       </div>
-      <div class="sec-body" id="sec-fours">
+      <div class="sec-body" id="sec-fours" style="display:none;">
         <div id="fours-list"></div>
         <div id="fours-add-form" class="add-form" style="display:none;">
           <div class="form-row">
@@ -178,36 +197,6 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
           </div>
         </div>
         <button class="btn-add-row" id="fours-add-btn" onclick="showAddFour()">+ Ajouter un fournisseur</button>
-      </div>
-    </div>
-
-    <!-- Articles -->
-    <div class="sec-card">
-      <div class="sec-head" onclick="toggleSec('arts')">
-        <span class="sec-title">Articles</span>
-        <span class="sec-count" id="arts-count">0</span>
-        <span class="sec-arrow open" id="arts-arrow">&#8964;</span>
-      </div>
-      <div class="sec-body" id="sec-arts">
-        <div id="arts-list"></div>
-        <div id="arts-add-form" class="add-form" style="display:none;">
-          <div class="form-row">
-            <input class="f-inp" id="art-new-nom" type="text" placeholder="Nom de l'article">
-            <select class="f-sel" id="art-new-unite" style="max-width:110px;">
-              <option value="Carton">Carton</option>
-              <option value="Paquet">Paquet</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <select class="f-sel" id="art-new-cat"></select>
-            <select class="f-sel" id="art-new-four"></select>
-          </div>
-          <div class="form-btns">
-            <button class="btn-cancel" onclick="hideAddArt()">Annuler</button>
-            <button class="btn-save" onclick="addArt()">Ajouter</button>
-          </div>
-        </div>
-        <button class="btn-add-row" id="arts-add-btn" onclick="showAddArt()">+ Ajouter un article</button>
       </div>
     </div>
 
@@ -248,6 +237,7 @@ const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases
 
 // ── State ──
 const S={categories:[],fournisseurs:[],articles:[]};
+const closedCats=new Set(); // catégories repliées
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -274,23 +264,22 @@ async function fbSave(doc,arr){
 
 // ── Init ──
 async function loadAll(){
-  ['cats','fours','arts'].forEach(id=>{
-    const el=document.getElementById(id+'-list');
-    if(el)el.innerHTML='<div class="empty-msg">Chargement...</div>';
-  });
+  document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   const[cats,fours,arts]=await Promise.all([fbLoad('categories'),fbLoad('fournisseurs'),fbLoad('articles')]);
   S.categories=cats;S.fournisseurs=fours;S.articles=arts;
   renderAll();
 }
-function renderAll(){renderCats();renderFours();renderArts();renderFoursView();}
+function renderAll(){renderStock();renderFours();renderFoursView();}
 
-// ── Nav & sections ──
+// ── Nav ──
 function showPage(id,tab){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   const p=document.getElementById('page-'+id);if(p)p.classList.add('active');
   if(tab)tab.classList.add('active');
 }
+
+// ── Section fournisseurs toggle ──
 function toggleSec(id){
   const body=document.getElementById('sec-'+id);
   const arrow=document.getElementById(id+'-arrow');
@@ -308,81 +297,240 @@ function toggleSec(id){
 })();
 
 // ════════════════════════════════
-// CATÉGORIES
+// STOCK — vue par catégorie
 // ════════════════════════════════
-function renderCats(){
-  const el=document.getElementById('cats-list');
-  document.getElementById('cats-count').textContent=S.categories.length;
-  if(!S.categories.length){el.innerHTML='<div class="empty-msg">Aucune catégorie</div>';return;}
-  el.innerHTML=S.categories.map(c=>
-    '<div class="item-row" id="cat-row-'+c.id+'">'+
-    '<span class="item-name">'+esc(c.nom)+'</span>'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic" onclick="editCat(\''+c.id+'\')">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteCat(\''+c.id+'\')">✕</button>'+
-    '</div></div>'
-  ).join('');
+function foursOpts(sel){
+  return'<option value="">— Fournisseur —</option>'+
+  S.fournisseurs.map(f=>'<option value="'+f.id+'"'+(sel===f.id?' selected':'')+'>'+esc(f.nom)+'</option>').join('');
 }
-function showAddCat(){
-  document.getElementById('cats-add-form').style.display='flex';
-  document.getElementById('cats-add-btn').style.display='none';
-  const inp=document.getElementById('cat-new-inp');inp.value='';inp.focus();
+
+function renderStock(){
+  const el=document.getElementById('stock-content');
+  let html='';
+
+  S.categories.forEach(function(cat){
+    const catArts=S.articles.filter(function(a){return a.categorieId===cat.id;});
+    const isOpen=!closedCats.has(cat.id);
+    html+=renderCatCard(cat,catArts,isOpen);
+  });
+
+  // Articles sans catégorie
+  const noCatArts=S.articles.filter(function(a){
+    return !a.categorieId||!S.categories.find(function(c){return c.id===a.categorieId;});
+  });
+  if(noCatArts.length){
+    const isOpen=!closedCats.has('__none__');
+    html+=renderCatCard({id:'__none__',nom:'Sans catégorie'},noCatArts,isOpen,true);
+  }
+
+  if(!html) html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucune catégorie — créez-en une pour commencer.</div>';
+  el.innerHTML=html;
 }
-function hideAddCat(){
-  document.getElementById('cats-add-form').style.display='none';
-  document.getElementById('cats-add-btn').style.display='flex';
-}
-async function addCat(){
-  const inp=document.getElementById('cat-new-inp');
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.categories.push({id:uid(),nom});
-  await fbSave('categories',S.categories);
-  hideAddCat();renderCats();refreshSelects();
-}
-function editCat(id){
-  const c=S.categories.find(x=>x.id===id);if(!c)return;
-  document.getElementById('cat-row-'+id).innerHTML=
-    '<input class="e-inp" id="ec-'+id+'" type="text" value="'+esc(c.nom)+'" style="flex:1;" '+
-    'onkeydown="if(event.key===\'Enter\')saveCat(\''+id+'\');if(event.key===\'Escape\')renderCats();">'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic ok" onclick="saveCat(\''+id+'\')">✓</button>'+
-    '<button class="btn-ic" onclick="renderCats()">✕</button>'+
+
+function renderCatCard(cat,arts,isOpen,noEdit){
+  const bodyStyle=isOpen?'':'display:none;';
+  const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
+  const artRows=arts.map(function(a){return renderArtRow(a);}).join('');
+  const editBtns=noEdit?'':
+    '<div class="cat-actions">'+
+    '<button class="btn-ic" onclick="editCatName(\''+cat.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteCat(\''+cat.id+'\')" title="Supprimer">✕</button>'+
     '</div>';
-  document.getElementById('ec-'+id).focus();
+  const addArtBtn=noEdit?'':
+    '<div id="art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="art-add-btn-'+cat.id+'" onclick="showAddArtInCat(\''+cat.id+'\')">+ Ajouter un article</button>';
+
+  return'<div class="cat-card" id="cat-card-'+cat.id+'">'+
+    '<div class="cat-head" id="cat-head-'+cat.id+'">'+
+    '<div class="cat-head-info" onclick="toggleCat(\''+cat.id+'\')">'+
+    '<span class="'+arrowClass+'" id="cat-arrow-'+cat.id+'">&#8964;</span>'+
+    '<span class="cat-name-text">'+esc(cat.nom)+'</span>'+
+    '<span class="cat-count-badge">'+arts.length+'</span>'+
+    '</div>'+editBtns+
+    '</div>'+
+    '<div class="cat-body" id="cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    artRows+addArtBtn+
+    '</div></div>';
 }
-async function saveCat(id){
-  const inp=document.getElementById('ec-'+id);
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.categories.findIndex(c=>c.id===id);if(idx===-1)return;
-  S.categories[idx].nom=nom;
-  await fbSave('categories',S.categories);
-  renderCats();renderArts();renderFoursView();
+
+function renderArtRow(a){
+  const four=S.fournisseurs.find(function(f){return f.id===a.fournisseurId;});
+  const fourStr=four?'<span class="art-four">'+esc(four.nom)+'</span>':'';
+  const meta=[a.unite,fourStr].filter(Boolean).join(' · ');
+  return'<div class="art-row" id="art-row-'+a.id+'">'+
+    '<div class="art-info">'+
+    '<div class="art-name">'+esc(a.nom)+'</div>'+
+    (meta?'<div class="art-meta">'+meta+'</div>':'')+
+    '</div>'+
+    '<div class="art-actions">'+
+    '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteArt(\''+a.id+'\')">✕</button>'+
+    '</div></div>';
 }
-async function deleteCat(id){
-  const c=S.categories.find(x=>x.id===id);if(!c)return;
-  const used=S.articles.some(a=>a.categorieId===id);
-  const msg=used?'Supprimer "'+c.nom+'" ? Elle est utilisée par des articles.':'Supprimer la catégorie "'+c.nom+'" ?';
-  if(!confirm(msg))return;
-  S.categories=S.categories.filter(x=>x.id!==id);
-  await fbSave('categories',S.categories);
-  renderCats();renderArts();renderFoursView();
+
+// ── Toggle catégorie ──
+function toggleCat(id){
+  const body=document.getElementById('cat-body-'+id);
+  const arrow=document.getElementById('cat-arrow-'+id);
+  if(!body)return;
+  if(closedCats.has(id)){
+    closedCats.delete(id);
+    body.style.display='block';
+    if(arrow)arrow.classList.add('open');
+  }else{
+    closedCats.add(id);
+    body.style.display='none';
+    if(arrow)arrow.classList.remove('open');
+  }
 }
 
 // ════════════════════════════════
-// FOURNISSEURS (CRUD)
+// CATÉGORIES — CRUD
+// ════════════════════════════════
+function showNewCatForm(){
+  document.getElementById('new-cat-form').style.display='flex';
+  document.getElementById('new-cat-btn').style.display='none';
+  const inp=document.getElementById('new-cat-inp');inp.value='';inp.focus();
+}
+function hideNewCatForm(){
+  document.getElementById('new-cat-form').style.display='none';
+  document.getElementById('new-cat-btn').style.display='flex';
+}
+async function addCat(){
+  const inp=document.getElementById('new-cat-inp');
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  S.categories.push({id:uid(),nom});
+  await fbSave('categories',S.categories);
+  hideNewCatForm();renderStock();
+}
+
+function editCatName(id){
+  const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
+  const head=document.getElementById('cat-head-'+id);
+  head.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<input class="e-inp" id="ecn-'+id+'" type="text" value="'+esc(cat.nom)+'" '+
+    'onkeydown="if(event.key===\'Enter\')saveCatName(\''+id+'\');if(event.key===\'Escape\')renderStock();">'+
+    '<button class="btn-ic ok" onclick="saveCatName(\''+id+'\')">✓</button>'+
+    '<button class="btn-ic" onclick="renderStock()">✕</button>'+
+    '</div>';
+  document.getElementById('ecn-'+id).focus();
+}
+async function saveCatName(id){
+  const inp=document.getElementById('ecn-'+id);
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  const idx=S.categories.findIndex(function(c){return c.id===id;});if(idx===-1)return;
+  S.categories[idx].nom=nom;
+  await fbSave('categories',S.categories);
+  renderStock();renderFoursView();
+}
+async function deleteCat(id){
+  const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
+  const used=S.articles.some(function(a){return a.categorieId===id;});
+  const msg=used?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
+  if(!confirm(msg))return;
+  S.categories=S.categories.filter(function(c){return c.id!==id;});
+  await fbSave('categories',S.categories);
+  renderStock();renderFoursView();
+}
+
+// ════════════════════════════════
+// ARTICLES — ajout dans catégorie
+// ════════════════════════════════
+function showAddArtInCat(catId){
+  const form=document.getElementById('art-add-form-'+catId);
+  const btn=document.getElementById('art-add-btn-'+catId);
+  if(!form)return;
+  form.style.display='flex';
+  form.style.flexDirection='column';
+  form.style.gap='8px';
+  if(btn)btn.style.display='none';
+  form.innerHTML=
+    '<div class="form-row">'+
+    '<input class="f-inp" id="aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
+    '<select class="f-sel" id="aan-unite-'+catId+'" style="max-width:110px;">'+
+    '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
+    '</select></div>'+
+    '<div class="form-row">'+
+    '<select class="f-sel" id="aan-four-'+catId+'">'+foursOpts('')+'</select>'+
+    '</div>'+
+    '<div class="form-btns">'+
+    '<button class="btn-cancel" onclick="hideAddArtInCat(\''+catId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addArtInCat(\''+catId+'\')">Ajouter</button>'+
+    '</div>';
+  document.getElementById('aan-nom-'+catId).focus();
+}
+function hideAddArtInCat(catId){
+  const form=document.getElementById('art-add-form-'+catId);
+  const btn=document.getElementById('art-add-btn-'+catId);
+  if(form){form.style.display='none';form.innerHTML='';}
+  if(btn)btn.style.display='flex';
+}
+async function addArtInCat(catId){
+  const nom=document.getElementById('aan-nom-'+catId).value.trim();
+  if(!nom){document.getElementById('aan-nom-'+catId).focus();return;}
+  const unite=document.getElementById('aan-unite-'+catId).value;
+  const fournisseurId=document.getElementById('aan-four-'+catId).value||null;
+  const categorieId=catId==='__none__'?null:catId;
+  S.articles.push({id:uid(),nom,unite,categorieId,fournisseurId});
+  await fbSave('articles',S.articles);
+  renderStock();renderFoursView();
+}
+
+// ── Édition article ──
+function editArt(id){
+  const a=S.articles.find(function(x){return x.id===id;});if(!a)return;
+  const row=document.getElementById('art-row-'+id);
+  row.style.flexWrap='wrap';
+  row.innerHTML=
+    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
+    '<input class="e-inp" id="ea-nom-'+id+'" type="text" value="'+esc(a.nom)+'" placeholder="Nom">'+
+    '<select class="e-sel" id="ea-unite-'+id+'" style="max-width:110px;flex-shrink:0;">'+
+    '<option value="Carton"'+(a.unite==='Carton'?' selected':'')+'>Carton</option>'+
+    '<option value="Paquet"'+(a.unite==='Paquet'?' selected':'')+'>Paquet</option>'+
+    '</select></div>'+
+    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
+    '<select class="e-sel" id="ea-four-'+id+'">'+foursOpts(a.fournisseurId)+'</select>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">'+
+    '<button class="btn-cancel" onclick="renderStock()">Annuler</button>'+
+    '<button class="btn-save" onclick="saveArt(\''+id+'\')">Enregistrer</button>'+
+    '</div>';
+  document.getElementById('ea-nom-'+id).focus();
+}
+async function saveArt(id){
+  const nom=document.getElementById('ea-nom-'+id).value.trim();
+  if(!nom){document.getElementById('ea-nom-'+id).focus();return;}
+  const unite=document.getElementById('ea-unite-'+id).value;
+  const fournisseurId=document.getElementById('ea-four-'+id).value||null;
+  const idx=S.articles.findIndex(function(a){return a.id===id;});if(idx===-1)return;
+  S.articles[idx]={...S.articles[idx],nom,unite,fournisseurId};
+  await fbSave('articles',S.articles);
+  renderStock();renderFoursView();
+}
+async function deleteArt(id){
+  const a=S.articles.find(function(x){return x.id===id;});if(!a)return;
+  if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
+  S.articles=S.articles.filter(function(x){return x.id!==id;});
+  await fbSave('articles',S.articles);
+  renderStock();renderFoursView();
+}
+
+// ════════════════════════════════
+// FOURNISSEURS — CRUD (section bas)
 // ════════════════════════════════
 function renderFours(){
   const el=document.getElementById('fours-list');
   document.getElementById('fours-count').textContent=S.fournisseurs.length;
   if(!S.fournisseurs.length){el.innerHTML='<div class="empty-msg">Aucun fournisseur</div>';return;}
-  el.innerHTML=S.fournisseurs.map(f=>
-    '<div class="item-row" id="four-row-'+f.id+'">'+
+  el.innerHTML=S.fournisseurs.map(function(f){
+    return'<div class="item-row" id="four-row-'+f.id+'">'+
     '<span class="item-name">'+esc(f.nom)+'</span>'+
     '<div class="item-actions">'+
     '<button class="btn-ic" onclick="editFour(\''+f.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteFour(\''+f.id+'\')">✕</button>'+
-    '</div></div>'
-  ).join('');
+    '</div></div>';
+  }).join('');
 }
 function showAddFour(){
   document.getElementById('fours-add-form').style.display='flex';
@@ -398,10 +546,10 @@ async function addFour(){
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   S.fournisseurs.push({id:uid(),nom});
   await fbSave('fournisseurs',S.fournisseurs);
-  hideAddFour();renderFours();refreshSelects();
+  hideAddFour();renderFours();
 }
 function editFour(id){
-  const f=S.fournisseurs.find(x=>x.id===id);if(!f)return;
+  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
   document.getElementById('four-row-'+id).innerHTML=
     '<input class="e-inp" id="ef-'+id+'" type="text" value="'+esc(f.nom)+'" style="flex:1;" '+
     'onkeydown="if(event.key===\'Enter\')saveFour(\''+id+'\');if(event.key===\'Escape\')renderFours();">'+
@@ -414,120 +562,19 @@ function editFour(id){
 async function saveFour(id){
   const inp=document.getElementById('ef-'+id);
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.fournisseurs.findIndex(f=>f.id===id);if(idx===-1)return;
+  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
   S.fournisseurs[idx].nom=nom;
   await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderArts();renderFoursView();
+  renderFours();renderStock();renderFoursView();
 }
 async function deleteFour(id){
-  const f=S.fournisseurs.find(x=>x.id===id);if(!f)return;
-  const used=S.articles.some(a=>a.fournisseurId===id);
+  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
+  const used=S.articles.some(function(a){return a.fournisseurId===id;});
   const msg=used?'Supprimer "'+f.nom+'" ? Il est utilisé par des articles.':'Supprimer le fournisseur "'+f.nom+'" ?';
   if(!confirm(msg))return;
-  S.fournisseurs=S.fournisseurs.filter(x=>x.id!==id);
+  S.fournisseurs=S.fournisseurs.filter(function(x){return x.id!==id;});
   await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderArts();renderFoursView();
-}
-
-// ════════════════════════════════
-// ARTICLES
-// ════════════════════════════════
-function catsOpts(sel){
-  return'<option value="">— Catégorie —</option>'+
-  S.categories.map(c=>'<option value="'+c.id+'"'+(sel===c.id?' selected':'')+'>'+esc(c.nom)+'</option>').join('');
-}
-function foursOpts(sel){
-  return'<option value="">— Fournisseur —</option>'+
-  S.fournisseurs.map(f=>'<option value="'+f.id+'"'+(sel===f.id?' selected':'')+'>'+esc(f.nom)+'</option>').join('');
-}
-function refreshSelects(){
-  const cs=document.getElementById('art-new-cat');
-  const fs=document.getElementById('art-new-four');
-  if(cs)cs.innerHTML=catsOpts('');
-  if(fs)fs.innerHTML=foursOpts('');
-}
-
-function renderArts(){
-  const el=document.getElementById('arts-list');
-  document.getElementById('arts-count').textContent=S.articles.length;
-  if(!S.articles.length){el.innerHTML='<div class="empty-msg">Aucun article</div>';return;}
-  el.innerHTML=S.articles.map(a=>{
-    const cat=S.categories.find(c=>c.id===a.categorieId);
-    const four=S.fournisseurs.find(f=>f.id===a.fournisseurId);
-    const meta=[a.unite,cat?cat.nom:null,four?four.nom:null].filter(Boolean).join(' · ');
-    return'<div class="item-row" id="art-row-'+a.id+'">'+
-      '<div style="flex:1;min-width:0;">'+
-      '<div class="item-name">'+esc(a.nom)+'</div>'+
-      (meta?'<div class="item-sub">'+esc(meta)+'</div>':'')+
-      '</div>'+
-      '<div class="item-actions">'+
-      '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
-      '<button class="btn-ic del" onclick="deleteArt(\''+a.id+'\')">✕</button>'+
-      '</div></div>';
-  }).join('');
-}
-
-function showAddArt(){
-  document.getElementById('arts-add-form').style.display='flex';
-  document.getElementById('arts-add-btn').style.display='none';
-  document.getElementById('art-new-nom').value='';
-  document.getElementById('art-new-cat').innerHTML=catsOpts('');
-  document.getElementById('art-new-four').innerHTML=foursOpts('');
-  document.getElementById('art-new-nom').focus();
-}
-function hideAddArt(){
-  document.getElementById('arts-add-form').style.display='none';
-  document.getElementById('arts-add-btn').style.display='flex';
-}
-async function addArt(){
-  const nom=document.getElementById('art-new-nom').value.trim();
-  if(!nom){document.getElementById('art-new-nom').focus();return;}
-  const unite=document.getElementById('art-new-unite').value;
-  const categorieId=document.getElementById('art-new-cat').value||null;
-  const fournisseurId=document.getElementById('art-new-four').value||null;
-  S.articles.push({id:uid(),nom,unite,categorieId,fournisseurId});
-  await fbSave('articles',S.articles);
-  hideAddArt();renderArts();renderFoursView();
-}
-
-function editArt(id){
-  const a=S.articles.find(x=>x.id===id);if(!a)return;
-  const row=document.getElementById('art-row-'+id);
-  row.style.flexWrap='wrap';
-  row.innerHTML=
-    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
-    '<input class="e-inp" id="ea-nom-'+id+'" type="text" value="'+esc(a.nom)+'" placeholder="Nom">'+
-    '<select class="e-sel" id="ea-unite-'+id+'" style="max-width:110px;flex-shrink:0;">'+
-    '<option value="Carton"'+(a.unite==='Carton'?' selected':'')+'>Carton</option>'+
-    '<option value="Paquet"'+(a.unite==='Paquet'?' selected':'')+'>Paquet</option>'+
-    '</select></div>'+
-    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
-    '<select class="e-sel" id="ea-cat-'+id+'">'+catsOpts(a.categorieId)+'</select>'+
-    '<select class="e-sel" id="ea-four-'+id+'">'+foursOpts(a.fournisseurId)+'</select>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">'+
-    '<button class="btn-cancel" onclick="renderArts()">Annuler</button>'+
-    '<button class="btn-save" onclick="saveArt(\''+id+'\')">Enregistrer</button>'+
-    '</div>';
-  document.getElementById('ea-nom-'+id).focus();
-}
-async function saveArt(id){
-  const nom=document.getElementById('ea-nom-'+id).value.trim();
-  if(!nom){document.getElementById('ea-nom-'+id).focus();return;}
-  const unite=document.getElementById('ea-unite-'+id).value;
-  const categorieId=document.getElementById('ea-cat-'+id).value||null;
-  const fournisseurId=document.getElementById('ea-four-'+id).value||null;
-  const idx=S.articles.findIndex(a=>a.id===id);if(idx===-1)return;
-  S.articles[idx]={...S.articles[idx],nom,unite,categorieId,fournisseurId};
-  await fbSave('articles',S.articles);
-  renderArts();renderFoursView();
-}
-async function deleteArt(id){
-  const a=S.articles.find(x=>x.id===id);if(!a)return;
-  if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
-  S.articles=S.articles.filter(x=>x.id!==id);
-  await fbSave('articles',S.articles);
-  renderArts();renderFoursView();
+  renderFours();renderStock();renderFoursView();
 }
 
 // ════════════════════════════════
@@ -542,18 +589,19 @@ function renderFoursView(){
     return;
   }
   const groups={};
-  S.fournisseurs.forEach(f=>{groups[f.id]={nom:f.nom,items:[]};});
+  S.fournisseurs.forEach(function(f){groups[f.id]={nom:f.nom,items:[]};});
   groups['__none__']={nom:'Sans fournisseur',items:[]};
-  S.articles.forEach(a=>{
+  S.articles.forEach(function(a){
     const key=(a.fournisseurId&&groups[a.fournisseurId])?a.fournisseurId:'__none__';
     groups[key].items.push(a);
   });
   let html='';
-  Object.entries(groups).forEach(([,g])=>{
+  Object.entries(groups).forEach(function(entry){
+    const g=entry[1];
     if(!g.items.length)return;
     html+='<div class="four-block"><div class="four-title">'+esc(g.nom)+'</div>';
-    g.items.forEach(a=>{
-      const cat=S.categories.find(c=>c.id===a.categorieId);
+    g.items.forEach(function(a){
+      const cat=S.categories.find(function(c){return c.id===a.categorieId;});
       html+='<div class="four-item">'+
         '<span>'+esc(a.nom)+(cat?'<span class="four-cat">'+esc(cat.nom)+'</span>':'')+'</span>'+
         '<span class="four-unite">'+esc(a.unite)+'</span>'+
