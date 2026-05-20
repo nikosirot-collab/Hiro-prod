@@ -35,37 +35,47 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .main{padding:1rem;}
 .page{display:none;}.page.active{display:block;}
 
-/* BOUTON NOUVELLE CATÉGORIE */
-.btn-new-cat{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dsm);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;-webkit-tap-highlight-color:transparent;}
+/* BOUTON NOUVEAU */
+.btn-new{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dsm);cursor:pointer;font-family:'DM Sans',sans-serif;margin-bottom:10px;-webkit-tap-highlight-color:transparent;}
 
-/* FORMULAIRE NOUVELLE CATÉGORIE */
-.new-cat-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
+/* FORMULAIRE NOUVEAU */
+.new-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;}
 
-/* CATEGORY CARD */
-.cat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
-.cat-head{display:flex;align-items:center;padding:11px 14px;gap:8px;-webkit-tap-highlight-color:transparent;}
-.cat-head-info{display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;}
-.cat-arrow{font-size:11px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
+/* FOURNISSEUR CARD (niveau 1) */
+.four-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.four-head{display:flex;align-items:center;padding:11px 14px;gap:8px;-webkit-tap-highlight-color:transparent;}
+.four-head-info{display:flex;align-items:center;gap:8px;flex:1;cursor:pointer;}
+.four-arrow{font-size:11px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
+.four-arrow.open{transform:rotate(180deg);}
+.four-name{font-size:13px;font-weight:600;}
+.four-count{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace;}
+.four-actions{display:flex;gap:4px;flex-shrink:0;}
+.four-body{border-top:1px solid var(--border);}
+
+/* CATÉGORIE (niveau 2) */
+.cat-block{border-bottom:1px solid var(--border);}
+.cat-head{display:flex;align-items:center;padding:8px 14px 8px 18px;gap:8px;-webkit-tap-highlight-color:transparent;}
+.cat-head-info{display:flex;align-items:center;gap:6px;flex:1;cursor:pointer;}
+.cat-arrow{font-size:10px;color:var(--hint);transition:transform .2s;flex-shrink:0;}
 .cat-arrow.open{transform:rotate(180deg);}
-.cat-name-text{font-size:13px;font-weight:600;}
-.cat-count-badge{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace;}
+.cat-name{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.cat-count{font-size:10px;color:var(--hint);font-family:'DM Mono',monospace;}
 .cat-actions{display:flex;gap:4px;flex-shrink:0;}
-.cat-body{border-top:1px solid var(--border);}
 
-/* ARTICLE ROW */
-.art-row{display:flex;align-items:center;gap:8px;padding:8px 14px 8px 28px;border-bottom:1px solid var(--border);}
-.art-row:last-of-type{border-bottom:none;}
+/* ARTICLE ROW (niveau 3) */
+.art-row{display:flex;align-items:center;gap:8px;padding:7px 14px 7px 34px;border-bottom:1px solid var(--border);}
 .art-info{flex:1;min-width:0;}
 .art-name{font-size:13px;}
 .art-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-.art-four{color:var(--dsm);}
 .art-actions{display:flex;gap:4px;flex-shrink:0;}
 
-/* BOUTON AJOUTER ARTICLE DANS CAT */
-.btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 28px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+/* BOUTONS D'AJOUT */
+.btn-add-art{display:flex;align-items:center;gap:6px;width:100%;padding:7px 14px 7px 34px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
+.btn-add-cat{display:flex;align-items:center;gap:6px;width:100%;padding:8px 14px 8px 18px;font-size:12px;color:var(--dsm);font-weight:500;background:none;border:none;border-top:1px solid var(--border);cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
 
-/* FORMULAIRE AJOUT ARTICLE */
-.art-add-form{padding:10px 14px 10px 28px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
+/* FORMULAIRES D'AJOUT */
+.art-add-form{padding:10px 14px 10px 34px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
+.cat-add-form{padding:10px 14px 10px 18px;border-top:1px solid var(--border);flex-direction:column;gap:8px;}
 .form-row{display:flex;gap:8px;}
 .f-inp,.f-sel{flex:1;padding:7px 10px;border:1px solid var(--border-s);border-radius:var(--r-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);outline:none;min-width:0;}
 .f-inp:focus,.f-sel:focus{border-color:var(--dsm);background:#fff;}
@@ -78,24 +88,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .e-inp,.e-sel{flex:1;padding:5px 8px;border:1px solid var(--dsm);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text);outline:none;min-width:0;}
 .e-sel{appearance:none;-webkit-appearance:none;}
 
-/* SECTION FOURNISSEURS (bas de page) */
-.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
-.sec-head{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;}
-.sec-title{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--muted);flex:1;text-transform:uppercase;}
-.sec-count{font-size:11px;font-family:'DM Mono',monospace;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:1px 8px;color:var(--muted);}
-.sec-arrow{font-size:11px;color:var(--hint);transition:transform .2s;}
-.sec-arrow.open{transform:rotate(180deg);}
-.sec-body{border-top:1px solid var(--border);}
-.item-row{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);}
-.item-row:last-child{border-bottom:none;}
-.item-name{font-size:13px;flex:1;}
-.item-actions{display:flex;gap:4px;}
+/* BOUTONS ICÔNES */
 .btn-ic{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--muted);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .btn-ic.del{color:#c0392b;border-color:#e0b0b0;}
 .btn-ic.ok{background:var(--mgt);color:#fff;border-color:var(--mgt);}
-.btn-add-row{display:flex;align-items:center;gap:6px;width:100%;padding:10px 14px;font-size:13px;color:var(--dsm);font-weight:500;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
-.add-form{padding:10px 14px;flex-direction:column;gap:8px;border-top:1px solid var(--border);}
-.empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
 /* PLACEHOLDER */
 .placeholder{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem 1.5rem;text-align:center;}
@@ -103,14 +99,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .placeholder-title{font-size:15px;font-weight:600;margin-bottom:6px;}
 .placeholder-desc{font-size:13px;color:var(--muted);line-height:1.6;max-width:280px;margin:0 auto;}
 .badge-wip{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;padding:3px 10px;border-radius:20px;margin-bottom:16px;}
+.empty-msg{padding:16px 14px;font-size:13px;color:var(--hint);text-align:center;}
 
-/* VUE FOURNISSEURS */
-.four-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
-.four-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);background:#faf9f6;}
-.four-item{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
-.four-item:last-child{border-bottom:none;}
-.four-cat{font-size:11px;color:var(--hint);margin-left:6px;}
-.four-unite{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 7px;flex-shrink:0;}
+/* VUE FOURNISSEURS (onglet) */
+.fv-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.fv-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);background:#faf9f6;}
+.fv-item{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.fv-item:last-child{border-bottom:none;}
+.fv-cat{font-size:11px;color:var(--hint);margin-left:6px;}
+.fv-unite{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 7px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -161,87 +158,34 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
 
   <!-- PAGE STOCK -->
   <div id="page-stock" class="page active">
-
-    <!-- Bouton / formulaire nouvelle catégorie -->
-    <div id="new-cat-form" class="new-cat-form" style="display:none;">
+    <div id="new-four-form" class="new-form" style="display:none;">
       <div class="form-row">
-        <input class="f-inp" id="new-cat-inp" type="text" placeholder="Nom de la catégorie"
-          onkeydown="if(event.key==='Enter')addCat();if(event.key==='Escape')hideNewCatForm();">
+        <input class="f-inp" id="new-four-inp" type="text" placeholder="Nom du fournisseur"
+          onkeydown="if(event.key==='Enter')addFour();if(event.key==='Escape')hideNewFourForm();">
       </div>
       <div class="form-btns">
-        <button class="btn-cancel" onclick="hideNewCatForm()">Annuler</button>
-        <button class="btn-save" onclick="addCat()">Créer</button>
+        <button class="btn-cancel" onclick="hideNewFourForm()">Annuler</button>
+        <button class="btn-save" onclick="addFour()">Créer</button>
       </div>
     </div>
-    <button class="btn-new-cat" id="new-cat-btn" onclick="showNewCatForm()">+ Nouvelle catégorie</button>
-
-    <!-- Catégories avec articles -->
+    <button class="btn-new" id="new-four-btn" onclick="showNewFourForm()">+ Nouveau fournisseur</button>
     <div id="stock-content"></div>
-
-    <!-- Gérer les fournisseurs -->
-    <div class="sec-card" style="margin-top:6px;">
-      <div class="sec-head" onclick="toggleSec('fours')">
-        <span class="sec-title">Gérer les fournisseurs</span>
-        <span class="sec-count" id="fours-count">0</span>
-        <span class="sec-arrow" id="fours-arrow">&#8964;</span>
-      </div>
-      <div class="sec-body" id="sec-fours" style="display:none;">
-        <div id="fours-list"></div>
-        <div id="fours-add-form" class="add-form" style="display:none;">
-          <div class="form-row">
-            <input class="f-inp" id="four-new-inp" type="text" placeholder="Nom du fournisseur"
-              onkeydown="if(event.key==='Enter')addFour();if(event.key==='Escape')hideAddFour();">
-          </div>
-          <div class="form-btns">
-            <button class="btn-cancel" onclick="hideAddFour()">Annuler</button>
-            <button class="btn-save" onclick="addFour()">Ajouter</button>
-          </div>
-        </div>
-        <button class="btn-add-row" id="fours-add-btn" onclick="showAddFour()">+ Ajouter un fournisseur</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- PAGE CF -->
   <div id="page-cf" class="page">
-
-    <div id="cf-new-cat-form" class="new-cat-form" style="display:none;">
+    <div id="cf-new-four-form" class="new-form" style="display:none;">
       <div class="form-row">
-        <input class="f-inp" id="cf-new-cat-inp" type="text" placeholder="Nom de la catégorie"
-          onkeydown="if(event.key==='Enter')addCatCF();if(event.key==='Escape')hideNewCatFormCF();">
+        <input class="f-inp" id="cf-new-four-inp" type="text" placeholder="Nom du fournisseur"
+          onkeydown="if(event.key==='Enter')addFourCF();if(event.key==='Escape')hideNewFourFormCF();">
       </div>
       <div class="form-btns">
-        <button class="btn-cancel" onclick="hideNewCatFormCF()">Annuler</button>
-        <button class="btn-save" onclick="addCatCF()">Créer</button>
+        <button class="btn-cancel" onclick="hideNewFourFormCF()">Annuler</button>
+        <button class="btn-save" onclick="addFourCF()">Créer</button>
       </div>
     </div>
-    <button class="btn-new-cat" id="cf-new-cat-btn" onclick="showNewCatFormCF()">+ Nouvelle catégorie</button>
-
+    <button class="btn-new" id="cf-new-four-btn" onclick="showNewFourFormCF()">+ Nouveau fournisseur</button>
     <div id="cf-content"></div>
-
-    <div class="sec-card" style="margin-top:6px;">
-      <div class="sec-head" onclick="toggleSec('cf-fours')">
-        <span class="sec-title">Gérer les fournisseurs</span>
-        <span class="sec-count" id="cf-fours-count">0</span>
-        <span class="sec-arrow" id="cf-fours-arrow">&#8964;</span>
-      </div>
-      <div class="sec-body" id="sec-cf-fours" style="display:none;">
-        <div id="cf-fours-list"></div>
-        <div id="cf-fours-add-form" class="add-form" style="display:none;">
-          <div class="form-row">
-            <input class="f-inp" id="cf-four-new-inp" type="text" placeholder="Nom du fournisseur"
-              onkeydown="if(event.key==='Enter')addFourCF();if(event.key==='Escape')hideAddFourCF();">
-          </div>
-          <div class="form-btns">
-            <button class="btn-cancel" onclick="hideAddFourCF()">Annuler</button>
-            <button class="btn-save" onclick="addFourCF()">Ajouter</button>
-          </div>
-        </div>
-        <button class="btn-add-row" id="cf-fours-add-btn" onclick="showAddFourCF()">+ Ajouter un fournisseur</button>
-      </div>
-    </div>
-
   </div>
 
   <!-- PAGE FOURNISSEURS -->
@@ -278,8 +222,10 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={categories:[],fournisseurs:[],articles:[],cf_categories:[],cf_articles:[]};
+const S={fournisseurs:[],categories:[],articles:[],cf_categories:[],cf_articles:[]};
+const closedFours=new Set();
 const closedCats=new Set();
+const closedFoursCF=new Set();
 const closedCatsCF=new Set();
 
 // ── Utils ──
@@ -309,15 +255,15 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[cats,fours,arts,cfCats,cfArts]=await Promise.all([
-    fbLoad('categories'),fbLoad('fournisseurs'),fbLoad('articles'),
+  const[fours,cats,arts,cfCats,cfArts]=await Promise.all([
+    fbLoad('fournisseurs'),fbLoad('categories'),fbLoad('articles'),
     fbLoad('cf-categories'),fbLoad('cf-articles')
   ]);
-  S.categories=cats;S.fournisseurs=fours;S.articles=arts;
+  S.fournisseurs=fours;S.categories=cats;S.articles=arts;
   S.cf_categories=cfCats;S.cf_articles=cfArts;
   renderAll();
 }
-function renderAll(){renderStock();renderFours();renderFoursView();renderCF();renderFoursCF();}
+function renderAll(){renderStock();renderCF();renderFoursView();}
 
 // ── Nav ──
 function showPage(id,tab){
@@ -325,15 +271,6 @@ function showPage(id,tab){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   const p=document.getElementById('page-'+id);if(p)p.classList.add('active');
   if(tab)tab.classList.add('active');
-}
-
-// ── Section fournisseurs toggle ──
-function toggleSec(id){
-  const body=document.getElementById('sec-'+id);
-  const arrow=document.getElementById(id+'-arrow');
-  const willOpen=body.style.display==='none';
-  body.style.display=willOpen?'block':'none';
-  arrow.classList.toggle('open',willOpen);
 }
 
 // ── Horloge ──
@@ -345,70 +282,73 @@ function toggleSec(id){
 })();
 
 // ════════════════════════════════
-// STOCK — vue par catégorie
+// STOCK — rendu 3 niveaux
 // ════════════════════════════════
-function foursOpts(sel){
-  return'<option value="">— Fournisseur —</option>'+
-  S.fournisseurs.map(f=>'<option value="'+f.id+'"'+(sel===f.id?' selected':'')+'>'+esc(f.nom)+'</option>').join('');
-}
-
 function renderStock(){
   const el=document.getElementById('stock-content');
   let html='';
-
-  S.categories.forEach(function(cat){
-    const catArts=S.articles.filter(function(a){return a.categorieId===cat.id;});
-    const isOpen=!closedCats.has(cat.id);
-    html+=renderCatCard(cat,catArts,isOpen);
+  S.fournisseurs.forEach(function(four){
+    const fourCats=S.categories.filter(function(c){return c.fournisseurId===four.id;});
+    const isOpen=!closedFours.has(four.id);
+    html+=renderFourCard(four,fourCats,isOpen);
   });
-
-  // Articles sans catégorie
-  const noCatArts=S.articles.filter(function(a){
-    return !a.categorieId||!S.categories.find(function(c){return c.id===a.categorieId;});
-  });
-  if(noCatArts.length){
-    const isOpen=!closedCats.has('__none__');
-    html+=renderCatCard({id:'__none__',nom:'Sans catégorie'},noCatArts,isOpen,true);
-  }
-
-  if(!html) html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucune catégorie — créez-en une pour commencer.</div>';
+  if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
 }
 
-function renderCatCard(cat,arts,isOpen,noEdit){
+function renderFourCard(four,cats,isOpen){
+  const bodyStyle=isOpen?'':'display:none;';
+  const arrowClass=isOpen?'four-arrow open':'four-arrow';
+  const totalArts=cats.reduce(function(n,c){return n+S.articles.filter(function(a){return a.categorieId===c.id;}).length;},0);
+  const catsHtml=cats.map(function(cat){
+    const arts=S.articles.filter(function(a){return a.categorieId===cat.id;});
+    return renderCatBlock(cat,arts,!closedCats.has(cat.id));
+  }).join('');
+  return'<div class="four-card" id="four-card-'+four.id+'">'+
+    '<div class="four-head" id="four-head-'+four.id+'">'+
+    '<div class="four-head-info" onclick="toggleFour(\''+four.id+'\')">'+
+    '<span class="'+arrowClass+'" id="four-arrow-'+four.id+'">&#8964;</span>'+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+
+    '<span class="four-count">'+totalArts+'</span>'+
+    '</div>'+
+    '<div class="four-actions">'+
+    '<button class="btn-ic" onclick="editFourName(\''+four.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteFour(\''+four.id+'\')" title="Supprimer">✕</button>'+
+    '</div></div>'+
+    '<div class="four-body" id="four-body-'+four.id+'" style="'+bodyStyle+'">'+
+    catsHtml+
+    '<div id="cat-add-form-'+four.id+'" class="cat-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-cat" id="cat-add-btn-'+four.id+'" onclick="showAddCatInFour(\''+four.id+'\')">+ Nouvelle catégorie</button>'+
+    '</div></div>';
+}
+
+function renderCatBlock(cat,arts,isOpen){
   const bodyStyle=isOpen?'':'display:none;';
   const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
   const artRows=arts.map(function(a){return renderArtRow(a);}).join('');
-  const editBtns=noEdit?'':
-    '<div class="cat-actions">'+
-    '<button class="btn-ic" onclick="editCatName(\''+cat.id+'\')" title="Renommer">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteCat(\''+cat.id+'\')" title="Supprimer">✕</button>'+
-    '</div>';
-  const addArtBtn=noEdit?'':
-    '<div id="art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-art" id="art-add-btn-'+cat.id+'" onclick="showAddArtInCat(\''+cat.id+'\')">+ Ajouter un article</button>';
-
-  return'<div class="cat-card" id="cat-card-'+cat.id+'">'+
+  return'<div class="cat-block" id="cat-block-'+cat.id+'">'+
     '<div class="cat-head" id="cat-head-'+cat.id+'">'+
     '<div class="cat-head-info" onclick="toggleCat(\''+cat.id+'\')">'+
     '<span class="'+arrowClass+'" id="cat-arrow-'+cat.id+'">&#8964;</span>'+
-    '<span class="cat-name-text">'+esc(cat.nom)+'</span>'+
-    '<span class="cat-count-badge">'+arts.length+'</span>'+
-    '</div>'+editBtns+
+    '<span class="cat-name">'+esc(cat.nom)+'</span>'+
+    '<span class="cat-count">'+arts.length+'</span>'+
     '</div>'+
-    '<div class="cat-body" id="cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
-    artRows+addArtBtn+
+    '<div class="cat-actions">'+
+    '<button class="btn-ic" onclick="editCatName(\''+cat.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteCat(\''+cat.id+'\')" title="Supprimer">✕</button>'+
+    '</div></div>'+
+    '<div id="cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    artRows+
+    '<div id="art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="art-add-btn-'+cat.id+'" onclick="showAddArtInCat(\''+cat.id+'\')">+ Ajouter un article</button>'+
     '</div></div>';
 }
 
 function renderArtRow(a){
-  const four=S.fournisseurs.find(function(f){return f.id===a.fournisseurId;});
-  const fourStr=four?'<span class="art-four">'+esc(four.nom)+'</span>':'';
-  const meta=[a.unite,fourStr].filter(Boolean).join(' · ');
   return'<div class="art-row" id="art-row-'+a.id+'">'+
     '<div class="art-info">'+
     '<div class="art-name">'+esc(a.nom)+'</div>'+
-    (meta?'<div class="art-meta">'+meta+'</div>':'')+
+    (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
@@ -416,42 +356,97 @@ function renderArtRow(a){
     '</div></div>';
 }
 
-// ── Toggle catégorie ──
-function toggleCat(id){
-  const body=document.getElementById('cat-body-'+id);
-  const arrow=document.getElementById('cat-arrow-'+id);
+// ── Toggles Stock ──
+function toggleFour(id){
+  const body=document.getElementById('four-body-'+id),arrow=document.getElementById('four-arrow-'+id);
   if(!body)return;
-  if(closedCats.has(id)){
-    closedCats.delete(id);
-    body.style.display='block';
-    if(arrow)arrow.classList.add('open');
-  }else{
-    closedCats.add(id);
-    body.style.display='none';
-    if(arrow)arrow.classList.remove('open');
-  }
+  if(closedFours.has(id)){closedFours.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  else{closedFours.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+}
+function toggleCat(id){
+  const body=document.getElementById('cat-body-'+id),arrow=document.getElementById('cat-arrow-'+id);
+  if(!body)return;
+  if(closedCats.has(id)){closedCats.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  else{closedCats.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
 }
 
-// ════════════════════════════════
-// CATÉGORIES — CRUD
-// ════════════════════════════════
-function showNewCatForm(){
-  document.getElementById('new-cat-form').style.display='flex';
-  document.getElementById('new-cat-btn').style.display='none';
-  const inp=document.getElementById('new-cat-inp');inp.value='';inp.focus();
+// ── FOURNISSEURS CRUD (Stock) ──
+function showNewFourForm(){
+  document.getElementById('new-four-form').style.display='flex';
+  document.getElementById('new-four-btn').style.display='none';
+  const inp=document.getElementById('new-four-inp');inp.value='';inp.focus();
 }
-function hideNewCatForm(){
-  document.getElementById('new-cat-form').style.display='none';
-  document.getElementById('new-cat-btn').style.display='flex';
+function hideNewFourForm(){
+  document.getElementById('new-four-form').style.display='none';
+  document.getElementById('new-four-btn').style.display='flex';
 }
-async function addCat(){
-  const inp=document.getElementById('new-cat-inp');
+async function addFour(){
+  const inp=document.getElementById('new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.categories.push({id:uid(),nom});
-  await fbSave('categories',S.categories);
-  hideNewCatForm();renderStock();
+  S.fournisseurs.push({id:uid(),nom});
+  await fbSave('fournisseurs',S.fournisseurs);
+  hideNewFourForm();renderStock();renderCF();renderFoursView();
+}
+function editFourName(id){
+  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const head=document.getElementById('four-head-'+id);
+  head.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<input class="e-inp" id="efn-'+id+'" type="text" value="'+esc(four.nom)+'" '+
+    'onkeydown="if(event.key===\'Enter\')saveFourName(\''+id+'\');if(event.key===\'Escape\')renderStock();">'+
+    '<button class="btn-ic ok" onclick="saveFourName(\''+id+'\')">✓</button>'+
+    '<button class="btn-ic" onclick="renderStock()">✕</button>'+
+    '</div>';
+  document.getElementById('efn-'+id).focus();
+}
+async function saveFourName(id){
+  const inp=document.getElementById('efn-'+id);
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  S.fournisseurs[idx].nom=nom;
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderStock();renderCF();renderFoursView();
+}
+async function deleteFour(id){
+  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const hasCats=S.categories.some(function(c){return c.fournisseurId===id;});
+  const msg=hasCats?'Supprimer "'+four.nom+'" ? Ses catégories resteront mais seront orphelines.':'Supprimer le fournisseur "'+four.nom+'" ?';
+  if(!confirm(msg))return;
+  S.fournisseurs=S.fournisseurs.filter(function(f){return f.id!==id;});
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderStock();renderCF();renderFoursView();
 }
 
+// ── CATÉGORIES CRUD (Stock) ──
+function showAddCatInFour(fourId){
+  const form=document.getElementById('cat-add-form-'+fourId);
+  const btn=document.getElementById('cat-add-btn-'+fourId);
+  if(!form)return;
+  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
+  if(btn)btn.style.display='none';
+  form.innerHTML=
+    '<div class="form-row">'+
+    '<input class="f-inp" id="acf-inp-'+fourId+'" type="text" placeholder="Nom de la catégorie"'+
+    ' onkeydown="if(event.key===\'Enter\')addCatInFour(\''+fourId+'\');if(event.key===\'Escape\')hideAddCatInFour(\''+fourId+'\');">'+
+    '</div><div class="form-btns">'+
+    '<button class="btn-cancel" onclick="hideAddCatInFour(\''+fourId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addCatInFour(\''+fourId+'\')">Créer</button>'+
+    '</div>';
+  document.getElementById('acf-inp-'+fourId).focus();
+}
+function hideAddCatInFour(fourId){
+  const form=document.getElementById('cat-add-form-'+fourId);
+  const btn=document.getElementById('cat-add-btn-'+fourId);
+  if(form){form.style.display='none';form.innerHTML='';}
+  if(btn)btn.style.display='flex';
+}
+async function addCatInFour(fourId){
+  const nom=document.getElementById('acf-inp-'+fourId).value.trim();
+  if(!nom){document.getElementById('acf-inp-'+fourId).focus();return;}
+  S.categories.push({id:uid(),nom,fournisseurId:fourId});
+  await fbSave('categories',S.categories);
+  renderStock();renderFoursView();
+}
 function editCatName(id){
   const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
   const head=document.getElementById('cat-head-'+id);
@@ -474,35 +469,27 @@ async function saveCatName(id){
 }
 async function deleteCat(id){
   const cat=S.categories.find(function(c){return c.id===id;});if(!cat)return;
-  const used=S.articles.some(function(a){return a.categorieId===id;});
-  const msg=used?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
+  const hasArts=S.articles.some(function(a){return a.categorieId===id;});
+  const msg=hasArts?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
   if(!confirm(msg))return;
   S.categories=S.categories.filter(function(c){return c.id!==id;});
   await fbSave('categories',S.categories);
   renderStock();renderFoursView();
 }
 
-// ════════════════════════════════
-// ARTICLES — ajout dans catégorie
-// ════════════════════════════════
+// ── ARTICLES CRUD (Stock) ──
 function showAddArtInCat(catId){
   const form=document.getElementById('art-add-form-'+catId);
   const btn=document.getElementById('art-add-btn-'+catId);
   if(!form)return;
-  form.style.display='flex';
-  form.style.flexDirection='column';
-  form.style.gap='8px';
+  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
   if(btn)btn.style.display='none';
   form.innerHTML=
     '<div class="form-row">'+
     '<input class="f-inp" id="aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
     '<select class="f-sel" id="aan-unite-'+catId+'" style="max-width:110px;">'+
     '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
-    '</select></div>'+
-    '<div class="form-row">'+
-    '<select class="f-sel" id="aan-four-'+catId+'">'+foursOpts('')+'</select>'+
-    '</div>'+
-    '<div class="form-btns">'+
+    '</select></div><div class="form-btns">'+
     '<button class="btn-cancel" onclick="hideAddArtInCat(\''+catId+'\')">Annuler</button>'+
     '<button class="btn-save" onclick="addArtInCat(\''+catId+'\')">Ajouter</button>'+
     '</div>';
@@ -518,14 +505,10 @@ async function addArtInCat(catId){
   const nom=document.getElementById('aan-nom-'+catId).value.trim();
   if(!nom){document.getElementById('aan-nom-'+catId).focus();return;}
   const unite=document.getElementById('aan-unite-'+catId).value;
-  const fournisseurId=document.getElementById('aan-four-'+catId).value||null;
-  const categorieId=catId==='__none__'?null:catId;
-  S.articles.push({id:uid(),nom,unite,categorieId,fournisseurId});
+  S.articles.push({id:uid(),nom,unite,categorieId:catId});
   await fbSave('articles',S.articles);
   renderStock();renderFoursView();
 }
-
-// ── Édition article ──
 function editArt(id){
   const a=S.articles.find(function(x){return x.id===id;});if(!a)return;
   const row=document.getElementById('art-row-'+id);
@@ -537,9 +520,6 @@ function editArt(id){
     '<option value="Carton"'+(a.unite==='Carton'?' selected':'')+'>Carton</option>'+
     '<option value="Paquet"'+(a.unite==='Paquet'?' selected':'')+'>Paquet</option>'+
     '</select></div>'+
-    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
-    '<select class="e-sel" id="ea-four-'+id+'">'+foursOpts(a.fournisseurId)+'</select>'+
-    '</div>'+
     '<div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">'+
     '<button class="btn-cancel" onclick="renderStock()">Annuler</button>'+
     '<button class="btn-save" onclick="saveArt(\''+id+'\')">Enregistrer</button>'+
@@ -550,9 +530,8 @@ async function saveArt(id){
   const nom=document.getElementById('ea-nom-'+id).value.trim();
   if(!nom){document.getElementById('ea-nom-'+id).focus();return;}
   const unite=document.getElementById('ea-unite-'+id).value;
-  const fournisseurId=document.getElementById('ea-four-'+id).value||null;
   const idx=S.articles.findIndex(function(a){return a.id===id;});if(idx===-1)return;
-  S.articles[idx]={...S.articles[idx],nom,unite,fournisseurId};
+  S.articles[idx]={...S.articles[idx],nom,unite};
   await fbSave('articles',S.articles);
   renderStock();renderFoursView();
 }
@@ -565,158 +544,73 @@ async function deleteArt(id){
 }
 
 // ════════════════════════════════
-// FOURNISSEURS — CRUD (section bas)
-// ════════════════════════════════
-function renderFours(){
-  const el=document.getElementById('fours-list');
-  document.getElementById('fours-count').textContent=S.fournisseurs.length;
-  if(!S.fournisseurs.length){el.innerHTML='<div class="empty-msg">Aucun fournisseur</div>';return;}
-  el.innerHTML=S.fournisseurs.map(function(f){
-    return'<div class="item-row" id="four-row-'+f.id+'">'+
-    '<span class="item-name">'+esc(f.nom)+'</span>'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic" onclick="editFour(\''+f.id+'\')">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteFour(\''+f.id+'\')">✕</button>'+
-    '</div></div>';
-  }).join('');
-}
-function showAddFour(){
-  document.getElementById('fours-add-form').style.display='flex';
-  document.getElementById('fours-add-btn').style.display='none';
-  const inp=document.getElementById('four-new-inp');inp.value='';inp.focus();
-}
-function hideAddFour(){
-  document.getElementById('fours-add-form').style.display='none';
-  document.getElementById('fours-add-btn').style.display='flex';
-}
-async function addFour(){
-  const inp=document.getElementById('four-new-inp');
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.fournisseurs.push({id:uid(),nom});
-  await fbSave('fournisseurs',S.fournisseurs);
-  hideAddFour();renderFours();renderFoursCF();
-}
-function editFour(id){
-  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
-  document.getElementById('four-row-'+id).innerHTML=
-    '<input class="e-inp" id="ef-'+id+'" type="text" value="'+esc(f.nom)+'" style="flex:1;" '+
-    'onkeydown="if(event.key===\'Enter\')saveFour(\''+id+'\');if(event.key===\'Escape\')renderFours();">'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic ok" onclick="saveFour(\''+id+'\')">✓</button>'+
-    '<button class="btn-ic" onclick="renderFours()">✕</button>'+
-    '</div>';
-  document.getElementById('ef-'+id).focus();
-}
-async function saveFour(id){
-  const inp=document.getElementById('ef-'+id);
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
-  S.fournisseurs[idx].nom=nom;
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
-}
-async function deleteFour(id){
-  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
-  const usedStock=S.articles.some(function(a){return a.fournisseurId===id;});
-  const usedCF=S.cf_articles.some(function(a){return a.fournisseurId===id;});
-  const used=usedStock||usedCF;
-  const msg=used?'Supprimer "'+f.nom+'" ? Il est utilisé par des articles.':'Supprimer le fournisseur "'+f.nom+'" ?';
-  if(!confirm(msg))return;
-  S.fournisseurs=S.fournisseurs.filter(function(x){return x.id!==id;});
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
-}
-
-// ════════════════════════════════
-// VUE FOURNISSEURS (onglet auto)
-// ════════════════════════════════
-function renderFoursView(){
-  const view=document.getElementById('fours-view');if(!view)return;
-  if(!S.articles.length){
-    view.innerHTML='<div class="placeholder"><div class="placeholder-icon">🚚</div>'+
-      '<div class="placeholder-title">Aucun article</div>'+
-      '<div class="placeholder-desc">Ajoutez des articles dans l\'onglet Stock pour les voir apparaître ici.</div></div>';
-    return;
-  }
-  const groups={};
-  S.fournisseurs.forEach(function(f){groups[f.id]={nom:f.nom,items:[]};});
-  groups['__none__']={nom:'Sans fournisseur',items:[]};
-  S.articles.forEach(function(a){
-    const key=(a.fournisseurId&&groups[a.fournisseurId])?a.fournisseurId:'__none__';
-    groups[key].items.push(a);
-  });
-  let html='';
-  Object.entries(groups).forEach(function(entry){
-    const g=entry[1];
-    if(!g.items.length)return;
-    html+='<div class="four-block"><div class="four-title">'+esc(g.nom)+'</div>';
-    g.items.forEach(function(a){
-      const cat=S.categories.find(function(c){return c.id===a.categorieId;});
-      html+='<div class="four-item">'+
-        '<span>'+esc(a.nom)+(cat?'<span class="four-cat">'+esc(cat.nom)+'</span>':'')+'</span>'+
-        '<span class="four-unite">'+esc(a.unite)+'</span>'+
-        '</div>';
-    });
-    html+='</div>';
-  });
-  view.innerHTML=html||'<div class="empty-msg">Aucun article associé à un fournisseur.</div>';
-}
-
-// ════════════════════════════════
-// CF — vue par catégorie
+// CF — rendu 3 niveaux
 // ════════════════════════════════
 function renderCF(){
   const el=document.getElementById('cf-content');
   let html='';
-  S.cf_categories.forEach(function(cat){
-    const catArts=S.cf_articles.filter(function(a){return a.categorieId===cat.id;});
-    const isOpen=!closedCatsCF.has(cat.id);
-    html+=renderCatCardCF(cat,catArts,isOpen);
+  S.fournisseurs.forEach(function(four){
+    const fourCats=S.cf_categories.filter(function(c){return c.fournisseurId===four.id;});
+    const isOpen=!closedFoursCF.has(four.id);
+    html+=renderFourCardCF(four,fourCats,isOpen);
   });
-  const noCatArts=S.cf_articles.filter(function(a){
-    return !a.categorieId||!S.cf_categories.find(function(c){return c.id===a.categorieId;});
-  });
-  if(noCatArts.length){
-    const isOpen=!closedCatsCF.has('__none_cf__');
-    html+=renderCatCardCF({id:'__none_cf__',nom:'Sans catégorie'},noCatArts,isOpen,true);
-  }
-  if(!html) html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucune catégorie — créez-en une pour commencer.</div>';
+  if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
 }
 
-function renderCatCardCF(cat,arts,isOpen,noEdit){
+function renderFourCardCF(four,cats,isOpen){
+  const bodyStyle=isOpen?'':'display:none;';
+  const arrowClass=isOpen?'four-arrow open':'four-arrow';
+  const totalArts=cats.reduce(function(n,c){return n+S.cf_articles.filter(function(a){return a.categorieId===c.id;}).length;},0);
+  const catsHtml=cats.map(function(cat){
+    const arts=S.cf_articles.filter(function(a){return a.categorieId===cat.id;});
+    return renderCatBlockCF(cat,arts,!closedCatsCF.has(cat.id));
+  }).join('');
+  return'<div class="four-card" id="cf-four-card-'+four.id+'">'+
+    '<div class="four-head" id="cf-four-head-'+four.id+'">'+
+    '<div class="four-head-info" onclick="toggleFourCF(\''+four.id+'\')">'+
+    '<span class="'+arrowClass+'" id="cf-four-arrow-'+four.id+'">&#8964;</span>'+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+
+    '<span class="four-count">'+totalArts+'</span>'+
+    '</div>'+
+    '<div class="four-actions">'+
+    '<button class="btn-ic" onclick="editFourNameCF(\''+four.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteFourCF(\''+four.id+'\')" title="Supprimer">✕</button>'+
+    '</div></div>'+
+    '<div class="four-body" id="cf-four-body-'+four.id+'" style="'+bodyStyle+'">'+
+    catsHtml+
+    '<div id="cf-cat-add-form-'+four.id+'" class="cat-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-cat" id="cf-cat-add-btn-'+four.id+'" onclick="showAddCatInFourCF(\''+four.id+'\')">+ Nouvelle catégorie</button>'+
+    '</div></div>';
+}
+
+function renderCatBlockCF(cat,arts,isOpen){
   const bodyStyle=isOpen?'':'display:none;';
   const arrowClass=isOpen?'cat-arrow open':'cat-arrow';
   const artRows=arts.map(function(a){return renderArtRowCF(a);}).join('');
-  const editBtns=noEdit?'':
-    '<div class="cat-actions">'+
-    '<button class="btn-ic" onclick="editCatNameCF(\''+cat.id+'\')" title="Renommer">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteCatCF(\''+cat.id+'\')" title="Supprimer">✕</button>'+
-    '</div>';
-  const addArtBtn=noEdit?'':
-    '<div id="cf-art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
-    '<button class="btn-add-art" id="cf-art-add-btn-'+cat.id+'" onclick="showAddArtInCatCF(\''+cat.id+'\')">+ Ajouter un article</button>';
-  return'<div class="cat-card" id="cf-cat-card-'+cat.id+'">'+
+  return'<div class="cat-block" id="cf-cat-block-'+cat.id+'">'+
     '<div class="cat-head" id="cf-cat-head-'+cat.id+'">'+
     '<div class="cat-head-info" onclick="toggleCatCF(\''+cat.id+'\')">'+
     '<span class="'+arrowClass+'" id="cf-cat-arrow-'+cat.id+'">&#8964;</span>'+
-    '<span class="cat-name-text">'+esc(cat.nom)+'</span>'+
-    '<span class="cat-count-badge">'+arts.length+'</span>'+
-    '</div>'+editBtns+
+    '<span class="cat-name">'+esc(cat.nom)+'</span>'+
+    '<span class="cat-count">'+arts.length+'</span>'+
     '</div>'+
-    '<div class="cat-body" id="cf-cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
-    artRows+addArtBtn+
+    '<div class="cat-actions">'+
+    '<button class="btn-ic" onclick="editCatNameCF(\''+cat.id+'\')" title="Renommer">✎</button>'+
+    '<button class="btn-ic del" onclick="deleteCatCF(\''+cat.id+'\')" title="Supprimer">✕</button>'+
+    '</div></div>'+
+    '<div id="cf-cat-body-'+cat.id+'" style="'+bodyStyle+'">'+
+    artRows+
+    '<div id="cf-art-add-form-'+cat.id+'" class="art-add-form" style="display:none;"></div>'+
+    '<button class="btn-add-art" id="cf-art-add-btn-'+cat.id+'" onclick="showAddArtInCatCF(\''+cat.id+'\')">+ Ajouter un article</button>'+
     '</div></div>';
 }
 
 function renderArtRowCF(a){
-  const four=S.fournisseurs.find(function(f){return f.id===a.fournisseurId;});
-  const fourStr=four?'<span class="art-four">'+esc(four.nom)+'</span>':'';
-  const meta=[a.unite,fourStr].filter(Boolean).join(' · ');
   return'<div class="art-row" id="cf-art-row-'+a.id+'">'+
     '<div class="art-info">'+
     '<div class="art-name">'+esc(a.nom)+'</div>'+
-    (meta?'<div class="art-meta">'+meta+'</div>':'')+
+    (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArtCF(\''+a.id+'\')">✎</button>'+
@@ -724,37 +618,96 @@ function renderArtRowCF(a){
     '</div></div>';
 }
 
-function toggleCatCF(id){
-  const body=document.getElementById('cf-cat-body-'+id);
-  const arrow=document.getElementById('cf-cat-arrow-'+id);
+// ── Toggles CF ──
+function toggleFourCF(id){
+  const body=document.getElementById('cf-four-body-'+id),arrow=document.getElementById('cf-four-arrow-'+id);
   if(!body)return;
-  if(closedCatsCF.has(id)){
-    closedCatsCF.delete(id);
-    body.style.display='block';
-    if(arrow)arrow.classList.add('open');
-  }else{
-    closedCatsCF.add(id);
-    body.style.display='none';
-    if(arrow)arrow.classList.remove('open');
-  }
+  if(closedFoursCF.has(id)){closedFoursCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  else{closedFoursCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+}
+function toggleCatCF(id){
+  const body=document.getElementById('cf-cat-body-'+id),arrow=document.getElementById('cf-cat-arrow-'+id);
+  if(!body)return;
+  if(closedCatsCF.has(id)){closedCatsCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  else{closedCatsCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
 }
 
-// CF CATÉGORIES — CRUD
-function showNewCatFormCF(){
-  document.getElementById('cf-new-cat-form').style.display='flex';
-  document.getElementById('cf-new-cat-btn').style.display='none';
-  const inp=document.getElementById('cf-new-cat-inp');inp.value='';inp.focus();
+// ── FOURNISSEURS CRUD (CF) ──
+function showNewFourFormCF(){
+  document.getElementById('cf-new-four-form').style.display='flex';
+  document.getElementById('cf-new-four-btn').style.display='none';
+  const inp=document.getElementById('cf-new-four-inp');inp.value='';inp.focus();
 }
-function hideNewCatFormCF(){
-  document.getElementById('cf-new-cat-form').style.display='none';
-  document.getElementById('cf-new-cat-btn').style.display='flex';
+function hideNewFourFormCF(){
+  document.getElementById('cf-new-four-form').style.display='none';
+  document.getElementById('cf-new-four-btn').style.display='flex';
 }
-async function addCatCF(){
-  const inp=document.getElementById('cf-new-cat-inp');
+async function addFourCF(){
+  const inp=document.getElementById('cf-new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.cf_categories.push({id:uid(),nom});
+  S.fournisseurs.push({id:uid(),nom});
+  await fbSave('fournisseurs',S.fournisseurs);
+  hideNewFourFormCF();renderStock();renderCF();renderFoursView();
+}
+function editFourNameCF(id){
+  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const head=document.getElementById('cf-four-head-'+id);
+  head.innerHTML=
+    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<input class="e-inp" id="cf-efn-'+id+'" type="text" value="'+esc(four.nom)+'" '+
+    'onkeydown="if(event.key===\'Enter\')saveFourNameCF(\''+id+'\');if(event.key===\'Escape\')renderCF();">'+
+    '<button class="btn-ic ok" onclick="saveFourNameCF(\''+id+'\')">✓</button>'+
+    '<button class="btn-ic" onclick="renderCF()">✕</button>'+
+    '</div>';
+  document.getElementById('cf-efn-'+id).focus();
+}
+async function saveFourNameCF(id){
+  const inp=document.getElementById('cf-efn-'+id);
+  const nom=inp.value.trim();if(!nom){inp.focus();return;}
+  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  S.fournisseurs[idx].nom=nom;
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderStock();renderCF();renderFoursView();
+}
+async function deleteFourCF(id){
+  const four=S.fournisseurs.find(function(f){return f.id===id;});if(!four)return;
+  const hasCats=S.cf_categories.some(function(c){return c.fournisseurId===id;});
+  const msg=hasCats?'Supprimer "'+four.nom+'" ? Ses catégories resteront mais seront orphelines.':'Supprimer le fournisseur "'+four.nom+'" ?';
+  if(!confirm(msg))return;
+  S.fournisseurs=S.fournisseurs.filter(function(f){return f.id!==id;});
+  await fbSave('fournisseurs',S.fournisseurs);
+  renderStock();renderCF();renderFoursView();
+}
+
+// ── CATÉGORIES CRUD (CF) ──
+function showAddCatInFourCF(fourId){
+  const form=document.getElementById('cf-cat-add-form-'+fourId);
+  const btn=document.getElementById('cf-cat-add-btn-'+fourId);
+  if(!form)return;
+  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
+  if(btn)btn.style.display='none';
+  form.innerHTML=
+    '<div class="form-row">'+
+    '<input class="f-inp" id="cf-acf-inp-'+fourId+'" type="text" placeholder="Nom de la catégorie"'+
+    ' onkeydown="if(event.key===\'Enter\')addCatInFourCF(\''+fourId+'\');if(event.key===\'Escape\')hideAddCatInFourCF(\''+fourId+'\');">'+
+    '</div><div class="form-btns">'+
+    '<button class="btn-cancel" onclick="hideAddCatInFourCF(\''+fourId+'\')">Annuler</button>'+
+    '<button class="btn-save" onclick="addCatInFourCF(\''+fourId+'\')">Créer</button>'+
+    '</div>';
+  document.getElementById('cf-acf-inp-'+fourId).focus();
+}
+function hideAddCatInFourCF(fourId){
+  const form=document.getElementById('cf-cat-add-form-'+fourId);
+  const btn=document.getElementById('cf-cat-add-btn-'+fourId);
+  if(form){form.style.display='none';form.innerHTML='';}
+  if(btn)btn.style.display='flex';
+}
+async function addCatInFourCF(fourId){
+  const nom=document.getElementById('cf-acf-inp-'+fourId).value.trim();
+  if(!nom){document.getElementById('cf-acf-inp-'+fourId).focus();return;}
+  S.cf_categories.push({id:uid(),nom,fournisseurId:fourId});
   await fbSave('cf-categories',S.cf_categories);
-  hideNewCatFormCF();renderCF();
+  renderCF();
 }
 function editCatNameCF(id){
   const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
@@ -778,33 +731,27 @@ async function saveCatNameCF(id){
 }
 async function deleteCatCF(id){
   const cat=S.cf_categories.find(function(c){return c.id===id;});if(!cat)return;
-  const used=S.cf_articles.some(function(a){return a.categorieId===id;});
-  const msg=used?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
+  const hasArts=S.cf_articles.some(function(a){return a.categorieId===id;});
+  const msg=hasArts?'Supprimer "'+cat.nom+'" ? Les articles associés perdront leur catégorie.':'Supprimer la catégorie "'+cat.nom+'" ?';
   if(!confirm(msg))return;
   S.cf_categories=S.cf_categories.filter(function(c){return c.id!==id;});
   await fbSave('cf-categories',S.cf_categories);
   renderCF();
 }
 
-// CF ARTICLES — ajout dans catégorie
+// ── ARTICLES CRUD (CF) ──
 function showAddArtInCatCF(catId){
   const form=document.getElementById('cf-art-add-form-'+catId);
   const btn=document.getElementById('cf-art-add-btn-'+catId);
   if(!form)return;
-  form.style.display='flex';
-  form.style.flexDirection='column';
-  form.style.gap='8px';
+  form.style.display='flex';form.style.flexDirection='column';form.style.gap='8px';
   if(btn)btn.style.display='none';
   form.innerHTML=
     '<div class="form-row">'+
     '<input class="f-inp" id="cf-aan-nom-'+catId+'" type="text" placeholder="Nom de l\'article">'+
     '<select class="f-sel" id="cf-aan-unite-'+catId+'" style="max-width:110px;">'+
     '<option value="Carton">Carton</option><option value="Paquet">Paquet</option>'+
-    '</select></div>'+
-    '<div class="form-row">'+
-    '<select class="f-sel" id="cf-aan-four-'+catId+'">'+foursOpts('')+'</select>'+
-    '</div>'+
-    '<div class="form-btns">'+
+    '</select></div><div class="form-btns">'+
     '<button class="btn-cancel" onclick="hideAddArtInCatCF(\''+catId+'\')">Annuler</button>'+
     '<button class="btn-save" onclick="addArtInCatCF(\''+catId+'\')">Ajouter</button>'+
     '</div>';
@@ -820,14 +767,10 @@ async function addArtInCatCF(catId){
   const nom=document.getElementById('cf-aan-nom-'+catId).value.trim();
   if(!nom){document.getElementById('cf-aan-nom-'+catId).focus();return;}
   const unite=document.getElementById('cf-aan-unite-'+catId).value;
-  const fournisseurId=document.getElementById('cf-aan-four-'+catId).value||null;
-  const categorieId=catId==='__none_cf__'?null:catId;
-  S.cf_articles.push({id:uid(),nom,unite,categorieId,fournisseurId});
+  S.cf_articles.push({id:uid(),nom,unite,categorieId:catId});
   await fbSave('cf-articles',S.cf_articles);
   renderCF();
 }
-
-// CF ARTICLES — édition inline
 function editArtCF(id){
   const a=S.cf_articles.find(function(x){return x.id===id;});if(!a)return;
   const row=document.getElementById('cf-art-row-'+id);
@@ -839,9 +782,6 @@ function editArtCF(id){
     '<option value="Carton"'+(a.unite==='Carton'?' selected':'')+'>Carton</option>'+
     '<option value="Paquet"'+(a.unite==='Paquet'?' selected':'')+'>Paquet</option>'+
     '</select></div>'+
-    '<div style="display:flex;gap:8px;width:100%;margin-bottom:6px;">'+
-    '<select class="e-sel" id="cf-ea-four-'+id+'">'+foursOpts(a.fournisseurId)+'</select>'+
-    '</div>'+
     '<div style="display:flex;gap:8px;width:100%;justify-content:flex-end;">'+
     '<button class="btn-cancel" onclick="renderCF()">Annuler</button>'+
     '<button class="btn-save" onclick="saveArtCF(\''+id+'\')">Enregistrer</button>'+
@@ -852,9 +792,8 @@ async function saveArtCF(id){
   const nom=document.getElementById('cf-ea-nom-'+id).value.trim();
   if(!nom){document.getElementById('cf-ea-nom-'+id).focus();return;}
   const unite=document.getElementById('cf-ea-unite-'+id).value;
-  const fournisseurId=document.getElementById('cf-ea-four-'+id).value||null;
   const idx=S.cf_articles.findIndex(function(a){return a.id===id;});if(idx===-1)return;
-  S.cf_articles[idx]={...S.cf_articles[idx],nom,unite,fournisseurId};
+  S.cf_articles[idx]={...S.cf_articles[idx],nom,unite};
   await fbSave('cf-articles',S.cf_articles);
   renderCF();
 }
@@ -866,65 +805,39 @@ async function deleteArtCF(id){
   renderCF();
 }
 
-// CF FOURNISSEURS — section gestion (partagée avec Stock)
-function renderFoursCF(){
-  const el=document.getElementById('cf-fours-list');if(!el)return;
-  document.getElementById('cf-fours-count').textContent=S.fournisseurs.length;
-  if(!S.fournisseurs.length){el.innerHTML='<div class="empty-msg">Aucun fournisseur</div>';return;}
-  el.innerHTML=S.fournisseurs.map(function(f){
-    return'<div class="item-row" id="cf-four-row-'+f.id+'">'+
-    '<span class="item-name">'+esc(f.nom)+'</span>'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic" onclick="editFourCF(\''+f.id+'\')">✎</button>'+
-    '<button class="btn-ic del" onclick="deleteFourCF(\''+f.id+'\')">✕</button>'+
-    '</div></div>';
-  }).join('');
-}
-function showAddFourCF(){
-  document.getElementById('cf-fours-add-form').style.display='flex';
-  document.getElementById('cf-fours-add-btn').style.display='none';
-  const inp=document.getElementById('cf-four-new-inp');inp.value='';inp.focus();
-}
-function hideAddFourCF(){
-  document.getElementById('cf-fours-add-form').style.display='none';
-  document.getElementById('cf-fours-add-btn').style.display='flex';
-}
-async function addFourCF(){
-  const inp=document.getElementById('cf-four-new-inp');
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.fournisseurs.push({id:uid(),nom});
-  await fbSave('fournisseurs',S.fournisseurs);
-  hideAddFourCF();renderFours();renderFoursCF();
-}
-function editFourCF(id){
-  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
-  document.getElementById('cf-four-row-'+id).innerHTML=
-    '<input class="e-inp" id="cf-ef-'+id+'" type="text" value="'+esc(f.nom)+'" style="flex:1;" '+
-    'onkeydown="if(event.key===\'Enter\')saveFourCF(\''+id+'\');if(event.key===\'Escape\')renderFoursCF();">'+
-    '<div class="item-actions">'+
-    '<button class="btn-ic ok" onclick="saveFourCF(\''+id+'\')">✓</button>'+
-    '<button class="btn-ic" onclick="renderFoursCF()">✕</button>'+
-    '</div>';
-  document.getElementById('cf-ef-'+id).focus();
-}
-async function saveFourCF(id){
-  const inp=document.getElementById('cf-ef-'+id);
-  const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
-  S.fournisseurs[idx].nom=nom;
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
-}
-async function deleteFourCF(id){
-  const f=S.fournisseurs.find(function(x){return x.id===id;});if(!f)return;
-  const usedStock=S.articles.some(function(a){return a.fournisseurId===id;});
-  const usedCF=S.cf_articles.some(function(a){return a.fournisseurId===id;});
-  const used=usedStock||usedCF;
-  const msg=used?'Supprimer "'+f.nom+'" ? Il est utilisé par des articles.':'Supprimer le fournisseur "'+f.nom+'" ?';
-  if(!confirm(msg))return;
-  S.fournisseurs=S.fournisseurs.filter(function(x){return x.id!==id;});
-  await fbSave('fournisseurs',S.fournisseurs);
-  renderFours();renderFoursCF();renderStock();renderCF();renderFoursView();
+// ════════════════════════════════
+// VUE FOURNISSEURS (onglet auto)
+// ════════════════════════════════
+function renderFoursView(){
+  const view=document.getElementById('fours-view');if(!view)return;
+  if(!S.articles.length){
+    view.innerHTML='<div class="placeholder"><div class="placeholder-icon">🚚</div>'+
+      '<div class="placeholder-title">Aucun article</div>'+
+      '<div class="placeholder-desc">Ajoutez des articles dans l\'onglet Stock pour les voir apparaître ici.</div></div>';
+    return;
+  }
+  const groups={};
+  S.fournisseurs.forEach(function(f){groups[f.id]={nom:f.nom,items:[]};});
+  groups['__none__']={nom:'Sans fournisseur',items:[]};
+  S.articles.forEach(function(a){
+    const cat=S.categories.find(function(c){return c.id===a.categorieId;});
+    const fourId=(cat&&cat.fournisseurId&&groups[cat.fournisseurId])?cat.fournisseurId:'__none__';
+    groups[fourId].items.push({a,cat});
+  });
+  let html='';
+  Object.entries(groups).forEach(function(entry){
+    const g=entry[1];
+    if(!g.items.length)return;
+    html+='<div class="fv-block"><div class="fv-title">'+esc(g.nom)+'</div>';
+    g.items.forEach(function(item){
+      html+='<div class="fv-item">'+
+        '<span>'+esc(item.a.nom)+(item.cat?'<span class="fv-cat">'+esc(item.cat.nom)+'</span>':'')+'</span>'+
+        '<span class="fv-unite">'+esc(item.a.unite)+'</span>'+
+        '</div>';
+    });
+    html+='</div>';
+  });
+  view.innerHTML=html||'<div class="empty-msg">Aucun article à afficher.</div>';
 }
 
 loadAll();
