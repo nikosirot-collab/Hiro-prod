@@ -245,6 +245,17 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
 function getStock(artId){const s=S.stocks.find(function(x){return x.articleId===artId;});return s?s.qte:0;}
 function today(){return new Date().toISOString().split('T')[0];}
+function nextDelivery(jours){
+  if(!jours||!jours.length)return today();
+  const map={Lun:1,Mar:2,Mer:3,Jeu:4,Ven:5,Sam:6,Dim:0};
+  const cur=new Date().getDay();
+  const days=jours.map(function(j){return map[j];}).filter(function(d){return d!==undefined;});
+  if(!days.length)return today();
+  let min=7;
+  days.forEach(function(d){let diff=d-cur;if(diff<=0)diff+=7;if(diff<min)min=diff;});
+  const dt=new Date();dt.setDate(dt.getDate()+min);
+  return dt.toISOString().split('T')[0];
+}
 
 // ── Firestore ──
 async function fbLoad(doc){
@@ -670,6 +681,7 @@ function renderFoursView(){
     let cmdSec='';
     if(arts.length){
       const joursHint=four.jours&&four.jours.length?'<span style="text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px;color:var(--dsm);">'+four.jours.join(' · ')+'</span>':'';
+      const suggestDate=nextDelivery(four.jours);
       cmdSec='<div class="sec-label">Nouvelle commande'+joursHint+'</div><div class="cmd-form">';
       arts.forEach(function(a){
         cmdSec+='<div class="cmd-art-line">'+
@@ -677,7 +689,11 @@ function renderFoursView(){
           '<input class="cmd-inp" id="cmd-inp-'+four.id+'-'+a.id+'" type="number" min="0" placeholder="0">'+
           '</div>';
       });
-      cmdSec+='<div class="form-btns" style="margin-top:10px;">'+
+      cmdSec+='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;">'+
+        '<span style="font-size:12px;color:var(--muted);flex-shrink:0;">Livraison le</span>'+
+        '<input class="f-inp" type="date" id="cmd-date-'+four.id+'" value="'+suggestDate+'" style="flex:1;padding:6px 10px;font-size:13px;">'+
+        '</div>'+
+        '<div class="form-btns" style="margin-top:8px;">'+
         '<button class="btn-save" onclick="passerCommande(\''+four.id+'\')">Passer la commande</button>'+
         '</div></div>';
     }
@@ -692,7 +708,7 @@ function renderFoursView(){
           return(art?esc(art.nom):'?')+' ×'+l.qte;
         }).join(', ');
         pendingSec+='<div class="cmd-row">'+
-          '<span class="cmd-date">'+fmtDate(cmd.date)+'</span>'+
+          '<span class="cmd-date" title="Commandé le '+fmtDate(cmd.date)+'">Liv. '+fmtDate(cmd.dateLivraison||cmd.date)+'</span>'+
           '<span class="cmd-detail">'+detail+'</span>'+
           '<button class="btn-recu" onclick="marquerRecu(\''+cmd.id+'\')">Reçu ✓</button>'+
           '</div>';
@@ -747,7 +763,9 @@ async function passerCommande(fourId){
     if(qte>0)lignes.push({articleId:a.id,qte:qte});
   });
   if(!lignes.length)return;
-  S.commandes.push({id:uid(),fournisseurId:fourId,date:today(),status:'pending',lignes:lignes});
+  const dateInp=document.getElementById('cmd-date-'+fourId);
+  const dateLivraison=dateInp&&dateInp.value?dateInp.value:today();
+  S.commandes.push({id:uid(),fournisseurId:fourId,date:today(),dateLivraison:dateLivraison,status:'pending',lignes:lignes});
   await fbSave('commandes',S.commandes);
   renderFoursView();
 }
