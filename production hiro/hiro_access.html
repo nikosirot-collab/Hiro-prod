@@ -1827,13 +1827,14 @@ async function laboPatchQty(shop,key,val){
   }catch(e){}
 }
 
-async function laboPatchPoids(shop,key,val){
+async function laboPatchPoids(shop,key,val,platDeductGrams){
   var order=laboOrders[shop];
   if(!order)return;
   var libreStr=order.vlibre||order.libre||'{}';
   var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
   if(!libre.poids)libre.poids={};
   libre.poids[key]=parseFloat(val)||0;
+  if(platDeductGrams!==undefined){if(!libre.platDeduct)libre.platDeduct={};libre.platDeduct[key]=platDeductGrams;}
   order.vlibre=JSON.stringify(libre);
   var fields={'vlibre':{stringValue:order.vlibre}};
   var dStr=laboDs(laboDate);
@@ -1868,7 +1869,7 @@ function laboTogglePlatDeduction(shop,key,grams,btnEl){
     btnEl.dataset.active='1';btnEl.style.background='#1a5fa8';btnEl.style.color='#fff';btnEl.style.borderColor='#1a5fa8';
     _platDeductActive[shop+'-'+key]=grams;
   }
-  laboPatchPoids(shop,key,inp.value);
+  laboPatchPoids(shop,key,inp.value,_platDeductActive[shop+'-'+key]);
 }
 
 async function laboPatchLibreChr(shop,idx,val){
@@ -2685,7 +2686,7 @@ function laboRenderFiche(shop,order){
       if(!_pfQty&&_pfQty!==0)_pfQty=0;
       var _pfRupt=order['rupt_pouletfrit'];
       var _pfPoids='';
-      try{var _lppf=JSON.parse(order.vlibre||order.libre||'{}');if(_lppf.poids&&_lppf.poids['pouletfrit'])_pfPoids=_lppf.poids['pouletfrit'];}catch(e){}
+      try{var _lppf=JSON.parse(order.vlibre||order.libre||'{}');if(_lppf.poids&&_lppf.poids['pouletfrit'])_pfPoids=_lppf.poids['pouletfrit'];_platDeductActive[shop+'-pouletfrit']=(_lppf.platDeduct&&_lppf.platDeduct['pouletfrit'])||0;}catch(e){}
       var _btnS='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
       var _pfActif=_platDeductActive[shop+'-pouletfrit']===800;
       var _pfBtnS=_btnS+'background:'+(_pfActif?'#1a5fa8':'var(--surface)')+';color:'+(_pfActif?'#fff':'var(--text)')+';border-color:'+(_pfActif?'#1a5fa8':'var(--border)')+';';
@@ -2761,16 +2762,17 @@ function laboRenderFiche(shop,order){
     try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0&&i.name.toLowerCase().indexOf('brochette')===-1;}).forEach(function(i){allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty,poids:i.poids||''});});_platsLibre=lpl.plats||[];}}catch(e){}
 
     // Récupérer les poids déjà sauvegardés
-    var _poids={};
-    try{if(_libreStr2){var _lp2=JSON.parse(_libreStr2);if(_lp2.poids)_poids=_lp2.poids;}}catch(e){}
+    var _poids={};var _platDeductSaved={};
+    try{if(_libreStr2){var _lp2=JSON.parse(_libreStr2);if(_lp2.poids)_poids=_lp2.poids;if(_lp2.platDeduct)_platDeductSaved=_lp2.platDeduct;}}catch(e){}
 
     if(allPlats.length>0){
       platsColRows=allPlats.map(function(p){
         var noPoids=['gyoza','siumai'];
         var showPoids=noPoids.indexOf(p.key)===-1;
         var poidsVal=showPoids?(_poids[p.key]||p.poids||''):'';
-        var _ptA=_platDeductActive[shop+'-'+p.key]===700;
-        var _gdA=_platDeductActive[shop+'-'+p.key]===800;
+        var _savedGrams=_platDeductSaved[p.key]||0;_platDeductActive[shop+'-'+p.key]=_savedGrams;
+        var _ptA=_savedGrams===700;
+        var _gdA=_savedGrams===800;
         var _bBase='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
         var _ptS=_bBase+'background:'+(_ptA?'#1a5fa8':'var(--surface)')+';color:'+(_ptA?'#fff':'var(--text)')+';border-color:'+(_ptA?'#1a5fa8':'var(--border)')+';';
         var _gdS=_bBase+'background:'+(_gdA?'#1a5fa8':'var(--surface)')+';color:'+(_gdA?'#fff':'var(--text)')+';border-color:'+(_gdA?'#1a5fa8':'var(--border)')+';';
