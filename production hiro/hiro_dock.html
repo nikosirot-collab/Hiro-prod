@@ -18,6 +18,12 @@
   --mgt:#0d7a52;--mgt-l:#e4f5ee;
   --r:10px;--r-sm:7px;
 }
+body.dark{
+  --bg:#111111;--surface:#1e1e1e;--border:#2e2e2e;--border-s:#444444;
+  --text:#f0eeea;--muted:#999999;--hint:#666666;
+  --dsm:#5ba3e8;--dsm-l:#1a2d42;
+  --mgt:#2ecc71;--mgt-l:#162a1e;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;}
 
@@ -111,6 +117,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .cmd-detail{flex:1;color:var(--muted);line-height:1.4;}
 .cmd-received{font-size:11px;font-weight:500;color:var(--mgt);flex-shrink:0;}
 .btn-recu{padding:5px 12px;border-radius:var(--r-sm);border:none;background:var(--mgt);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;}
+body.dark .sec-label{background:#1f1f1f;}
+body.dark .badge-wip{background:#2a1f00;border-color:#7a5500;color:#f0b429;}
+body.dark .f-inp:focus,body.dark .f-sel:focus{background:#252525;}
+body.dark .cmd-inp:focus{background:#252525;}
+body.dark .e-inp,body.dark .e-sel{background:#252525;}
 </style>
 </head>
 <body>
@@ -145,7 +156,10 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
       <div class="hdr-sub">Entrepôt</div>
     </div>
   </div>
-  <div class="hdr-right"><span id="clock"></span></div>
+  <div class="hdr-right" style="display:flex;align-items:center;gap:10px;">
+    <button id="btn-theme" onclick="toggleTheme()" style="background:none;border:none;font-size:16px;cursor:pointer;color:#aaa;padding:0;line-height:1;-webkit-tap-highlight-color:transparent;">🌙</button>
+    <span id="clock"></span>
+  </div>
 </header>
 
 <!-- NAV -->
@@ -782,6 +796,19 @@ async function marquerRecu(cmdId){
   await Promise.all([fbSave('stocks',S.stocks),fbSave('commandes',S.commandes)]);
   renderFoursView();
   renderStock();
+}
+
+// ── Thème ──
+(function(){
+  if(localStorage.getItem('hiro-dock-theme')==='dark'){
+    document.body.classList.add('dark');
+    const b=document.getElementById('btn-theme');if(b)b.textContent='☀';
+  }
+})();
+function toggleTheme(){
+  const dark=document.body.classList.toggle('dark');
+  localStorage.setItem('hiro-dock-theme',dark?'dark':'light');
+  const b=document.getElementById('btn-theme');if(b)b.textContent=dark?'☀':'🌙';
 }
 
 loadAll();
