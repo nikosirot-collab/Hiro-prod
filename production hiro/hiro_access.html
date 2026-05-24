@@ -100,7 +100,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .fete-tag{font-size:11px;background:var(--fete);border:1px solid var(--fete-b);color:#7a4f00;padding:4px 10px;border-radius:20px;font-weight:500;}
 .print-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);font-weight:500;-webkit-tap-highlight-color:transparent;}
 .print-btn svg{width:14px;height:14px;}
-@media(max-width:600px){.print-btn span{display:none;}}
+.print-btn .btn-short{display:none;}
+@media(max-width:600px){.print-btn .btn-long{display:none;}.print-btn .btn-short{display:inline;}}
 
 /* MAIN */
 .main{padding:1rem;}
@@ -309,11 +310,11 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     <span class="fete-tag" id="feteTag" style="display:none">&#127876; Fêtes</span>
     <button class="print-btn" onclick="printPoisson()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span>Imprimer découpe poisson</span>
+      <span class="btn-long">Imprimer découpe poisson</span><span class="btn-short">Poisson</span>
     </button>
     <button class="print-btn" onclick="printRolls()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-      <span>Imprimer riz / rolls</span>
+      <span class="btn-long">Imprimer riz / rolls</span><span class="btn-short">Rolls</span>
     </button>
   </div>
 </div>
