@@ -2200,6 +2200,7 @@ function _printCombined(type) {
     td.dim{background:#f5f5f5;}
     th.sep,td.sep{border-left:2px solid #000!important;}`;
 
+  if(document.activeElement) document.activeElement.blur();
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
   <title>${isRolls?'Rolls':'Poisson'} — ${weekShort}</title>
