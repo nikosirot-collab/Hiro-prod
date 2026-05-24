@@ -98,6 +98,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .wbtn{width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 .week-label{font-size:13px;font-weight:500;text-align:center;min-width:130px;}
 .fete-tag{font-size:11px;background:var(--fete);border:1px solid var(--fete-b);color:#7a4f00;padding:4px 10px;border-radius:20px;font-weight:500;}
+.print-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text);font-weight:500;-webkit-tap-highlight-color:transparent;}
+.print-btn svg{width:14px;height:14px;}
+@media(max-width:600px){.print-btn span{display:none;}}
 
 /* MAIN */
 .main{padding:1rem;}
@@ -302,7 +305,17 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     <span class="week-label" id="weekLabel"></span>
     <button class="wbtn" onclick="changeWeek(1)">&#8594;</button>
   </div>
-  <span class="fete-tag" id="feteTag" style="display:none">&#127876; Fêtes</span>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span class="fete-tag" id="feteTag" style="display:none">&#127876; Fêtes</span>
+    <button class="print-btn" onclick="printPoisson()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span>Poisson</span>
+    </button>
+    <button class="print-btn" onclick="printRolls()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      <span>Riz / Rolls</span>
+    </button>
+  </div>
 </div>
 
 <div class="main">
@@ -3502,6 +3515,81 @@ document.addEventListener('visibilitychange', function(){
     if(window._sendPing) window._sendPing();
   }
 });
+</script>
+
+<script>
+function printPoisson(){_printCombinedAccess('poisson');}
+function printRolls(){_printCombinedAccess('rolls');}
+function _printCombinedAccess(type){
+  const m=mondayOf(weekOff),e=new Date(m);e.setDate(e.getDate()+6);
+  const weekShort=fmtS(m)+' – '+fmtS(e)+'/'+e.getFullYear();
+  let rows='';
+  if(type==='rolls'){
+    for(let di=0;di<7;di++){
+      const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
+      const isDim=(di===6);
+      const v={};['dsm','mgt','paita','ville'].forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
+      const ar={
+        dsm:(laboIsOff('dsm',dStr)||laboIsRizPoisson('dsm',dStr))?0:(getR(dStr,'dsm')||getRolls(v.dsm,isDim)),
+        mgt:(laboIsOff('mgt',dStr)||laboIsRizPoisson('mgt',dStr))?0:(getR(dStr,'mgt')||getRolls(v.mgt,isDim)),
+        paita:(laboIsOff('paita',dStr)||laboIsRizPoisson('paita',dStr))?0:(getR(dStr,'paita')||getRolls(v.paita,isDim)),
+        ville:(laboIsOff('ville',dStr)||laboIsRizPoisson('ville',dStr))?0:(getR(dStr,'ville')||0)
+      };
+      rows+=`<tr>
+        <td class="day${isDim?' dim':''}">${DAYS[di]}<br><span style="font-weight:400;font-size:10px">${short}</span></td>
+        <td class="sep">${v.dsm||''}</td><td>${ar.dsm||''}</td>
+        <td class="sep">${v.mgt||''}</td><td>${ar.mgt||''}</td>
+        <td class="sep">${v.paita||''}</td><td>${ar.paita||''}</td>
+        <td class="sep">${v.ville||''}</td><td>${ar.ville||''}</td>
+      </tr>`;
+    }
+  }
+  if(type==='poisson'){
+    for(let di=0;di<7;di++){
+      const d=dayOf(weekOff,di),dStr=ds(d);
+      const isDim=(di===6);
+      const v={};['dsm','mgt','paita','ville'].forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
+      const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s]);});
+      const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+      rows+=`<tr>
+        <td class="day${isDim?' dim':''}">${DAYS[di]}</td>
+        <td class="sep">${gfv('dsm','t')}</td><td>${gfv('dsm','s')}</td><td>${gfv('dsm','a')}</td>
+        <td class="sep">${gfv('mgt','t')}</td><td>${gfv('mgt','s')}</td><td>${gfv('mgt','a')}</td>
+        <td class="sep">${gfv('paita','t')}</td><td>${gfv('paita','s')}</td><td>${gfv('paita','a')}</td>
+        <td class="sep">${gfv('ville','t')}</td><td>${gfv('ville','s')}</td><td>${gfv('ville','a')}</td>
+      </tr>`;
+    }
+  }
+  const isRolls=type==='rolls';
+  const thead=isRolls?`
+    <tr>
+      <th rowspan="2" class="th-date">DATE<br><span style="font-weight:400;font-size:9px">${fmtS(m)}–${fmtS(e)}</span></th>
+      <th colspan="2" class="sep">DSM</th><th colspan="2" class="sep">MGT</th>
+      <th colspan="2" class="sep">PAITA</th><th colspan="2" class="sep">VILLE</th>
+    </tr>
+    <tr>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+      <th class="sep">RIZ</th><th>ROLL</th>
+    </tr>`:`
+    <tr>
+      <th rowspan="2" class="th-date">DATE<br><span style="font-weight:400;font-size:9px">${fmtS(m)}–${fmtS(e)}</span></th>
+      <th colspan="3" class="sep">DSM</th><th colspan="3" class="sep">MGT</th>
+      <th colspan="3" class="sep">PAITA</th><th colspan="3" class="sep">VILLE</th>
+    </tr>
+    <tr>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+      <th class="sep">THON</th><th>SAU.</th><th>ABURI</th>
+    </tr>`;
+  const cssRolls=`@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}html{width:297mm;height:210mm;}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;display:flex;flex-direction:column;width:297mm;height:210mm;padding:3mm 4mm;}h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:2px;flex-shrink:0;}table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;min-height:0;}th{background:#d0d0d0;border:1.5px solid #000;padding:3px 1px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;}th.th-date{text-align:left;padding-left:6px;}td{border:1px solid #000;text-align:center;font-size:16px;font-weight:600;vertical-align:middle;}tbody{height:100%;}tbody tr{height:calc(100% / 7);}td.day{text-align:left;font-weight:700;font-size:13px;padding-left:8px;background:#e8e8e8;border:1.5px solid #000;}td.dim{background:#f5f5f5;}th.sep,td.sep{border-left:2.5px solid #000!important;}`;
+  const cssPoisson=`@page{size:A4 landscape;margin:0;}*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}html{width:297mm;height:210mm;}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#000;display:flex;flex-direction:column;width:297mm;height:210mm;padding:3mm 4mm;}h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:2px;flex-shrink:0;}table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;min-height:0;}th{background:#d0d0d0;border:1px solid #000;padding:3px 0;text-align:center;font-weight:700;font-size:8px;white-space:nowrap;}th.th-date{text-align:left;padding-left:4px;}td{border:1px solid #000;text-align:center;font-size:14px;font-weight:600;vertical-align:middle;}tbody{height:100%;}tbody tr{height:calc(100% / 7);}td.day{text-align:left;font-weight:700;font-size:12px;padding-left:6px;background:#e8e8e8;border:1px solid #000;}td.dim{background:#f5f5f5;}th.sep,td.sep{border-left:2px solid #000!important;}`;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>${isRolls?'Riz/Rolls':'Poisson'} — ${weekShort}</title><style>${isRolls?cssRolls:cssPoisson}</style></head><body><h1>${isRolls?'QUANTITÉ RIZ / ROLLS':'DÉCOUPE POISSON'} HIRO — ${weekShort}</h1><table><thead>${thead}</thead><tbody>${rows}</tbody></table><script>window.onload=()=>{window.print();}<\/script>`);
+  win.document.close();
+}
 </script>
 
 <script>
