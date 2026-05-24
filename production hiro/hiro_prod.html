@@ -2200,25 +2200,52 @@ function _printCombined(type) {
     td.dim{background:#f5f5f5;}
     th.sep,td.sep{border-left:2px solid #000!important;}`;
 
-  const win=window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
-<link rel="manifest" href="/Hiro-prod/production%20hiro/manifest.json">
-<meta name="theme-color" content="#1a1a1a">
+  let printEl=document.getElementById('_hp');
+  if(!printEl){printEl=document.createElement('div');printEl.id='_hp';document.body.appendChild(printEl);}
+  let styleEl=document.getElementById('_hp-style');
+  if(!styleEl){styleEl=document.createElement('style');styleEl.id='_hp-style';document.head.appendChild(styleEl);}
 
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>${type==='poisson'?'Poisson':'Rolls'} — ${weekShort}</title>
-  <style>${type==='rolls'?cssRolls:cssPoisson}</style>
-  </head><body>
-  <h1>${type==='poisson'?'QUANTITÉ POISSON':'QUANTITÉ ROLL'} HIRO — ${weekShort}</h1>
-  <table>
-    <thead>${thead}</thead>
-    <tbody>${rows}</tbody>
-  </table>
-  <script>window.onload=()=>{window.print();}<\/script>
-  `);
-  win.document.close();
+  const printCSS=isRolls?`
+    @media print{
+      @page{size:A4 landscape;margin:0;}
+      *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      body>*:not(#_hp){display:none!important;}
+      #_hp{display:flex!important;flex-direction:column;position:fixed;top:0;left:0;width:297mm;height:210mm;padding:3mm 4mm;background:#fff;box-sizing:border-box;}
+      #_hp h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:2px;flex-shrink:0;}
+      #_hp table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;min-height:0;}
+      #_hp th{background:#d0d0d0;border:1.5px solid #000;padding:3px 1px;text-align:center;font-weight:700;font-size:10px;white-space:nowrap;}
+      #_hp th.th-date{text-align:left;padding-left:6px;}
+      #_hp td{border:1px solid #000;text-align:center;font-size:16px;font-weight:600;vertical-align:middle;}
+      #_hp tbody{height:100%;}
+      #_hp tbody tr{height:calc(100% / 7);}
+      #_hp td.day{text-align:left;font-weight:700;font-size:13px;padding-left:8px;background:#e8e8e8;border:1.5px solid #000;}
+      #_hp td.dim{background:#f5f5f5;}
+      #_hp th.sep,#_hp td.sep{border-left:2.5px solid #000!important;}
+    }
+    #_hp{display:none;}`:`
+    @media print{
+      @page{size:A4 landscape;margin:0;}
+      *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      body>*:not(#_hp){display:none!important;}
+      #_hp{display:flex!important;flex-direction:column;position:fixed;top:0;left:0;width:297mm;height:210mm;padding:3mm 4mm;background:#fff;box-sizing:border-box;}
+      #_hp h1{text-align:center;font-size:12px;font-weight:700;letter-spacing:.05em;margin-bottom:2px;flex-shrink:0;}
+      #_hp table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;min-height:0;}
+      #_hp th{background:#d0d0d0;border:1px solid #000;padding:3px 0;text-align:center;font-weight:700;font-size:8px;white-space:nowrap;}
+      #_hp th.th-date{text-align:left;padding-left:4px;}
+      #_hp td{border:1px solid #000;text-align:center;font-size:14px;font-weight:600;vertical-align:middle;}
+      #_hp tbody{height:100%;}
+      #_hp tbody tr{height:calc(100% / 7);}
+      #_hp td.day{text-align:left;font-weight:700;font-size:12px;padding-left:6px;background:#e8e8e8;border:1px solid #000;}
+      #_hp td.dim{background:#f5f5f5;}
+      #_hp th.sep,#_hp td.sep{border-left:2px solid #000!important;}
+    }
+    #_hp{display:none;}`;
+
+  styleEl.textContent=printCSS;
+  printEl.innerHTML=`<h1>${isRolls?'QUANTITÉ ROLL':'QUANTITÉ POISSON'} HIRO — ${weekShort}</h1><table><thead>${thead}</thead><tbody>${rows}</tbody></table>`;
+  window.print();
+  printEl.innerHTML='';
+  styleEl.textContent='#_hp{display:none;}';
 }
 
 function updateClock(){
