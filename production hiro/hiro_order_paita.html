@@ -117,10 +117,12 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 
 .status-banner{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);}
 .status-banner.sent{background:#e4f5ee;color:#0d7a52;}
-.status-banner.pending{background:#fde8e8;color:#c0392b;}
+.status-banner.pending{background:#fff3cd;color:#856404;}
+.status-banner.locked{background:#fde8e8;color:#c0392b;}
 .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .status-banner.sent .status-dot{background:#0d7a52;}
-.status-banner.pending .status-dot{background:#c0392b;}
+.status-banner.pending .status-dot{background:#856404;}
+.status-banner.locked .status-dot{background:#c0392b;}
 
 .valid-notif{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:300;overflow-y:auto;padding-bottom:40px;}
 .valid-notif.show{display:block;}
@@ -384,8 +386,25 @@ function updateStatusBanner(hasOrder){
   const banner=document.getElementById('status-banner');
   const text=document.getElementById('status-text');
   if(!banner||!text)return;
-  if(hasOrder){banner.className='status-banner sent';text.textContent='✓ Commande envoyée pour le '+fmtDate(tomorrow);}
-  else{banner.className='status-banner pending';text.textContent='⚠ Commande non envoyée pour le '+fmtDate(tomorrow);}
+  var _nc=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var _ncH=_nc.getHours()+_nc.getMinutes()/60;
+  var isLocked=_ncH>=14;
+  var btn=document.getElementById('btn-send');
+  if(hasOrder){
+    banner.className='status-banner sent';
+    text.textContent='✓ Commande envoyée — en attente de validation';
+  }else if(isLocked){
+    banner.className='status-banner locked';
+    text.textContent='🔒 Délai dépassé — commande non envoyée';
+  }else{
+    banner.className='status-banner pending';
+    text.textContent='⚠ Commande non envoyée — jusqu\'à 14h00';
+  }
+  if(btn){
+    if(isLocked){btn.textContent='🔒 Clôturé';btn.disabled=true;btn.onclick=null;}
+    else if(hasOrder){btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};}
+    else{btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
+  }
 }
 
 function showPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');el.classList.add('active');}
@@ -862,14 +881,23 @@ function updateStatusBanner(hasOrder){
   var text=document.getElementById('status-text');
   if(!banner||!text)return;
   var btn=document.getElementById('btn-send');
+  var _nc=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var _ncH=_nc.getHours()+_nc.getMinutes()/60;
+  var isLocked=_ncH>=14;
   if(hasOrder){
     banner.className='status-banner sent';
-    text.textContent='✓ Commande envoyée pour le '+fmtDate(tomorrow);
-    if(btn){btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};}
+    text.textContent='✓ Commande envoyée — en attente de validation';
+  }else if(isLocked){
+    banner.className='status-banner locked';
+    text.textContent='🔒 Délai dépassé — commande non envoyée';
   }else{
     banner.className='status-banner pending';
-    text.textContent='⚠ Commande non envoyée pour le '+fmtDate(tomorrow);
-    if(btn){btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
+    text.textContent='⚠ Commande non envoyée — jusqu\'à 14h00';
+  }
+  if(btn){
+    if(isLocked){btn.textContent='🔒 Clôturé';btn.disabled=true;btn.onclick=null;}
+    else if(hasOrder){btn.textContent='✏️ Modifier';btn.onclick=function(){editOrder();};}
+    else{btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
   }
 }
 
