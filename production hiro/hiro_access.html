@@ -2691,6 +2691,13 @@ function laboRenderFiche(shop,order){
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
   if(shop==='dsm') rightItems.push({key:'pouletfrit',name:'Poulet frit',val:_v('pouletfrit')});
   var rightRows=rightItems.map(function(p){
+    if(p.key==='rizprod'){
+      var _rizRupt=order['rupt_rizprod'];
+      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-rizprod">'
+        +'<input id="vinp-'+shop+'-rizprod" type="number" min="0" value="'+(_rizRupt?0:p.val)+'" onchange="laboPatchQty(\''+shop+'\',\'rizprod\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;">Riz'+(_rizRupt?' ⚠':'')+'</div>'
+        +'</div>';
+    }
     if(p.key==='villerolls'){
       if(!p.val||p.val===0) return '';
       var _rupt=order['rupt_villerolls'];
