@@ -617,7 +617,8 @@ function showRecap(d){
   var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rRow(SALADE_RECAP_NAMES[k],d[k]||0);}).join('');
 
   // Col droite : poke + riz
-  var rightRows=rRow('Riz',d.rizprod||0)+rRow('Rolls',d.villerolls||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
+  var _rizRecap=(_rizData&&_rizData[ds(tomorrow)+'__'+SHOP])||qty['rizprod']||d.rizprod||0;
+  var rightRows=rRow('Riz',_rizRecap)+rRow('Rolls',d.villerolls||0)+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
 
   // Dessert
   var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
