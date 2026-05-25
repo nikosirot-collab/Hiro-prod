@@ -1,6 +1,6 @@
 // ── Hiro Sushi Service Worker v2.1 ──
 const SW_VERSION = '2.1.0';
-const CACHE_NAME = 'hiro-cache-v4';
+const CACHE_NAME = 'hiro-cache-v5';
 const DB_NAME = 'hiro-offline-db';
 const DB_VERSION = 1;
 const BASE = 'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/';
