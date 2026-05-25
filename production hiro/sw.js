@@ -24,8 +24,7 @@ self.addEventListener('install', function(e){
       return Promise.allSettled(PRECACHE_URLS.map(function(url){
         return cache.add(url).catch(function(err){ console.log('SW: skip', url, err); });
       }));
-    })
-    // Ne pas skipWaiting ici — on attend que la page demande le rechargement
+    }).then(function(){ return self.skipWaiting(); })
   );
 });
 

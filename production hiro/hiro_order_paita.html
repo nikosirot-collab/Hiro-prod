@@ -535,7 +535,7 @@ loadExistingOrder();
 </script>
 
 <script>
-function showRecap(d){
+async function showRecap(d){
   var el=document.getElementById('recap-content');
   if(!el) return;
 
@@ -547,12 +547,19 @@ function showRecap(d){
       +'</div>';
   }
 
+  // Fetch riz courant directement depuis Firebase
+  var _rizRecap=qty['rizprod']||d.rizprod||0;
+  try{
+    var _mon=mondayOf(tomorrow);
+    var _res=await fetch(_API_PROD+'/week_'+ds(_mon)+'?key='+_KEY);
+    if(_res.ok){var _json=await _res.json();if(_json.fields){var _dk=ds(tomorrow)+'--'+SHOP;if(_json.fields[_dk]&&_json.fields[_dk].integerValue!==undefined)_rizRecap=parseInt(_json.fields[_dk].integerValue);}}
+  }catch(e){}
+
   // Salade col gauche
   var saladeRows=SALADE_RECAP_KEYS.map(function(k){return rRow(SALADE_RECAP_NAMES[k],d[k]||0);}).join('');
 
   // Col droite : poke + riz
   var _rollToday=(typeof _rizData!=='undefined'&&_rizData[ds(tomorrow)+'__r__'+SHOP])||0;
-  var _rizRecap=(_rizData&&_rizData[ds(tomorrow)+'__'+SHOP])||qty['rizprod']||d.rizprod||0;
   var rightRows=rRow('Riz',_rizRecap)+(_rollToday>0?rRow('Rolls',_rollToday):'')+rRow('Poke thon',d.pokethon||0)+rRow('Poke saumon',d.pokesaumon||0);
 
   // Dessert
