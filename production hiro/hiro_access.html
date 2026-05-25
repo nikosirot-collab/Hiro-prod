@@ -2674,7 +2674,7 @@ function laboRenderFiche(shop,order){
   var rightItems=[
     {key:'f_t',name:'Thon',val:_fish('t')},{key:'f_s',name:'Saumon',val:_fish('s')},
     {key:'f_a',name:'Aburi',val:_fish('a')},{key:'f_tamago',name:'Tamago',val:(isValidated&&order['vqty_f_tamago']!==undefined?order['vqty_f_tamago']:laboGetFish(shop,'tamago'))},
-    {key:'rizprod',name:'Riz',val:_v('rizprod')||laboGetRiz(shop)}
+    {key:'rizprod',name:'Riz',val:laboGetRiz(shop)}
   ];
   if(shop==='ville'){
     var _dStrVille=laboDs(laboDate);
@@ -2880,7 +2880,7 @@ function laboPrint(){
 
     // Poisson
     var poissonRows=pRow('Thon',fv('t'))+pRow('Saumon',fv('s'))+pRow('Aburi',fv('a'))+pRow('Tamago',laboGetFish(shop,'tamago'));
-    poissonRows+=pRow('Riz',v('rizprod')||laboGetRiz(shop));
+    poissonRows+=pRow('Riz',(isVal&&order['vqty_rizprod']!==undefined?order['vqty_rizprod']:null)||laboGetRiz(shop));
     if(shop==='ville'){var dStrV=laboDs(laboDate);var villeR=getR(dStrV,'ville');poissonRows+='<tr><td style="padding:2px 6px;font-size:10px;">Rolls</td><td style="padding:2px 6px;font-size:10px;font-weight:700;text-align:right;">'+(villeR||'—')+'</td></tr>';}
     else poissonRows+=pRow('Roll',isVal&&order['vqty_roll']>0?order['vqty_roll']:laboGetRoll(shop));
     poissonRows+=pRow('Poke thon',v('pokethon'))+pRow('Poke saumon',v('pokesaumon'));
