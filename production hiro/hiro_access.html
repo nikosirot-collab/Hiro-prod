@@ -3141,6 +3141,7 @@ async function laboFetchFish(){
                 else if(e[1].booleanValue!==undefined)laboFishData[dk]=e[1].booleanValue;
               });
               try{localStorage.setItem(cacheKey,JSON.stringify({data:Object.assign({},laboFishData),ts:Date.now()}));}catch(e){}
+              laboRender();
             }
           }).catch(function(){});
           return;
