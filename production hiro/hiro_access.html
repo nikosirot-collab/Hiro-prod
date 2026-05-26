@@ -1842,6 +1842,18 @@ async function laboPatchQty(shop,key,val){
     await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     laboBackup(shop,'patch_qty_'+key);
     laboShowSaveToast(shop);
+    if(key==='rizprod'){
+      var _monDate=new Date(laboDate.getFullYear(),laboDate.getMonth(),laboDate.getDate());
+      var _dow=_monDate.getDay();
+      _monDate.setDate(_monDate.getDate()+(_dow===0?-6:1-_dow));
+      var _monStr=laboDs(_monDate);
+      laboFishData[dStr+'__'+shop]=v;
+      var _fsRizKey=(dStr+'__'+shop).replace(/__/g,'--');
+      fetch(_API+'/week_'+_monStr+'?updateMask.fieldPaths='+encodeURIComponent('`'+_fsRizKey+'`')+'&key='+_KEY,{
+        method:'PATCH',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({fields:{[_fsRizKey]:{integerValue:v}}})
+      }).catch(function(){});
+    }
   }catch(e){}
 }
 
