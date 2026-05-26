@@ -2487,6 +2487,12 @@ function laboRenderFicheRie(){
     var str=order.vlibre||order.libre||'';
     try{ var j=JSON.parse(str); return (j[section]||[]).filter(function(i){return i.name&&i.qty>0;}); }catch(e){ return []; }
   }
+  function getBrochVal(order){
+    if(!order) return 0;
+    var v=(order.status==='validated'&&order['vqty_brochettes']!==undefined)?parseInt(order['vqty_brochettes'])||0:parseInt(order['brochettes'])||0;
+    if(v===0){var str=order.vlibre||order.libre||'';try{var j=JSON.parse(str);if(j.plats){var b=j.plats.filter(function(i){return i.name&&i.name.toLowerCase().indexOf('brochette')!==-1&&i.qty>0;});if(b.length>0)v=b.reduce(function(s,i){return s+(parseInt(i.qty)||0);},0);}}catch(e){}}
+    return v;
+  }
 
   var rows=[
     {label:'POE',      subKeys:[{key:'poebanane',sub:'BANANE'},{key:'poecitrouille',sub:'CITROUILLE'}]},
@@ -2496,6 +2502,7 @@ function laboRenderFicheRie(){
     {label:'ANANAS',   subKeys:[{key:'ananas',sub:''}]},
     {label:'BAO',      subKeys:[{key:'banhbao',sub:''}]},
     {label:'SESAME',   subKeys:[{key:'sesame',sub:''}]},
+    {label:'BROCHETTES', brochettes:true},
     {label:'AUTRE',    libre:'chr'}
   ];
 
@@ -2561,6 +2568,11 @@ function laboRenderFicheRie(){
       // 1 seule valeur -> colspan 2
       shops.forEach(function(s){
         var v=getV(laboOrders[s],row.subKeys[0].key);
+        html+='<td style="'+cssVal+'border-left:'+bBold+';" colspan="2">'+(v>0?v:'')+'</td>';
+      });
+    } else if(row.brochettes){
+      shops.forEach(function(s){
+        var v=s==='ville'?getBrochVal(laboOrders[s]):0;
         html+='<td style="'+cssVal+'border-left:'+bBold+';" colspan="2">'+(v>0?v:'')+'</td>';
       });
     } else if(row.libre){
