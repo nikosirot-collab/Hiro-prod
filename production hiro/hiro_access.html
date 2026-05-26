@@ -1586,11 +1586,11 @@ function laboGetFish(shop,field){
 }
 function laboGetRiz(shop){
   var dStr=laboDs(laboDate);
-  var fromData=data[dStr+'__'+shop];
-  if(fromData!==undefined) return fromData;
   var order=laboOrders[shop];
   if(order&&order['rizprod']!==undefined) return order['rizprod'];
   if(order&&order['vqty_rizprod']!==undefined) return order['vqty_rizprod'];
+  var fromData=data[dStr+'__'+shop];
+  if(fromData!==undefined) return fromData;
   return laboFishData[dStr+'__'+shop]||0;
 }
 function laboGetRoll(shop){
