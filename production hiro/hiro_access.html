@@ -1587,10 +1587,15 @@ function laboGetFish(shop,field){
 function laboGetRiz(shop){
   var dStr=laboDs(laboDate);
   var order=laboOrders[shop];
-  if(order&&order['rizprod']!==undefined) return order['rizprod'];
-  if(order&&order['vqty_rizprod']!==undefined) return order['vqty_rizprod'];
+  var todayStr=laboDs(new Date());
+  if(dStr<todayStr){
+    if(order&&order['rizprod']!==undefined) return order['rizprod'];
+    if(order&&order['vqty_rizprod']!==undefined) return order['vqty_rizprod'];
+  }
   var fromData=data[dStr+'__'+shop];
   if(fromData!==undefined) return fromData;
+  if(order&&order['rizprod']!==undefined) return order['rizprod'];
+  if(order&&order['vqty_rizprod']!==undefined) return order['vqty_rizprod'];
   return laboFishData[dStr+'__'+shop]||0;
 }
 function laboGetRoll(shop){
