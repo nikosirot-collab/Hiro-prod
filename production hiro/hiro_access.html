@@ -1588,12 +1588,10 @@ function laboGetRiz(shop){
   var dStr=laboDs(laboDate);
   var fromData=data[dStr+'__'+shop];
   if(fromData!==undefined) return fromData;
-  var fromFish=laboFishData[dStr+'__'+shop];
-  if(fromFish!==undefined) return fromFish;
   var order=laboOrders[shop];
   if(order&&order['vqty_rizprod']!==undefined) return order['vqty_rizprod'];
   if(order&&order['rizprod']!==undefined) return order['rizprod'];
-  return 0;
+  return laboFishData[dStr+'__'+shop]||0;
 }
 function laboGetRoll(shop){
   var dStr=laboDs(laboDate);
@@ -1854,7 +1852,7 @@ async function laboPatchQty(shop,key,val){
       var _monStr=laboDs(_monDate);
       laboFishData[dStr+'__'+shop]=v;
       var _fsRizKey=(dStr+'__'+shop).replace(/__/g,'--');
-      fetch(_API+'/week_'+_monStr+'?updateMask.fieldPaths='+encodeURIComponent('`'+_fsRizKey+'`')+'&key='+_KEY,{
+      await fetch(_API+'/week_'+_monStr+'?updateMask.fieldPaths='+encodeURIComponent('`'+_fsRizKey+'`')+'&key='+_KEY,{
         method:'PATCH',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({fields:{[_fsRizKey]:{integerValue:v}}})
       }).catch(function(){});
