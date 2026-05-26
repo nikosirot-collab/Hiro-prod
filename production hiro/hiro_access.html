@@ -1514,8 +1514,7 @@ function laboChangeDate(d){
   laboDate.setDate(laboDate.getDate()+d);
   document.getElementById('labo-date-label').textContent=laboFmt(laboDate);
   laboOrders={};laboFishData={};
-  laboFetch();
-  laboFetchFish().then(function(){laboRender();});
+  Promise.all([laboFetch(), laboFetchFish()]).then(function(){laboRender();});
 }
 
 function laboGoToShop(shop){
