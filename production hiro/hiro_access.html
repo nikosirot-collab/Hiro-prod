@@ -2290,33 +2290,72 @@ function _cmdHistoRenderDay(){
   if(!day)return;
   var dayOrders=_.allOrders[day.dStr];
   var hasAny=_.shops.some(function(s){var o=dayOrders[s];return o&&(o.ts||o.status);});
-  var html='<div style="font-size:13px;font-weight:600;margin-bottom:10px;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>';
+
+  // Barre de statut boutiques
+  var statusHtml='<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;">';
+  _.shops.forEach(function(shop){
+    var o=dayOrders[shop];
+    var hasOrder=o&&(o.ts||o.status);
+    var isVal=hasOrder&&o.status==='validated';
+    var bg=isVal?'#0d7a52':hasOrder?_.shopColors[shop]:'var(--surface)';
+    var tc=hasOrder?'#fff':'var(--muted)';
+    statusHtml+='<span style="font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px;background:'+bg+';color:'+tc+';border:1px solid '+(hasOrder?bg:'var(--border)')+';">'
+      +_.shopLabels[shop]+(isVal?' ✓':hasOrder?' ·':'')+'</span>';
+  });
+  statusHtml+='</div>';
+
+  var html='<div style="font-size:14px;font-weight:600;margin-bottom:10px;">'+day.label
+    +' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
+    +statusHtml;
+
   if(!hasAny){
     html+='<div style="text-align:center;color:var(--muted);padding:1.5rem;font-size:13px;">Aucune commande</div>';
     el.innerHTML=html;return;
   }
+
   _.shops.forEach(function(shop){
     var o=dayOrders[shop];
-    if(!o||((!o.ts)&&o.status!=='validated'))return;
-    var isVal=o.status==='validated';
     var color=_.shopColors[shop];
+
+    if(!o||((!o.ts)&&o.status!=='validated')){
+      html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;opacity:0.4;">'
+        +'<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-left:3px solid var(--border);background:var(--surface);">'
+        +'<span style="font-size:12px;font-weight:700;color:var(--muted);">'+_.shopLabels[shop]+'</span>'
+        +'<span style="font-size:10px;color:var(--muted);">— non commandé</span>'
+        +'</div></div>';
+      return;
+    }
+
+    var isVal=o.status==='validated';
     var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
+
+    var timeHtml='';
+    if(o.ts){
+      var d=new Date(o.ts);
+      timeHtml='<span style="font-size:10px;color:var(--muted);margin-left:auto;">'+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'</span>';
+    }
+
     var chipsHtml='';
     Object.keys(_.NAMES).forEach(function(k){
       var qty=getV(k);
-      if(qty>0) chipsHtml+='<span style="display:inline-flex;align-items:center;gap:3px;background:'+color+'12;border:1px solid '+color+'30;border-radius:20px;padding:2px 8px;font-size:11px;white-space:nowrap;">'
+      if(qty>0) chipsHtml+='<span style="display:inline-flex;align-items:center;gap:4px;background:'+color+'12;border:1px solid '+color+'30;border-radius:20px;padding:3px 10px;font-size:12px;white-space:nowrap;">'
         +'<span style="font-weight:700;color:'+color+';">'+qty+'</span>'
         +'<span style="color:var(--text);">'+_.NAMES[k]+'</span>'
         +'</span>';
     });
+
     html+='<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
-      +'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg);">'
-      +'<span style="font-size:12px;font-weight:700;color:'+color+';">'+_.shopLabels[shop]+'</span>'
-      +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;background:#e4f5ee;padding:1px 6px;border-radius:10px;">✓ validé</span>':'')
+      +'<div style="display:flex;align-items:center;gap:6px;padding:9px 12px;border-bottom:1px solid var(--border);border-left:3px solid '+color+';background:'+color+'08;">'
+      +'<span style="font-size:13px;font-weight:700;color:'+color+';">'+_.shopLabels[shop]+'</span>'
+      +(isVal
+        ?'<span style="font-size:10px;color:#0d7a52;font-weight:600;background:#e4f5ee;padding:2px 7px;border-radius:10px;">✓ validé</span>'
+        :'<span style="font-size:10px;color:var(--muted);background:var(--surface);border:1px solid var(--border);padding:2px 7px;border-radius:10px;">en attente</span>')
+      +timeHtml
       +'</div>'
-      +'<div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;">'+chipsHtml+'</div>'
+      +'<div style="padding:10px 12px;display:flex;flex-wrap:wrap;gap:5px;">'+chipsHtml+'</div>'
       +'</div>';
   });
+
   el.innerHTML=html;
 }
 
