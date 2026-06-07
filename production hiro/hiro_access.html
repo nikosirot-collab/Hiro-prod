@@ -1307,7 +1307,11 @@ function _histoRender(hData,monday){
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s));return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
 
-  let wBacs=0,wMarmites=0,wThon=0;
+  let wBacs=0,wMarmites=0,wThon=0,wTemps=0,wSaumon=0,wAburi=0;
+  const wRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
+  const wBacsS={dsm:0,mgt:0,paita:0};
+  const wFish={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
+  const wRolls={dsm:0,mgt:0,paita:0,ville:0};
   let rizRows='',fishRows='',rollRows='',thonRows='';
 
   for(let di=0;di<7;di++){
@@ -1319,24 +1323,129 @@ function _histoRender(hData,monday){
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
     const marmites=totB>0?Math.round(totB/2+(isDim?0:2)):0;
     const temps=Math.round(totB*5*10)/10;
-    wBacs+=totB;wMarmites+=marmites;
+    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
-    wThon+=dayT;
+    const dayS=hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s');
+    const dayA=hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a');
+    wThon+=dayT;wSaumon+=dayS;wAburi+=dayA;
+    ['dsm','mgt','paita','ville','asia'].forEach(s=>{if(wRiz[s]!==undefined)wRiz[s]+=riz[s]||0;});
+    ['dsm','mgt','paita'].forEach(s=>{wBacsS[s]+=bacs[s]||0;});
+    ['dsm','mgt','paita','ville'].forEach(s=>{['t','s','a'].forEach(f=>{wFish[s][f]+=hfv(dStr,s,f);});});
     const ar={dsm:hr(d,'dsm')||getRolls(riz.dsm,isDim),mgt:hr(d,'mgt')||getRolls(riz.mgt,isDim),paita:hr(d,'paita')||getRolls(riz.paita,isDim)};
     const villeR=hr(dStr,'ville');
-    const bg=isDim?'background:var(--bg);':'';
-    const td=(val,cls='')=>`<td style="padding:5px 6px;text-align:center;font-size:12px;${cls}">${val||'—'}</td>`;
-    const tdL=()=>`<td style="padding:5px 8px;font-weight:500;font-size:12px;">${label}<span style="font-size:10px;color:var(--muted);display:block">${short}</span></td>`;
-    const tr=(c)=>`<tr style="border-bottom:1px solid var(--border);${bg}">${c}</tr>`;
+    ['dsm','mgt','paita'].forEach(s=>{wRolls[s]+=ar[s]||0;});wRolls.ville+=villeR||0;
+    const rowBg=isDim?'background:var(--surface);':'';
+    const dimSt=isDim?'font-style:italic;color:var(--muted);':'';
+    const td=(val,cls='')=>`<td style="padding:7px 10px;text-align:center;font-size:13px;${cls}">${val||'—'}</td>`;
+    const tdL=()=>`<td style="padding:7px 10px;font-weight:500;font-size:13px;${dimSt}">${label}<span style="font-size:10px;color:var(--muted);display:block;font-weight:400;font-style:normal;">${short}</span></td>`;
+    const tr=(c)=>`<tr style="border-bottom:1px solid var(--border);${rowBg}">${c}</tr>`;
 
-    rizRows+=tr(`${tdL()}${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(fb2(bacs.dsm))}${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(fb2(bacs.mgt))}${td(riz.paita,'border-left:2px solid var(--paita)')}${td(fb2(bacs.paita))}${td(riz.ville,'border-left:1px solid var(--border)')}${td(riz.asia,'border-left:1px solid var(--border)')}${td(totB>0?fb2(marmites):'—','border-left:2px solid var(--border);color:var(--dsm);font-weight:500')}${td(totB>0?fb2(temps)+'min':'—','color:#5b4bb5;font-weight:500')}`);
-    fishRows+=tr(`${tdL()}${td(hfv(dStr,'dsm','t'),'color:var(--dsm);border-left:2px solid var(--dsm)')}${td(hfv(dStr,'dsm','s'),'color:var(--mgt)')}${td(hfv(dStr,'dsm','a'),'color:var(--paita)')}${td(hfv(dStr,'mgt','t'),'color:var(--dsm);border-left:2px solid var(--mgt)')}${td(hfv(dStr,'mgt','s'),'color:var(--mgt)')}${td(hfv(dStr,'mgt','a'),'color:var(--paita)')}${td(hfv(dStr,'paita','t'),'color:var(--dsm);border-left:2px solid var(--paita)')}${td(hfv(dStr,'paita','s'),'color:var(--mgt)')}${td(hfv(dStr,'paita','a'),'color:var(--paita)')}${td(hfv(dStr,'ville','t'),'color:var(--dsm);border-left:1px solid var(--border)')}${td(hfv(dStr,'ville','s'),'color:var(--mgt)')}${td(hfv(dStr,'ville','a'),'color:var(--paita)')}`);
-    rollRows+=tr(`${tdL()}${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(ar.dsm,'font-weight:500')}${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(ar.mgt,'font-weight:500')}${td(riz.paita,'border-left:2px solid var(--paita)')}${td(ar.paita,'font-weight:500')}${td(riz.ville,'border-left:1px solid var(--border)')}${td(villeR,'font-weight:500')}`);
-    thonRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm);font-weight:500')}${td(hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s'),'color:var(--mgt);font-weight:500')}${td(hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a'),'color:var(--paita);font-weight:500')}${td(dayT+(hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s'))+(hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a')),'font-weight:600')}`);
+    rizRows+=tr(
+      tdL()
+      +td(riz.dsm,'border-left:3px solid var(--dsm)')
+      +td(riz.dsm?fb2(bacs.dsm):'','color:var(--muted);font-size:11px')
+      +td(riz.mgt,'border-left:3px solid var(--mgt)')
+      +td(riz.mgt?fb2(bacs.mgt):'','color:var(--muted);font-size:11px')
+      +td(riz.paita,'border-left:3px solid var(--paita)')
+      +td(riz.paita?fb2(bacs.paita):'','color:var(--muted);font-size:11px')
+      +td(riz.ville,'border-left:2px solid var(--border)')
+      +td(riz.asia)
+      +td(totB>0?fb2(marmites):'','border-left:3px solid var(--border);font-weight:600;color:var(--dsm)')
+      +td(totB>0?fb2(temps)+'min':'','color:#5b4bb5;font-weight:500')
+    );
+    fishRows+=tr(
+      tdL()
+      +td(hfv(dStr,'dsm','t')||'','color:var(--dsm);font-weight:600;border-left:3px solid var(--dsm)')
+      +td(hfv(dStr,'dsm','s')||'','color:var(--mgt)')
+      +td(hfv(dStr,'dsm','a')||'','color:var(--paita)')
+      +td(hfv(dStr,'mgt','t')||'','color:var(--dsm);font-weight:600;border-left:3px solid var(--mgt)')
+      +td(hfv(dStr,'mgt','s')||'','color:var(--mgt)')
+      +td(hfv(dStr,'mgt','a')||'','color:var(--paita)')
+      +td(hfv(dStr,'paita','t')||'','color:var(--dsm);font-weight:600;border-left:3px solid var(--paita)')
+      +td(hfv(dStr,'paita','s')||'','color:var(--mgt)')
+      +td(hfv(dStr,'paita','a')||'','color:var(--paita)')
+      +td(hfv(dStr,'ville','t')||'','color:var(--dsm);font-weight:600;border-left:2px solid var(--border)')
+      +td(hfv(dStr,'ville','s')||'','color:var(--mgt)')
+      +td(hfv(dStr,'ville','a')||'','color:var(--paita)')
+    );
+    rollRows+=tr(
+      tdL()
+      +td(riz.dsm,'border-left:3px solid var(--dsm);color:var(--muted);font-size:11px')
+      +td(ar.dsm,'font-weight:600')
+      +td(riz.mgt,'border-left:3px solid var(--mgt);color:var(--muted);font-size:11px')
+      +td(ar.mgt,'font-weight:600')
+      +td(riz.paita,'border-left:3px solid var(--paita);color:var(--muted);font-size:11px')
+      +td(ar.paita,'font-weight:600')
+      +td(riz.ville,'border-left:2px solid var(--border);color:var(--muted);font-size:11px')
+      +td(villeR,'font-weight:600')
+    );
+    thonRows+=tr(
+      tdL()
+      +td(dayT||'','color:var(--dsm);font-weight:600')
+      +td(dayS||'','color:var(--mgt);font-weight:500')
+      +td(dayA||'','color:var(--paita);font-weight:500')
+      +td(dayT+dayS+dayA||'','font-weight:700')
+    );
   }
 
-  const thS=(t,cls='')=>`<th style="padding:5px 6px;text-align:center;font-size:10px;font-weight:600;background:var(--bg);${cls}">${t}</th>`;
-  const thL=(t)=>`<th style="padding:5px 8px;text-align:left;font-size:10px;font-weight:600;background:var(--bg);">${t}</th>`;
+  const thS=(t,cls='')=>`<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:700;background:var(--bg);border-bottom:2px solid var(--border);${cls}">${t}</th>`;
+  const thL=(t)=>`<th style="padding:6px 10px;text-align:left;font-size:11px;font-weight:700;background:var(--bg);border-bottom:2px solid var(--border);">${t}</th>`;
+  const thG=(t,bg,span,cls='')=>`<th colspan="${span}" style="padding:4px 10px;text-align:center;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;background:${bg||'var(--bg)'};border-bottom:1px solid var(--border);${cls}">${t}</th>`;
+  const thGE=()=>`<th style="padding:4px 10px;background:var(--bg);border-bottom:1px solid var(--border);"></th>`;
+  const tf=(val,cls='')=>`<td style="padding:7px 10px;text-align:center;font-size:13px;font-weight:700;background:var(--surface);border-top:2px solid var(--border);${cls}">${val||'—'}</td>`;
+  const tfL=(t)=>`<td style="padding:7px 10px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--surface);border-top:2px solid var(--border);">${t}</td>`;
+
+  const DSM_BG='rgba(26,95,168,.07)',MGT_BG='rgba(13,122,82,.07)',PAITA_BG='rgba(184,74,26,.07)',VILLE_BG='rgba(122,61,184,.07)',PROD_BG='rgba(0,0,0,.04)';
+
+  const rizFoot=`<tfoot><tr>
+    ${tfL('Total')}
+    ${tf(wRiz.dsm,'border-left:3px solid var(--dsm);color:var(--dsm)')}
+    ${tf(fb2(wBacsS.dsm),'color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRiz.mgt,'border-left:3px solid var(--mgt);color:var(--mgt)')}
+    ${tf(fb2(wBacsS.mgt),'color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRiz.paita,'border-left:3px solid var(--paita);color:var(--paita)')}
+    ${tf(fb2(wBacsS.paita),'color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRiz.ville,'border-left:2px solid var(--border)')}
+    ${tf(wRiz.asia)}
+    ${tf(Math.round(wMarmites),'border-left:3px solid var(--border);color:var(--dsm)')}
+    ${tf(Math.round(wTemps)+'min','color:#5b4bb5')}
+  </tr></tfoot>`;
+
+  const fishFoot=`<tfoot><tr>
+    ${tfL('Total')}
+    ${tf(wFish.dsm.t,'color:var(--dsm);border-left:3px solid var(--dsm)')}
+    ${tf(wFish.dsm.s,'color:var(--mgt)')}
+    ${tf(wFish.dsm.a,'color:var(--paita)')}
+    ${tf(wFish.mgt.t,'color:var(--dsm);border-left:3px solid var(--mgt)')}
+    ${tf(wFish.mgt.s,'color:var(--mgt)')}
+    ${tf(wFish.mgt.a,'color:var(--paita)')}
+    ${tf(wFish.paita.t,'color:var(--dsm);border-left:3px solid var(--paita)')}
+    ${tf(wFish.paita.s,'color:var(--mgt)')}
+    ${tf(wFish.paita.a,'color:var(--paita)')}
+    ${tf(wFish.ville.t,'color:var(--dsm);border-left:2px solid var(--border)')}
+    ${tf(wFish.ville.s,'color:var(--mgt)')}
+    ${tf(wFish.ville.a,'color:var(--paita)')}
+  </tr></tfoot>`;
+
+  const rollFoot=`<tfoot><tr>
+    ${tfL('Total')}
+    ${tf(wRiz.dsm,'border-left:3px solid var(--dsm);color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRolls.dsm)}
+    ${tf(wRiz.mgt,'border-left:3px solid var(--mgt);color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRolls.mgt)}
+    ${tf(wRiz.paita,'border-left:3px solid var(--paita);color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRolls.paita)}
+    ${tf(wRiz.ville,'border-left:2px solid var(--border);color:var(--muted);font-size:11px;font-weight:400')}
+    ${tf(wRolls.ville)}
+  </tr></tfoot>`;
+
+  const thonFoot=`<tfoot><tr>
+    ${tfL('Total')}
+    ${tf(wThon,'color:var(--dsm)')}
+    ${tf(wSaumon,'color:var(--mgt)')}
+    ${tf(wAburi,'color:var(--paita)')}
+    ${tf(wThon+wSaumon+wAburi)}
+  </tr></tfoot>`;
 
   const sumEl=document.getElementById('histo-summary');
   if(sumEl) sumEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
@@ -1346,10 +1455,25 @@ function _histoRender(hData,monday){
   </div>`;
 
   const wrap=(c)=>`<div class="tbl-wrap">${c}</div>`;
-  document.getElementById('histo-riz').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Bacs')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Bacs')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Bacs')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Asia','border-left:1px solid var(--border)')}${thS('Marmites','border-left:2px solid var(--border);color:var(--dsm)')}${thS('Temps')}</tr></thead><tbody>${rizRows}</tbody></table>`);
-  document.getElementById('histo-fish').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('')}${thS('')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('')}${thS('')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('')}${thS('')}${thS('Ville','border-left:1px solid var(--border)')}${thS('')}${thS('')}</tr><tr>${thL('Jour')}${thS('T','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--mgt);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--paita);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:1px solid var(--border);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}</tr></thead><tbody>${fishRows}</tbody></table>`);
-  document.getElementById('histo-rolls').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM riz','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Rolls')}${thS('MGT riz','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Rolls')}${thS('Paita riz','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Rolls')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Rolls')}</tr></thead><tbody>${rollRows}</tbody></table>`);
-  document.getElementById('histo-thon').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('Thon','color:var(--dsm)')}${thS('Saumon','color:var(--mgt)')}${thS('Aburi','color:var(--paita)')}${thS('Total')}</tr></thead><tbody>${thonRows}</tbody></table>`);
+
+  document.getElementById('histo-riz').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead>
+    <tr>${thGE()}${thG('DSM',DSM_BG,2,'border-left:3px solid var(--dsm)')}${thG('MGT',MGT_BG,2,'border-left:3px solid var(--mgt)')}${thG('Paita',PAITA_BG,2,'border-left:3px solid var(--paita)')}${thG('Ville · Asia','',2,'border-left:2px solid var(--border)')}${thG('Production',PROD_BG,2,'border-left:3px solid var(--border)')}</tr>
+    <tr>${thL('Jour')}${thS('g','border-left:3px solid var(--dsm);color:var(--dsm)')}${thS('Bacs','color:var(--muted)')}${thS('g','border-left:3px solid var(--mgt);color:var(--mgt)')}${thS('Bacs','color:var(--muted)')}${thS('g','border-left:3px solid var(--paita);color:var(--paita)')}${thS('Bacs','color:var(--muted)')}${thS('Ville','border-left:2px solid var(--border)')}${thS('Asia')}${thS('Marmites','border-left:3px solid var(--border);color:var(--dsm)')}${thS('Temps','color:#5b4bb5')}</tr>
+  </thead><tbody>${rizRows}</tbody>${rizFoot}</table>`);
+
+  document.getElementById('histo-fish').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead>
+    <tr>${thGE()}${thG('DSM',DSM_BG,3,'border-left:3px solid var(--dsm)')}${thG('MGT',MGT_BG,3,'border-left:3px solid var(--mgt)')}${thG('Paita',PAITA_BG,3,'border-left:3px solid var(--paita)')}${thG('Ville',VILLE_BG,3,'border-left:2px solid var(--border)')}</tr>
+    <tr>${thL('Jour')}${thS('T','border-left:3px solid var(--dsm);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:3px solid var(--mgt);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:3px solid var(--paita);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--border);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}</tr>
+  </thead><tbody>${fishRows}</tbody>${fishFoot}</table>`);
+
+  document.getElementById('histo-rolls').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead>
+    <tr>${thGE()}${thG('DSM',DSM_BG,2,'border-left:3px solid var(--dsm)')}${thG('MGT',MGT_BG,2,'border-left:3px solid var(--mgt)')}${thG('Paita',PAITA_BG,2,'border-left:3px solid var(--paita)')}${thG('Ville',VILLE_BG,2,'border-left:2px solid var(--border)')}</tr>
+    <tr>${thL('Jour')}${thS('Riz','border-left:3px solid var(--dsm);color:var(--muted)')}${thS('Rolls','color:var(--dsm)')}${thS('Riz','border-left:3px solid var(--mgt);color:var(--muted)')}${thS('Rolls','color:var(--mgt)')}${thS('Riz','border-left:3px solid var(--paita);color:var(--muted)')}${thS('Rolls','color:var(--paita)')}${thS('Riz','border-left:2px solid var(--border);color:var(--muted)')}${thS('Rolls','color:#7a3db8')}</tr>
+  </thead><tbody>${rollRows}</tbody>${rollFoot}</table>`);
+
+  document.getElementById('histo-thon').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead>
+    <tr>${thL('Jour')}${thS('Thon','color:var(--dsm)')}${thS('Saumon','color:var(--mgt)')}${thS('Aburi','color:var(--paita)')}${thS('Total')}</tr>
+  </thead><tbody>${thonRows}</tbody>${thonFoot}</table>`);
 
   ['riz','fish','rolls','thon'].forEach(t=>{
     const p=document.getElementById('histo-'+t);
