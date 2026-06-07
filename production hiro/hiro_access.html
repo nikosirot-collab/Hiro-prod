@@ -1283,21 +1283,34 @@ async function loadHistorique() {
           const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
           const wLabel=fmtS(monday)+' – '+fmtS(sunday);
           let bacs=0,thon=0;
+          const shopBacs={dsm:0,mgt:0,paita:0,ville:0};
           for(let di=0;di<7;di++){
             const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-            SHOPS.forEach(s=>{bacs+=(hData[dStr+'__'+s]||0)/250;});
+            SHOPS.forEach(s=>{const b=(hData[dStr+'__'+s]||0)/250;bacs+=b;if(shopBacs[s]!==undefined)shopBacs[s]+=b;});
             ['dsm','mgt','paita','ville'].forEach(s=>{
               const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz);
               const fk=dStr+'__f__'+s+'__t';
               thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
             });
           }
+          const _barColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+          const _maxB=Math.max(...Object.values(shopBacs),1);
+          const _barsHtml=['dsm','mgt','paita','ville'].map(s=>{
+            const h=Math.max(Math.round((shopBacs[s]/_maxB)*18),shopBacs[s]>0?2:0);
+            return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="width:7px;height:${h}px;background:${_barColors[s]};border-radius:2px 2px 0 0;opacity:0.85;"></div>
+              <div style="width:7px;height:${18-h}px;"></div>
+            </div>`;
+          }).join('');
           return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
             <div>
               <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
               <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
             </div>
-            <span style="font-size:16px;color:var(--muted);">›</span>
+            <div style="display:flex;align-items:flex-end;gap:6px;">
+              <div style="display:flex;align-items:flex-end;gap:2px;height:18px;">${_barsHtml}</div>
+              <span style="font-size:16px;color:var(--muted);">›</span>
+            </div>
           </div>`;
         }).join('')}
       </div>
@@ -2161,7 +2174,7 @@ async function loadCmdHisto(){
         var o=dayOrders[shop];
         var ok=o&&(o.ts||o.status);
         var isVal=ok&&o.status==='validated';
-        html+='<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:'+(ok?shopColors[shop]+'22':'#f0f0f0')+';color:'+(ok?shopColors[shop]:'#bbb')+';font-weight:600;">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
+        html+='<span style="font-size:11px;padding:3px 9px;border-radius:10px;background:'+(ok?shopColors[shop]+'18':'var(--bg)')+';color:'+(ok?shopColors[shop]:'var(--hint)')+';font-weight:700;border:1px solid '+(ok?shopColors[shop]+'44':'var(--border)')+';">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
       });
       html+='</div></div>';
       if(hasAny){
@@ -2171,12 +2184,20 @@ async function loadCmdHisto(){
           if(!o||((!o.ts)&&o.status!=='validated'))return;
           var isVal=o.status==='validated';
           var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
-          var items=[];
-          Object.keys(NAMES).forEach(function(k){if(getV(k)>0)items.push(getV(k)+' '+NAMES[k]);});
-          html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">'
-            +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';min-width:40px;">'+shopLabels[shop]+'</span>'
-            +'<span style="font-size:11px;color:var(--text);flex:1;">'+items.join(' · ')+'</span>'
-            +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;">✓</span>':'')
+          var chipsHtml='';
+          Object.keys(NAMES).forEach(function(k){
+            var qty=getV(k);
+            if(qty>0) chipsHtml+='<span style="display:inline-flex;align-items:center;gap:3px;background:'+shopColors[shop]+'12;border:1px solid '+shopColors[shop]+'30;border-radius:20px;padding:2px 8px;font-size:11px;white-space:nowrap;">'
+              +'<span style="font-weight:700;color:'+shopColors[shop]+';">'+qty+'</span>'
+              +'<span style="color:var(--text);">'+NAMES[k]+'</span>'
+              +'</span>';
+          });
+          html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);">'
+            +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
+            +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';">'+shopLabels[shop]+'</span>'
+            +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;background:#e4f5ee;padding:1px 6px;border-radius:10px;">✓ validé</span>':'')
+            +'</div>'
+            +'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+chipsHtml+'</div>'
             +'</div>';
         });
         html+='</div>';
