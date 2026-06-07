@@ -1977,7 +1977,7 @@ function render() {
           if(el) el.textContent=((dimByShop[s]||0)+(lunByShop[s]||0))||'—';
         });
         const totalSam = ['dsm','mgt','paita','ville'].reduce((sum,s)=>sum+(dimByShop[s]||0)+(lunByShop[s]||0),0);
-        const kgSam = totalSam > 0 ? getThonKg(totalSam) : '—';
+        const kgSam = data[dStr+'__thon_kg']!==undefined ? data[dStr+'__thon_kg']+' kg' : (totalSam > 0 ? getThonKg(totalSam) : '—');
         const elTot = document.getElementById('thon-sat-total');
         if(elTot) elTot.textContent = totalSam||'—';
         const elKg = document.getElementById('thon-sat-kg');
@@ -2001,7 +2001,7 @@ function render() {
       const getThonVal = s => { if(prodIsOff(s,dsNext)||prodIsRizPoisson(s,dsNext)) return 0; const mk=dsNext+'__f__'+s+'__t'; return data[mk]!==undefined?data[mk]:(fdNext[s]?.t||0); };
       const tDsm=getThonVal('dsm'), tMgt=getThonVal('mgt'), tPaita=getThonVal('paita'), tVille=getThonVal('ville');
       const tNext = tDsm+tMgt+tPaita+tVille;
-      const kgNext = getThonKg(tNext);
+      const kgNext = data[dStr+'__thon_kg']!==undefined ? data[dStr+'__thon_kg']+' kg' : getThonKg(tNext);
       thonRow = `<tr>
         <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
         <td class="${dc2} val-thon">${tDsm||'—'}</td>
