@@ -507,11 +507,23 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <!-- PAGE LOGS -->
   <!-- PAGE HISTORIQUE -->
   <div id="page-historique" class="page">
-    <div style="padding:8px 0;">
-      <div id="historique-content" style="padding:4px 0;">
-        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger l'historique</div>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 12px;">
+      <button onclick="histoChangeWeek(-1)" id="histo-prev-btn" style="width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;">←</button>
+      <span id="histo-week-label" style="font-size:13px;font-weight:500;text-align:center;min-width:130px;"></span>
+      <button onclick="histoChangeWeek(1)" id="histo-next-btn" style="width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;opacity:0.3;">→</button>
     </div>
+    <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto;scrollbar-width:none;">
+      <div class="histo-tab active" onclick="histoSetTab('riz',this)" style="padding:8px 14px;font-size:13px;color:var(--text);cursor:pointer;border-bottom:2px solid var(--text);white-space:nowrap;font-weight:500;flex-shrink:0;">Riz</div>
+      <div class="histo-tab" onclick="histoSetTab('fish',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;">Poisson</div>
+      <div class="histo-tab" onclick="histoSetTab('rolls',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;">Rolls</div>
+      <div class="histo-tab" onclick="histoSetTab('thon',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;">Thon</div>
+    </div>
+    <div id="histo-summary" style="margin-bottom:10px;"></div>
+    <div id="histo-riz" class="histo-panel"></div>
+    <div id="histo-fish" class="histo-panel" style="display:none;"></div>
+    <div id="histo-rolls" class="histo-panel" style="display:none;"></div>
+    <div id="histo-thon" class="histo-panel" style="display:none;"></div>
+    <div id="histo-loading" style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;"></div>
   </div>
 
 </div>
@@ -1233,114 +1245,70 @@ function mKeyLabel(mKey){
   return new Date(y,m-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
 }
 
-async function loadHistorique() {
-  const el=document.getElementById('historique-content');
-  el.innerHTML=`<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement…</div>`;
-  const curMonday=mondayOf(0);
-  const weekIds=[];
-  for(let i=1;i<=12;i++){
-    const m=new Date(curMonday);m.setDate(m.getDate()-i*7);
-    weekIds.push(ds(m));
-  }
-  const results=[];
-  for(let i=0;i<weekIds.length;i+=8){
-    const batch=weekIds.slice(i,i+8);
-    const fetched=await Promise.all(batch.map(async dateStr=>{
-      try{
-        const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
-        if(!res.ok) return null;
-        return {dateStr,hData:_fromFirestore(await res.json())};
-      }catch(e){return null;}
-    }));
-    fetched.forEach(r=>{if(r) results.push(r);});
-  }
-  if(results.length===0){
-    el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucun historique disponible</div>';
-    return;
-  }
-  const byMonth={};
-  results.forEach(({dateStr,hData})=>{
-    const mKey=majorityMonth(new Date(dateStr));
-    if(!byMonth[mKey]) byMonth[mKey]=[];
-    byMonth[mKey].push({dateStr,hData});
-  });
-  Object.values(byMonth).forEach(arr=>arr.sort((a,b)=>b.dateStr.localeCompare(a.dateStr)));
-  let html='';
-  Object.keys(byMonth).sort().reverse().forEach(mKey=>{
-    const wks=byMonth[mKey];
-    const label=mKeyLabel(mKey);
-    html+=`<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-      <div onclick="toggleHistMonth('${mKey}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--bg);">
-        <div>
-          <div style="font-size:14px;font-weight:600;text-transform:capitalize;">${label}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">${wks.length} semaine${wks.length>1?'s':''}</div>
-        </div>
-        <span id="chev-${mKey}" style="font-size:18px;color:var(--muted);transition:transform .2s;">›</span>
-      </div>
-      <div id="month-${mKey}" style="display:none;border-top:1px solid var(--border);">
-        ${wks.map(({dateStr,hData})=>{
-          const monday=new Date(dateStr);
-          const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
-          const wLabel=fmtS(monday)+' – '+fmtS(sunday);
-          let bacs=0,thon=0;
-          const shopBacs={dsm:0,mgt:0,paita:0,ville:0};
-          for(let di=0;di<7;di++){
-            const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
-            SHOPS.forEach(s=>{const b=(hData[dStr+'__'+s]||0)/250;bacs+=b;if(shopBacs[s]!==undefined)shopBacs[s]+=b;});
-            ['dsm','mgt','paita','ville'].forEach(s=>{
-              const riz=hData[dStr+'__'+s]||0;const fd=getFish(s,riz);
-              const fk=dStr+'__f__'+s+'__t';
-              thon+=hData[fk]!==undefined?hData[fk]:(fd?fd.t:0);
-            });
-          }
-          const _barColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
-          const _maxB=Math.max(...Object.values(shopBacs),1);
-          const _barsHtml=['dsm','mgt','paita','ville'].map(s=>{
-            const h=Math.max(Math.round((shopBacs[s]/_maxB)*18),shopBacs[s]>0?2:0);
-            return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-              <div style="width:7px;height:${h}px;background:${_barColors[s]};border-radius:2px 2px 0 0;opacity:0.85;"></div>
-              <div style="width:7px;height:${18-h}px;"></div>
-            </div>`;
-          }).join('');
-          return `<div onclick="loadWeekFromHistory('${dateStr}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);">
-            <div>
-              <div style="font-size:13px;font-weight:500;">Semaine du ${wLabel}</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(bacs)} bacs · ${thon} tranches thon</div>
-            </div>
-            <div style="display:flex;align-items:flex-end;gap:6px;">
-              <div style="display:flex;align-items:flex-end;gap:2px;height:18px;">${_barsHtml}</div>
-              <span style="font-size:16px;color:var(--muted);">›</span>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
-  });
-  el.innerHTML=html;
+let _histoOff=-1;
+let _histoActiveTab='riz';
+const _histoCache={};
+
+function histoChangeWeek(d){
+  const newOff=_histoOff+d;
+  if(newOff>-1||newOff<-12) return;
+  _histoOff=newOff;
+  loadHistorique();
 }
 
-function toggleHistMonth(mKey){
-  const panel=document.getElementById('month-'+mKey);
-  const chev=document.getElementById('chev-'+mKey);
-  const open=panel.style.display==='none';
-  panel.style.display=open?'block':'none';
-  chev.style.transform=open?'rotate(90deg)':'';
+function histoSetTab(tab,el){
+  _histoActiveTab=tab;
+  document.querySelectorAll('.histo-tab').forEach(t=>{
+    const active=t===el;
+    t.style.borderBottomColor=active?'var(--text)':'transparent';
+    t.style.color=active?'var(--text)':'var(--muted)';
+    t.style.fontWeight=active?'500':'400';
+  });
+  ['riz','fish','rolls','thon'].forEach(t=>{
+    const p=document.getElementById('histo-'+t);
+    if(p) p.style.display=t===tab?'block':'none';
+  });
 }
 
-async function loadWeekFromHistory(dateStr) {
-  const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
-  if(!res.ok) return;
-  const hData=_fromFirestore(await res.json());
-  const monday=new Date(dateStr);
+async function loadHistorique(){
+  const monday=mondayOf(_histoOff);
+  const dateStr=ds(monday);
   const sunday=new Date(monday);sunday.setDate(sunday.getDate()+6);
-  const wLabel=fmtS(monday)+' – '+fmtS(sunday);
 
+  const lbl=document.getElementById('histo-week-label');
+  const loading=document.getElementById('histo-loading');
+  const prevBtn=document.getElementById('histo-prev-btn');
+  const nextBtn=document.getElementById('histo-next-btn');
+
+  if(lbl) lbl.textContent=fmtS(monday)+' – '+fmtS(sunday);
+  if(prevBtn) prevBtn.style.opacity=_histoOff<=-12?'0.3':'1';
+  if(nextBtn) nextBtn.style.opacity=_histoOff>=-1?'0.3':'1';
+
+  if(_histoCache[dateStr]){_histoRender(_histoCache[dateStr],monday);return;}
+
+  if(loading) loading.textContent='Chargement…';
+  ['riz','fish','rolls','thon'].forEach(t=>{const el=document.getElementById('histo-'+t);if(el)el.innerHTML='';});
+  const sumEl=document.getElementById('histo-summary');if(sumEl)sumEl.innerHTML='';
+
+  try{
+    const res=await fetch(`${_API}/week_${dateStr}?key=${_KEY}`);
+    if(!res.ok){if(loading)loading.textContent='Données non disponibles';return;}
+    const hData=_fromFirestore(await res.json());
+    _histoCache[dateStr]=hData;
+    if(loading) loading.textContent='';
+    _histoRender(hData,monday);
+  }catch(e){
+    if(loading) loading.textContent='Erreur de chargement';
+  }
+}
+
+function _histoRender(hData,monday){
   const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:(PREFILL[d]?PREFILL[d][s]||0:0);};
   const hr=(d,s)=>hData[d+'__r__'+s]||0;
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s));return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
 
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let wBacs=0,wMarmites=0,wThon=0;
   let rizRows='',fishRows='',rollRows='',thonRows='';
 
   for(let di=0;di<7;di++){
@@ -1352,14 +1320,10 @@ async function loadWeekFromHistory(dateStr) {
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
     const marmites=totB>0?Math.round(totB/2+(isDim?0:2)):0;
     const temps=Math.round(totB*5*10)/10;
-    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
+    wBacs+=totB;wMarmites+=marmites;
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
     wThon+=dayT;
-    const ar={
-      dsm:hr(d,'dsm')||getRolls(riz.dsm,isDim),
-      mgt:hr(d,'mgt')||getRolls(riz.mgt,isDim),
-      paita:hr(d,'paita')||getRolls(riz.paita,isDim)
-    };
+    const ar={dsm:hr(d,'dsm')||getRolls(riz.dsm,isDim),mgt:hr(d,'mgt')||getRolls(riz.mgt,isDim),paita:hr(d,'paita')||getRolls(riz.paita,isDim)};
     const villeR=hr(dStr,'ville');
     const bg=isDim?'background:var(--bg);':'';
     const td=(val,cls='')=>`<td style="padding:5px 6px;text-align:center;font-size:12px;${cls}">${val||'—'}</td>`;
@@ -1367,54 +1331,30 @@ async function loadWeekFromHistory(dateStr) {
     const tr=(c)=>`<tr style="border-bottom:1px solid var(--border);${bg}">${c}</tr>`;
 
     rizRows+=tr(`${tdL()}${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(fb2(bacs.dsm))}${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(fb2(bacs.mgt))}${td(riz.paita,'border-left:2px solid var(--paita)')}${td(fb2(bacs.paita))}${td(riz.ville,'border-left:1px solid var(--border)')}${td(riz.asia,'border-left:1px solid var(--border)')}${td(totB>0?fb2(marmites):'—','border-left:2px solid var(--border);color:var(--dsm);font-weight:500')}${td(totB>0?fb2(temps)+'min':'—','color:#5b4bb5;font-weight:500')}`);
-
     fishRows+=tr(`${tdL()}${td(hfv(dStr,'dsm','t'),'color:var(--dsm);border-left:2px solid var(--dsm)')}${td(hfv(dStr,'dsm','s'),'color:var(--mgt)')}${td(hfv(dStr,'dsm','a'),'color:var(--paita)')}${td(hfv(dStr,'mgt','t'),'color:var(--dsm);border-left:2px solid var(--mgt)')}${td(hfv(dStr,'mgt','s'),'color:var(--mgt)')}${td(hfv(dStr,'mgt','a'),'color:var(--paita)')}${td(hfv(dStr,'paita','t'),'color:var(--dsm);border-left:2px solid var(--paita)')}${td(hfv(dStr,'paita','s'),'color:var(--mgt)')}${td(hfv(dStr,'paita','a'),'color:var(--paita)')}${td(hfv(dStr,'ville','t'),'color:var(--dsm);border-left:1px solid var(--border)')}${td(hfv(dStr,'ville','s'),'color:var(--mgt)')}${td(hfv(dStr,'ville','a'),'color:var(--paita)')}`);
-
     rollRows+=tr(`${tdL()}${td(riz.dsm,'border-left:2px solid var(--dsm)')}${td(ar.dsm,'font-weight:500')}${td(riz.mgt,'border-left:2px solid var(--mgt)')}${td(ar.mgt,'font-weight:500')}${td(riz.paita,'border-left:2px solid var(--paita)')}${td(ar.paita,'font-weight:500')}${td(riz.ville,'border-left:1px solid var(--border)')}${td(villeR,'font-weight:500')}`);
-
     thonRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm);font-weight:500')}${td(hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s'),'color:var(--mgt);font-weight:500')}${td(hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a'),'color:var(--paita);font-weight:500')}${td(dayT+(hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s'))+(hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a')),'font-weight:600')}`);
   }
 
   const thS=(t,cls='')=>`<th style="padding:5px 6px;text-align:center;font-size:10px;font-weight:600;background:var(--bg);${cls}">${t}</th>`;
   const thL=(t)=>`<th style="padding:5px 8px;text-align:left;font-size:10px;font-weight:600;background:var(--bg);">${t}</th>`;
 
-  const tabs=[
-    {id:'ha-riz',label:'Riz',html:`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Bacs')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Bacs')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Bacs')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Asia','border-left:1px solid var(--border)')}${thS('Marmites','border-left:2px solid var(--border);color:var(--dsm)')}${thS('Temps')}</tr></thead><tbody>${rizRows}</tbody></table>`},
-    {id:'ha-fish',label:'Poisson',html:`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('')}${thS('')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('')}${thS('')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('')}${thS('')}${thS('Ville','border-left:1px solid var(--border)')}${thS('')}${thS('')}</tr><tr>${thL('Jour')}${thS('T','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--mgt);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--paita);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:1px solid var(--border);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}</tr></thead><tbody>${fishRows}</tbody></table>`},
-    {id:'ha-rolls',label:'Rolls',html:`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM riz','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Rolls')}${thS('MGT riz','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Rolls')}${thS('Paita riz','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Rolls')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Rolls')}</tr></thead><tbody>${rollRows}</tbody></table>`},
-    {id:'ha-thon',label:'Thon',html:`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('Thon','color:var(--dsm)')}${thS('Saumon','color:var(--mgt)')}${thS('Aburi','color:var(--paita)')}${thS('Total')}</tr></thead><tbody>${thonRows}</tbody></table>`},
-  ];
-
-  const overlay=document.createElement('div');
-  overlay.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;';
-  overlay.innerHTML=`<div style="background:var(--bg);border-radius:12px;width:100%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
-      <div>
-        <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${Math.round(wBacs)} bacs · ${wThon} tranches thon · ${Math.round(wMarmites*6)} kg riz</div>
-      </div>
-      <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;">×</button>
-    </div>
-    <div style="display:flex;border-bottom:1px solid var(--border);flex-shrink:0;">
-      ${tabs.map((t,i)=>`<div onclick="switchHistTabA('${t.id}')" id="htab-${t.id}" style="padding:8px 14px;font-size:12px;cursor:pointer;border-bottom:2px solid ${i===0?'var(--text)':'transparent'};color:${i===0?'var(--text)':'var(--muted)'};">${t.label}</div>`).join('')}
-    </div>
-    <div style="overflow-y:auto;flex:1;">
-      ${tabs.map((t,i)=>`<div id="hpanel-${t.id}" style="display:${i===0?'block':'none'}">${t.html}</div>`).join('')}
-    </div>
-    <div style="padding:8px 16px;text-align:center;font-size:11px;color:var(--muted);border-top:1px solid var(--border);flex-shrink:0;">Lecture seule · semaine archivée</div>
+  const sumEl=document.getElementById('histo-summary');
+  if(sumEl) sumEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wBacs)} bacs</span>
+    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--dsm);">${wThon} thon</span>
+    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wMarmites*6)} kg riz</span>
   </div>`;
-  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
-  document.body.appendChild(overlay);
-}
 
-function switchHistTabA(id){
-  document.querySelectorAll('[id^="htab-ha-"]').forEach(t=>{
-    const active=t.id==='htab-'+id;
-    t.style.borderBottomColor=active?'var(--text)':'transparent';
-    t.style.color=active?'var(--text)':'var(--muted)';
-  });
-  document.querySelectorAll('[id^="hpanel-ha-"]').forEach(p=>{
-    p.style.display=p.id==='hpanel-'+id?'block':'none';
+  const wrap=(c)=>`<div class="tbl-wrap">${c}</div>`;
+  document.getElementById('histo-riz').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Bacs')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Bacs')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Bacs')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Asia','border-left:1px solid var(--border)')}${thS('Marmites','border-left:2px solid var(--border);color:var(--dsm)')}${thS('Temps')}</tr></thead><tbody>${rizRows}</tbody></table>`);
+  document.getElementById('histo-fish').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('')}${thS('DSM','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('')}${thS('')}${thS('MGT','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('')}${thS('')}${thS('Paita','border-left:2px solid var(--paita);color:var(--paita)')}${thS('')}${thS('')}${thS('Ville','border-left:1px solid var(--border)')}${thS('')}${thS('')}</tr><tr>${thL('Jour')}${thS('T','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--mgt);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:2px solid var(--paita);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}${thS('T','border-left:1px solid var(--border);color:var(--dsm)')}${thS('S','color:var(--mgt)')}${thS('A','color:var(--paita)')}</tr></thead><tbody>${fishRows}</tbody></table>`);
+  document.getElementById('histo-rolls').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('DSM riz','border-left:2px solid var(--dsm);color:var(--dsm)')}${thS('Rolls')}${thS('MGT riz','border-left:2px solid var(--mgt);color:var(--mgt)')}${thS('Rolls')}${thS('Paita riz','border-left:2px solid var(--paita);color:var(--paita)')}${thS('Rolls')}${thS('Ville','border-left:1px solid var(--border)')}${thS('Rolls')}</tr></thead><tbody>${rollRows}</tbody></table>`);
+  document.getElementById('histo-thon').innerHTML=wrap(`<table style="width:100%;border-collapse:collapse;"><thead><tr>${thL('Jour')}${thS('Thon','color:var(--dsm)')}${thS('Saumon','color:var(--mgt)')}${thS('Aburi','color:var(--paita)')}${thS('Total')}</tr></thead><tbody>${thonRows}</tbody></table>`);
+
+  ['riz','fish','rolls','thon'].forEach(t=>{
+    const p=document.getElementById('histo-'+t);
+    if(p) p.style.display=t===_histoActiveTab?'block':'none';
   });
 }
 
