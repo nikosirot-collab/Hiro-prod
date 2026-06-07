@@ -454,15 +454,14 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
 
   <!-- PAGE HISTO COMMANDES -->
   <div id="page-cmd-histo" class="page">
-    <div style="padding:8px 0;">
-      <div style="display:flex;align-items:center;gap:12px;padding:4px 0 12px;">
-        <button onclick="cmdHistoChangeDate(-1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">←</button>
-        <div id="cmd-histo-date" style="flex:1;text-align:center;font-size:14px;font-weight:600;"></div>
-        <button onclick="cmdHistoChangeDate(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
-      </div>
-      <div id="cmd-histo-content">
-        <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>
-      </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 12px;">
+      <button onclick="cmdHistoChangeDate(-1)" style="width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;">←</button>
+      <span id="cmd-histo-date" style="font-size:13px;font-weight:500;text-align:center;min-width:130px;"></span>
+      <button onclick="cmdHistoChangeDate(1)" style="width:36px;height:36px;border:1px solid var(--border-s);border-radius:var(--r-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text);display:flex;align-items:center;justify-content:center;">→</button>
+    </div>
+    <div id="cmd-histo-day-tabs" style="display:flex;border-bottom:1px solid var(--border);margin-bottom:12px;overflow-x:auto;scrollbar-width:none;"></div>
+    <div id="cmd-histo-content">
+      <div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>
     </div>
   </div>
 
@@ -2045,37 +2044,54 @@ function laboModify(shop){
 // ── HISTORIQUE COMMANDES MAGASIN ──
 var _cmdHistoDate=(function(){
   var d=new Date(TODAY_NC);
-  // Lundi de la semaine courante
   var dow=d.getDay();var diff=dow===0?-6:1-dow;
   d.setDate(d.getDate()+diff);return d;
 })();
+var _cmdHistoDay=0;
+var _cmdHistoData=null;
 
 function cmdHistoChangeDate(d){
   _cmdHistoDate.setDate(_cmdHistoDate.getDate()+d*7);
+  _cmdHistoData=null;
   loadCmdHisto();
+}
+
+function cmdHistoSetDay(idx,el){
+  _cmdHistoDay=idx;
+  document.querySelectorAll('.cmd-day-tab').forEach(function(t){
+    var active=t===el;
+    t.style.borderBottomColor=active?'var(--text)':'transparent';
+    t.style.color=active?'var(--text)':'var(--muted)';
+    t.style.fontWeight=active?'500':'400';
+  });
+  _cmdHistoRenderDay();
 }
 
 async function loadCmdHisto(){
   var el=document.getElementById('cmd-histo-content');
   var dateEl=document.getElementById('cmd-histo-date');
+  var tabsEl=document.getElementById('cmd-histo-day-tabs');
   if(!el)return;
+
   var monday=new Date(_cmdHistoDate);
   var saturday=new Date(monday);saturday.setDate(saturday.getDate()+5);
-  var wLabel='Semaine du '+monday.toLocaleDateString('fr-FR',{day:'numeric',month:'long'})+' au '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-  if(dateEl)dateEl.textContent=wLabel;
+  if(dateEl) dateEl.textContent=monday.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' – '+saturday.toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
   el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Chargement...</div>';
+  if(tabsEl) tabsEl.innerHTML='';
 
   var shops=['paita','dsm','mgt','ville'];
   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var shopColors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var dayShorts=['Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var dayLongs=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
   var days=[];
   for(var i=0;i<6;i++){
     var d2=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
-    days.push({date:d2,dStr:laboDs(d2),label:['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'][i]});
+    days.push({date:d2,dStr:laboDs(d2),label:dayLongs[i],short:dayShorts[i]});
   }
   var dStrs=days.map(function(d){return d.dStr;});
+  var NAMES={bo:'Bun Bò',sin:'Sing.',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Gd nem',pnem:'Pt nem',sesame:'Sésame',banhbao:'Bao',tiramisu:'Tira.',ananas:'Ananas',poebanane:'Poe ban.',cheesemangue:'CK mangue',cheeseframboise:'CK framb.',villerolls:'Rolls'};
 
-  // Une seule requête pour toutes les commandes
   try{
     var res=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
     var allOrders={};
@@ -2100,54 +2116,61 @@ async function loadCmdHisto(){
         allOrders[docDate][docShop]=d3;
       });
     }
-
-    var NAMES={bo:'Bun Bò',sin:'Sing.',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Gd nem',pnem:'Pt nem',sesame:'Sésame',banhbao:'Bao',tiramisu:'Tira.',ananas:'Ananas',poebanane:'Poe ban.',cheesemangue:'CK mangue',cheeseframboise:'CK framb.',villerolls:'Rolls'};
-    var html='';
-    days.forEach(function(day){
-      var dayOrders=allOrders[day.dStr];
-      var hasAny=shops.some(function(s){return dayOrders[s]&&(dayOrders[s].ts||dayOrders[s].status);});
-      html+='<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg);">'
-        +'<div style="font-size:13px;font-weight:600;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>'
-        +'<div style="display:flex;gap:6px;">';
-      shops.forEach(function(shop){
-        var o=dayOrders[shop];
-        var ok=o&&(o.ts||o.status);
-        var isVal=ok&&o.status==='validated';
-        html+='<span style="font-size:11px;padding:3px 9px;border-radius:10px;background:'+(ok?shopColors[shop]+'18':'var(--bg)')+';color:'+(ok?shopColors[shop]:'var(--hint)')+';font-weight:700;border:1px solid '+(ok?shopColors[shop]+'44':'var(--border)')+';">'+shopLabels[shop]+(isVal?' ✓':'')+'</span>';
-      });
-      html+='</div></div>';
-      if(hasAny){
-        html+='<div style="border-top:1px solid var(--border);">';
-        shops.forEach(function(shop){
-          var o=dayOrders[shop];
-          if(!o||((!o.ts)&&o.status!=='validated'))return;
-          var isVal=o.status==='validated';
-          var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
-          var chipsHtml='';
-          Object.keys(NAMES).forEach(function(k){
-            var qty=getV(k);
-            if(qty>0) chipsHtml+='<span style="display:inline-flex;align-items:center;gap:3px;background:'+shopColors[shop]+'12;border:1px solid '+shopColors[shop]+'30;border-radius:20px;padding:2px 8px;font-size:11px;white-space:nowrap;">'
-              +'<span style="font-weight:700;color:'+shopColors[shop]+';">'+qty+'</span>'
-              +'<span style="color:var(--text);">'+NAMES[k]+'</span>'
-              +'</span>';
-          });
-          html+='<div style="padding:8px 14px;border-bottom:1px solid var(--border);">'
-            +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">'
-            +'<span style="font-size:11px;font-weight:700;color:'+shopColors[shop]+';">'+shopLabels[shop]+'</span>'
-            +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;background:#e4f5ee;padding:1px 6px;border-radius:10px;">✓ validé</span>':'')
-            +'</div>'
-            +'<div style="display:flex;flex-wrap:wrap;gap:4px;">'+chipsHtml+'</div>'
-            +'</div>';
-        });
-        html+='</div>';
-      }
-      html+='</div>';
-    });
-    el.innerHTML=html||'<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune commande cette semaine</div>';
+    _cmdHistoData={days:days,allOrders:allOrders,shops:shops,shopLabels:shopLabels,shopColors:shopColors,NAMES:NAMES};
+    el.innerHTML='';
+    if(tabsEl){
+      tabsEl.innerHTML=days.map(function(day,i){
+        var hasOrder=shops.some(function(s){var o=allOrders[day.dStr][s];return o&&(o.ts||o.status);});
+        var isActive=i===_cmdHistoDay;
+        return '<div class="cmd-day-tab" onclick="cmdHistoSetDay('+i+',this)" style="padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:2px solid '+(isActive?'var(--text)':'transparent')+';color:'+(isActive?'var(--text)':'var(--muted)')+';font-weight:'+(isActive?'500':'400')+';flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:4px;">'
+          +day.short
+          +(hasOrder?'<span style="width:5px;height:5px;border-radius:50%;background:var(--dsm);opacity:0.7;flex-shrink:0;"></span>':'')
+          +'</div>';
+      }).join('');
+    }
+    _cmdHistoRenderDay();
   }catch(e){
     el.innerHTML='<div style="text-align:center;color:var(--muted);padding:1rem;font-size:13px;">Erreur de chargement</div>';
   }
+}
+
+function _cmdHistoRenderDay(){
+  if(!_cmdHistoData)return;
+  var el=document.getElementById('cmd-histo-content');
+  if(!el)return;
+  var _=_cmdHistoData;
+  var day=_.days[_cmdHistoDay];
+  if(!day)return;
+  var dayOrders=_.allOrders[day.dStr];
+  var hasAny=_.shops.some(function(s){var o=dayOrders[s];return o&&(o.ts||o.status);});
+  var html='<div style="font-size:13px;font-weight:600;margin-bottom:10px;">'+day.label+' <span style="font-weight:400;color:var(--muted);font-size:11px;">'+day.date.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+'</span></div>';
+  if(!hasAny){
+    html+='<div style="text-align:center;color:var(--muted);padding:1.5rem;font-size:13px;">Aucune commande</div>';
+    el.innerHTML=html;return;
+  }
+  _.shops.forEach(function(shop){
+    var o=dayOrders[shop];
+    if(!o||((!o.ts)&&o.status!=='validated'))return;
+    var isVal=o.status==='validated';
+    var color=_.shopColors[shop];
+    var getV=function(k){return o[k]!==undefined?o[k]:(isVal&&o['vqty_'+k]!==undefined?o['vqty_'+k]:0);};
+    var chipsHtml='';
+    Object.keys(_.NAMES).forEach(function(k){
+      var qty=getV(k);
+      if(qty>0) chipsHtml+='<span style="display:inline-flex;align-items:center;gap:3px;background:'+color+'12;border:1px solid '+color+'30;border-radius:20px;padding:2px 8px;font-size:11px;white-space:nowrap;">'
+        +'<span style="font-weight:700;color:'+color+';">'+qty+'</span>'
+        +'<span style="color:var(--text);">'+_.NAMES[k]+'</span>'
+        +'</span>';
+    });
+    html+='<div style="margin-bottom:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;">'
+      +'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--bg);">'
+      +'<span style="font-size:12px;font-weight:700;color:'+color+';">'+_.shopLabels[shop]+'</span>'
+      +(isVal?'<span style="font-size:10px;color:#0d7a52;font-weight:600;background:#e4f5ee;padding:1px 6px;border-radius:10px;">✓ validé</span>':'')
+      +'</div>'
+      +'<div style="padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;">'+chipsHtml+'</div>'
+      +'</div>';
+  });
+  el.innerHTML=html;
 }
 
 // ── NEM / SÉSAME RECAP ──
