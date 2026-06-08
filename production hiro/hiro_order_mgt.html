@@ -1510,7 +1510,7 @@ async function loadChrCatalog(){
     var res=await fetch(_CHR_CATALOG_URL+'?key='+_KEY);
     if(!res.ok)return;
     var j=await res.json();
-    _chrCatalog=(j.fields&&j.fields.list)?JSON.parse(j.fields.list.stringValue):[];
+    _chrCatalog=(j.fields&&j.fields.mgt)?JSON.parse(j.fields.mgt.stringValue):[];
     var dl=document.getElementById('chr-catalog-list');
     if(!dl)return;
     dl.innerHTML='';
@@ -1524,10 +1524,10 @@ async function saveToChrCatalog(names){
     _chrCatalog=_chrCatalog.concat(toAdd);
     var dl=document.getElementById('chr-catalog-list');
     if(dl)toAdd.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
-    await fetch(_CHR_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths=list',{
+    await fetch(_CHR_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths=mgt',{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{list:{stringValue:JSON.stringify(_chrCatalog)}}})
+      body:JSON.stringify({fields:{mgt:{stringValue:JSON.stringify(_chrCatalog)}}})
     });
   }catch(e){}
 }

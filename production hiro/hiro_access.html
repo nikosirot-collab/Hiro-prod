@@ -1862,7 +1862,7 @@ async function laboAddArticle(shop){
     if(!found)libre.chr.push({name:name,qty:qty});
     order.vlibre=JSON.stringify(libre);
     fields['vlibre']={stringValue:order.vlibre};
-    saveToChrCatalog([name]);
+    saveToChrCatalog([name],shop);
   }
 
   var dStr=laboDs(laboDate);
@@ -2133,7 +2133,7 @@ function laboAddLibreLine(shop,catId){
   _laboAddLibreCount[shop+catId]=idx+1;
   var div=document.createElement('div');
   div.style.cssText='display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;';
-  div.innerHTML='<input type="text" placeholder="Article..." '+(catId==='chr'?'list="chr-catalog-list" onblur="if(this.value.trim())saveToChrCatalog([this.value.trim()])" ':'')+' style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'name\',this.value)">'
+  div.innerHTML='<input type="text" placeholder="Article..." '+(catId==='chr'?'list="chr-catalog-list" onblur="if(this.value.trim())saveToChrCatalog([this.value.trim()],\''+shop+'\')" ':'')+' style="flex:1;border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'name\',this.value)">'
     +'<input type="number" min="0" value="1" style="width:48px;text-align:center;border:1px solid var(--border);border-radius:6px;padding:4px;font-size:13px;font-weight:600;" oninput="laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'qty\',this.value)">'
     +'<button onclick="this.parentNode.remove();laboAddLibreUpdate(\''+shop+'\',\''+catId+'\','+idx+',\'del\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--muted);">×</button>';
   container.appendChild(div);
@@ -3833,31 +3833,36 @@ function toggleTheme(){
 <datalist id="chr-catalog-list"></datalist>
 
 <script>
-var _chrCatalog=[];
+var _chrCatalogs={ville:[],dsm:[],mgt:[],paita:[]};
 var _CHR_CATALOG_URL='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/chr-catalog';
 async function loadChrCatalog(){
   try{
     var res=await fetch(_CHR_CATALOG_URL+'?key='+_KEY);
     if(!res.ok)return;
     var j=await res.json();
-    _chrCatalog=(j.fields&&j.fields.list)?JSON.parse(j.fields.list.stringValue):[];
+    ['ville','dsm','mgt','paita'].forEach(function(s){
+      _chrCatalogs[s]=(j.fields&&j.fields[s])?JSON.parse(j.fields[s].stringValue):[];
+    });
+    var all=[];
+    Object.values(_chrCatalogs).forEach(function(arr){arr.forEach(function(n){if(!all.some(function(c){return c.toLowerCase()===n.toLowerCase();}))all.push(n);});});
     var dl=document.getElementById('chr-catalog-list');
     if(!dl)return;
     dl.innerHTML='';
-    _chrCatalog.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
+    all.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
   }catch(e){}
 }
-async function saveToChrCatalog(names){
+async function saveToChrCatalog(names,shop){
+  if(!shop||!_chrCatalogs[shop])return;
   try{
-    var toAdd=names.filter(function(n){return n&&!_chrCatalog.some(function(c){return c.toLowerCase()===n.toLowerCase();});});
+    var toAdd=names.filter(function(n){return n&&!_chrCatalogs[shop].some(function(c){return c.toLowerCase()===n.toLowerCase();});});
     if(!toAdd.length)return;
-    _chrCatalog=_chrCatalog.concat(toAdd);
+    _chrCatalogs[shop]=_chrCatalogs[shop].concat(toAdd);
     var dl=document.getElementById('chr-catalog-list');
-    if(dl)toAdd.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
-    await fetch(_CHR_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths=list',{
+    if(dl)toAdd.forEach(function(n){if(!Array.from(dl.options).some(function(o){return o.value.toLowerCase()===n.toLowerCase();})){var o=document.createElement('option');o.value=n;dl.appendChild(o);}});
+    await fetch(_CHR_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths='+shop,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{list:{stringValue:JSON.stringify(_chrCatalog)}}})
+      body:JSON.stringify({fields:{[shop]:{stringValue:JSON.stringify(_chrCatalogs[shop])}}})
     });
   }catch(e){}
 }

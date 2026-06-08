@@ -723,9 +723,15 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <!-- PAGE HISTORIQUE -->
   <div id="page-catalogue" class="page">
     <div class="section">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="section-header" style="margin-bottom:12px;">
         <span class="section-title">Catalogue CHR — Articles libres</span>
-        <span id="catalogue-count" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="cat-shop-btn active" data-shop="ville" onclick="catSetShop('ville',this)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--text);color:#fff;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Ville</button>
+        <button class="cat-shop-btn" data-shop="dsm" onclick="catSetShop('dsm',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">DSM</button>
+        <button class="cat-shop-btn" data-shop="mgt" onclick="catSetShop('mgt',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">MGT</button>
+        <button class="cat-shop-btn" data-shop="paita" onclick="catSetShop('paita',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Paita</button>
+        <span id="catalogue-count" style="font-size:12px;color:var(--text-muted);align-self:center;margin-left:6px;"></span>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <input id="catalogue-add-inp" type="text" placeholder="Ajouter un article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;">
@@ -3635,7 +3641,8 @@ function toggleTheme(){
 </script>
 
 <script>
-var _catalogue=[];
+var _catalogues={ville:[],dsm:[],mgt:[],paita:[]};
+var _catShop='ville';
 var _CATALOGUE_URL='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/chr-catalog';
 var _CATALOGUE_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 
@@ -3644,11 +3651,22 @@ async function loadChrCatalogue(){
   if(el)el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Chargement...</div>';
   try{
     var res=await fetch(_CATALOGUE_URL+'?key='+_CATALOGUE_KEY);
-    if(!res.ok){_catalogue=[];}else{
-      var j=await res.json();
-      _catalogue=(j.fields&&j.fields.list)?JSON.parse(j.fields.list.stringValue):[];
-    }
-  }catch(e){_catalogue=[];}
+    var j=res.ok?await res.json():{};
+    ['ville','dsm','mgt','paita'].forEach(function(s){
+      _catalogues[s]=(j.fields&&j.fields[s])?JSON.parse(j.fields[s].stringValue):[];
+    });
+  }catch(e){}
+  renderChrCatalogue();
+}
+
+function catSetShop(shop,btn){
+  _catShop=shop;
+  document.querySelectorAll('.cat-shop-btn').forEach(function(b){
+    var s=b.dataset.shop;
+    var colors={ville:'var(--text)',dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a'};
+    b.style.background=s===shop?colors[s]:'none';
+    b.style.color=s===shop?'#fff':colors[s];
+  });
   renderChrCatalogue();
 }
 
@@ -3656,11 +3674,11 @@ function renderChrCatalogue(){
   var el=document.getElementById('catalogue-content');
   var count=document.getElementById('catalogue-count');
   if(!el)return;
-  var list=_catalogue.filter(function(n){return n&&n.trim();});
+  var list=(_catalogues[_catShop]||[]).filter(function(n){return n&&n.trim();});
   list.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
   if(count)count.textContent=list.length+' article'+(list.length>1?'s':'');
-  if(!list.length){el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Aucun article enregistré.</div>';return;}
-  el.innerHTML=list.map(function(name,i){
+  if(!list.length){el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Aucun article pour ce magasin.</div>';return;}
+  el.innerHTML=list.map(function(name){
     return '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:10px;">'
       +'<div style="flex:1;font-size:13px;">'+name+'</div>'
       +'<button onclick="chrCatalogueDelete(\''+name.replace(/'/g,"\\'")+'\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;">×</button>'
@@ -3668,11 +3686,11 @@ function renderChrCatalogue(){
   }).join('');
 }
 
-async function _saveCatalogue(){
-  await fetch(_CATALOGUE_URL+'?key='+_CATALOGUE_KEY+'&updateMask.fieldPaths=list',{
+async function _saveCatalogueShop(shop){
+  await fetch(_CATALOGUE_URL+'?key='+_CATALOGUE_KEY+'&updateMask.fieldPaths='+shop,{
     method:'PATCH',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({fields:{list:{stringValue:JSON.stringify(_catalogue)}}})
+    body:JSON.stringify({fields:{[shop]:{stringValue:JSON.stringify(_catalogues[shop])}}})
   });
 }
 
@@ -3681,17 +3699,17 @@ async function chrCatalogueAdd(){
   if(!inp)return;
   var name=inp.value.trim();
   if(!name)return;
-  if(_catalogue.some(function(c){return c.toLowerCase()===name.toLowerCase();})){inp.value='';return;}
-  _catalogue.push(name);
+  if((_catalogues[_catShop]||[]).some(function(c){return c.toLowerCase()===name.toLowerCase();})){inp.value='';return;}
+  _catalogues[_catShop].push(name);
   inp.value='';
   renderChrCatalogue();
-  await _saveCatalogue();
+  await _saveCatalogueShop(_catShop);
 }
 
 async function chrCatalogueDelete(name){
-  _catalogue=_catalogue.filter(function(c){return c.toLowerCase()!==name.toLowerCase();});
+  _catalogues[_catShop]=(_catalogues[_catShop]||[]).filter(function(c){return c.toLowerCase()!==name.toLowerCase();});
   renderChrCatalogue();
-  await _saveCatalogue();
+  await _saveCatalogueShop(_catShop);
 }
 </script>
 
