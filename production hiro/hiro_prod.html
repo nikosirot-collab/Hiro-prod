@@ -395,6 +395,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
   <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
+  <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
@@ -724,6 +725,22 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     </div>
   </div>
   <!-- PAGE HISTORIQUE -->
+  <div id="page-catalogue" class="page">
+    <div class="section">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="section-title">Catalogue CHR — Articles libres</span>
+        <span id="catalogue-count" style="font-size:12px;color:var(--text-muted);"></span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input id="catalogue-add-inp" type="text" placeholder="Ajouter un article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;">
+        <button onclick="chrCatalogueAdd()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--text);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Ajouter</button>
+      </div>
+      <div id="catalogue-content" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div style="padding:16px;color:var(--text-muted);font-size:13px;">Chargement...</div>
+      </div>
+    </div>
+  </div>
+
   <div id="page-historique" class="page">
     <div class="section">
       <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -3619,6 +3636,67 @@ function toggleTheme(){
     if(btn) btn.textContent='☀';
   }
 })();
+</script>
+
+<script>
+var _catalogue=[];
+var _CATALOGUE_URL='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/chr-catalog';
+var _CATALOGUE_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+async function loadChrCatalogue(){
+  var el=document.getElementById('catalogue-content');
+  if(el)el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Chargement...</div>';
+  try{
+    var res=await fetch(_CATALOGUE_URL+'?key='+_CATALOGUE_KEY);
+    if(!res.ok){_catalogue=[];}else{
+      var j=await res.json();
+      _catalogue=(j.fields&&j.fields.list)?JSON.parse(j.fields.list.stringValue):[];
+    }
+  }catch(e){_catalogue=[];}
+  renderChrCatalogue();
+}
+
+function renderChrCatalogue(){
+  var el=document.getElementById('catalogue-content');
+  var count=document.getElementById('catalogue-count');
+  if(!el)return;
+  var list=_catalogue.filter(function(n){return n&&n.trim();});
+  list.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
+  if(count)count.textContent=list.length+' article'+(list.length>1?'s':'');
+  if(!list.length){el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Aucun article enregistré.</div>';return;}
+  el.innerHTML=list.map(function(name,i){
+    return '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:10px;">'
+      +'<div style="flex:1;font-size:13px;">'+name+'</div>'
+      +'<button onclick="chrCatalogueDelete(\''+name.replace(/'/g,"\\'")+'\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;">×</button>'
+      +'</div>';
+  }).join('');
+}
+
+async function _saveCatalogue(){
+  await fetch(_CATALOGUE_URL+'?key='+_CATALOGUE_KEY+'&updateMask.fieldPaths=list',{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{list:{stringValue:JSON.stringify(_catalogue)}}})
+  });
+}
+
+async function chrCatalogueAdd(){
+  var inp=document.getElementById('catalogue-add-inp');
+  if(!inp)return;
+  var name=inp.value.trim();
+  if(!name)return;
+  if(_catalogue.some(function(c){return c.toLowerCase()===name.toLowerCase();})){inp.value='';return;}
+  _catalogue.push(name);
+  inp.value='';
+  renderChrCatalogue();
+  await _saveCatalogue();
+}
+
+async function chrCatalogueDelete(name){
+  _catalogue=_catalogue.filter(function(c){return c.toLowerCase()!==name.toLowerCase();});
+  renderChrCatalogue();
+  await _saveCatalogue();
+}
 </script>
 
 </body>
