@@ -727,7 +727,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         <span class="section-title">Catalogue CHR — Articles libres</span>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="cat-shop-btn active" data-shop="ville" onclick="catSetShop('ville',this)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--text);color:#fff;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Ville</button>
+        <button class="cat-shop-btn active" data-shop="ville" onclick="catSetShop('ville',this)" style="padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--text);color:var(--bg);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Ville</button>
         <button class="cat-shop-btn" data-shop="dsm" onclick="catSetShop('dsm',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">DSM</button>
         <button class="cat-shop-btn" data-shop="mgt" onclick="catSetShop('mgt',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">MGT</button>
         <button class="cat-shop-btn" data-shop="paita" onclick="catSetShop('paita',this)" style="padding:5px 14px;border-radius:20px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Paita</button>
@@ -735,7 +735,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       </div>
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <input id="catalogue-add-inp" type="text" placeholder="Ajouter un article..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;">
-        <button onclick="chrCatalogueAdd()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--text);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Ajouter</button>
+        <button onclick="chrCatalogueAdd()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--text);color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Ajouter</button>
       </div>
       <div id="catalogue-content" style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
         <div style="padding:16px;color:var(--text-muted);font-size:13px;">Chargement...</div>
@@ -3665,7 +3665,7 @@ function catSetShop(shop,btn){
     var s=b.dataset.shop;
     var colors={ville:'var(--text)',dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a'};
     b.style.background=s===shop?colors[s]:'none';
-    b.style.color=s===shop?'#fff':colors[s];
+    b.style.color=s===shop?'var(--bg)':colors[s];
   });
   renderChrCatalogue();
 }
