@@ -1836,7 +1836,7 @@ async function laboAddArticle(shop){
     var bestLen=0;
     Object.keys(_ARTICLE_MAP).forEach(function(k){
       if(k.length<4) return; // ignorer les clés trop courtes comme 'bo', 'sin'
-      if(norm===k||(norm.length>3&&k.indexOf(norm)!==-1)||(k.length>3&&norm.indexOf(k)!==-1)){
+      if(norm===k||(norm.length>3&&k.indexOf(norm)!==-1)||(k.length>3&&norm.indexOf(k)!==-1&&norm.length-k.length<=2)){
         if(k.length>bestLen){bestLen=k.length;key=_ARTICLE_MAP[k];}
       }
     });
