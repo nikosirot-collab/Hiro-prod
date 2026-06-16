@@ -828,6 +828,10 @@ function setLoading(a){
 }
 function showError(m){ const e=document.getElementById('errorBox'); e.textContent=m; e.className='error-box active'; }
 function hideError(){ document.getElementById('errorBox').className='error-box'; }
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js').catch(e=>console.log('SW:',e));
+}
 </script>
 </body>
 </html>
