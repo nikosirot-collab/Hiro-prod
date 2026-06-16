@@ -813,6 +813,10 @@ function toggleTheme(){
 }
 
 loadAll();
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js').catch(e=>console.log('SW:',e));
+}
 </script>
 
 </body>
