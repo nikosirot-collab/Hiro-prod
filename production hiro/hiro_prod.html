@@ -226,6 +226,8 @@ body {
 
 /* SECTION */
 .section { margin-bottom: 1.5rem; }
+.recette-grid { display:grid; grid-template-columns:1fr; align-items:start; }
+@media(min-width:768px){ .recette-grid { grid-template-columns:1fr 1fr; gap:2rem; } }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 8px;
@@ -768,11 +770,12 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
 
 
   <div id="page-recette" class="page">
-    <div class="section">
-      <div class="section-header">
-        <span class="section-title">Calculatrice — Assaisonnement riz sushi</span>
-      </div>
-      <div style="max-width:480px;">
+    <div class="recette-grid">
+      <!-- Colonne gauche : calculatrice + recette de base -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Calculatrice — Assaisonnement riz sushi</span>
+        </div>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:12px;">
           <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;">Vinaigre de riz</label>
           <div style="display:flex;align-items:center;gap:10px;">
@@ -809,14 +812,15 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
           <br><span style="font-size:11px;color:var(--text-muted);">Vinaigre de céréales japonais (穀物酢) — Uchihori Jozo, acidité 4.2%, bidon 20L</span>
         </div>
       </div>
-    </div>
-    <div class="section" style="margin-top:24px;">
-      <div class="section-header">
-        <span class="section-title">Production du jour</span>
-        <button onclick="loadProductionDuJour()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;">&#8635; Rafraîchir</button>
-      </div>
-      <div style="max-width:480px;" id="prod-jour-content">
-        <div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement&#8230;</div>
+      <!-- Colonne droite : production du jour -->
+      <div class="section">
+        <div class="section-header">
+          <span class="section-title">Production du jour</span>
+          <button onclick="loadProductionDuJour()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;">&#8635; Rafraîchir</button>
+        </div>
+        <div id="prod-jour-content">
+          <div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement&#8230;</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2435,28 +2439,28 @@ async function loadProductionDuJour(){
     var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
     var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:#1a5fa8;color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'');
     var shopCells=shops.map(function(s){
-      return '<td style="padding:6px 8px;text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:'+shopColors[s]+';">'+(bacs[s]>0?bacs[s]:'—')+'</td>';
+      return '<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:'+shopColors[s]+';">'+(bacs[s]>0?bacs[s]:'—')+'</td>';
     }).join('');
     rows+='<tr style="border-bottom:1px solid var(--border);'+rowBg+rowBorder+'">'
-      +'<td style="padding:6px 8px;font-size:12px;white-space:nowrap;">'+dayLabel+'</td>'
+      +'<td style="padding:4px 6px;font-size:12px;white-space:nowrap;">'+dayLabel+'</td>'
       +shopCells
-      +'<td style="padding:6px 8px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent);">'+(marmites>0?marmites:'—')+'</td>'
-      +'<td style="padding:6px 8px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*600)+' ml':'—')+'</td>'
+      +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent);">'+(marmites>0?marmites:'—')+'</td>'
+      +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*600)+' ml':'—')+'</td>'
     +'</tr>';
   }
   var thead='<thead><tr style="border-bottom:2px solid var(--border);background:var(--bg);">'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;text-transform:uppercase;text-align:left;letter-spacing:.06em;">Jour</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--dsm);text-align:center;">DSM</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--mgt);text-align:center;">MGT</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;color:var(--paita);text-align:center;">Paita</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;color:#7a3db8;text-align:center;">Ville</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Marmites</th>'
-    +'<th style="padding:6px 8px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Vinaigre</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-transform:uppercase;text-align:left;letter-spacing:.06em;">Jour</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--dsm);text-align:center;">DSM</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--mgt);text-align:center;">MGT</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--paita);text-align:center;">Paita</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:#7a3db8;text-align:center;">Ville</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Marmites</th>'
+    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Vinaigre (ml)</th>'
     +'</tr></thead>';
   var tfoot='<tfoot><tr style="border-top:2px solid var(--border);background:var(--bg);">'
-    +'<td colspan="5" style="padding:6px 8px;font-size:11px;font-weight:600;text-align:right;color:var(--text-muted);">Total semaine</td>'
-    +'<td style="padding:6px 8px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:var(--accent);">'+totWeekMarmites+'</td>'
-    +'<td style="padding:6px 8px;text-align:center;font-size:12px;color:var(--text-muted);">'+(totWeekMarmites*600)+' ml</td>'
+    +'<td colspan="5" style="padding:4px 6px;font-size:11px;font-weight:600;text-align:right;color:var(--text-muted);">Total semaine</td>'
+    +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:var(--accent);">'+totWeekMarmites+'</td>'
+    +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(totWeekMarmites*600)+' ml</td>'
     +'</tr></tfoot>';
   var table='<div style="overflow-x:auto;margin-bottom:16px;">'
     +'<table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">'
