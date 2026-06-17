@@ -1300,6 +1300,7 @@ function changeWeek(d){
   document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
   subscribeWeek();
   if(document.getElementById('page-stat').classList.contains('active')) renderRecap();
+  if(document.getElementById('page-recette').classList.contains('active')) loadProductionDuJour();
 }
 
 // ─── RÉCAP ───
@@ -2409,7 +2410,7 @@ async function loadProductionDuJour(){
   var el=document.getElementById('prod-jour-content');
   if(!el) return;
   el.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement…</div>';
-  var monday=mondayOf(0);
+  var monday=mondayOf(weekOff);
   var mondayStr=ds(monday);
   var todayStr=ds(TODAY_NC);
   var shops=['dsm','mgt','paita','ville'];
