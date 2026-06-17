@@ -2433,7 +2433,7 @@ async function loadProductionDuJour(){
     if(marmites>0) totWeekMarmites+=marmites;
     var rowBg=isToday?'background:#f0f7ff;':'';
     var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
-    var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:var(--accent);color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'');
+    var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:#1a5fa8;color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'');
     var shopCells=shops.map(function(s){
       return '<td style="padding:6px 8px;text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:'+shopColors[s]+';">'+(bacs[s]>0?bacs[s]:'—')+'</td>';
     }).join('');
