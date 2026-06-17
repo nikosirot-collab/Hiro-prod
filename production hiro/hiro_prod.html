@@ -1326,9 +1326,13 @@ function renderRecap() {
   // Calcul semaine N-1
   const rizTotalByDay=labels.map((_,di)=>SHOPS.reduce((a,s)=>a+(rizByDay[s][di]||0),0));
   const prevRizByDay=[];
+  const prevMonday=ds(mondayOf(weekOff-1));
+  const prevWeekData=window._histoResults&&window._histoResults.find(r=>r.dateStr===prevMonday);
   for(let di=0;di<7;di++){
     const d=dayOf(weekOff-1,di),dStr=ds(d);
-    const tot=SHOPS.reduce((a,s)=>a+(getV(dStr,s)||0),0);
+    const tot=prevWeekData
+      ?SHOPS.reduce((a,s)=>a+(prevWeekData.hData[dStr+'__'+s]||0),0)
+      :SHOPS.reduce((a,s)=>a+(getV(dStr,s)||0),0);
     prevRizByDay.push(tot);
   }
 
@@ -1486,6 +1490,7 @@ async function loadHistorique() {
   window._histoResults=results;
   tendRender('all');
   document.getElementById('histo-tendances').style.display='block';
+  if(document.getElementById('page-stat').classList.contains('active')) renderRecap();
 
   const byMonth={};
   results.forEach(({dateStr,hData})=>{
