@@ -389,14 +389,13 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('poisson',this)">Découpe Poisson</div>
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Commande Thon</div>
-  <div class="nav-tab" onclick="showPage('recap',this)">Récap</div>
+  <div class="nav-tab" onclick="showPage('stat',this)">Stats</div>
   <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
   <div class="nav-tab" onclick="showPage('commandes',this)">Commandes</div>
   <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
   <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
   <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
-  <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
 </nav>
 
 <div class="main">
@@ -561,11 +560,29 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   </div>
 
   <!-- PAGE TOTAUX -->
-  <!-- PAGE RÉCAP -->
-  <div id="page-recap" class="page">
+  <!-- PAGE STATS -->
+  <div id="page-stat" class="page">
     <div class="section">
       <div class="section-header"><span class="section-title">Récapitulatif de la semaine</span></div>
       <div id="recap-content" style="padding:8px 0;"></div>
+      <div style="border-top:1px solid var(--border);margin:24px 0;"></div>
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span class="section-title">Historique des semaines</span>
+      </div>
+      <div id="histo-tendances" style="display:none;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Tendances riz — 12 semaines</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="tend-btn active" data-shop="all" onclick="tendSetShop('all',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
+          <button class="tend-btn" data-shop="dsm" onclick="tendSetShop('dsm',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">DSM</button>
+          <button class="tend-btn" data-shop="mgt" onclick="tendSetShop('mgt',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:11px;cursor:pointer;">MGT</button>
+          <button class="tend-btn" data-shop="paita" onclick="tendSetShop('paita',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:11px;cursor:pointer;">Paita</button>
+          <button class="tend-btn" data-shop="ville" onclick="tendSetShop('ville',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #7a3db8;background:none;color:#7a3db8;font-size:11px;cursor:pointer;">Ville</button>
+        </div>
+        <div id="histo-chart" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow:hidden;"></div>
+      </div>
+      <div id="historique-content" style="padding:8px 0;">
+        <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement de l'historique…</div>
+      </div>
     </div>
   </div>
 
@@ -747,30 +764,6 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     </div>
   </div>
 
-  <div id="page-historique" class="page">
-    <div class="section">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span class="section-title">Historique des semaines</span>
-      </div>
-      <!-- Bloc tendances -->
-      <div id="histo-tendances" style="display:none;margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Tendances riz — 12 semaines</div>
-        <!-- Sélecteur magasin -->
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-          <button class="tend-btn active" data-shop="all" onclick="tendSetShop('all',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
-          <button class="tend-btn" data-shop="dsm" onclick="tendSetShop('dsm',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">DSM</button>
-          <button class="tend-btn" data-shop="mgt" onclick="tendSetShop('mgt',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:11px;cursor:pointer;">MGT</button>
-          <button class="tend-btn" data-shop="paita" onclick="tendSetShop('paita',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:11px;cursor:pointer;">Paita</button>
-          <button class="tend-btn" data-shop="ville" onclick="tendSetShop('ville',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #7a3db8;background:none;color:#7a3db8;font-size:11px;cursor:pointer;">Ville</button>
-        </div>
-        <div id="histo-chart" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow:hidden;"></div>
-      </div>
-      <!-- Liste semaines -->
-      <div id="historique-content" style="padding:8px 0;">
-        <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Cliquez sur cet onglet pour charger l'historique</div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- PRINT ZONE POISSON -->
@@ -1228,8 +1221,7 @@ function showPage(p, el) {
   document.getElementById('page-'+p).classList.add('active');
   if(el) el.classList.add('active');
   else if(event&&event.target) event.target.classList.add('active');
-  if(p==='historique') loadHistorique();
-  if(p==='recap') renderRecap();
+  if(p==='stat'){ renderRecap(); if(!_histoLoaded) loadHistorique(); }
   if(p==='commandes') loadCommandes();
   if(p==='logs'){loadLogs();}
   if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
@@ -1246,6 +1238,7 @@ function changeWeek(d){
   document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
   document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
   subscribeWeek();
+  if(document.getElementById('page-stat').classList.contains('active')) renderRecap();
 }
 
 // ─── RÉCAP ───
@@ -1454,8 +1447,10 @@ function mKeyLabel(mKey){
 }
 
 let _histDocs=null;
+let _histoLoaded=false;
 
 async function loadHistorique() {
+  _histoLoaded=true;
   const el=document.getElementById('historique-content');
   el.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement…</div>`;
 
