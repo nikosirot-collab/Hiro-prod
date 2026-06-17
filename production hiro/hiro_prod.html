@@ -396,6 +396,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
   <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
+  <div class="nav-tab" onclick="showPage('recette',this)">Recette</div>
 </nav>
 
 <div class="main">
@@ -764,6 +765,50 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     </div>
   </div>
 
+
+  <div id="page-recette" class="page">
+    <div class="section">
+      <div class="section-header">
+        <span class="section-title">Calculatrice — Assaisonnement riz sushi</span>
+      </div>
+      <div style="max-width:480px;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:12px;">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;">Vinaigre de riz</label>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input id="vin-input" type="number" min="0" placeholder="ex: 600"
+              oninput="calcRecette(this.value)"
+              style="width:140px;padding:10px 14px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);outline:none;text-align:center;"
+              onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-strong)'">
+            <span style="font-size:16px;color:var(--text-muted);">ml</span>
+          </div>
+        </div>
+        <div id="recette-results" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:14px;">Composition du mélange</div>
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:14px;min-width:140px;">Vinaigre de riz</span>
+              <span style="font-size:26px;font-weight:500;font-family:'DM Mono',monospace;color:var(--dsm);" id="res-vin">—</span>
+              <span style="font-size:13px;color:var(--text-muted);min-width:24px;text-align:right;">ml</span>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+              <span style="font-size:14px;min-width:140px;">Sucre</span>
+              <span style="font-size:26px;font-weight:500;font-family:'DM Mono',monospace;color:var(--mgt);" id="res-sucre">—</span>
+              <span style="font-size:13px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;padding:10px 0;">
+              <span style="font-size:14px;min-width:140px;">Sel</span>
+              <span style="font-size:26px;font-weight:500;font-family:'DM Mono',monospace;color:var(--paita);" id="res-sel">—</span>
+              <span style="font-size:13px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>
+            </div>
+          </div>
+        </div>
+        <div class="note-box">
+          <b>Recette de base — 1 marmite (6 kg riz cru)</b><br>
+          600 ml vinaigre de riz &nbsp;·&nbsp; 300 g sucre &nbsp;·&nbsp; 120 g sel
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- PRINT ZONE POISSON -->
@@ -3605,6 +3650,18 @@ function secPollStop(){
 })();
 </script>
 
+
+<script>
+function calcRecette(v) {
+  var n = parseFloat(v);
+  var el = document.getElementById('recette-results');
+  if (!v || isNaN(n) || n <= 0) { el.style.display = 'none'; return; }
+  document.getElementById('res-vin').textContent = Math.round(n);
+  document.getElementById('res-sucre').textContent = Math.round(n * 0.5);
+  document.getElementById('res-sel').textContent = Math.round(n * 0.2);
+  el.style.display = 'block';
+}
+</script>
 
 <script>
 // ── Pause polling quand en arrière-plan ──
