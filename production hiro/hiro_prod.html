@@ -809,6 +809,15 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         </div>
       </div>
     </div>
+    <div class="section" style="margin-top:24px;">
+      <div class="section-header">
+        <span class="section-title">Production du jour</span>
+        <button onclick="loadProductionDuJour()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;">&#8635; Rafraîchir</button>
+      </div>
+      <div style="max-width:480px;" id="prod-jour-content">
+        <div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement&#8230;</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1269,6 +1278,7 @@ function showPage(p, el) {
   else if(event&&event.target) event.target.classList.add('active');
   if(p==='stat'){ renderRecap(); if(!_histoLoaded) loadHistorique(); }
   if(p==='commandes') loadCommandes();
+  if(p==='recette') loadProductionDuJour();
   if(p==='logs'){loadLogs();}
   if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
   else{secPollStop();stopNetMonitor();secPollStop();}
@@ -2387,6 +2397,86 @@ function cmdRow(name,val){
   return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
     +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
     +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+name+'</div>'
+    +'</div>';
+}
+
+async function loadProductionDuJour(){
+  var el=document.getElementById('prod-jour-content');
+  if(!el) return;
+  el.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement…</div>';
+  var ncNow=new Date(Date.now()+new Date().getTimezoneOffset()*60000+11*3600000);
+  var dStr=ds(ncNow);
+  var isDim=ncNow.getDay()===0;
+  var shops=['dsm','mgt','paita','ville'];
+  var labels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+  var colors={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
+  var results=await Promise.all(shops.map(async function(s){
+    try{
+      var res=await _fbFetch(_CMD_API+'/order_'+dStr+'_'+s+'?key='+_KEY);
+      if(!res.ok) return null;
+      var json=await res.json();
+      if(!json.fields) return null;
+      var d={};
+      Object.entries(json.fields).forEach(function(e){
+        var k=e[0],v=e[1];
+        if(v.integerValue!==undefined) d[k]=parseInt(v.integerValue);
+        else if(v.stringValue!==undefined) d[k]=v.stringValue;
+        else if(v.booleanValue!==undefined) d[k]=v.booleanValue;
+      });
+      return d;
+    }catch(e){return null;}
+  }));
+  var orders={};
+  shops.forEach(function(s,i){orders[s]=results[i];});
+  var bacs={};
+  shops.forEach(function(s){
+    var o=orders[s];
+    var r=0;
+    if(o){r=(o.rizprod!==undefined?o.rizprod:(o.status==='validated'&&o['vqty_rizprod']!==undefined?o['vqty_rizprod']:0));}
+    bacs[s]=r>0?Math.round(r/250*10)/10:0;
+  });
+  var totBacs=shops.reduce(function(a,s){return a+bacs[s];},0);
+  var marmites=totBacs>0?Math.round(totBacs/2+(isDim?0:2)):0;
+  if(!shops.some(function(s){return bacs[s]>0;})){
+    el.innerHTML='<div class="note-box" style="color:var(--text-muted);">Aucune commande reçue pour le '+dStr+'.</div>';
+    return;
+  }
+  var shopRows=shops.map(function(s){
+    var b=bacs[s];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
+      +'<span style="font-size:13px;font-weight:600;color:'+colors[s]+'">'+labels[s]+'</span>'
+      +'<span style="font-family:\'DM Mono\',monospace;font-size:15px;font-weight:500;">'+(b>0?b+' bacs':'<span style=\"color:var(--text-muted)\">En attente</span>')+'</span>'
+      +'</div>';
+  }).join('');
+  el.innerHTML=
+    '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;">'
+      +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">Total marmites</div>'
+      +'<div style="font-size:48px;font-family:\'DM Mono\',monospace;font-weight:500;color:var(--accent);line-height:1;">'+marmites+'</div>'
+      +'<div style="font-size:11px;color:var(--text-muted);margin-top:4px;">'+totBacs.toFixed(1)+' bacs total</div>'
+    +'</div>'
+    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;">'
+      +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Mélange à préparer</div>'
+      +'<div style="display:flex;flex-direction:column;">'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
+          +'<span style="font-size:13px;min-width:120px;">Vinaigre de riz</span>'
+          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--dsm);">'+(marmites*600)+'</span>'
+          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">ml</span>'
+        +'</div>'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
+          +'<span style="font-size:13px;min-width:120px;">Sucre</span>'
+          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--mgt);">'+(marmites*300)+'</span>'
+          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
+        +'</div>'
+        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;">'
+          +'<span style="font-size:13px;min-width:120px;">Sel</span>'
+          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--paita);">'+(marmites*120)+'</span>'
+          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">'
+      +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;">Détail par magasin</div>'
+      +shopRows
     +'</div>';
 }
 
