@@ -2412,6 +2412,7 @@ function cmdRow(name,val){
    if(!el) return;
    var monday=mondayOf(weekOff);
    var todayStr=ds(TODAY_NC);
+   var allShops=['dsm','mgt','paita','ville','asia'];
    var shops=['dsm','mgt','paita','ville'];
    var shopColors={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
    var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
@@ -2423,11 +2424,11 @@ function cmdRow(name,val){
      var dStr=ds(d);
      var isDim=di===6;
      var isToday=dStr===todayStr;
-     var riz={};shops.forEach(function(s){riz[s]=getV(dStr,s);});
-     var bacs={};shops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
-     var totBacs=shops.reduce(function(a,s){return a+bacs[s];},0);
+     var riz={};allShops.forEach(function(s){riz[s]=getV(dStr,s);});
+     var bacs={};allShops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
+     var totBacs=allShops.reduce(function(a,s){return a+bacs[s];},0);
      var marmites=totBacs>0?Math.round(totBacs/2+(isDim?0:2)):0;
-     if(isToday){todayMarmites=marmites;shops.forEach(function(s){todayBacs[s]=bacs[s];});}
+     if(isToday){todayMarmites=marmites;allShops.forEach(function(s){todayBacs[s]=bacs[s];});}
      if(marmites>0) totWeekMarmites+=marmites;
      var rowBg=isToday?'background:#f0f7ff;':'';
      var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
