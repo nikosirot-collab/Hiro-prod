@@ -1266,6 +1266,7 @@ function subscribeWeek(){
       _scheduleSave(weekDocId());
     }
     render();
+    if(document.getElementById('page-recette').classList.contains('active')) loadProductionDuJour();
   }, 30000);
 }
 
@@ -2406,99 +2407,91 @@ function cmdRow(name,val){
     +'</div>';
 }
 
-async function loadProductionDuJour(){
-  var el=document.getElementById('prod-jour-content');
-  if(!el) return;
-  el.innerHTML='<div style="color:var(--text-muted);font-size:13px;padding:12px 0;">Chargement…</div>';
-  var monday=mondayOf(weekOff);
-  var mondayStr=ds(monday);
-  var todayStr=ds(TODAY_NC);
-  var shops=['dsm','mgt','paita','ville'];
-  var shopColors={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
-  var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-  var wData={};
-  try{
-    var res=await _fbFetch(_API+'/week_'+mondayStr+'?key='+_KEY);
-    if(!res.ok){el.innerHTML='<div class="note-box" style="color:var(--text-muted);">Données de production non disponibles.</div>';return;}
-    wData=_fromFirestore(await res.json());
-  }catch(e){el.innerHTML='<div class="note-box" style="color:var(--text-muted);">Erreur de chargement.</div>';return;}
-  var todayMarmites=0,todayBacs={};
-  var totWeekMarmites=0;
-  var rows='';
-  for(var di=0;di<7;di++){
-    var d=new Date(monday);d.setDate(d.getDate()+di);
-    var dStr=ds(d);
-    var isDim=di===6;
-    var isToday=dStr===todayStr;
-    var riz={};shops.forEach(function(s){riz[s]=wData[dStr+'__'+s]||0;});
-    var bacs={};shops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
-    var totBacs=shops.reduce(function(a,s){return a+bacs[s];},0);
-    var marmites=totBacs>0?Math.round(totBacs/2+(isDim?0:2)):0;
-    if(isToday){todayMarmites=marmites;shops.forEach(function(s){todayBacs[s]=bacs[s];});}
-    if(marmites>0) totWeekMarmites+=marmites;
-    var rowBg=isToday?'background:#f0f7ff;':'';
-    var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
-    var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:#1a5fa8;color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'');
-    var shopCells=shops.map(function(s){
-      return '<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:'+shopColors[s]+';">'+(bacs[s]>0?bacs[s]:'—')+'</td>';
-    }).join('');
-    rows+='<tr style="border-bottom:1px solid var(--border);'+rowBg+rowBorder+'">'
-      +'<td style="padding:4px 6px;font-size:12px;white-space:nowrap;">'+dayLabel+'</td>'
-      +shopCells
-      +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent);">'+(marmites>0?marmites:'—')+'</td>'
-      +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*600)+' ml':'—')+'</td>'
-    +'</tr>';
-  }
-  var thead='<thead><tr style="border-bottom:2px solid var(--border);background:var(--bg);">'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-transform:uppercase;text-align:left;letter-spacing:.06em;">Jour</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--dsm);text-align:center;">DSM</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--mgt);text-align:center;">MGT</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--paita);text-align:center;">Paita</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:#7a3db8;text-align:center;">Ville</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Marmites</th>'
-    +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Vinaigre (ml)</th>'
-    +'</tr></thead>';
-  var tfoot='<tfoot><tr style="border-top:2px solid var(--border);background:var(--bg);">'
-    +'<td colspan="5" style="padding:4px 6px;font-size:11px;font-weight:600;text-align:right;color:var(--text-muted);">Total semaine</td>'
-    +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:var(--accent);">'+totWeekMarmites+'</td>'
-    +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(totWeekMarmites*600)+' ml</td>'
-    +'</tr></tfoot>';
-  var table='<div style="overflow-x:auto;margin-bottom:16px;">'
-    +'<table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">'
-    +thead+'<tbody>'+rows+'</tbody>'+tfoot+'</table></div>';
-  var todayCard='';
-  if(todayMarmites>0){
-    var shopDetail=shops.map(function(s){
-      var b=todayBacs[s];
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">'
-        +'<span style="font-size:13px;font-weight:600;color:'+shopColors[s]+'">'+shopLabels[s]+'</span>'
-        +'<span style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+(b>0?b+' bacs':'<span style=\"color:var(--text-muted)\">—</span>')+'</span>'
-        +'</div>';
-    }).join('');
-    todayCard='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">'
-      +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Mélange aujourd\'hui — '+todayMarmites+' marmite'+(todayMarmites>1?'s':'')+'</div>'
-      +'<div style="display:flex;flex-direction:column;margin-bottom:12px;">'
-        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
-          +'<span style="font-size:13px;min-width:120px;">Vinaigre de riz</span>'
-          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--dsm);">'+(todayMarmites*600)+'</span>'
-          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">ml</span>'
-        +'</div>'
-        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
-          +'<span style="font-size:13px;min-width:120px;">Sucre</span>'
-          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--mgt);">'+(todayMarmites*300)+'</span>'
-          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
-        +'</div>'
-        +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;">'
-          +'<span style="font-size:13px;min-width:120px;">Sel</span>'
-          +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--paita);">'+(todayMarmites*120)+'</span>'
-          +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
-        +'</div>'
-      +'</div>'
-      +shopDetail
-    +'</div>';
-  }
-  el.innerHTML=table+todayCard;
-}
+ function loadProductionDuJour(){
+   var el=document.getElementById('prod-jour-content');
+   if(!el) return;
+   var monday=mondayOf(weekOff);
+   var todayStr=ds(TODAY_NC);
+   var shops=['dsm','mgt','paita','ville'];
+   var shopColors={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
+   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
+   var todayMarmites=0,todayBacs={};
+   var totWeekMarmites=0;
+   var rows='';
+   for(var di=0;di<7;di++){
+     var d=new Date(monday);d.setDate(d.getDate()+di);
+     var dStr=ds(d);
+     var isDim=di===6;
+     var isToday=dStr===todayStr;
+     var riz={};shops.forEach(function(s){riz[s]=getV(dStr,s);});
+     var bacs={};shops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
+     var totBacs=shops.reduce(function(a,s){return a+bacs[s];},0);
+     var marmites=totBacs>0?Math.round(totBacs/2+(isDim?0:2)):0;
+     if(isToday){todayMarmites=marmites;shops.forEach(function(s){todayBacs[s]=bacs[s];});}
+     if(marmites>0) totWeekMarmites+=marmites;
+     var rowBg=isToday?'background:#f0f7ff;':'';
+     var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
+     var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:#1a5fa8;color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'')+'';
+     var shopCells=shops.map(function(s){
+       return '<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:12px;color:'+shopColors[s]+';">'+(bacs[s]>0?bacs[s]:'—')+'</td>';
+     }).join('');
+     rows+='<tr style="border-bottom:1px solid var(--border);'+rowBg+rowBorder+'">'
+       +'<td style="padding:4px 6px;font-size:12px;white-space:nowrap;">'+dayLabel+'</td>'
+       +shopCells
+       +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent);">'+(marmites>0?marmites:'—')+'</td>'
+       +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*600)+' ml':'—')+'</td>'
+     +'</tr>';
+   }
+   var thead='<thead><tr style="border-bottom:2px solid var(--border);background:var(--bg);">'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-transform:uppercase;text-align:left;letter-spacing:.06em;">Jour</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--dsm);text-align:center;">DSM</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--mgt);text-align:center;">MGT</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:var(--paita);text-align:center;">Paita</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;color:#7a3db8;text-align:center;">Ville</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Marmites</th>'
+     +'<th style="padding:4px 6px;font-size:10px;font-weight:700;text-align:center;letter-spacing:.06em;">Vinaigre (ml)</th>'
+     +'</tr></thead>';
+   var tfoot='<tfoot><tr style="border-top:2px solid var(--border);background:var(--bg);">'
+     +'<td colspan="5" style="padding:4px 6px;font-size:11px;font-weight:600;text-align:right;color:var(--text-muted);">Total semaine</td>'
+     +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:var(--accent);">'+totWeekMarmites+'</td>'
+     +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(totWeekMarmites*600)+' ml</td>'
+     +'</tr></tfoot>';
+   var table='<div style="overflow-x:auto;margin-bottom:16px;">'
+     +'<table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">'
+     +thead+'<tbody>'+rows+'</tbody>'+tfoot+'</table></div>';
+   var todayCard='';
+   if(todayMarmites>0){
+     var shopDetail=shops.map(function(s){
+       var b=todayBacs[s];
+       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">'
+         +'<span style="font-size:13px;font-weight:600;color:'+shopColors[s]+'">'+shopLabels[s]+'</span>'
+         +'<span style="font-family:\'DM Mono\',monospace;font-size:14px;font-weight:500;">'+(b>0?b+' bacs':'<span style=\"color:var(--text-muted)\">—</span>')+'</span>'
+         +'</div>';
+     }).join('');
+     todayCard='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">'
+       +'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:12px;">Mélange aujourd\'hui — '+todayMarmites+' marmite'+(todayMarmites>1?'s':'')+'</div>'
+       +'<div style="display:flex;flex-direction:column;margin-bottom:12px;">'
+         +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
+           +'<span style="font-size:13px;min-width:120px;">Vinaigre de riz</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--dsm);">'+(todayMarmites*600)+'</span>'
+           +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">ml</span>'
+         +'</div>'
+         +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
+           +'<span style="font-size:13px;min-width:120px;">Sucre</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--mgt);">'+(todayMarmites*300)+'</span>'
+           +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
+         +'</div>'
+         +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;">'
+           +'<span style="font-size:13px;min-width:120px;">Sel</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--paita);">'+(todayMarmites*120)+'</span>'
+           +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
+         +'</div>'
+       +'</div>'
+       +shopDetail
+     +'</div>';
+   }
+   el.innerHTML=table+todayCard;
+ }
 
 function cmdRenderFiche(shop, order){
   var color=_CMD_COLORS[shop];
