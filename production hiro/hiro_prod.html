@@ -394,7 +394,6 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('thon',this)">Commande Thon</div>
   <div class="nav-tab" onclick="showPage('stat',this)">Stats</div>
   <div class="nav-tab" onclick="showPage('commandes',this)">Commandes</div>
-  <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
   <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
   <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
@@ -588,39 +587,6 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       </div>
     </div>
   </div>
-
-  <!-- PAGE COMMANDES -->
-  <!-- PAGE LOGS -->
-  <div id="page-logs" class="page">
-    <div class="section">
-      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <span class="section-title">Logs — Activité</span>
-        <button onclick="loadLogs()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;">↻ Actualiser</button>
-      </div>
-      <!-- Résumé du jour -->
-      <div id="logs-summary" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:none;"></div>
-      <!-- Filtres -->
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);align-self:center;margin-right:4px;">Magasin :</div>
-        <button class="log-filter-shop active" data-shop="" onclick="logsSetShop('',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
-        <button class="log-filter-shop" data-shop="dsm" onclick="logsSetShop('dsm',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">DSM</button>
-        <button class="log-filter-shop" data-shop="mgt" onclick="logsSetShop('mgt',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:11px;cursor:pointer;">MGT</button>
-        <button class="log-filter-shop" data-shop="paita" onclick="logsSetShop('paita',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:11px;cursor:pointer;">Paita</button>
-        <button class="log-filter-shop" data-shop="ville" onclick="logsSetShop('ville',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #7a3db8;background:none;color:#7a3db8;font-size:11px;cursor:pointer;">Ville</button>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);align-self:center;margin-right:4px;">Type :</div>
-        <button class="log-filter-type active" data-type="" onclick="logsSetType('',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
-        <button class="log-filter-type" data-type="validation" onclick="logsSetType('validation',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">✅ Validations</button>
-        <button class="log-filter-type" data-type="modification" onclick="logsSetType('modification',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">✏️ Modifications</button>
-        <button class="log-filter-type" data-type="envoi" onclick="logsSetType('envoi',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">📤 Envois</button>
-      </div>
-      <div id="logs-content" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
-        <div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Cliquez sur cet onglet pour charger</div>
-      </div>
-    </div>
-  </div>
-  <!-- PAGE SECURITE -->
 
   <!-- PAGE COMMANDES -->
   <div id="page-commandes" class="page">
@@ -1291,7 +1257,6 @@ function showPage(p, el) {
   if(p==='stat'){ renderRecap(); if(!_histoLoaded) loadHistorique(); }
   if(p==='commandes') loadCommandes();
   if(p==='recette') loadProductionDuJour();
-  if(p==='logs'){loadLogs();}
   if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
   else{secPollStop();stopNetMonitor();secPollStop();}
 }
@@ -2885,9 +2850,6 @@ var SEC_IFACE_ORDER=[
 var SEC_SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',prod:'',access:'',labo:''};
 
 
-var _LOG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-logs';
-var _LOG_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-
 // ── Jours off ──
 var _CONFIG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
 // Format: {dsm:[{date:'2026-05-01',mode:'off'|'rizpoisson'},...], ...}
@@ -3054,164 +3016,6 @@ async function saveJoursOff(){
       body:JSON.stringify({fields:fields})
     });
   }catch(e){}
-}
-
-
-async function loadLogs(){
-  var el=document.getElementById('logs-content');
-  if(!el)return;
-  var _logsCache=_cacheGet('logs',60000);
-  if(_logsCache){el.innerHTML=_logsCache;}
-  else{el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Chargement...</div>';}
-  try{
-    var res=await _fbFetch(_LOG_API+'?orderBy=ts+desc&pageSize=200&key='+_LOG_KEY);
-    if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Aucun log disponible</div>';return;}
-    var json=await res.json();
-    var docs=(json.documents||[]);
-    if(docs.length===0){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;font-size:13px;">Aucun log</div>';return;}
-
-    var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
-    var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
-    var now=Date.now();
-    var limit7j=7*24*3600*1000;
-
-    // Parser tous les docs, filtrer sur 7 jours
-    var allLogs=[];
-    docs.forEach(function(doc){
-      if(!doc.fields)return;
-      var f=doc.fields;
-      var ts=f.ts?parseInt(f.ts.integerValue):0;
-      if(ts&&now-ts>limit7j)return;
-      allLogs.push({
-        ts:ts,
-        action:f.action?f.action.stringValue:'',
-        shop:f.shop?f.shop.stringValue:'',
-        details:f.details?f.details.stringValue:'',
-        date:f.date?f.date.stringValue:''
-      });
-    });
-    allLogs.sort(function(a,b){return b.ts-a.ts;});
-
-    // ── Résumé du jour ──
-    var todayStr=new Date().toLocaleDateString('fr-FR');
-    var todayLogs=allLogs.filter(function(l){
-      return l.ts&&new Date(l.ts).toLocaleDateString('fr-FR')===todayStr;
-    });
-    var summaryEl=document.getElementById('logs-summary');
-    if(summaryEl){
-      if(todayLogs.length>0){
-        // Dernière action par magasin aujourd'hui
-        var lastByShop={};
-        var countByShop={};
-        var modifByShop={};
-        todayLogs.forEach(function(l){
-          if(!l.shop)return;
-          if(!lastByShop[l.shop]||l.ts>lastByShop[l.shop].ts) lastByShop[l.shop]=l;
-          countByShop[l.shop]=(countByShop[l.shop]||0)+1;
-          if(l.action==='modification') modifByShop[l.shop]=(modifByShop[l.shop]||0)+1;
-        });
-        var sHtml='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Résumé aujourd\'hui</div>'
-          +'<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">';
-        ['dsm','mgt','paita','ville'].forEach(function(s){
-          var last=lastByShop[s];
-          var cnt=countByShop[s]||0;
-          var modifs=modifByShop[s]||0;
-          var color=SHOP_COLORS[s]||'#888';
-          var icon=!last?'⚫':last.action==='validation'?'✅':last.action==='modification'?'✏️':'📤';
-          var timeStr=last?new Date(last.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'—';
-          var sub=cnt>0?(last.action==='validation'?'Validé':'Dernière action')+' à '+timeStr+(modifs>0?' · '+modifs+' modif':''):'Aucune activité';
-          sHtml+='<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;">'
-            +'<span style="font-size:14px;">'+icon+'</span>'
-            +'<div><div style="font-size:12px;font-weight:700;color:'+color+';">'+SHOP_LABELS[s]+'</div>'
-            +'<div style="font-size:10px;color:var(--text-muted);">'+sub+'</div>'
-            +'</div></div>';
-        });
-        sHtml+='</div>';
-        summaryEl.innerHTML=sHtml;
-        summaryEl.style.display='block';
-      } else {
-        summaryEl.style.display='none';
-      }
-    }
-
-    // Stocker les données brutes pour le filtrage
-    window._logsData=allLogs;
-    _logsRender();
-  }catch(e){el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur: '+e.message+'</div>';}
-}
-
-var _logsFilterShop='';
-var _logsFilterType='';
-
-function logsSetShop(val,btn){
-  _logsFilterShop=val;
-  document.querySelectorAll('.log-filter-shop').forEach(function(b){
-    var active=b===btn;
-    b.style.background=active?'#1a1916':'none';
-    b.style.color=active?'#fff':(b.dataset.shop?({dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'}[b.dataset.shop]||'var(--text)'):'var(--text)');
-  });
-  _logsRender();
-}
-
-function logsSetType(val,btn){
-  _logsFilterType=val;
-  document.querySelectorAll('.log-filter-type').forEach(function(b){
-    var active=b===btn;
-    b.style.background=active?'#1a1916':'none';
-    b.style.color=active?'#fff':'var(--text)';
-  });
-  _logsRender();
-}
-
-function _logsRender(){
-  var el=document.getElementById('logs-content');
-  if(!el||!window._logsData)return;
-  var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
-
-  var filtered=window._logsData.filter(function(l){
-    if(_logsFilterShop&&l.shop!==_logsFilterShop)return false;
-    if(_logsFilterType&&l.action!==_logsFilterType)return false;
-    return true;
-  });
-
-  if(filtered.length===0){
-    el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1.5rem;font-size:13px;">Aucun log correspondant</div>';
-    return;
-  }
-
-  // Regrouper par jour
-  var byDay={};
-  filtered.forEach(function(l){
-    var dk=l.ts?new Date(l.ts).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}):'—';
-    if(!byDay[dk])byDay[dk]=[];
-    byDay[dk].push(l);
-  });
-
-  var html='';
-  Object.entries(byDay).forEach(function(kv){
-    var day=kv[0],list=kv[1];
-    html+='<div style="padding:8px 12px 4px;background:var(--bg);border-bottom:1px solid var(--border);">'
-      +'<span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);">'+day+'</span>'
-      +'</div>';
-    list.forEach(function(l){
-      var time=l.ts?new Date(l.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
-      var color=SHOP_COLORS[l.shop]||'#888';
-      var icon=l.action==='validation'?'✅':l.action==='modification'?'✏️':l.action==='envoi'?'📤':'📝';
-      html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);">'
-        +'<span style="font-size:15px;flex-shrink:0;padding-top:1px;">'+icon+'</span>'
-        +'<div style="flex:1;min-width:0;">'
-        +'<div style="font-size:12px;font-weight:600;">'
-        +(l.shop?'<span style="color:'+color+';">'+l.shop.toUpperCase()+'</span> · ':'' )
-        +l.action+'</div>'
-        +(l.details?'<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">'+l.details+'</div>':'')
-        +'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">'+time+(l.date?' · livraison '+l.date:'')+'</div>'
-        +'</div></div>';
-    });
-  });
-
-  var _lHtml=html||'<div style="text-align:center;color:var(--text-muted);padding:1rem;">Aucun log</div>';
-  if(!_logsFilterShop&&!_logsFilterType) _cacheSet('logs',_lHtml);
-  el.innerHTML=_lHtml;
 }
 
 
