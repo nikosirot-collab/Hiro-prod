@@ -393,7 +393,6 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('rolls',this)">Rolls</div>
   <div class="nav-tab" onclick="showPage('thon',this)">Commande Thon</div>
   <div class="nav-tab" onclick="showPage('stat',this)">Stats</div>
-  <div class="nav-tab" onclick="showPage('totaux',this)">Totaux</div>
   <div class="nav-tab" onclick="showPage('commandes',this)">Commandes</div>
   <div class="nav-tab" onclick="showPage('logs',this);loadLogs()">Logs</div>
   <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
@@ -586,27 +585,6 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       </div>
       <div id="historique-content" style="padding:8px 0;">
         <div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement de l'historique…</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="page-totaux" class="page">
-    <div class="section">
-      <div class="section-header"><span class="section-title">Total thon / saumon / aburi par jour</span></div>
-      <div class="tbl-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="min-width:90px;text-align:left;padding-left:12px">Date</th>
-              <th class="c-dsm">Thon total</th>
-              <th class="c-mgt">Saumon total</th>
-              <th class="c-aburi">Aburi total</th>
-              <th>Total tranches</th>
-            </tr>
-          </thead>
-          <tbody id="body-total"></tbody>
-          <tfoot id="foot-total"></tfoot>
-        </table>
       </div>
     </div>
   </div>
@@ -1802,7 +1780,7 @@ async function loadWeekFromHistory(dateStr) {
   let totRolls={dsm:0,mgt:0,paita:0,ville:0};
 
   // Génère les lignes pour chaque onglet
-  let rizRows='',fishRows='',rollRows='',thonRows='',totRows='';
+  let rizRows='',fishRows='',rollRows='',thonRows='';
 
   for(let di=0;di<7;di++){
     const d=new Date(monday);d.setDate(d.getDate()+di);const dStr=ds(d);
@@ -1854,7 +1832,6 @@ async function loadWeekFromHistory(dateStr) {
       ${td(riz.ville,'border-left:1px solid var(--border)')}${td(villeR,'font-weight:500')}`);
 
     thonRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm);font-weight:500')}${td(dayS,'color:var(--mgt);font-weight:500')}${td(dayA,'color:var(--paita);font-weight:500')}${td(dayT+dayS+dayA,'font-weight:600')}`);
-    totRows+=tr(`${tdL()}${td(dayT,'color:var(--dsm)')}${td(dayS,'color:var(--mgt)')}${td(dayA,'color:var(--paita)')}${td(dayT+dayS+dayA,'font-weight:600')}`);
   }
 
   const thS=(t,cls='')=>`<th style="padding:5px 6px;text-align:center;font-size:10px;font-weight:600;background:var(--bg);${cls}">${t}</th>`;
@@ -1913,7 +1890,7 @@ function switchHistTab(id){
 function render() {
   const todayDs = ds(TODAY_NC);
   let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
-  let rizR='',fishR='',rollR='',thonR='',totR='';
+  let rizR='',fishR='',rollR='',thonR='';
   let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totRolls={dsm:0,mgt:0,paita:0,ville:0,asia:0};
@@ -1967,7 +1944,6 @@ function render() {
       return data[mk]!==undefined ? data[mk] : auto;
     };
 
-    // Accumulation pour totaux (utilise valeurs effectives)
     ['dsm','mgt','paita','ville'].forEach(s=>{
       const t=gfv(s,'t'), sa=gfv(s,'s'), a=gfv(s,'a');
       totFS[s].t+=t; totFS[s].s+=sa; totFS[s].a+=a;
@@ -2127,15 +2103,6 @@ function render() {
       </tr>`;
     }
     thonR += thonRow;
-
-    // TOTAUX
-    totR+=`<tr>
-      <td class="${dc}">${label}${tags}<span class="date-sub">${short}</span></td>
-      <td class="${dc2} val-thon">${dayT||'—'}</td>
-      <td class="${dc2} val-saumon">${dayS||'—'}</td>
-      <td class="${dc2} val-aburi">${dayA||'—'}</td>
-      <td class="${dc2} val-mono" style="font-weight:600">${(dayT+dayS+dayA)||'—'}</td>
-    </tr>`;
   }
 
   // Set bodies
@@ -2143,8 +2110,6 @@ function render() {
   document.getElementById('body-fish').innerHTML=fishR;
   document.getElementById('body-rolls').innerHTML=rollR;
   document.getElementById('body-thon').innerHTML=thonR;
-  document.getElementById('body-total').innerHTML=totR;
-
   // Footers
   document.getElementById('foot-riz').innerHTML=`<tr>
     <td class="td-total td-day">Total semaine</td>
@@ -2186,14 +2151,6 @@ function render() {
     <td class="td-total val-thon">${totFS.ville.t}</td>
     <td class="td-blue-total">${totThonTranches}</td>
     <td class="td-blue-total">${getThonKg(Math.round(totThonTranches/7))}/jour</td>
-  </tr>`;
-
-  document.getElementById('foot-total').innerHTML=`<tr>
-    <td class="td-total td-day">Total semaine</td>
-    <td class="td-blue-total val-thon">${totFish.t}</td>
-    <td class="td-blue-total val-saumon">${totFish.s}</td>
-    <td class="td-blue-total val-aburi">${totFish.a}</td>
-    <td class="td-blue-total">${totFish.t+totFish.s+totFish.a}</td>
   </tr>`;
 
   document.getElementById('m-bacs').textContent=fb(wBacs);
