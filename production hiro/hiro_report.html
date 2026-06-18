@@ -619,7 +619,7 @@ async function fetchRolls(dateStr){
     if(vm&&vm.integerValue!==undefined){ rolls[s.id]=parseInt(vm.integerValue); return; }
     if(vm&&vm.doubleValue!==undefined){ rolls[s.id]=Math.round(parseFloat(vm.doubleValue)); return; }
     // 2. Ville et Asia : rolls directs seulement
-    if(s.id==='ville'||s.id==='asia'){ rolls[s.id]=0; return; }
+    if(s.id==='ville'){ rolls[s.id]=0; return; }
     // 3. DSM/MGT/Paita : calculer depuis le riz
     const vr=j.fields[`${dateStr}--${s.id}`];
     let riz=0;
