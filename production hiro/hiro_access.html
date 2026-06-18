@@ -569,12 +569,26 @@ function _setStatus(ok) {
   if (el) { el.textContent = ok ? '● Live' : '○ Hors ligne'; el.style.color = ok ? '#7fcf7f' : '#f08060'; }
 }
 
+function _fbCacheSet(docId,data){
+  try{localStorage.setItem('hiro_fc_'+docId,JSON.stringify({ts:Date.now(),data:data}));}catch(e){}
+}
+function _fbCacheGet(docId){
+  try{
+    var raw=localStorage.getItem('hiro_fc_'+docId);
+    if(!raw)return null;
+    var c=JSON.parse(raw);
+    if(Date.now()-c.ts>3600000)return null;
+    return c.data;
+  }catch(e){return null;}
+}
+
 async function _fbGet(docId) {
   try {
     const res = await fetch(`${_API}/${docId}?key=${_KEY}`);
+    _setStatus(res.ok);
     if (!res.ok) return null;
     return _fromFirestore(await res.json());
-  } catch(e) { return null; }
+  } catch(e) { _setStatus(false); return null; }
 }
 
 let _pollInterval = null;
@@ -589,13 +603,15 @@ function _fbPoll(docId, onData, interval=5000) {
           clearInterval(_pollInterval);
           _pollInterval=setInterval(tryFetch,30000);
         }
-        onData({});
+        var cached=_fbCacheGet(docId);
+        if(cached) onData(cached);
       } else {
         if(_pollSlowdown){
           _pollSlowdown=false;
           clearInterval(_pollInterval);
           _pollInterval=setInterval(tryFetch,interval);
         }
+        _fbCacheSet(docId,d);
         onData(d);
       }
     });
@@ -856,7 +872,7 @@ function subscribeWeek(){
         data={};Object.assign(data,r);
         renderWithState();
       }
-    }, 3000);
+    }, 15000);
   };
   if(typeof _laboJoursOffEarlyReady!=='undefined'){
     _laboJoursOffEarlyReady.then(_startPoll);

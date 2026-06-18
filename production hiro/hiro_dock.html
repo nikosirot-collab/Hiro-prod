@@ -259,17 +259,20 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
 function getStock(artId){const s=S.stocks.find(function(x){return x.articleId===artId;});return s?s.qte:0;}
-function today(){return new Date().toISOString().split('T')[0];}
+function _todayNC(){return new Date(Date.now()+(11*3600000)+new Date().getTimezoneOffset()*60000);}
+function _fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function today(){return _fmtDate(_todayNC());}
 function nextDelivery(jours){
   if(!jours||!jours.length)return today();
   const map={Lun:1,Mar:2,Mer:3,Jeu:4,Ven:5,Sam:6,Dim:0};
-  const cur=new Date().getDay();
+  const now=_todayNC();
+  const cur=now.getDay();
   const days=jours.map(function(j){return map[j];}).filter(function(d){return d!==undefined;});
   if(!days.length)return today();
   let min=7;
   days.forEach(function(d){let diff=d-cur;if(diff<=0)diff+=7;if(diff<min)min=diff;});
-  const dt=new Date();dt.setDate(dt.getDate()+min);
-  return dt.toISOString().split('T')[0];
+  const dt=new Date(now.getTime());dt.setDate(dt.getDate()+min);
+  return _fmtDate(dt);
 }
 
 // ── Firestore ──
