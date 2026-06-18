@@ -169,6 +169,9 @@ async function checkOrderPwd(){
 
 <script>
 // ── Jours off ──
+const SHOP='mgt';
+const SHOP_LABEL='MGT';
+const ACCENT='#0d7a52';
 var _JOURS_OFF=[];
 var _JOURS_OFF_RP=[];
 var _joursOffLoaded=false;
@@ -319,9 +322,6 @@ loadJoursOff();
 const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
 const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production';
-const SHOP='mgt';
-const SHOP_LABEL='MGT';
-const ACCENT='#0d7a52';
 const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
 var SALADE_RECAP_KEYS=['bo','sin','thon','thai','plp','rouleaux','tataki'];
 var SALADE_RECAP_NAMES={bo:'Bun Bo',sin:'Singapour',thon:'Thon marine',thai:'Thai',plp:'Poulpe',rouleaux:'Rouleau',tataki:'Tataki'};
