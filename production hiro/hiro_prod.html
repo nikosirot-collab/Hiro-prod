@@ -823,6 +823,34 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         </div>
       </div>
     </div>
+    <div class="section" style="margin-top:1.5rem;">
+      <div class="section-header">
+        <span class="section-title">Composition des rolls</span>
+      </div>
+      <div style="max-width:600px;">
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;">Palier de production</label>
+          <select id="rolls-palier" onchange="renderRollsCompo()"
+            style="padding:9px 14px;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);outline:none;cursor:pointer;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-strong)'">
+            <option value="">— Sélectionner un palier —</option>
+            <option value="0">20</option>
+            <option value="1">25</option>
+            <option value="2">30 City</option>
+            <option value="3">30</option>
+            <option value="4">40</option>
+            <option value="5">45</option>
+            <option value="6">60</option>
+            <option value="7">70</option>
+            <option value="8">80</option>
+            <option value="9">90</option>
+            <option value="10">100</option>
+            <option value="11">120</option>
+          </select>
+        </div>
+        <div id="rolls-compo-table"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3757,6 +3785,50 @@ function secPollStop(){
 
 
 <script>
+var ROLLS_PALIERS=['20','25','30 City','30','40','45','60','70','80','90','100','120'];
+var ROLLS_DATA=[
+  {name:'Saumon Fumé',       compo:'Carotte, concombre, avocat',           vals:[0,0,0,2,4,5,10,10,10,10,10,10]},
+  {name:'Rillette',          compo:'Carotte, concombre, avocat',           vals:[4,5,2,2,4,5,5,10,10,10,10,15]},
+  {name:'Bœuf Teriyaki',     compo:'Carotte, concombre, teriyaki',         vals:[2,2,2,4,4,5,5,5,5,5,10,10]},
+  {name:'Thon Teriyaki',     compo:'Carotte, concombre, avocat, teriyaki', vals:[2,2,2,4,4,5,5,5,5,5,5,10]},
+  {name:'Saumon Teriyaki',   compo:'Salade, concombre, teriyaki',          vals:[0,2,2,4,4,5,5,5,5,5,10,10]},
+  {name:'Poulpe / Vege',     compo:'Carotte, salade, concombre',           vals:[0,0,0,0,0,0,5,5,5,5,5,5]},
+  {name:'Surimi Crabe',      compo:'Salade, concombre',                    vals:[0,0,2,2,5,5,3,3,5,5,5,10]},
+  {name:'Saumon Sashimi',    compo:'Carotte, concombre, avocat',           vals:[4,4,5,5,5,5,5,10,10,10,10,15]},
+  {name:'Thon Sashimi',      compo:'Carotte, concombre',                   vals:[4,4,5,2,5,5,5,5,10,10,10,10]},
+  {name:'California Fromage',compo:'Crevette, fromage, concombre',         vals:[4,4,10,5,5,5,10,10,10,15,15,15]},
+  {name:'Poulet Fromage',    compo:'Fromage',                              vals:[0,2,0,0,0,0,2,2,5,5,5,5]},
+  {name:'Poulet Teriyaki',   compo:'Salade, concombre, teriyaki',          vals:[0,0,0,0,0,0,0,0,0,5,5,5]},
+];
+function renderRollsCompo(){
+  var sel=document.getElementById('rolls-palier');
+  var container=document.getElementById('rolls-compo-table');
+  if(!sel||!container)return;
+  var idx=sel.value;
+  if(idx===''){container.innerHTML='';return;}
+  idx=parseInt(idx);
+  var rows=ROLLS_DATA.filter(function(r){return r.vals[idx]>0;});
+  if(!rows.length){container.innerHTML='<p style="color:var(--text-muted);font-size:13px;padding:8px 0;">Aucun roll pour ce palier.</p>';return;}
+  var total=rows.reduce(function(s,r){return s+r.vals[idx];},0);
+  var html='<div class="tbl-wrap"><table><thead><tr>'
+    +'<th style="text-align:left;min-width:160px;">Type de roll</th>'
+    +'<th style="text-align:left;">Composition</th>'
+    +'<th style="min-width:80px;">Qté</th>'
+    +'</tr></thead><tbody>';
+  rows.forEach(function(r){
+    html+='<tr>'
+      +'<td style="text-align:left;font-weight:500;">'+r.name+'</td>'
+      +'<td style="text-align:left;color:var(--text-muted);font-size:12px;">'+r.compo+'</td>'
+      +'<td class="val-mono" style="font-weight:500;">'+r.vals[idx]+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody><tfoot><tr>'
+    +'<td class="td-total" style="text-align:left;" colspan="2">Total</td>'
+    +'<td class="td-total">'+total+'</td>'
+    +'</tr></tfoot></table></div>';
+  container.innerHTML=html;
+}
+
 function calcRecette(v) {
   var n = parseFloat(v);
   var el = document.getElementById('recette-results');
