@@ -661,6 +661,7 @@ async function loadReport(){
 }
 
 // Render
+var _carouselResizeHandler=null;
 function renderReport(dateStr, results){
   const d=new Date(dateStr+'T12:00:00');
   const dl=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -780,7 +781,9 @@ function renderReport(dateStr, results){
       carousel.style.height = _cards[_carouselIdx].offsetHeight+'px';
     }
   }
-  window.addEventListener('resize', resizeCarousel);
+  if(_carouselResizeHandler) window.removeEventListener('resize',_carouselResizeHandler);
+  _carouselResizeHandler=resizeCarousel;
+  window.addEventListener('resize',_carouselResizeHandler);
   setTimeout(resizeCarousel, 100);
   window.carouselNext=()=>setCarousel((_carouselIdx+1)%_cards.length);
   window.carouselPrev=()=>setCarousel((_carouselIdx-1+_cards.length)%_cards.length);

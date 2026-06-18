@@ -1099,24 +1099,7 @@ function fb(x) { return x===0?'0':x%1===0?String(x):x.toFixed(1); }
 
 let isFete=false, weekOff=0, data={};
 
-const PREFILL = {
-  '2026-03-30':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
-  '2026-03-31':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-01':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-02':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-03':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
-  '2026-04-04':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
-  '2026-04-05':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
-  '2026-04-06':{dsm:1250,mgt:750,paita:1000,ville:0,asia:0},
-  '2026-04-07':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-08':{dsm:1250,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-09':{dsm:1000,mgt:750,paita:750,ville:200,asia:100},
-  '2026-04-10':{dsm:1250,mgt:1000,paita:1000,ville:200,asia:100},
-  '2026-04-11':{dsm:1500,mgt:1000,paita:1250,ville:200,asia:100},
-  '2026-04-12':{dsm:1000,mgt:500,paita:750,ville:0,asia:0},
-};
-
-function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:(PREFILL[d]?PREFILL[d][s]||0:0);}
+function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:0;}
 function getR(d,s){return data[d+'__r__'+s]||0;}
 
 // Poisson verrouillé si :
@@ -1732,7 +1715,7 @@ async function loadWeekFromHistory(dateStr) {
   const wLabel=fmtS(monday)+' – '+fmtS(sunday);
 
   // Helpers
-  const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:(PREFILL[d]?PREFILL[d][s]||0:0);};
+  const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:0;};
   const hr=(d,s)=>hData[d+'__r__'+s]||0;
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s),false);return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
