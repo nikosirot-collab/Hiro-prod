@@ -388,7 +388,8 @@ function updateStatusBanner(hasOrder){
   if(!banner||!text)return;
   var _nc=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var _ncH=_nc.getHours()+_nc.getMinutes()/60;
-  var isLocked=_ncH>=14;
+  var _ncDay=_nc.getDay();
+  var isLocked=(_ncDay!==6&&_ncDay!==0)&&_ncH>=14;
   var btn=document.getElementById('btn-send');
   if(hasOrder){
     banner.className='status-banner sent';
@@ -418,7 +419,8 @@ function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById
 function editOrder(){
   var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
-  if(ncH>=14){var m=document.createElement('div');m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Modification impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être modifiées après 14h00</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(m);return;}
+  var ncDay=ncNow.getDay();
+  if(ncDay!==6&&ncDay!==0&&ncH>=14){var m=document.createElement('div');m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Modification impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être modifiées après 14h00</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(m);return;}
   // Remettre le bouton en mode Envoyer
   var btn=document.getElementById('btn-send');
   if(btn){btn.textContent='Envoyer →';btn.onclick=function(){showConfirmModal();};}
@@ -464,7 +466,8 @@ async function _doSendOrder(){
   // Vérif 14h00
   var _ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var _ncH=_ncNow.getHours()+_ncNow.getMinutes()/60;
-  if(_ncH>=14){var _m=document.createElement('div');_m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';_m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 14h00</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(_m);return;}
+  var _ncDay=_ncNow.getDay();
+  if(_ncDay!==6&&_ncDay!==0&&_ncH>=14){var _m=document.createElement('div');_m.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border:1px solid #ddd;border-radius:12px;padding:24px 20px;max-width:280px;width:90%;text-align:center;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.15);';_m.innerHTML='<div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:15px;font-weight:700;margin-bottom:6px;">Envoi impossible</div><div style="font-size:13px;color:#888;margin-bottom:16px;">Les commandes ne peuvent plus être envoyées après 14h00</div><button onclick="this.parentNode.remove()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">OK</button>';document.body.appendChild(_m);return;}
   // Vérif prénom
   var _name=localStorage.getItem('hiro-user-name')||'';
   if(!_name.trim()){var _modal=document.getElementById('name-modal');if(_modal){_modal.style.display='flex';document.getElementById('name-modal-input').focus();}return;}
@@ -893,7 +896,8 @@ function updateStatusBanner(hasOrder){
   var btn=document.getElementById('btn-send');
   var _nc=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var _ncH=_nc.getHours()+_nc.getMinutes()/60;
-  var isLocked=_ncH>=14;
+  var _ncDay=_nc.getDay();
+  var isLocked=(_ncDay!==6&&_ncDay!==0)&&_ncH>=14;
   if(hasOrder){
     banner.className='status-banner sent';
     text.textContent='✓ Commande envoyée — en attente de validation';
@@ -1426,7 +1430,8 @@ function isRollLocked(dStr){
   // Jours passés et jour actuel (heure Nouméa) -> verrouillé
   if(dStr<=todayStr) return true;
   // Lendemain -> verrouillé après 14h heure Nouméa
-  if(dStr===tomorrowStr) return ncNow.getHours()>=14;
+  var _ncDay=ncNow.getDay();
+  if(dStr===tomorrowStr) return (_ncDay!==6&&_ncDay!==0)&&ncNow.getHours()>=14;
   // Surlendemain et au-delà -> modifiable
   return false;
 }
