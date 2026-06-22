@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hiro Planning — Équipe MGT</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --border: #e2e0d8;
+  --border-strong: #c8c5ba;
+  --text: #1a1916;
+  --text-muted: #6b6860;
+  --text-hint: #a09d96;
+  --mgt: #0d7a52;
+  --mgt-light: #e4f5ee;
+  --dsm: #1a5fa8;
+  --dsm-light: #e8f1fb;
+  --purple: #5b4bb5;
+  --purple-light: #ede8f7;
+  --accent: #1a1916;
+  --radius: 8px;
+}
+body.dark {
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --border: #2a2a2a;
+  --border-strong: #3a3a3a;
+  --text: #f0ede8;
+  --text-muted: #8a8680;
+  --text-hint: #4a4642;
+  --accent: #f0ede8;
+  --mgt-light: #071e12;
+  --dsm-light: #0d3060;
+  --purple-light: #1a1530;
+}
+body.dark .app-header { background: #111; }
+body.dark th { background: #222 !important; }
+body.dark .config-panel { background: var(--surface); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+
+/* HEADER */
+.app-header {
+  background: var(--text);
+  color: #fff;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+@media(min-width:768px){ .app-header { padding: 0 2rem; } }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.hdr-title { font-size: 15px; font-weight: 500; letter-spacing: .02em; color: #fff; }
+.hdr-sub { font-size: 11px; color: #999; margin-top: 1px; }
+
+/* MAIN */
+.main { padding: 1rem; max-width: 1800px; }
+@media(min-width:768px){ .main { padding: 1.5rem 2rem; } }
+
+/* MONTH BAR */
+.month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.month-nav { display: flex; align-items: center; gap: 8px; }
+.month-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+}
+.month-btn:hover { background: var(--bg); }
+.month-label { font-size: 15px; font-weight: 500; min-width: 180px; text-align: center; }
+.bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* BUTTONS */
+.btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--text); color: #fff; border-color: var(--text); }
+.btn-muted { color: var(--text-muted); }
+.btn-muted:hover { background: var(--bg); color: var(--text); }
+
+/* CONFIG PANEL */
+.config-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 1rem;
+}
+.config-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 12px; }
+@media(max-width:800px){ .config-grid { grid-template-columns: 1fr; } }
+.config-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+.config-select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+.config-info { font-size: 11px; color: var(--text-hint); margin-top: 12px; }
+
+/* LEGEND */
+.legend { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); }
+.leg-badge { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+/* TABLE */
+.tbl-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+#planning-tbl { border-collapse: collapse; background: var(--surface); font-size: 12px; }
+#planning-tbl th, #planning-tbl td {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+#planning-tbl th:last-child, #planning-tbl td:last-child { border-right: none; }
+#planning-tbl tr:last-child td { border-bottom: none; }
+#planning-tbl th {
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
+  background: #faf9f6; padding: 6px 8px;
+}
+.td-day {
+  text-align: left !important; padding-left: 10px !important;
+  background: #faf9f6; min-width: 76px; position: sticky; left: 0; z-index: 1;
+}
+body.dark .td-day { background: #222 !important; }
+.td-week-sep { background: var(--bg) !important; height: 2px; padding: 0 !important; }
+.td-week-total { background: #f0efe9 !important; font-weight: 600; font-family: 'DM Mono', monospace; font-size: 11px; }
+body.dark .td-week-total { background: #252525 !important; }
+.td-month-total { background: var(--mgt-light) !important; font-weight: 600; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--mgt); }
+.td-alert { color: #c0392b !important; }
+
+/* PLANNING CELLS */
+.pcell {
+  cursor: pointer;
+  min-width: 82px;
+  padding: 3px 4px !important;
+  transition: filter 0.1s;
+  vertical-align: middle;
+}
+.pcell:hover { filter: brightness(0.92); }
+.pcell-inner { font-size: 11px; font-weight: 500; line-height: 1.3; }
+.pcell-hours { font-size: 10px; font-family: 'DM Mono', monospace; opacity: 0.7; }
+.pcell-override { font-size: 9px; opacity: 0.6; }
+
+/* QUICK POPOVER */
+#quick-popover {
+  display: none;
+  position: fixed;
+  z-index: 500;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.18);
+  padding: 10px;
+  width: 318px;
+}
+.pop-slot-btn {
+  padding: 7px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+  transition: filter 0.1s;
+  border: 1px solid transparent;
+  width: 100%;
+}
+.pop-slot-btn:hover { filter: brightness(0.88); }
+
+/* SECTION TITLE */
+.section-title { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+
+/* SUMMARY TABLE */
+.sum-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+.sum-tbl { border-collapse: collapse; width: 100%; background: var(--surface); font-size: 12px; }
+.sum-tbl th, .sum-tbl td { border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); padding: 6px 10px; text-align: center; white-space: nowrap; }
+.sum-tbl th:last-child, .sum-tbl td:last-child { border-right: none; }
+.sum-tbl tr:last-child td { border-bottom: none; }
+.sum-tbl th { font-size: 11px; font-weight: 500; color: var(--text-muted); background: #faf9f6; }
+.sum-tbl td:first-child { text-align: left; font-weight: 500; }
+
+/* MODAL */
+.modal-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 320px;
+  max-width: 95vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+.modal-title { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+.modal-field { margin-bottom: 12px; }
+.modal-field label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+.modal-select, .modal-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+}
+.modal-input[type=time] { font-family: 'DM Mono', monospace; letter-spacing: .03em; text-align: center; }
+.time-adj-btn {
+  width: 34px; height: 38px; flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 20px; line-height: 1;
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+  font-family: 'DM Sans', sans-serif;
+}
+.time-adj-btn:hover { background: var(--bg); }
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-btn {
+  flex: 1; padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.modal-btn-primary { background: var(--text); color: #fff; border-color: var(--text); }
+.modal-btn-danger { color: #c0392b; border-color: #e8c0c0; }
+.modal-btn-danger:hover { background: #fef0f0; }
+
+@media print {
+  .app-header, .month-bar, .config-panel, .legend, .bar-actions { display: none !important; }
+  .main { padding: 0; }
+  .tbl-wrap { border: none; }
+  .pcell { cursor: default; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1916;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#222;border:1px solid #333;border-radius:14px;padding:32px 28px;max-width:300px;width:90%;text-align:center;">
+    <div style="font-size:17px;font-weight:600;color:#fff;margin-bottom:4px;">Hiro Planning</div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px;">Équipe MGT</div>
+    <input id="pwd-input" type="password" placeholder="Mot de passe" autocomplete="current-password"
+      style="width:100%;padding:10px 14px;border:1px solid #444;border-radius:8px;font-size:15px;margin-bottom:12px;background:#333;color:#fff;outline:none;"
+      onkeydown="if(event.key==='Enter')checkPwd()">
+    <button onclick="checkPwd()" style="width:100%;padding:10px;background:#0d7a52;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Connexion</button>
+    <div id="pwd-error" style="color:#e74c3c;font-size:12px;margin-top:10px;display:none;">Mot de passe incorrect</div>
+  </div>
+</div>
+<script>
+function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+const _PWD='1af5a601';
+function checkPwd(){
+  const v=document.getElementById('pwd-input').value;
+  if(_h(v)===_PWD){
+    localStorage.setItem('hiro-ok','1');
+    document.getElementById('login-screen').style.display='none';
+  } else {
+    document.getElementById('pwd-error').style.display='block';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
+</script>
+
+<!-- APP -->
+<header class="app-header">
+  <div class="header-left">
+    <div>
+      <div class="hdr-title">Hiro Planning</div>
+      <div class="hdr-sub">MGT — Équipe</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-muted" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-muted" onclick="toggleDark()" id="dark-btn">◑</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- MONTH BAR -->
+  <div class="month-bar">
+    <div class="month-nav">
+      <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="month-label">—</div>
+      <button class="month-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="bar-actions">
+      <button class="btn btn-muted" onclick="toggleConfig()" id="config-toggle-btn">⚙ Config rotation</button>
+      <button class="btn btn-muted" onclick="recalculate()">↺ Recalculer</button>
+      <button class="btn btn-muted" onclick="window.print()">Imprimer</button>
+    </div>
+  </div>
+
+  <!-- CONFIG PANEL -->
+  <div class="config-panel" id="config-panel" style="display:none">
+    <div class="section-title">Configuration de la rotation dimanche</div>
+    <div class="config-grid">
+      <div>
+        <div class="config-label">Cuisine — qui a travaillé le dernier dimanche du mois précédent ?</div>
+        <select class="config-select" id="cuisine-last" onchange="onConfigChange()">
+          <option value="none">— Aucun (départ du cycle)</option>
+          <option value="Sanine">Sanine</option>
+          <option value="Anna">Anna</option>
+          <option value="Mohu">Mohu</option>
+        </select>
+      </div>
+      <div>
+        <div class="config-label">Labo — qui a travaillé le dernier dimanche du mois précédent ?</div>
+        <select class="config-select" id="labo-last" onchange="onConfigChange()">
+          <option value="none">— Aucun (départ du cycle)</option>
+          <option value="Evelyne">Evelyne</option>
+          <option value="Elise">Elise</option>
+        </select>
+      </div>
+      <div>
+        <div class="config-label">Devant — quel binôme a travaillé le dernier dimanche du mois précédent ?</div>
+        <select class="config-select" id="devant-last-binome" onchange="onConfigChange()">
+          <option value="none">— Aucun (départ du cycle)</option>
+          <option value="A">Binôme A — Seb + Chrystelle</option>
+          <option value="B">Binôme B — Tory + Ginette</option>
+        </select>
+      </div>
+    </div>
+    <div class="config-info" id="config-info"></div>
+  </div>
+
+
+  <!-- TABLE -->
+  <div class="tbl-wrap">
+    <div id="table-container"></div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div id="summary-container"></div>
+
+</div>
+
+<!-- QUICK POPOVER -->
+<div id="quick-popover">
+  <div id="popover-title" style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px"></div>
+  <div id="popover-slots" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px"></div>
+  <div style="border-top:1px solid var(--border);padding-top:8px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:10px;color:var(--text-hint)">Clic = appliquer immédiatement</span>
+    <div style="display:flex;gap:6px">
+      <button onclick="openFullEditor()" style="padding:5px 10px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text)">⏱ Horaires</button>
+      <button onclick="closePopover()" style="padding:5px 8px;border:1px solid var(--border-strong);border-radius:5px;background:var(--surface);cursor:pointer;font-size:13px;color:var(--text-muted)">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Modifier</div>
+    <div class="modal-field">
+      <label>Créneau</label>
+      <select class="modal-select" id="modal-slot" onchange="onModalSlotChange()">
+        <option value="fixe">Fixe (06h30–13h30)</option>
+        <option value="matin">Matin (07h–13h30)</option>
+        <option value="matin_court">Matin court (10h–13h30)</option>
+        <option value="aprem_11">Après-midi (11h–19h45)</option>
+        <option value="aprem_11h30">Après-midi (11h30–19h45)</option>
+        <option value="aprem_13">Après-midi (13h–19h45)</option>
+        <option value="rotation_cl">Dim. Cuisine/Labo (06h30–12h30)</option>
+        <option value="rotation_dev">Dim. Devant (07h30–12h30)</option>
+        <option value="conge">Congé (= 6.5h)</option>
+        <option value="absence">Absence (= 0h)</option>
+        <option value="maladie">Maladie (= 0h)</option>
+        <option value="repos">Repos</option>
+        <option value="repos_comp">Repos compensatoire</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Heure de début</label>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <button class="time-adj-btn" onclick="adjustTime('modal-start',-15)">−</button>
+        <input class="modal-input" type="time" id="modal-start" oninput="updateModalTotal()" style="flex:1">
+        <button class="time-adj-btn" onclick="adjustTime('modal-start',15)">+</button>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Heure de fin</label>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <button class="time-adj-btn" onclick="adjustTime('modal-end',-15)">−</button>
+        <input class="modal-input" type="time" id="modal-end" oninput="updateModalTotal()" style="flex:1">
+        <button class="time-adj-btn" onclick="adjustTime('modal-end',15)">+</button>
+      </div>
+    </div>
+    <div class="modal-field" style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:500">Total journée</span>
+      <span id="modal-total" style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600">—</span>
+    </div>
+    <div class="modal-field">
+      <label>Note</label>
+      <input class="modal-input" type="text" id="modal-note" placeholder="Optionnel…">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn modal-btn-primary" onclick="saveModal()">Enregistrer</button>
+      <button class="modal-btn modal-btn-danger" onclick="resetCell()">Réinitialiser</button>
+      <button class="modal-btn" onclick="closeModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== FIREBASE ====================
+
+const _API = 'https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents';
+const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+
+// ==================== CONSTANTS ====================
+
+const CUISINE_GIRLS = ['Sanine', 'Anna', 'Mohu'];
+const LABO_GIRLS = ['Evelyne', 'Elise'];
+const BINOME_A = ['Seb', 'Chrystelle'];
+const BINOME_B = ['Tory', 'Ginette'];
+const DEVANT_ROTANTS = ['Ginette', 'Seb', 'Chrystelle', 'Tory'];
+const EMPLOYEES = ['Nico', 'Ginette', 'Seb', 'Chrystelle', 'Tory', 'Sanine', 'Anna', 'Mohu', 'Evelyne', 'Elise'];
+
+const GROUP = {
+  Nico: 'devant', Ginette: 'devant', Seb: 'devant', Chrystelle: 'devant', Tory: 'devant',
+  Sanine: 'cuisine', Anna: 'cuisine', Mohu: 'cuisine',
+  Evelyne: 'labo', Elise: 'labo'
+};
+
+const SLOT_DEF = {
+  fixe:         { label: 'Fixe',        bg: '#C0DD97', color: '#2d6a2d', border: '' },
+  matin:        { label: 'Matin',       bg: '#B5D4F4', color: '#1a5fa8', border: '' },
+  matin_court:  { label: 'Matin 10h',   bg: '#cfe3f8', color: '#1a5fa8', border: '' },
+  aprem_11:     { label: 'Aprem 11h',   bg: '#FAC775', color: '#7a4f00', border: '' },
+  aprem_11h30:  { label: 'Aprem 11h30', bg: '#f8b96a', color: '#7a4f00', border: '' },
+  aprem_13:     { label: 'Aprem 13h',   bg: '#f5a85a', color: '#7a4f00', border: '' },
+  rotation_cl:  { label: 'Dim. C/L',    bg: '#EAF3DE', color: '#0d7a52', border: '1px solid #0d7a52' },
+  rotation_dev: { label: 'Dim. Dev',    bg: '#ddf0ea', color: '#0d7a52', border: '1px dashed #0d7a52' },
+  conge:        { label: 'Congé',       bg: '#e0d3f7', color: '#6232a8', border: '' },
+  absence:      { label: 'Absence',     bg: '#ffe4b2', color: '#a05000', border: '1px solid #e08000' },
+  maladie:      { label: 'Maladie',     bg: '#ffd6d6', color: '#8b0000', border: '1px dashed #c00000' },
+  repos:        { label: 'Repos',       bg: '#F7C1C1', color: '#c0392b', border: '' },
+  repos_comp:   { label: 'Repos comp.', bg: '#F4C0D1', color: '#b03060', border: '2px dashed #e06090' }
+};
+
+const MONTH_NAMES = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAY_NAMES = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+
+// ==================== STATE ====================
+
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let monthData = { config: { cuisineLastSunday: 'none', laboLastSunday: 'none', devantLastBinome: 'none' }, overrides: {} };
+let baseSchedule = {};
+let modalEmp = null, modalDate = null;
+
+// ==================== STORAGE ====================
+
+function storageKey(y, m) { return `hiro-planning-${y}-${String(m+1).padStart(2,'0')}`; }
+
+function defaultMonthData() {
+  return { config: { cuisineLastSunday: 'none', laboLastSunday: 'none', devantLastBinome: 'none' }, overrides: {} };
+}
+
+function _normalizeMonthData() {
+  if (!monthData.config) monthData.config = {};
+  monthData.config = Object.assign({ cuisineLastSunday: 'none', laboLastSunday: 'none', devantLastBinome: 'none' }, monthData.config);
+  if (!monthData.overrides) monthData.overrides = {};
+}
+
+async function loadData() {
+  const key = storageKey(currentYear, currentMonth);
+  try {
+    const res = await fetch(`${_API}/hiro-planning/${key}?key=${_KEY}`);
+    if (res.ok) {
+      const doc = await res.json();
+      if (doc.fields && doc.fields.data) {
+        monthData = JSON.parse(doc.fields.data.stringValue);
+        localStorage.setItem(key, JSON.stringify(monthData));
+      } else {
+        monthData = defaultMonthData();
+        await autoFillConfig();
+        saveData();
+      }
+    } else if (res.status === 404) {
+      monthData = defaultMonthData();
+      await autoFillConfig();
+      saveData();
+    } else {
+      throw new Error('HTTP ' + res.status);
+    }
+  } catch(e) {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      try { monthData = JSON.parse(raw); } catch(e2) { monthData = defaultMonthData(); }
+    } else {
+      monthData = defaultMonthData();
+      await autoFillConfig();
+    }
+  }
+  _normalizeMonthData();
+}
+
+async function autoFillConfig() {
+  const prevY = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const prevM = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevKey = storageKey(prevY, prevM);
+
+  let prevData = null;
+  const raw = localStorage.getItem(prevKey);
+  if (raw) { try { prevData = JSON.parse(raw); } catch(e) {} }
+
+  if (!prevData) {
+    try {
+      const res = await fetch(`${_API}/hiro-planning/${prevKey}?key=${_KEY}`);
+      if (res.ok) {
+        const doc = await res.json();
+        if (doc.fields && doc.fields.data) {
+          prevData = JSON.parse(doc.fields.data.stringValue);
+          localStorage.setItem(prevKey, JSON.stringify(prevData));
+        }
+      }
+    } catch(e) {}
+  }
+  if (!prevData) return;
+
+  const prevConfig = Object.assign(
+    { cuisineLastSunday: 'none', laboLastSunday: 'none', devantLastBinome: 'none' },
+    prevData.config || {}
+  );
+  const prevBase = computeSchedule(prevY, prevM, prevConfig);
+  const prevDim = daysInMonth(prevY, prevM);
+  let lastSun = null;
+  for (let d = prevDim; d >= 1; d--) {
+    if (new Date(prevY, prevM, d).getDay() === 0) { lastSun = d; break; }
+  }
+  if (!lastSun) return;
+  const lastSunStr = fmtDate(prevY, prevM, lastSun);
+  const prevOverrides = prevData.overrides || {};
+  function getPrevCell(emp) {
+    return prevOverrides[`${emp}-${lastSunStr}`] || prevBase[`${emp}-${lastSunStr}`];
+  }
+
+  for (const g of CUISINE_GIRLS) {
+    const c = getPrevCell(g);
+    if (c && (c.slot === 'rotation_cl' || c.slot === 'rotation')) { monthData.config.cuisineLastSunday = g; break; }
+  }
+  for (const g of LABO_GIRLS) {
+    const c = getPrevCell(g);
+    if (c && (c.slot === 'rotation_cl' || c.slot === 'rotation')) { monthData.config.laboLastSunday = g; break; }
+  }
+  for (const g of BINOME_A) {
+    const c = getPrevCell(g);
+    if (c && c.slot === 'rotation_dev') { monthData.config.devantLastBinome = 'A'; return; }
+  }
+  for (const g of BINOME_B) {
+    const c = getPrevCell(g);
+    if (c && c.slot === 'rotation_dev') { monthData.config.devantLastBinome = 'B'; return; }
+  }
+}
+
+async function saveData() {
+  const key = storageKey(currentYear, currentMonth);
+  localStorage.setItem(key, JSON.stringify(monthData));
+  try {
+    await fetch(`${_API}/hiro-planning/${key}?key=${_KEY}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(monthData) } } })
+    });
+  } catch(e) { console.warn('Firestore save failed, données sauvegardées localement'); }
+}
+
+// ==================== DATE UTILS ====================
+
+function fmtDate(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+
+function isoWeek(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const y1 = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - y1) / 86400000 + 1) / 7);
+}
+
+// ==================== SCHEDULE COMPUTATION ====================
+
+function getDefaultTimes(emp, slot) {
+  if (slot === 'repos' || slot === 'repos_comp') return { start: '', end: '' };
+  if (slot === 'fixe') return emp === 'Nico' ? { start: '05:00', end: '13:00' } : { start: '06:30', end: '13:30' };
+  if (slot === 'matin') return { start: '07:00', end: '13:30' };
+  if (slot === 'matin_court') return { start: '10:00', end: '13:30' };
+  if (slot === 'aprem_11') return { start: '11:00', end: '19:45' };
+  if (slot === 'aprem_11h30') return { start: '11:30', end: '19:45' };
+  if (slot === 'aprem_13') return { start: '13:00', end: '19:45' };
+  if (slot === 'rotation_cl') return { start: '06:30', end: '12:30' };
+  if (slot === 'rotation_dev') return { start: '07:30', end: '12:30' };
+  if (slot === 'conge' || slot === 'absence' || slot === 'maladie') return { start: '', end: '' };
+  return { start: '', end: '' };
+}
+
+function computeHours(start, end) {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  const h = (eh * 60 + em - sh * 60 - sm) / 60;
+  return h > 0 ? h : 0;
+}
+
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  return m === '00' ? `${h}h` : `${h}h${m}`;
+}
+
+function makeCell(emp, slot) {
+  const times = getDefaultTimes(emp, slot);
+  return { slot, startTime: times.start, endTime: times.end, note: '' };
+}
+
+function cellHours(cell) {
+  if (cell.slot === 'conge') return 6.5;
+  if (cell.slot === 'absence' || cell.slot === 'maladie') return 0;
+  if (cell.startTime && cell.endTime) return computeHours(cell.startTime, cell.endTime);
+  return cell.hours || 0; // rétrocompatibilité
+}
+
+function computeSchedule(y, m, config) {
+  const sched = {};
+  const dim = daysInMonth(y, m);
+
+  // collect Sundays
+  const sundays = [];
+  for (let d = 1; d <= dim; d++) {
+    if (new Date(y, m, d).getDay() === 0) sundays.push(d);
+  }
+
+  const cuisineLastIdx = CUISINE_GIRLS.indexOf(config.cuisineLastSunday); // -1 si none
+  const laboLastIdx = LABO_GIRLS.indexOf(config.laboLastSunday);
+
+  function force(emp, dateStr, slot) {
+    sched[`${emp}-${dateStr}`] = makeCell(emp, slot);
+  }
+  function dayStr(sundayDay, offset) {
+    const d = new Date(y, m, sundayDay + offset);
+    return d.getMonth() === m ? fmtDate(y, m, d.getDate()) : null;
+  }
+
+  // Qui travaille le dimanche si pour ce groupe (phase 0)
+  function getWorker(si, lastIdx, girls) {
+    const N = girls.length;
+    return girls[((lastIdx + 1 + si) % N + N) % N];
+  }
+  // Phase 1 : a travaillé le dimanche précédent → mardi + mercredi off
+  function getPhase1(si, lastIdx, girls) {
+    if (si === 0) return lastIdx < 0 ? null : girls[lastIdx];
+    return getWorker(si - 1, lastIdx, girls);
+  }
+  // Phase 2 : a travaillé il y a 2 dimanches → mercredi off (cuisine uniquement, N≥3)
+  function getPhase2(si, lastIdx, girls) {
+    const N = girls.length;
+    if (N < 3) return null;
+    if (si === 0) return lastIdx < 0 ? null : girls[((lastIdx - 1) % N + N) % N];
+    if (si === 1) return lastIdx < 0 ? null : girls[lastIdx];
+    return getWorker(si - 2, lastIdx, girls);
+  }
+
+  function applyRotation(si, sd, girls, lastIdx) {
+    const sunStr = fmtDate(y, m, sd);
+    const p0 = getWorker(si, lastIdx, girls);
+    const p1 = getPhase1(si, lastIdx, girls);
+    const p2 = getPhase2(si, lastIdx, girls);
+
+    // Phase 0 : jeudi off + dimanche TRAVAIL
+    const thu = dayStr(sd, -3);
+    if (thu) force(p0, thu, 'repos_comp');
+    force(p0, sunStr, 'rotation_cl');
+
+    // Phase 1 : mardi off + mercredi off + dimanche off
+    if (p1) {
+      const tue = dayStr(sd, -5);
+      const wed = dayStr(sd, -4);
+      if (tue) force(p1, tue, 'repos_comp');
+      if (wed) force(p1, wed, 'repos_comp');
+      force(p1, sunStr, 'repos');
+    }
+
+    // Phase 2 : mercredi off + dimanche off (cuisine seulement)
+    if (p2) {
+      const wed = dayStr(sd, -4);
+      if (wed) force(p2, wed, 'repos_comp');
+      force(p2, sunStr, 'repos');
+    }
+
+    // Autres : repos dimanche
+    for (const g of girls) {
+      if (!sched[`${g}-${sunStr}`]) force(g, sunStr, 'repos');
+    }
+  }
+
+  for (let si = 0; si < sundays.length; si++) {
+    applyRotation(si, sundays[si], CUISINE_GIRLS, cuisineLastIdx);
+    applyRotation(si, sundays[si], LABO_GIRLS, laboLastIdx);
+  }
+
+  // --- DEVANT auto-schedule ---
+  if (config.devantLastBinome && config.devantLastBinome !== 'none') {
+    scheduleDevant(y, m, sundays, config.devantLastBinome, sched);
+  }
+
+  // Default fill
+  for (let d = 1; d <= dim; d++) {
+    const dow = new Date(y, m, d).getDay();
+    const ds = fmtDate(y, m, d);
+    const isSun = dow === 0;
+    const isSat = dow === 6;
+
+    for (const emp of EMPLOYEES) {
+      const k = `${emp}-${ds}`;
+      if (sched[k]) continue;
+
+      let slot;
+      if (emp === 'Nico') {
+        slot = isSun ? 'repos' : 'fixe';
+      } else if (GROUP[emp] === 'devant') {
+        // Variable: default repos (user will override with matin/aprem)
+        slot = 'repos';
+      } else {
+        // Cuisine / Labo : travaillent lun–sam, repos dimanche (sauf rotation)
+        slot = isSun ? 'repos' : 'fixe';
+      }
+      sched[k] = makeCell(emp, slot);
+    }
+  }
+
+  return sched;
+}
+
+function scheduleDevant(y, m, sundays, devantLastBinome, sched) {
+  const dim = daysInMonth(y, m);
+
+  function dayStr(sd, offset) {
+    const d = new Date(y, m, sd + offset);
+    return d.getMonth() === m ? fmtDate(y, m, d.getDate()) : null;
+  }
+
+  const firstLetter = devantLastBinome === 'A' ? 'B' : 'A';
+
+  // Step 1: assign Sundays + compensation days
+  for (let si = 0; si < sundays.length; si++) {
+    const sd = sundays[si];
+    const sunStr = fmtDate(y, m, sd);
+    const letter = (si % 2 === 0) ? firstLetter : (firstLetter === 'A' ? 'B' : 'A');
+    const working = letter === 'A' ? BINOME_A : BINOME_B;
+    const resting = letter === 'A' ? BINOME_B : BINOME_A;
+
+    for (const emp of working) sched[`${emp}-${sunStr}`] = makeCell(emp, 'rotation_dev');
+    for (const emp of resting) sched[`${emp}-${sunStr}`] = makeCell(emp, 'repos');
+
+    // Same week: working[0] → mercredi, working[1] → jeudi
+    const wedStr = dayStr(sd, -4);
+    const thuStr = dayStr(sd, -3);
+    if (wedStr) sched[`${working[0]}-${wedStr}`] = makeCell(working[0], 'repos_comp');
+    if (thuStr) sched[`${working[1]}-${thuStr}`] = makeCell(working[1], 'repos_comp');
+
+    // Semaine suivante: working[0] → lundi, working[1] → mardi
+    const monStr = dayStr(sd, 1);
+    const tueStr = dayStr(sd, 2);
+    if (monStr) sched[`${working[0]}-${monStr}`] = makeCell(working[0], 'repos_comp');
+    if (tueStr) sched[`${working[1]}-${tueStr}`] = makeCell(working[1], 'repos_comp');
+  }
+
+  // Step 2: count pre-assigned hours
+  const totalH = {}, apremC = {};
+  for (const emp of DEVANT_ROTANTS) { totalH[emp] = 0; apremC[emp] = 0; }
+  for (let d = 1; d <= dim; d++) {
+    const ds = fmtDate(y, m, d);
+    for (const emp of DEVANT_ROTANTS) {
+      const cell = sched[`${emp}-${ds}`];
+      if (cell) totalH[emp] += cellHours(cell);
+    }
+  }
+
+  // Step 3: fill weekdays — 2 en aprem décalés (11h30 + 13h), reste en matin
+  for (let d = 1; d <= dim; d++) {
+    if (new Date(y, m, d).getDay() === 0) continue;
+    const ds = fmtDate(y, m, d);
+    const avail = DEVANT_ROTANTS.filter(emp => !sched[`${emp}-${ds}`]);
+    if (avail.length === 0) continue;
+
+    // Priorité aprem à ceux qui en ont le moins (équilibre matin/aprem)
+    avail.sort((a, b) => apremC[a] - apremC[b] || totalH[a] - totalH[b]);
+
+    let apremSlots = 0;
+    for (const emp of avail) {
+      if (apremSlots < 2) {
+        const slot = apremSlots === 0 ? 'aprem_11h30' : 'aprem_13';
+        const h = apremSlots === 0 ? 8.25 : 6.75;
+        if (totalH[emp] + h <= 169) {
+          sched[`${emp}-${ds}`] = makeCell(emp, slot);
+          apremC[emp]++;
+          totalH[emp] += h;
+          apremSlots++;
+        } else if (totalH[emp] + 6.5 <= 169) {
+          sched[`${emp}-${ds}`] = makeCell(emp, 'matin');
+          totalH[emp] += 6.5;
+        }
+      } else {
+        if (totalH[emp] + 6.5 <= 169) {
+          sched[`${emp}-${ds}`] = makeCell(emp, 'matin');
+          totalH[emp] += 6.5;
+        }
+      }
+    }
+  }
+}
+
+// effective cell = override > base
+function getCell(emp, ds) {
+  const k = `${emp}-${ds}`;
+  return monthData.overrides[k] || baseSchedule[k] || makeCell(emp, 'repos');
+}
+
+// ==================== RENDER ====================
+
+function renderAll() {
+  renderMonthLabel();
+  renderConfigUI();
+  renderTable();
+  renderSummary();
+}
+
+function renderMonthLabel() {
+  document.getElementById('month-label').textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+}
+
+function renderConfigUI() {
+  document.getElementById('cuisine-last').value = monthData.config.cuisineLastSunday || 'none';
+  document.getElementById('labo-last').value = monthData.config.laboLastSunday || 'none';
+  document.getElementById('devant-last-binome').value = monthData.config.devantLastBinome || 'none';
+
+  // Show first Sunday of month in info
+  const dim = daysInMonth(currentYear, currentMonth);
+  let firstSun = null;
+  for (let d = 1; d <= dim; d++) {
+    if (new Date(currentYear, currentMonth, d).getDay() === 0) { firstSun = d; break; }
+  }
+  const all = [];
+  for (let d = 1; d <= dim; d++) {
+    if (new Date(currentYear, currentMonth, d).getDay() === 0) all.push(d);
+  }
+  const sunList = all.map(d => `${d}/${currentMonth+1}`).join(', ');
+  document.getElementById('config-info').textContent =
+    `Dimanches du mois : ${sunList}${firstSun ? ` — Premier dimanche : ${firstSun}/${currentMonth+1}` : ''}`;
+}
+
+function renderTable() {
+  const dim = daysInMonth(currentYear, currentMonth);
+  const empCount = EMPLOYEES.length;
+
+  let html = `<table id="planning-tbl">`;
+
+  // Header row 1: groups
+  html += `<thead>`;
+  html += `<tr>`;
+  html += `<th class="td-day">Jour</th>`;
+  html += `<th colspan="5" style="background:#e8f1fb;color:#1a5fa8;font-weight:600">Devant</th>`;
+  html += `<th colspan="3" style="background:#e4f5ee;color:#0d7a52;font-weight:600">Cuisine</th>`;
+  html += `<th colspan="2" style="background:#ede8f7;color:#5b4bb5;font-weight:600">Labo</th>`;
+  html += `</tr>`;
+
+  // Header row 2: employee names
+  html += `<tr>`;
+  html += `<th class="td-day"></th>`;
+  for (const emp of EMPLOYEES) {
+    const g = GROUP[emp];
+    const c = g==='devant'?'#1a5fa8':g==='cuisine'?'#0d7a52':'#5b4bb5';
+    html += `<th style="color:${c}">${emp}</th>`;
+  }
+  html += `</tr>`;
+  html += `</thead><tbody>`;
+
+  // Week grouping
+  let prevWeekNum = null;
+  const weekHours = {}; // weekNum -> empName -> hours
+  const monthlyHours = {};
+  for (const emp of EMPLOYEES) monthlyHours[emp] = 0;
+
+  // Collect week boundaries
+  const weekRows = {}; // weekNum -> last day in that week within month
+  for (let d = 1; d <= dim; d++) {
+    const wk = isoWeek(new Date(currentYear, currentMonth, d));
+    weekRows[wk] = d;
+  }
+
+  // Rows for each day
+  for (let d = 1; d <= dim; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dow = date.getDay();
+    const ds = fmtDate(currentYear, currentMonth, d);
+    const wk = isoWeek(date);
+    const isSun = dow === 0;
+    const isSat = dow === 6;
+
+    if (!weekHours[wk]) { weekHours[wk] = {}; for (const e of EMPLOYEES) weekHours[wk][e] = 0; }
+
+    // Separator before new week (but not before first day)
+    if (prevWeekNum !== null && wk !== prevWeekNum) {
+      // Insert weekly total row
+      html += `<tr>`;
+      html += `<td class="td-day td-week-total" style="font-size:10px;color:var(--text-muted)">Sem. ${prevWeekNum}</td>`;
+      for (const emp of EMPLOYEES) {
+        const h = weekHours[prevWeekNum][emp] || 0;
+        const over = h > 40;
+        html += `<td class="td-week-total${over?' td-alert':''}">${h > 0 ? h.toFixed(1)+'h' : '—'}</td>`;
+      }
+      html += `</tr>`;
+      // Visual separator
+      html += `<tr><td colspan="${empCount+1}" class="td-week-sep"></td></tr>`;
+    }
+    prevWeekNum = wk;
+
+    const rowBg = isSun ? '#fff8e8' : isSat ? '#f8f5f0' : '';
+    html += `<tr${rowBg ? ` style="background:${rowBg}"` : ''}>`;
+
+    // Day cell
+    const dayLabel = `${DAY_NAMES[dow]} ${d}`;
+    html += `<td class="td-day"><span style="font-weight:${isSun||isSat?'600':'400'}">${DAY_NAMES[dow]}</span> <span style="font-family:'DM Mono',monospace">${String(d).padStart(2,' ')}</span></td>`;
+
+    // Employee cells
+    for (const emp of EMPLOYEES) {
+      const cell = getCell(emp, ds);
+      const isOverride = !!monthData.overrides[`${emp}-${ds}`];
+      const sd = SLOT_DEF[cell.slot] || SLOT_DEF.repos;
+
+      const styleStr = `background:${sd.bg};color:${sd.color};${sd.border ? 'border:'+sd.border+';' : ''}`;
+
+      // Accumulate hours
+      const h = cellHours(cell);
+      weekHours[wk][emp] = (weekHours[wk][emp] || 0) + h;
+      monthlyHours[emp] = (monthlyHours[emp] || 0) + h;
+
+      html += `<td class="pcell" style="${styleStr}" onclick="openPopover(event,'${emp}','${ds}')">`;
+      html += `<div class="pcell-inner">${sd.label}</div>`;
+      if (cell.startTime && cell.endTime) {
+        html += `<div class="pcell-hours">${fmtTime(cell.startTime)}–${fmtTime(cell.endTime)}</div>`;
+      }
+      if (h > 0) html += `<div class="pcell-hours" style="font-weight:600">${h % 1 === 0 ? h+'h' : h.toFixed(1)+'h'}</div>`;
+      if (isOverride) html += `<div class="pcell-override">✎</div>`;
+      html += `</td>`;
+    }
+
+    html += `</tr>`;
+  }
+
+  // Last week total
+  if (prevWeekNum !== null) {
+    html += `<tr>`;
+    html += `<td class="td-day td-week-total" style="font-size:10px;color:var(--text-muted)">Sem. ${prevWeekNum}</td>`;
+    for (const emp of EMPLOYEES) {
+      const h = weekHours[prevWeekNum][emp] || 0;
+      const over = h > 40;
+      html += `<td class="td-week-total${over?' td-alert':''}">${h > 0 ? h.toFixed(1)+'h' : '—'}</td>`;
+    }
+    html += `</tr>`;
+  }
+
+  // Monthly total row
+  html += `<tr>`;
+  html += `<td class="td-day" style="background:var(--mgt-light);font-size:10px;font-weight:600;color:var(--mgt)">Total mois</td>`;
+  for (const emp of EMPLOYEES) {
+    const h = monthlyHours[emp] || 0;
+    const over = h > 169;
+    html += `<td class="td-month-total${over?' td-alert':''}">${h > 0 ? h.toFixed(1)+'h' : '—'}</td>`;
+  }
+  html += `</tr>`;
+
+  html += `</tbody></table>`;
+  document.getElementById('table-container').innerHTML = html;
+}
+
+function renderSummary() {
+  const dim = daysInMonth(currentYear, currentMonth);
+  const monthlyH = {}, weeklyH = {};
+  for (const emp of EMPLOYEES) { monthlyH[emp] = 0; weeklyH[emp] = {}; }
+
+  for (let d = 1; d <= dim; d++) {
+    const ds = fmtDate(currentYear, currentMonth, d);
+    const wk = isoWeek(new Date(currentYear, currentMonth, d));
+    for (const emp of EMPLOYEES) {
+      const h = cellHours(getCell(emp, ds));
+      monthlyH[emp] += h;
+      if (!weeklyH[emp][wk]) weeklyH[emp][wk] = 0;
+      weeklyH[emp][wk] += h;
+    }
+  }
+
+  // Get unique weeks
+  const weeks = [];
+  const seen = new Set();
+  for (let d = 1; d <= dim; d++) {
+    const wk = isoWeek(new Date(currentYear, currentMonth, d));
+    if (!seen.has(wk)) { seen.add(wk); weeks.push(wk); }
+  }
+
+  let html = `<div class="section-title">Récapitulatif mensuel</div>`;
+  html += `<div class="sum-wrap"><table class="sum-tbl"><thead><tr>`;
+  html += `<th style="text-align:left">Employé</th><th>Groupe</th>`;
+  for (const wk of weeks) html += `<th>Sem. ${wk}</th>`;
+  html += `<th>Total mois</th><th>Alertes</th>`;
+  html += `</tr></thead><tbody>`;
+
+  const groupLabels = {devant:'Devant',cuisine:'Cuisine',labo:'Labo'};
+  const groupColors = {devant:'#1a5fa8',cuisine:'#0d7a52',labo:'#5b4bb5'};
+
+  for (const emp of EMPLOYEES) {
+    const g = GROUP[emp];
+    const mh = monthlyH[emp];
+    const alerts = [];
+    if (mh > 169) alerts.push('⚠ > 169h/mois');
+    for (const wk of weeks) {
+      const wh = weeklyH[emp][wk] || 0;
+      if (wh > 40) alerts.push(`⚠ Sem.${wk} > 40h`);
+    }
+
+    html += `<tr>`;
+    html += `<td>${emp}</td>`;
+    html += `<td style="color:${groupColors[g]}">${groupLabels[g]}</td>`;
+    for (const wk of weeks) {
+      const wh = weeklyH[emp][wk] || 0;
+      const over = wh > 40;
+      html += `<td style="font-family:'DM Mono',monospace;${over?'color:#c0392b;font-weight:600':''}">${wh > 0 ? wh.toFixed(1)+'h' : '—'}</td>`;
+    }
+    const mover = mh > 169;
+    html += `<td style="font-family:'DM Mono',monospace;font-weight:600;${mover?'color:#c0392b':''}">${mh > 0 ? mh.toFixed(1)+'h' : '—'}</td>`;
+    html += `<td style="color:#c0392b;font-size:11px">${alerts.join(' ')}</td>`;
+    html += `</tr>`;
+  }
+
+  html += `</tbody></table></div>`;
+  document.getElementById('summary-container').innerHTML = html;
+}
+
+// ==================== QUICK POPOVER ====================
+
+let popoverEmp = null, popoverDate = null;
+const SLOT_ORDER = ['fixe','matin','matin_court','aprem_11','aprem_11h30','aprem_13','rotation_cl','rotation_dev','conge','absence','maladie','repos','repos_comp'];
+
+function openPopover(event, emp, ds) {
+  event.stopPropagation();
+  popoverEmp = emp; popoverDate = ds;
+
+  const dateObj = new Date(ds + 'T00:00:00');
+  const dayName = DAY_NAMES[dateObj.getDay()];
+  const [y, mo, d] = ds.split('-');
+  document.getElementById('popover-title').textContent = `${emp} — ${dayName} ${parseInt(d)}/${parseInt(mo)}`;
+
+  let btnHtml = '';
+  for (const slot of SLOT_ORDER) {
+    const sd = SLOT_DEF[slot];
+    const borderStyle = sd.border ? `border:${sd.border}` : `border:1px solid rgba(0,0,0,0.08)`;
+    btnHtml += `<button class="pop-slot-btn" onclick="applySlot('${slot}')" style="background:${sd.bg};color:${sd.color};${borderStyle}">${sd.label}</button>`;
+  }
+  document.getElementById('popover-slots').innerHTML = btnHtml;
+
+  const pop = document.getElementById('quick-popover');
+  pop.style.display = 'block';
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.left;
+
+  requestAnimationFrame(() => {
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 4) left = 4;
+    if (top + ph > window.innerHeight - 8) top = rect.top - ph - 4;
+    if (top < 4) top = 4;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  });
+}
+
+function applySlot(slot) {
+  if (!popoverEmp || !popoverDate) return;
+  const times = getDefaultTimes(popoverEmp, slot);
+  monthData.overrides[`${popoverEmp}-${popoverDate}`] = { slot, startTime: times.start, endTime: times.end, note: '' };
+  saveData();
+  closePopover();
+  renderTable();
+  renderSummary();
+}
+
+function openFullEditor() {
+  const emp = popoverEmp, ds = popoverDate;
+  closePopover();
+  openModal(emp, ds);
+}
+
+function closePopover() {
+  document.getElementById('quick-popover').style.display = 'none';
+  popoverEmp = null; popoverDate = null;
+}
+
+document.addEventListener('click', function(e) {
+  const pop = document.getElementById('quick-popover');
+  if (pop.style.display !== 'none' && !pop.contains(e.target)) closePopover();
+});
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closePopover();
+});
+
+// ==================== MODAL ====================
+
+function openModal(emp, ds) {
+  modalEmp = emp; modalDate = ds;
+  const cell = getCell(emp, ds);
+  const dateObj = new Date(ds + 'T00:00:00');
+  const dayName = DAY_NAMES[dateObj.getDay()];
+  const [y, mo, d] = ds.split('-');
+  document.getElementById('modal-title').textContent = `${emp} — ${dayName} ${parseInt(d)}/${parseInt(mo)}/${y}`;
+  document.getElementById('modal-slot').value = cell.slot;
+  document.getElementById('modal-start').value = cell.startTime || '';
+  document.getElementById('modal-end').value = cell.endTime || '';
+  document.getElementById('modal-note').value = cell.note || '';
+  updateModalTotal();
+  document.getElementById('modal').classList.add('open');
+}
+
+function onModalSlotChange() {
+  const slot = document.getElementById('modal-slot').value;
+  const times = getDefaultTimes(modalEmp || '', slot);
+  document.getElementById('modal-start').value = times.start;
+  document.getElementById('modal-end').value = times.end;
+  updateModalTotal();
+}
+
+function adjustTime(fieldId, deltaMin) {
+  const inp = document.getElementById(fieldId);
+  if (!inp.value) return;
+  const [h, m] = inp.value.split(':').map(Number);
+  let total = ((h * 60 + m + deltaMin) % 1440 + 1440) % 1440;
+  inp.value = `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  updateModalTotal();
+}
+
+function updateModalTotal() {
+  const slot = document.getElementById('modal-slot').value;
+  const el = document.getElementById('modal-total');
+  if (slot === 'conge') {
+    el.textContent = '6.5h'; el.style.color = '#6232a8'; return;
+  }
+  if (slot === 'absence' || slot === 'maladie') {
+    el.textContent = '0h'; el.style.color = 'var(--text-hint)'; return;
+  }
+  const s = document.getElementById('modal-start').value;
+  const e = document.getElementById('modal-end').value;
+  const h = computeHours(s, e);
+  if (h > 0) {
+    el.textContent = (h % 1 === 0 ? h + 'h' : h.toFixed(1) + 'h');
+    el.style.color = 'var(--mgt)';
+  } else {
+    el.textContent = '—';
+    el.style.color = 'var(--text-hint)';
+  }
+}
+
+function saveModal() {
+  const slot = document.getElementById('modal-slot').value;
+  const startTime = document.getElementById('modal-start').value;
+  const endTime = document.getElementById('modal-end').value;
+  const note = document.getElementById('modal-note').value.trim();
+  monthData.overrides[`${modalEmp}-${modalDate}`] = { slot, startTime, endTime, note };
+  saveData();
+  closeModal();
+  renderTable();
+  renderSummary();
+}
+
+function resetCell() {
+  delete monthData.overrides[`${modalEmp}-${modalDate}`];
+  saveData();
+  closeModal();
+  renderTable();
+  renderSummary();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  modalEmp = null; modalDate = null;
+}
+
+// Close modal on backdrop click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ==================== NAV ====================
+
+async function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  await loadData();
+  baseSchedule = computeSchedule(currentYear, currentMonth, monthData.config);
+  renderAll();
+}
+
+function toggleConfig() {
+  const p = document.getElementById('config-panel');
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+}
+
+function onConfigChange() {
+  monthData.config.cuisineLastSunday = document.getElementById('cuisine-last').value;
+  monthData.config.laboLastSunday = document.getElementById('labo-last').value;
+  monthData.config.devantLastBinome = document.getElementById('devant-last-binome').value;
+  saveData();
+  baseSchedule = computeSchedule(currentYear, currentMonth, monthData.config);
+  renderConfigUI();
+  renderTable();
+  renderSummary();
+}
+
+function recalculate() {
+  if (!confirm('Recalculer effacera les saisies manuelles pour ce mois. Continuer ?')) return;
+  monthData.overrides = {};
+  baseSchedule = computeSchedule(currentYear, currentMonth, monthData.config);
+  saveData();
+  renderTable();
+  renderSummary();
+}
+
+// ==================== DARK MODE ====================
+
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('hiro-dark', document.body.classList.contains('dark') ? '1' : '0');
+}
+
+// ==================== CSV EXPORT ====================
+
+function exportCSV() {
+  const dim = daysInMonth(currentYear, currentMonth);
+  const rows = [];
+
+  // Header
+  rows.push(['Jour', 'Date', ...EMPLOYEES].join(';'));
+
+  for (let d = 1; d <= dim; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const ds = fmtDate(currentYear, currentMonth, d);
+    const dow = date.getDay();
+    const row = [DAY_NAMES[dow], ds];
+    for (const emp of EMPLOYEES) {
+      const cell = getCell(emp, ds);
+      const sd = SLOT_DEF[cell.slot] || SLOT_DEF.repos;
+      const h = cellHours(cell);
+      const timeRange = cell.startTime && cell.endTime ? ` ${fmtTime(cell.startTime)}-${fmtTime(cell.endTime)}` : '';
+      row.push(`${sd.label}${timeRange} (${h > 0 ? (h%1===0?h+'h':h.toFixed(1)+'h') : '0h'})${cell.note ? ' – '+cell.note : ''}`);
+    }
+    rows.push(row.join(';'));
+  }
+
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `planning_mgt_${currentYear}-${String(currentMonth+1).padStart(2,'0')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ==================== INIT ====================
+
+(async function init() {
+  if (localStorage.getItem('hiro-dark') === '1') document.body.classList.add('dark');
+  await loadData();
+  baseSchedule = computeSchedule(currentYear, currentMonth, monthData.config);
+  renderAll();
+})();
+</script>
+</body>
+</html>
