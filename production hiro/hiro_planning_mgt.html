@@ -326,6 +326,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   </div>
   <div class="header-right">
     <button class="btn btn-muted" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-muted" onclick="syncLocalToFirebase()" id="sync-btn" title="Envoyer les données locales vers Firebase">☁ Sync</button>
     <button class="btn btn-muted" onclick="toggleDark()" id="dark-btn">◑</button>
   </div>
 </header>
@@ -1284,6 +1285,41 @@ function recalculate() {
   saveData();
   renderTable();
   renderSummary();
+}
+
+// ==================== SYNC LOCAL → FIREBASE ====================
+
+async function syncLocalToFirebase() {
+  const btn = document.getElementById('sync-btn');
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('hiro-planning-')) keys.push(k);
+  }
+  if (keys.length === 0) {
+    alert('Aucune donnée locale à synchroniser.');
+    return;
+  }
+  if (!confirm(`Envoyer ${keys.length} mois vers Firebase ?\n(${keys.join(', ')})`)) return;
+
+  btn.textContent = '⏳ Sync…';
+  btn.disabled = true;
+  let ok = 0, err = 0;
+  for (const key of keys) {
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+    try {
+      const res = await fetch(`${_API}/hiro-planning/${key}?key=${_KEY}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { data: { stringValue: raw } } })
+      });
+      if (res.ok) ok++; else err++;
+    } catch(e) { err++; }
+  }
+  btn.textContent = '☁ Sync';
+  btn.disabled = false;
+  alert(`Sync terminé : ${ok} mois envoyés${err ? ', ' + err + ' erreur(s)' : ''}.`);
 }
 
 // ==================== DARK MODE ====================
