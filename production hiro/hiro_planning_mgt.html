@@ -326,7 +326,10 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   </div>
   <div class="header-right">
     <button class="btn btn-muted" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn btn-muted" onclick="syncLocalToFirebase()" id="sync-btn" title="Envoyer les données locales vers Firebase">☁ Sync</button>
+    <button class="btn btn-muted" onclick="syncLocalToFirebase()" id="sync-btn" title="Sync données vers Firebase">☁ Sync</button>
+    <label class="btn btn-muted" title="Importer un fichier JSON de planning" style="cursor:pointer">
+      📥 Import <input type="file" accept=".json" onchange="importJSON(this)" style="display:none">
+    </label>
     <button class="btn btn-muted" onclick="toggleDark()" id="dark-btn">◑</button>
   </div>
 </header>
@@ -1289,37 +1292,80 @@ function recalculate() {
 
 // ==================== SYNC LOCAL → FIREBASE ====================
 
-async function syncLocalToFirebase() {
-  const btn = document.getElementById('sync-btn');
-  const keys = [];
+function _getLocalPlanningData() {
+  const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.startsWith('hiro-planning-')) keys.push(k);
+    if (k && k.startsWith('hiro-planning-')) data[k] = localStorage.getItem(k);
   }
-  if (keys.length === 0) {
-    alert('Aucune donnée locale à synchroniser.');
+  return data;
+}
+
+async function syncLocalToFirebase() {
+  const data = _getLocalPlanningData();
+  const keys = Object.keys(data);
+  if (keys.length === 0) { alert('Aucune donnée locale à synchroniser.'); return; }
+
+  // Sur file:// les requêtes HTTPS sont bloquées → export JSON
+  if (window.location.protocol === 'file:') {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hiro_planning_export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    alert(`Fichier exporté avec ${keys.length} mois.\nImporte-le sur GitHub Pages via le bouton "📥 Import".`);
     return;
   }
-  if (!confirm(`Envoyer ${keys.length} mois vers Firebase ?\n(${keys.join(', ')})`)) return;
 
-  btn.textContent = '⏳ Sync…';
-  btn.disabled = true;
+  // Sur https:// → envoi direct Firebase
+  if (!confirm(`Envoyer ${keys.length} mois vers Firebase ?\n(${keys.join(', ')})`)) return;
+  const btn = document.getElementById('sync-btn');
+  btn.textContent = '⏳ Sync…'; btn.disabled = true;
   let ok = 0, err = 0;
   for (const key of keys) {
-    const raw = localStorage.getItem(key);
-    if (!raw) continue;
     try {
       const res = await fetch(`${_API}/hiro-planning/${key}?key=${_KEY}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fields: { data: { stringValue: raw } } })
+        body: JSON.stringify({ fields: { data: { stringValue: data[key] } } })
       });
-      if (res.ok) ok++; else err++;
-    } catch(e) { err++; }
+      if (res.ok) ok++; else { console.error(key, res.status, await res.text()); err++; }
+    } catch(e) { console.error(key, e); err++; }
   }
-  btn.textContent = '☁ Sync';
-  btn.disabled = false;
+  btn.textContent = '☁ Sync'; btn.disabled = false;
   alert(`Sync terminé : ${ok} mois envoyés${err ? ', ' + err + ' erreur(s)' : ''}.`);
+}
+
+async function importJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const text = await file.text();
+  let data;
+  try { data = JSON.parse(text); } catch(e) { alert('Fichier JSON invalide.'); return; }
+  const keys = Object.keys(data).filter(k => k.startsWith('hiro-planning-'));
+  if (keys.length === 0) { alert('Aucune donnée planning trouvée dans ce fichier.'); return; }
+  if (!confirm(`Importer ${keys.length} mois et envoyer vers Firebase ?\n(${keys.join(', ')})`)) return;
+  let ok = 0, err = 0;
+  for (const key of keys) {
+    localStorage.setItem(key, data[key]);
+    if (window.location.protocol !== 'file:') {
+      try {
+        const res = await fetch(`${_API}/hiro-planning/${key}?key=${_KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: { data: { stringValue: data[key] } } })
+        });
+        if (res.ok) ok++; else { console.error(key, res.status, await res.text()); err++; }
+      } catch(e) { console.error(key, e); err++; }
+    } else { ok++; }
+  }
+  input.value = '';
+  alert(`Import terminé : ${ok} mois${err ? ', ' + err + ' erreur(s) Firebase' : ' envoyés vers Firebase'}.`);
+  await loadData();
+  baseSchedule = computeSchedule(currentYear, currentMonth, monthData.config);
+  renderAll();
 }
 
 // ==================== DARK MODE ====================
