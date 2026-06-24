@@ -411,8 +411,8 @@ function updateStatusBanner(hasOrder){
 function showPage(p,el){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));document.getElementById('page-'+p).classList.add('active');el.classList.add('active');}
 function adj(key,delta){const el=document.getElementById('q-'+key);const v=Math.max(0,(parseInt(el.value)||0)+delta);el.value=v;qty[key]=v;el.classList.toggle('active',v>0);el.style.color=v>0?ACCENT:'';el.style.borderColor=v>0?ACCENT:'';updateCount();}
 function setQ(key,val){const v=Math.max(0,parseInt(val)||0);qty[key]=v;const el=document.getElementById('q-'+key);if(el){el.classList.toggle('active',v>0);el.style.color=v>0?ACCENT:'';el.style.borderColor=v>0?ACCENT:''}updateCount();}
-function addLine(pageId){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCount[pageId])lineCount[pageId]=0;const idx=lineCount[pageId]++;const container=document.getElementById('libre-lines-'+pageId);const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.placeholder='Article...';nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};if(pageId==='chr')nameInp.setAttribute('list','chr-catalog-list');const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value='1';qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);container.appendChild(div);libreItems[pageId].push({name:'',qty:1});nameInp.focus();updateCount();}
-function addLineWithData(pageId,name,qty2){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCount[pageId])lineCount[pageId]=0;const idx=lineCount[pageId]++;const container=document.getElementById('libre-lines-'+pageId);if(!container)return;const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.value=name;nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};if(pageId==='chr')nameInp.setAttribute('list','chr-catalog-list');const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value=qty2;qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);container.appendChild(div);libreItems[pageId].push({name:name,qty:qty2});updateCount();}
+function addLine(pageId){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCount[pageId])lineCount[pageId]=0;const idx=lineCount[pageId]++;const container=document.getElementById('libre-lines-'+pageId);const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.placeholder='Article...';nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};if(pageId==='chr')nameInp.setAttribute('list','chr-catalog-list');if(pageId==='tarte')nameInp.setAttribute('list','tarte-catalog-list');const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value='1';qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);container.appendChild(div);libreItems[pageId].push({name:'',qty:1});nameInp.focus();updateCount();}
+function addLineWithData(pageId,name,qty2){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCount[pageId])lineCount[pageId]=0;const idx=lineCount[pageId]++;const container=document.getElementById('libre-lines-'+pageId);if(!container)return;const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.value=name;nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};if(pageId==='chr')nameInp.setAttribute('list','chr-catalog-list');if(pageId==='tarte')nameInp.setAttribute('list','tarte-catalog-list');const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value=qty2;qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);container.appendChild(div);libreItems[pageId].push({name:name,qty:qty2});updateCount();}
 function updateLibre(pageId,idx,field,val){if(!libreItems[pageId]||!libreItems[pageId][idx])return;libreItems[pageId][idx][field]=field==='qty'?Math.max(0,parseInt(val)||0):val;updateCount();}
 function delLine(pageId,idx){const el=document.getElementById('libre-row-'+pageId+'-'+idx);if(el)el.remove();if(libreItems[pageId]&&libreItems[pageId][idx])libreItems[pageId][idx]={name:'',qty:0};updateCount();}
 function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
@@ -483,7 +483,7 @@ async function _doSendOrder(){
   fields['libre']={stringValue:JSON.stringify(libreItems)};
   try{
     const res=await fetch(_API+'/'+docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);updateStatusBanner(true);document.querySelector('.nav-tab').click();var _cn=(libreItems.chr||[]).filter(function(i){return i.name&&i.qty>0;}).map(function(i){return i.name;});if(_cn.length)saveToChrCatalog(_cn);}
+    if(res.ok){const ord=Object.assign({ts:Date.now()},qty);ord.libre=JSON.stringify(libreItems);showRecap(ord);updateStatusBanner(true);document.querySelector('.nav-tab').click();var _cn=(libreItems.chr||[]).filter(function(i){return i.name&&i.qty>0;}).map(function(i){return i.name;});if(_cn.length)saveToChrCatalog(_cn);var _tn=(libreItems.tarte||[]).filter(function(i){return i.name&&i.qty>0;}).map(function(i){return i.name;});if(_tn.length)saveToTarteCatalog(_tn);}
     else{alert('Erreur lors de l envoi. Reessayez.');}
   }catch(e){alert('Pas de connexion. Reessayez.');}
   btn.disabled=false;btn.textContent='Envoyer →';
@@ -1537,6 +1537,40 @@ async function saveToChrCatalog(names){
   }catch(e){}
 }
 loadChrCatalog();
+</script>
+
+<datalist id="tarte-catalog-list"></datalist>
+
+<script>
+var _tarteCatalog=[];
+var _TARTE_CATALOG_URL='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/tarte-catalog';
+async function loadTarteCatalog(){
+  try{
+    var res=await fetch(_TARTE_CATALOG_URL+'?key='+_KEY);
+    if(!res.ok)return;
+    var j=await res.json();
+    _tarteCatalog=(j.fields&&j.fields.items)?JSON.parse(j.fields.items.stringValue):[];
+    var dl=document.getElementById('tarte-catalog-list');
+    if(!dl)return;
+    dl.innerHTML='';
+    _tarteCatalog.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
+  }catch(e){}
+}
+async function saveToTarteCatalog(names){
+  try{
+    var toAdd=names.filter(function(n){return n&&!_tarteCatalog.some(function(c){return c.toLowerCase()===n.toLowerCase();});});
+    if(!toAdd.length)return;
+    _tarteCatalog=_tarteCatalog.concat(toAdd);
+    var dl=document.getElementById('tarte-catalog-list');
+    if(dl)toAdd.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
+    await fetch(_TARTE_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths=items',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{items:{stringValue:JSON.stringify(_tarteCatalog)}}})
+    });
+  }catch(e){}
+}
+loadTarteCatalog();
 </script>
 
 </body>
