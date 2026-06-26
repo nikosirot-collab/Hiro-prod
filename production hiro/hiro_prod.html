@@ -3197,6 +3197,7 @@ async function loadSecurite(){
         userName:f.userName?f.userName.stringValue:'',
         ts:ts,
         disabled:f.disabled&&f.disabled.booleanValue===true,
+        pendingApproval:f.pendingApproval&&f.pendingApproval.booleanValue===true,
         isOnline:(now-ts)<_NOW_ONLINE_MS,
         online:f.online?f.online.booleanValue:undefined,
         latency:f.latency?parseInt(f.latency.integerValue):null,
@@ -3334,18 +3335,19 @@ function secDevCard(e){
   var nameStr=e.userName||(shopLabel||'');
   var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
   var isOld=ago>1440; // Plus de 24h
-  var disabledStyle=e.disabled?'opacity:.4;':'';
+  var isPending=e.pendingApproval&&e.disabled;
+  var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
   var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
-  var btnLabel=isOld?'🗑 Supprimer':(e.disabled?'Réactiver':'Désactiver');
-  var btnColor=isOld?'#999':(e.disabled?'#0d7a52':'#e74c3c');
-  var btnAction=isOld?'secDeleteDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
+  var btnLabel=isOld?'🗑 Supprimer':isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver');
+  var btnColor=isOld?'#999':isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c');
+  var btnAction=isOld?'secDeleteDevice(\''+e.devId+'\')':isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'+disabledStyle+'">'
     +statusDot
     +'<div style="flex:1;min-width:0;">'
     +'<div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">'
     +(nameStr?nameStr:'—')
     +(shopLabel&&nameStr!==shopLabel?' <span style="font-weight:400;color:var(--text-muted);font-size:11px;">'+shopLabel+'</span>':'')
-    +(e.disabled?' <span style="color:#e74c3c;font-size:10px;font-weight:700;">DÉSACTIVÉ</span>':'')
+    +(isPending?' <span style="color:#f39c12;font-size:10px;font-weight:700;">EN ATTENTE</span>':e.disabled?' <span style="color:#e74c3c;font-size:10px;font-weight:700;">DÉSACTIVÉ</span>':'')
     +'</div>'
     +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
     +'</div>'
@@ -3423,6 +3425,18 @@ async function secDeleteDevice(devId){
 async function secToggleDevice(devId, disable){
   try{
     var fields={disabled:{booleanValue:disable}};
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    loadSecurite();
+  }catch(e){alert('Erreur');}
+}
+
+async function secApproveDevice(devId){
+  try{
+    var fields={disabled:{booleanValue:false},pendingApproval:{booleanValue:false}};
     await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
