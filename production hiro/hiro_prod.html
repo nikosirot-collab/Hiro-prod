@@ -3275,15 +3275,30 @@ function _secRender(){
 
   var filtered=_secFilterIface?entries.filter(function(e){return e.iface===_secFilterIface;}):entries;
 
+  var html='';
+
+  // Section En attente d'approbation — toujours en premier, iface indépendant
+  var pendingList=filtered.filter(function(e){return e.pendingApproval;});
+  if(pendingList.length>0){
+    html+='<div style="margin-bottom:16px;">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #f39c12;">'
+      +'<span style="font-size:13px;font-weight:700;color:#f39c12;">⏳ En attente d\'approbation</span>'
+      +'<span style="font-size:11px;padding:2px 8px;border-radius:10px;background:#fff8e1;color:#f39c12;font-weight:600;">'+pendingList.length+' demande'+(pendingList.length>1?'s':'')+'</span>'
+      +'</div>';
+    pendingList.forEach(function(e){html+=secDevCard(e);});
+    html+='</div>';
+  }
+
+  // Groupes par interface (sans les entrées déjà affichées en attente)
+  var nonPending=filtered.filter(function(e){return !e.pendingApproval;});
   var groups={};
   SEC_IFACE_ORDER.forEach(function(g){groups[g.key]=[];});
-  filtered.forEach(function(e){
+  nonPending.forEach(function(e){
     var k=e.iface;
     if(!groups[k])groups[k]=[];
     groups[k].push(e);
   });
 
-  var html='';
   SEC_IFACE_ORDER.forEach(function(g){
     if(_secFilterIface&&g.key!==_secFilterIface)return;
     var list=groups[g.key]||[];
