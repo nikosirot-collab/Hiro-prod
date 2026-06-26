@@ -3346,12 +3346,12 @@ function parseUA(ua){
 
 function secDevCard(e){
   var now=Date.now();
-  var ago=Math.round((now-e.ts)/60000);
-  var agoStr=ago<1?'il y a 1min':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
+  var ago=e.ts>0?Math.round((now-e.ts)/60000):null;
+  var agoStr=ago===null?'—':ago<1?'il y a 1min':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
   var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'';
   var nameStr=e.userName||(shopLabel||'');
   var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
-  var isOld=ago>1440; // Plus de 24h
+  var isOld=ago!==null&&ago>1440;
   var isPending=e.pendingApproval&&e.disabled;
   var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
   var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
