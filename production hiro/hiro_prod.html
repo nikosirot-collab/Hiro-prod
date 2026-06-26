@@ -3352,7 +3352,7 @@ function secDevCard(e){
   var nameStr=e.userName||(shopLabel||'');
   var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
   var isOld=ago!==null&&ago>1440;
-  var isPending=e.pendingApproval&&e.disabled;
+  var isPending=e.pendingApproval;
   var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
   var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
   var btnLabel=isOld?'🗑 Supprimer':isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver');
