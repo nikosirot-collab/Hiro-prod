@@ -168,14 +168,14 @@ async function checkOrderPwd(){
   if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id-paita',_devId);}
   try{
     var chk=await fetch(_PA+'/'+_devId+'?key='+_PK);
-    if(chk.ok){var chkJ=await chk.json();if(chkJ.fields&&chkJ.fields.disabled&&chkJ.fields.disabled.booleanValue===true){await fetch(_PA+'/'+_devId+'?key='+_PK,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{pendingApproval:{booleanValue:true}}})});_showPendingScreen(hash,_devId,_PA,_PK);return;}}
+    if(chk.ok){var chkJ=await chk.json();if(chkJ.fields&&chkJ.fields.disabled&&chkJ.fields.disabled.booleanValue===true){await fetch(_PA+'/'+_devId+'?key='+_PK+'&updateMask.fieldPaths=pendingApproval',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{pendingApproval:{booleanValue:true}}})});_showPendingScreen(hash,_devId,_PA,_PK);return;}}
   }catch(e){}
   localStorage.setItem('hiro-order-hash-paita',hash);document.getElementById('login-screen').style.display='none';
 }
 function _showPendingScreen(hash,devId,pa,pk){
   window._pendingApproval=true;
   document.getElementById('login-screen').innerHTML="<div style='text-align:center;padding:40px 24px;'><div style='font-size:40px;margin-bottom:16px;'>⏳</div><div style='color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;'>En attente d'approbation</div><div style='color:#888;font-size:13px;'>Un administrateur doit valider votre accès</div></div>";
-  var _poll=setInterval(async function(){try{var r=await fetch(pa+'/'+devId+'?key='+pk);if(r.ok){var j=await r.json();if(j.fields&&(!j.fields.disabled||j.fields.disabled.booleanValue===false)){clearInterval(_poll);window._pendingApproval=false;localStorage.setItem('hiro-order-hash-paita',hash);document.getElementById('login-screen').style.display='none';}}}catch(e){}},30000);
+  var _poll=setInterval(async function(){try{var r=await fetch(pa+'/'+devId+'?key='+pk);if(r.ok){var j=await r.json();if(j.fields&&j.fields.disabled&&j.fields.disabled.booleanValue===false){clearInterval(_poll);window._pendingApproval=false;localStorage.setItem('hiro-order-hash-paita',hash);document.getElementById('login-screen').style.display='none';}}}catch(e){}},30000);
 }
 (async function(){var stored=localStorage.getItem('hiro-order-hash-paita');if(!stored)return;var hash=await _getOrderHash();if(hash&&stored===hash)document.getElementById('login-screen').style.display='none';})();
 </script>

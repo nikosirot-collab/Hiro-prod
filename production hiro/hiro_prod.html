@@ -3425,7 +3425,7 @@ async function secDeleteDevice(devId){
 async function secToggleDevice(devId, disable){
   try{
     var fields={disabled:{booleanValue:disable}};
-    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY+'&updateMask.fieldPaths=disabled',{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})
@@ -3437,7 +3437,7 @@ async function secToggleDevice(devId, disable){
 async function secApproveDevice(devId){
   try{
     var fields={disabled:{booleanValue:false},pendingApproval:{booleanValue:false}};
-    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY+'&updateMask.fieldPaths=disabled&updateMask.fieldPaths=pendingApproval',{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})
