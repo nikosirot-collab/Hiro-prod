@@ -3189,7 +3189,8 @@ async function loadSecurite(){
       if(!doc.fields)return;
       var f=doc.fields;
       var ts=f.ts?parseInt(f.ts.integerValue):0;
-      if(!ts)return;
+      var hasPending=f.pendingApproval&&f.pendingApproval.booleanValue===true;
+      if(!ts&&!hasPending)return;
       entries.push({
         devId:doc.name.split('/').pop(),
         iface:f.iface?f.iface.stringValue:'?',
@@ -3197,7 +3198,7 @@ async function loadSecurite(){
         userName:f.userName?f.userName.stringValue:'',
         ts:ts,
         disabled:f.disabled&&f.disabled.booleanValue===true,
-        pendingApproval:f.pendingApproval&&f.pendingApproval.booleanValue===true,
+        pendingApproval:hasPending,
         isOnline:(now-ts)<_NOW_ONLINE_MS,
         online:f.online?f.online.booleanValue:undefined,
         latency:f.latency?parseInt(f.latency.integerValue):null,
@@ -3205,9 +3206,10 @@ async function loadSecurite(){
         browser:f.browser?f.browser.stringValue:''
       });
     });
-    // Filtrer appareils inconnus > 24h
+    // Filtrer appareils inconnus > 24h (sauf si en attente d'approbation)
     var DAY_MS=24*60*60*1000;
     entries=entries.filter(function(e){
+      if(e.pendingApproval)return true;
       var isUnknown=!e.userName&&!e.shop&&!e.device;
       return !(isUnknown&&(now-e.ts)>DAY_MS);
     });
