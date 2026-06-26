@@ -1266,7 +1266,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
         var _tr=await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY);
         _fbOk=_tr.ok;
         // Vérif désactivation
-        if(_tr.ok){var _chk=await _tr.json();if(_chk.fields&&_chk.fields.disabled&&_chk.fields.disabled.booleanValue===true){if(window._pendingApproval)return;localStorage.removeItem('hiro-order-hash-ville');document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Session révoquée<br><small style='color:#888;'>Contactez l'administrateur</small></div></div>";return;}}
+        if(_tr.ok){var _chk=await _tr.json();if(_chk.fields&&_chk.fields.disabled&&_chk.fields.disabled.booleanValue===true){if(window._pendingApproval)return;var _ls=document.getElementById('login-screen');if(_ls&&_ls.style.display!=='none')return;localStorage.removeItem('hiro-order-hash-ville');document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;font-size:16px;text-align:center;padding:24px;'><div>Session révoquée<br><small style='color:#888;'>Contactez l'administrateur</small></div></div>";return;}}
       }catch(e){_fbOk=false;}
       var _lat=Date.now()-_t0;
       var fields={
