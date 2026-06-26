@@ -3486,7 +3486,7 @@ async function changeOrderPwd(){
 
 function secPollStart(){
   secPollStop();
-  _secPollTimer=setInterval(loadSecurite,60000);
+  _secPollTimer=setInterval(loadSecurite,10000);
 }
 function secPollStop(){
   if(_secPollTimer){clearInterval(_secPollTimer);_secPollTimer=null;}
