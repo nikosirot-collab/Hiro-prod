@@ -3355,9 +3355,10 @@ function secDevCard(e){
   var isPending=e.pendingApproval;
   var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
   var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
-  var btnLabel=isOld?'🗑 Supprimer':isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver');
-  var btnColor=isOld?'#999':isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c');
-  var btnAction=isOld?'secDeleteDevice(\''+e.devId+'\')':isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
+  var btnLabel=isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver');
+  var btnColor=isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c');
+  var btnAction=isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
+  var deleteBtn=isOld&&!isPending?'<button onclick="secDeleteDevice(\''+e.devId+'\')" style="padding:4px 8px;border-radius:6px;border:none;background:#bbb;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">🗑</button>':'';
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'+disabledStyle+'">'
     +statusDot
     +'<div style="flex:1;min-width:0;">'
@@ -3369,6 +3370,7 @@ function secDevCard(e){
     +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
     +'</div>'
     +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
+    +deleteBtn
     +'</div>';
 }
 
