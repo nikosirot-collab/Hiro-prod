@@ -3359,6 +3359,7 @@ function secDevCard(e){
   var btnColor=isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c');
   var btnAction=isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
   var deleteBtn=isOld&&!isPending?'<button onclick="secDeleteDevice(\''+e.devId+'\')" style="padding:4px 8px;border-radius:6px;border:none;background:#bbb;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">🗑</button>':'';
+  var rejectBtn=isPending?'<button onclick="secRejectDevice(\''+e.devId+'\')" style="padding:4px 10px;border-radius:6px;border:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">Refuser</button>':'';
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'+disabledStyle+'">'
     +statusDot
     +'<div style="flex:1;min-width:0;">'
@@ -3370,6 +3371,7 @@ function secDevCard(e){
     +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
     +'</div>'
     +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
+    +rejectBtn
     +deleteBtn
     +'</div>';
 }
@@ -3457,6 +3459,18 @@ async function secApproveDevice(devId){
   try{
     var fields={disabled:{booleanValue:false},pendingApproval:{booleanValue:false}};
     await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY+'&updateMask.fieldPaths=disabled&updateMask.fieldPaths=pendingApproval',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    loadSecurite();
+  }catch(e){alert('Erreur');}
+}
+
+async function secRejectDevice(devId){
+  try{
+    var fields={pendingApproval:{booleanValue:false},disabled:{booleanValue:true},rejected:{booleanValue:true}};
+    await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY+'&updateMask.fieldPaths=pendingApproval&updateMask.fieldPaths=disabled&updateMask.fieldPaths=rejected',{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:fields})
