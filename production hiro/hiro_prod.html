@@ -629,12 +629,15 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
 
       <!-- Filtres interface -->
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:600;color:var(--text-muted);align-self:center;margin-right:4px;">Interface :</div>
-        <button class="sec-filter-iface active" data-iface="" onclick="secSetIface('',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
-        <button class="sec-filter-iface" data-iface="Commande" onclick="secSetIface('Commande',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">📦 Commandes</button>
-        <button class="sec-filter-iface" data-iface="Hiro Access" onclick="secSetIface('Hiro Access',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">👁 Access</button>
-        <button class="sec-filter-iface" data-iface="Hiro Labo" onclick="secSetIface('Hiro Labo',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🏭 Labo</button>
-        <button class="sec-filter-iface" data-iface="Hiro Prod" onclick="secSetIface('Hiro Prod',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🍱 Prod</button>
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);align-self:center;margin-right:4px;">Filtre :</div>
+        <button class="sec-filter-iface active" data-iface="" data-shop="" onclick="secSetFilter('','',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:#1a1916;color:#fff;font-size:11px;cursor:pointer;">Tous</button>
+        <button class="sec-filter-iface" data-iface="Commande" data-shop="mgt" onclick="secSetFilter('Commande','mgt',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #0d7a52;background:none;color:#0d7a52;font-size:11px;cursor:pointer;">📦 MGT</button>
+        <button class="sec-filter-iface" data-iface="Commande" data-shop="dsm" onclick="secSetFilter('Commande','dsm',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #1a5fa8;background:none;color:#1a5fa8;font-size:11px;cursor:pointer;">📦 DSM</button>
+        <button class="sec-filter-iface" data-iface="Commande" data-shop="paita" onclick="secSetFilter('Commande','paita',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #b84a1a;background:none;color:#b84a1a;font-size:11px;cursor:pointer;">📦 Paita</button>
+        <button class="sec-filter-iface" data-iface="Commande" data-shop="ville" onclick="secSetFilter('Commande','ville',this)" style="padding:4px 10px;border-radius:12px;border:1px solid #7a3db8;background:none;color:#7a3db8;font-size:11px;cursor:pointer;">📦 Ville</button>
+        <button class="sec-filter-iface" data-iface="Hiro Access" data-shop="" onclick="secSetFilter('Hiro Access','',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">👁 Access</button>
+        <button class="sec-filter-iface" data-iface="Hiro Labo" data-shop="" onclick="secSetFilter('Hiro Labo','',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🏭 Labo</button>
+        <button class="sec-filter-iface" data-iface="Hiro Prod" data-shop="" onclick="secSetFilter('Hiro Prod','',this)" style="padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:none;font-size:11px;cursor:pointer;">🍱 Prod</button>
       </div>
 
       <!-- Appareils actifs -->
@@ -3231,13 +3234,17 @@ async function loadSecurite(){
 }
 
 var _secFilterIface='';
+var _secFilterShop='';
+var _SEC_SHOP_COLORS={mgt:'#0d7a52',dsm:'#1a5fa8',paita:'#b84a1a',ville:'#7a3db8'};
 
-function secSetIface(val,btn){
-  _secFilterIface=val;
+function secSetFilter(iface,shop,btn){
+  _secFilterIface=iface;
+  _secFilterShop=shop;
   document.querySelectorAll('.sec-filter-iface').forEach(function(b){
     var active=b===btn;
     b.style.background=active?'#1a1916':'none';
-    b.style.color=active?'#fff':(b.dataset.iface==='Commande'?'#1a5fa8':'var(--text)');
+    var bShop=b.dataset.shop||'';
+    b.style.color=active?'#fff':(_SEC_SHOP_COLORS[bShop]||'var(--text)');
   });
   _secRender();
 }
@@ -3276,7 +3283,7 @@ function _secRender(){
   var entries=window._secData;
   var now=Date.now();
 
-  var filtered=_secFilterIface?entries.filter(function(e){return e.iface===_secFilterIface;}):entries;
+  var filtered=entries.filter(function(e){if(_secFilterIface&&e.iface!==_secFilterIface)return false;if(_secFilterShop&&e.shop!==_secFilterShop)return false;return true;});
 
   var html='';
 
