@@ -622,7 +622,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       <!-- Résumé statut temps réel -->
       <div id="sec-summary" style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:12px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:8px;">Statut temps réel</div>
-        <div id="sec-summary-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
+        <div id="sec-summary-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px;">
           <div style="font-size:12px;color:var(--text-muted);padding:6px;">Chargement...</div>
         </div>
       </div>
@@ -3253,14 +3253,17 @@ function _secRenderSummary(entries,now){
   var grid=document.getElementById('sec-summary-grid');
   if(!grid)return;
   var IFACE_LIST=[
-    {key:'Commande',  label:'📦 Commandes', color:'#1a5fa8'},
-    {key:'Hiro Access',label:'👁 Access',  color:'#555'},
-    {key:'Hiro Labo', label:'🏭 Labo',     color:'#555'},
-    {key:'Hiro Prod', label:'🍱 Prod',     color:'#1a1916'},
+    {key:'Commande',   shop:'mgt',   label:'📦 MGT',   color:'#0d7a52'},
+    {key:'Commande',   shop:'dsm',   label:'📦 DSM',   color:'#1a5fa8'},
+    {key:'Commande',   shop:'paita', label:'📦 Paita', color:'#b84a1a'},
+    {key:'Commande',   shop:'ville', label:'📦 Ville', color:'#7a3db8'},
+    {key:'Hiro Access',shop:'',      label:'👁 Access', color:'#555'},
+    {key:'Hiro Labo',  shop:'',      label:'🏭 Labo',  color:'#555'},
+    {key:'Hiro Prod',  shop:'',      label:'🍱 Prod',  color:'#1a1916'},
   ];
   var html='';
   IFACE_LIST.forEach(function(g){
-    var list=entries.filter(function(e){return e.iface===g.key&&!e.disabled;});
+    var list=entries.filter(function(e){return e.iface===g.key&&!e.disabled&&(!g.shop||e.shop===g.shop);});
     var online=list.filter(function(e){return e.isOnline;}).length;
     var total=list.length;
     var latest=list.sort(function(a,b){return b.ts-a.ts;})[0];
