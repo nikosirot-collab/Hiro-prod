@@ -1156,6 +1156,9 @@ if(_offlineQueue.length>0)showOfflineBanner();
   var _devId=localStorage.getItem('hiro-dev-id-dsm');
   if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id-dsm',_devId);}
 
+  var _ip='',_city='',_isp='';
+  (async function(){try{var _r=await fetch('https://ipapi.co/json/');if(_r.ok){var _d=await _r.json();_ip=_d.ip||'';_city=_d.city||'';_isp=_d.org||'';}}catch(e){}})();
+
   async function _sendPing(){
     try{
       // Mesurer latence Firebase
@@ -1194,9 +1197,12 @@ if(_offlineQueue.length>0)showOfflineBanner();
           if(/Chrome/.test(ua)) return 'Chrome';
           if(/Firefox/.test(ua)) return 'Firefox';
           return '';
-        })()}
+        })()},
+        ip:{stringValue:_ip},
+        city:{stringValue:_city},
+        isp:{stringValue:_isp}
       };
-      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=iface&updateMask.fieldPaths=shop&updateMask.fieldPaths=devId&updateMask.fieldPaths=userName&updateMask.fieldPaths=ts&updateMask.fieldPaths=online&updateMask.fieldPaths=latency&updateMask.fieldPaths=device&updateMask.fieldPaths=browser&currentDocument.exists=true',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+      await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=iface&updateMask.fieldPaths=shop&updateMask.fieldPaths=devId&updateMask.fieldPaths=userName&updateMask.fieldPaths=ts&updateMask.fieldPaths=online&updateMask.fieldPaths=latency&updateMask.fieldPaths=device&updateMask.fieldPaths=browser&updateMask.fieldPaths=ip&updateMask.fieldPaths=city&updateMask.fieldPaths=isp&currentDocument.exists=true',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
   _sendPing();
