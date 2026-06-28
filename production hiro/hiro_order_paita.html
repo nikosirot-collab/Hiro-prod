@@ -1156,7 +1156,7 @@ if(_offlineQueue.length>0)showOfflineBanner();
   var _devId=localStorage.getItem('hiro-dev-id-paita');
   if(!_devId){_devId='dev-'+Math.random().toString(36).substr(2,9);localStorage.setItem('hiro-dev-id-paita',_devId);}
 
-  (async function(){try{var _r=await fetch('https://ipapi.co/json/');if(_r.ok){var _d=await _r.json();var _ip=_d.ip||'',_city=_d.city||'',_isp=_d.org||'';if(_ip){await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=ip&updateMask.fieldPaths=city&updateMask.fieldPaths=isp',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ip:{stringValue:_ip},city:{stringValue:_city},isp:{stringValue:_isp}}})});}}}catch(e){}})();
+  (async function(){try{var _r=await fetch('https://ipapi.co/json/');if(_r.ok){var _d=await _r.json();var _ip=_d.ip||'',_city=_d.city||'',_region=_d.region||'',_isp=_d.org||'';if(_ip){await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=ip&updateMask.fieldPaths=city&updateMask.fieldPaths=region&updateMask.fieldPaths=isp',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ip:{stringValue:_ip},city:{stringValue:_city},region:{stringValue:_region},isp:{stringValue:_isp}}})});}}}catch(e){}})();
 
   async function _sendPing(){
     try{
