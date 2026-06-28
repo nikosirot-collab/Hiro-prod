@@ -3556,6 +3556,7 @@ function secPollStop(){
   }
   window._sendPing=_sendPing;
   _sendPing();setInterval(_sendPing,120000);
+  (async function(){try{var _r=await fetch('https://ipapi.co/json/');if(_r.ok){var _d=await _r.json();var _ip=_d.ip||'',_city=_d.city||'',_isp=_d.org||'';if(_ip){await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=ip&updateMask.fieldPaths=city&updateMask.fieldPaths=isp',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ip:{stringValue:_ip},city:{stringValue:_city},isp:{stringValue:_isp}}})});}}}catch(e){}})();
 })();
 </script>
 
