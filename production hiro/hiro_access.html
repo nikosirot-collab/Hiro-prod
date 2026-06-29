@@ -1840,6 +1840,13 @@ async function laboAddArticle(shop){
   }
 
   var fields={};
+  // Si le document Firestore n'a pas de ts (commande partielle ou jamais reçue), l'écrire
+  if(!order.ts){
+    order.ts=Date.now();
+    fields['ts']={integerValue:order.ts};
+    fields['shop']={stringValue:shop};
+    fields['date']={stringValue:laboDs(laboDate)};
+  }
   if(key){
     // Article connu — ajouter à sa clé
     var cur=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:(order[key]||0);
