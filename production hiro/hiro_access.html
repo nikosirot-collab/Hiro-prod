@@ -1514,8 +1514,6 @@ var _ORDERS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/data
 var laboDate=(function(){
   var d=new Date(TODAY_NC);
   var dow=d.getDay();
-  // Lundi : afficher aujourd'hui (commandes du week-end pour lundi)
-  if(dow===1){return d;}
   if(dow===6){d.setDate(d.getDate()+2);}
   else if(dow===0){d.setDate(d.getDate()+1);}
   else{d.setDate(d.getDate()+1);}
