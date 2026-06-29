@@ -2652,26 +2652,36 @@ async function loadCommandes(){
     el.innerHTML=_CMD_SHOPS.map(function(s){return cmdRenderFiche(s,cmdOrders[s]);}).join('');
   }
 
-  // Lister tous les docs de hiro-orders et filtrer par date
+  // Requête uniquement les docs du jour via runQuery (listDocuments cappé à 300)
   try{
-    var listRes=await _fbFetch(_CMD_API+'?pageSize=10000&key='+_KEY);
+    var cRef='projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/';
+    var listRes=await _fbFetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents:runQuery?key='+_KEY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({structuredQuery:{
+        from:[{collectionId:'hiro-orders'}],
+        where:{compositeFilter:{op:'AND',filters:[
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'GREATER_THAN_OR_EQUAL',value:{referenceValue:cRef+'order_'+dStr+'_'}}},
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'LESS_THAN',value:{referenceValue:cRef+'order_'+dStr+'z'}}}
+        ]}}
+      }})
+    });
     if(listRes.ok){
-      var listJson=await listRes.json();
-      var docs=listJson.documents||[];
+      var queryCmd=await listRes.json();
       // Réinitialiser
       _CMD_SHOPS.forEach(function(s){cmdOrders[s]=null;});
-      docs.forEach(function(doc){
-        var name=doc.name.split('/').pop(); // ex: order_2026-04-13_mgt
-        var parts=name.split('_'); // ['order','2026-04-13','mgt']
+      (Array.isArray(queryCmd)?queryCmd:[]).forEach(function(item){
+        var doc=item.document;
+        if(!doc) return;
+        var name=doc.name.split('/').pop();
+        var parts=name.split('_');
         if(parts.length<3) return;
-        var docDate=parts[1];
         var docShop=parts[2];
-        if(docDate!==dStr) return;
         if(!_CMD_SHOPS.includes(docShop)) return;
         var d={};
         if(doc.fields)Object.entries(doc.fields).forEach(function(e){
           var k=e[0],v=e[1];
           if(v.integerValue!==undefined)d[k]=parseInt(v.integerValue);
+          else if(v.doubleValue!==undefined)d[k]=v.doubleValue;
           else if(v.stringValue!==undefined)d[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d[k]=v.booleanValue;
         });
