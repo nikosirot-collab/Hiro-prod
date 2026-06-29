@@ -2245,13 +2245,25 @@ async function loadCmdHisto(){
   var NAMES={bo:'Bun Bò',sin:'Sing.',thon:'Thon mariné',thai:'Thaï',plp:'Poulpe',rouleaux:'Roul.',rizprod:'Riz',pokethon:'P.thon',pokesaumon:'P.saum.',tataki:'Tataki',gyoza:'Gyoza',siumai:'Siu Mai',gnem:'Gd nem',pnem:'Pt nem',sesame:'Sésame',banhbao:'Bao',tiramisu:'Tira.',ananas:'Ananas',poebanane:'Poe ban.',cheesemangue:'CK mangue',cheeseframboise:'CK framb.',villerolls:'Rolls'};
 
   try{
-    var res=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
+    var hRef='projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/';
+    var hNext=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+6);
+    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents:runQuery?key='+_KEY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({structuredQuery:{
+        from:[{collectionId:'hiro-orders'}],
+        where:{compositeFilter:{op:'AND',filters:[
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'GREATER_THAN_OR_EQUAL',value:{referenceValue:hRef+'order_'+days[0].dStr+'_'}}},
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'LESS_THAN',value:{referenceValue:hRef+'order_'+laboDs(hNext)+'_'}}}
+        ]}}
+      }})
+    });
     var allOrders={};
     days.forEach(function(d){allOrders[d.dStr]={};});
     if(res.ok){
-      var json=await res.json();
-      var docs=json.documents||[];
-      docs.forEach(function(doc){
+      var queryH=await res.json();
+      (Array.isArray(queryH)?queryH:[]).forEach(function(item){
+        var doc=item.document;
+        if(!doc)return;
         var name=doc.name.split('/').pop();
         var parts=name.split('_');
         if(parts.length<3)return;
@@ -2262,6 +2274,7 @@ async function loadCmdHisto(){
         if(doc.fields)Object.entries(doc.fields).forEach(function(e){
           var k=e[0],v=e[1];
           if(v.integerValue!==undefined)d3[k]=parseInt(v.integerValue);
+          else if(v.doubleValue!==undefined)d3[k]=v.doubleValue;
           else if(v.stringValue!==undefined)d3[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d3[k]=v.booleanValue;
         });
@@ -2400,14 +2413,27 @@ async function loadNemRecap(){
   var dStrs=days.map(function(d){return d.dStr;});
 
   try{
-    var res=await fetch(_ORDERS_API+'?pageSize=10000&key='+_KEY);
+    var nRef='projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/';
+    var nNext=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+6);
+    var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents:runQuery?key='+_KEY,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({structuredQuery:{
+        from:[{collectionId:'hiro-orders'}],
+        where:{compositeFilter:{op:'AND',filters:[
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'GREATER_THAN_OR_EQUAL',value:{referenceValue:nRef+'order_'+days[0].dStr+'_'}}},
+          {fieldFilter:{field:{fieldPath:'__name__'},op:'LESS_THAN',value:{referenceValue:nRef+'order_'+laboDs(nNext)+'_'}}}
+        ]}}
+      }})
+    });
     // allOrders[dStr][shop] = {gnem, pnem, sesame}
     var allOrders={};
     days.forEach(function(d){allOrders[d.dStr]={};shops.forEach(function(s){allOrders[d.dStr][s]={gnem:0,pnem:0,sesame:0};});});
 
     if(res.ok){
-      var json=await res.json();
-      (json.documents||[]).forEach(function(doc){
+      var queryN=await res.json();
+      (Array.isArray(queryN)?queryN:[]).forEach(function(item){
+        var doc=item.document;
+        if(!doc)return;
         var name=doc.name.split('/').pop();
         var parts=name.split('_');
         if(parts.length<3)return;
