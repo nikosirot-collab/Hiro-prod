@@ -3439,6 +3439,7 @@ async function laboFetch(){
         if(doc.fields)Object.entries(doc.fields).forEach(function(e){
           var k=e[0],v=e[1];
           if(v.integerValue!==undefined)d2[k]=parseInt(v.integerValue);
+          else if(v.doubleValue!==undefined)d2[k]=v.doubleValue;
           else if(v.stringValue!==undefined)d2[k]=v.stringValue;
           else if(v.booleanValue!==undefined)d2[k]=v.booleanValue;
         });
