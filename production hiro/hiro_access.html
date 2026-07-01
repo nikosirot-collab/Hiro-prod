@@ -211,8 +211,8 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 .valid-status-pending{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;}
 
 /* Ligne plat avec badges (Poulet frit, plat libre) */
-.plat-row-wrap{display:flex;align-items:center;gap:6px;}
-.plat-row-main{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
+.plat-row-wrap{display:flex;align-items:flex-start;gap:6px;}
+.plat-row-body{display:flex;align-items:center;gap:6px;flex:1;min-width:0;}
 .plat-row-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0;}
 
 /* Mobile responsive pour fiches commande */
@@ -278,14 +278,17 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
     padding:4px 6px !important;
     font-size:11px !important;
   }
-  /* Nom au-dessus, badges+poids en dessous (jamais superposés) */
-  #labo-content .plat-row-wrap {
+  /* Nom au-dessus, badges+poids en dessous, alignés au même point horizontal */
+  #labo-content .plat-row-body {
     flex-direction:column;
     align-items:stretch;
+    gap:2px;
+  }
+  #labo-content .plat-row-wrap {
     padding:3px 5px !important;
   }
   #labo-content .plat-row-ctrl {
-    justify-content:flex-end;
+    flex-wrap:wrap;
   }
 }
 
@@ -3133,14 +3136,14 @@ function laboRenderFiche(shop,order){
       var _pfActif=_platDeductActive[shop+'-pouletfrit']===800;
       var _pfBtnS=_btnS+'background:'+(_pfActif?'#1a5fa8':'var(--surface)')+';color:'+(_pfActif?'#fff':'var(--text)')+';border-color:'+(_pfActif?'#1a5fa8':'var(--border)')+';';
       return '<div class="plat-row-wrap" style="padding:4px 8px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-pouletfrit">'
-        +'<div class="plat-row-main">'
         +'<input id="vinp-'+shop+'-pouletfrit" type="number" min="0" value="'+(_pfRupt?0:_pfQty)+'" onchange="laboPatchQty(\''+shop+'\',\'pouletfrit\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div class="plat-row-body">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_pfRupt?'#c0392b':'var(--text)')+';">Poulet frit'+(_pfRupt?' ⚠':'')+'</div>'
-        +'</div>'
         +'<div class="plat-row-ctrl">'
         +'<button data-plat-btn="1" data-active="'+(_pfActif?1:0)+'" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\'pouletfrit\',800,this)" style="'+_pfBtnS+'">Gd plat</button>'
         +'<input id="poids-inp-'+shop+'-pouletfrit" type="number" min="0" step="0.1" placeholder="kg" value="'+_pfPoids+'" onchange="laboPatchPoids(\''+shop+'\',\'pouletfrit\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
         +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+        +'</div>'
         +'</div>'
         +'</div>';
     }
@@ -3158,16 +3161,16 @@ function laboRenderFiche(shop,order){
       var _fpPtS=_bBase+'background:'+(_fpPtA?'#1a5fa8':'var(--surface)')+';color:'+(_fpPtA?'#fff':'var(--text)')+';border-color:'+(_fpPtA?'#1a5fa8':'var(--border)')+';';
       var _fpGdS=_bBase+'background:'+(_fpGdA?'#1a5fa8':'var(--surface)')+';color:'+(_fpGdA?'#fff':'var(--text)')+';border-color:'+(_fpGdA?'#1a5fa8':'var(--border)')+';';
       return '<div class="plat-row-wrap" style="padding:4px 8px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+_fpKey+'">'
-        +'<div class="plat-row-main">'
         +'<input id="vinp-'+shop+'-'+_fpKey+'" type="number" min="0" value="'+_fpQty+'" onchange="laboPatchQty(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div class="plat-row-body">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;">'+_fpName+'</div>'
-        +'</div>'
         +'<div class="plat-row-ctrl">'
         +'<button data-plat-btn="1" data-active="'+(_fpPtA?1:0)+'" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+_fpKey+'\',700,this)" style="'+_fpPtS+'">Pt plat</button>'
         +'<button data-plat-btn="1" data-active="'+(_fpGdA?1:0)+'" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+_fpKey+'\',800,this)" style="'+_fpGdS+'">Gd plat</button>'
         +'<input id="poids-inp-'+shop+'-'+_fpKey+'" type="number" min="0" step="0.1" placeholder="kg" value="'+_fpPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
         +'<span style="font-size:10px;color:var(--muted);">kg</span>'
         +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'plats\','+_fpIdx+',\''+laboJsEsc(p.name)+'\')')
+        +'</div>'
         +'</div>'
         +'</div>';
     }
