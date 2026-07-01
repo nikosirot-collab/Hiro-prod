@@ -287,7 +287,7 @@ loadJoursOff();
 <tr><td class="td-product">Poe citrouille</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('poecitrouille',-1)">&#8722;</button><input class="qty-inp" id="q-poecitrouille" type="number" min="0" value="0" onchange="setQ('poecitrouille',this.value)"><button class="qty-btn" onclick="adj('poecitrouille',1)">+</button></div></td></tr>
 <tr><td class="td-product">Cheesecake mangue</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('cheesemangue',-1)">&#8722;</button><input class="qty-inp" id="q-cheesemangue" type="number" min="0" value="0" onchange="setQ('cheesemangue',this.value)"><button class="qty-btn" onclick="adj('cheesemangue',1)">+</button></div></td></tr>
 <tr><td class="td-product">Cheesecake framboise</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('cheeseframboise',-1)">&#8722;</button><input class="qty-inp" id="q-cheeseframboise" type="number" min="0" value="0" onchange="setQ('cheeseframboise',this.value)"><button class="qty-btn" onclick="adj('cheeseframboise',1)">+</button></div></td></tr>
-</tbody></table></div></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Tarte — préciser le type</span></div><div id="libre-lines-tarte" class="libre-lines"></div><button class="btn-add-line" data-page="tarte" onclick="addLine(this.dataset.page)">+ Ajouter une tarte</button></div></div></div>
+</tbody></table></div></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">Tarte — préciser le type</span></div><div id="tarte-catalog-rows" class="libre-lines"></div><div id="libre-lines-tarte" class="libre-lines"></div><button class="btn-add-line" data-page="tarte" onclick="addLine(this.dataset.page)">+ Ajouter une tarte</button></div></div></div>
 <div id="page-tapas" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Tapas</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Gyoza</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gyoza',-1)">&#8722;</button><input class="qty-inp" id="q-gyoza" type="number" min="0" value="0" onchange="setQ('gyoza',this.value)"><button class="qty-btn" onclick="adj('gyoza',1)">+</button></div></td></tr>
 <tr><td class="td-product">Grand nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('gnem',-1)">&#8722;</button><input class="qty-inp" id="q-gnem" type="number" min="0" value="0" onchange="setQ('gnem',this.value)"><button class="qty-btn" onclick="adj('gnem',1)">+</button></div></td></tr>
 <tr><td class="td-product">Petit nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pnem',-1)">&#8722;</button><input class="qty-inp" id="q-pnem" type="number" min="0" value="0" onchange="setQ('pnem',this.value)"><button class="qty-btn" onclick="adj('pnem',1)">+</button></div></td></tr>
@@ -430,7 +430,28 @@ function addLine(pageId){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCo
 function addLineWithData(pageId,name,qty2){if(!libreItems[pageId])libreItems[pageId]=[];if(!lineCount[pageId])lineCount[pageId]=0;const idx=lineCount[pageId]++;const container=document.getElementById('libre-lines-'+pageId);if(!container)return;const div=document.createElement('div');div.className='libre-row';div.id='libre-row-'+pageId+'-'+idx;const nameInp=document.createElement('input');nameInp.className='libre-name';nameInp.type='text';nameInp.value=name;nameInp.oninput=function(){updateLibre(pageId,idx,'name',this.value);};if(pageId==='chr')nameInp.setAttribute('list','chr-catalog-list');if(pageId==='tarte')nameInp.setAttribute('list','tarte-catalog-list');const qtyInp=document.createElement('input');qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value=qty2;qtyInp.oninput=function(){updateLibre(pageId,idx,'qty',this.value);};const delBtn=document.createElement('button');delBtn.className='libre-del';delBtn.textContent='×';delBtn.onclick=function(){delLine(pageId,idx);};div.appendChild(nameInp);div.appendChild(qtyInp);div.appendChild(delBtn);container.appendChild(div);libreItems[pageId].push({name:name,qty:qty2});updateCount();}
 function updateLibre(pageId,idx,field,val){if(!libreItems[pageId]||!libreItems[pageId][idx])return;libreItems[pageId][idx][field]=field==='qty'?Math.max(0,parseInt(val)||0):val;updateCount();}
 function delLine(pageId,idx){const el=document.getElementById('libre-row-'+pageId+'-'+idx);if(el)el.remove();if(libreItems[pageId]&&libreItems[pageId][idx])libreItems[pageId][idx]={name:'',qty:0};updateCount();}
-function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});updateCount();loadRiz();}
+function renderTarteCatalogRows(){
+  const container=document.getElementById('tarte-catalog-rows');
+  if(!container)return;
+  container.innerHTML='';
+  libreItems.tarte=[];lineCount.tarte=0;
+  _tarteCatalog.forEach(function(name){
+    const idx=lineCount.tarte++;
+    const div=document.createElement('div');
+    div.className='libre-row';
+    div.id='libre-row-tarte-'+idx;
+    const label=document.createElement('span');
+    label.className='libre-name';
+    label.textContent=name;
+    const qtyInp=document.createElement('input');
+    qtyInp.className='libre-qty';qtyInp.type='number';qtyInp.min='0';qtyInp.value='0';
+    qtyInp.oninput=function(){updateLibre('tarte',idx,'qty',this.value);};
+    div.appendChild(label);div.appendChild(qtyInp);
+    container.appendChild(div);
+    libreItems.tarte.push({name:name,qty:0});
+  });
+}
+function resetAll(){qty={};ALL_KEYS.forEach(k=>{const el=document.getElementById('q-'+k);if(el){el.value=0;el.classList.remove('active');el.style.color='';el.style.borderColor='';}});libreItems={};lineCount={};['chr','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});renderTarteCatalogRows();updateCount();loadRiz();}
 function editOrder(){
   var ncNow=new Date(new Date().getTime()+new Date().getTimezoneOffset()*60000+11*3600000);
   var ncH=ncNow.getHours()+ncNow.getMinutes()/60;
@@ -518,19 +539,19 @@ async function loadExistingOrder(){
   const docId='order_'+ds(tomorrow)+'_'+SHOP;
   const cacheKey='hiro-order-cache-'+docId;
   // Afficher le cache immédiatement
-  function _applyOrder(d){
+  async function _applyOrder(d){
     if(!d.ts&&d.status!=='validated')return;
     var isVal=d.status==='validated';
     ALL_KEYS.forEach(k=>{
       var val=d[k]!==undefined?d[k]:(isVal&&d['vqty_'+k]!==undefined?d['vqty_'+k]:undefined);
       if(val!==undefined&&val>0){qty[k]=val;const el=document.getElementById('q-'+k);if(el){el.value=val;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}}
     });
-    if(d.libre||d.vlibre){try{const libre=JSON.parse(d.vlibre||d.libre);libreItems={};lineCount={};['chr','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});Object.entries(libre).forEach(([pageId,items])=>{if(Array.isArray(items))items.forEach(item=>{if(item.name&&item.qty>0)addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
+    if(d.libre||d.vlibre){try{const libre=JSON.parse(d.vlibre||d.libre);libreItems={};lineCount={};['chr','tarte'].forEach(p=>{const c=document.getElementById('libre-lines-'+p);if(c)c.innerHTML='';});if(typeof _tarteCatalogReady!=='undefined')await _tarteCatalogReady;renderTarteCatalogRows();Object.entries(libre).forEach(([pageId,items])=>{if(Array.isArray(items))items.forEach(item=>{if(!item.name||!(item.qty>0))return;if(pageId==='tarte'){const _catIdx=libreItems.tarte.findIndex(r=>r.name===item.name);if(_catIdx!==-1){libreItems.tarte[_catIdx].qty=item.qty;const _inp=document.querySelector('#libre-row-tarte-'+_catIdx+' .libre-qty');if(_inp)_inp.value=item.qty;return;}}addLineWithData(pageId,item.name,item.qty);});});}catch(e){}}
     updateCount();updateStatusBanner(true);
   }
   try{
     var cached=localStorage.getItem(cacheKey);
-    if(cached){_applyOrder(JSON.parse(cached));}
+    if(cached){await _applyOrder(JSON.parse(cached));}
   }catch(e){}
   try{
     const res=await fetch(_API+'/'+docId+'?key='+_KEY);
@@ -544,7 +565,7 @@ async function loadExistingOrder(){
     });
     // Sauvegarder en cache
     try{localStorage.setItem(cacheKey,JSON.stringify(d));}catch(e){}
-    _applyOrder(d);
+    await _applyOrder(d);
   }catch(e){}
 }
 
@@ -1577,11 +1598,10 @@ async function loadTarteCatalog(){
     var res=await fetch(_TARTE_CATALOG_URL+'?key='+_KEY);
     if(!res.ok)return;
     var j=await res.json();
-    _tarteCatalog=(j.fields&&j.fields.items)?JSON.parse(j.fields.items.stringValue):[];
+    _tarteCatalog=(j.fields&&j.fields[SHOP])?JSON.parse(j.fields[SHOP].stringValue):[];
     var dl=document.getElementById('tarte-catalog-list');
-    if(!dl)return;
-    dl.innerHTML='';
-    _tarteCatalog.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
+    if(dl){dl.innerHTML='';_tarteCatalog.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});}
+    renderTarteCatalogRows();
   }catch(e){}
 }
 async function saveToTarteCatalog(names){
@@ -1591,14 +1611,14 @@ async function saveToTarteCatalog(names){
     _tarteCatalog=_tarteCatalog.concat(toAdd);
     var dl=document.getElementById('tarte-catalog-list');
     if(dl)toAdd.forEach(function(n){var o=document.createElement('option');o.value=n;dl.appendChild(o);});
-    await fetch(_TARTE_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths=items',{
+    await fetch(_TARTE_CATALOG_URL+'?key='+_KEY+'&updateMask.fieldPaths='+SHOP,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{items:{stringValue:JSON.stringify(_tarteCatalog)}}})
+      body:JSON.stringify({fields:{[SHOP]:{stringValue:JSON.stringify(_tarteCatalog)}}})
     });
   }catch(e){}
 }
-loadTarteCatalog();
+var _tarteCatalogReady=loadTarteCatalog();
 </script>
 
 </body>
