@@ -211,7 +211,7 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
 .valid-status-pending{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3e2;color:#b07000;font-weight:600;}
 
 /* Mobile responsive pour fiches commande */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
   /* Réduire la taille des quantités dans les fiches */
   #labo-content div[style*="font-size:20px"],
   #labo-content div[style*="font-size:18px"] {
@@ -234,6 +234,44 @@ th{font-size:11px;font-weight:500;color:var(--muted);background:#faf9f6;}
   #labo-content div[style*="font-size:10px"] {
     font-size:9px !important;
     padding:4px 6px !important;
+  }
+  /* Lignes qté / nom (Salade, Poisson-Riz-Poke, CHR, plats...) */
+  #labo-content div[style*="padding:4px 8px;gap:6px;border-bottom"] {
+    padding:3px 5px !important;
+    gap:4px !important;
+  }
+  #labo-content input[id^="vinp-"] {
+    width:40px !important;
+    font-size:12px !important;
+    padding:2px 3px !important;
+  }
+  #labo-content input[id^="poids-inp-"],
+  #labo-content input[style*="width:54px"] {
+    width:40px !important;
+    font-size:10px !important;
+  }
+  /* Badges Pt plat / Gd plat : passent sous le nom au lieu de le chevaucher */
+  #labo-content button[data-plat-btn="1"] {
+    font-size:8px !important;
+    padding:1px 3px !important;
+  }
+  #labo-content div[style*="gap:4px;flex-shrink:0"] {
+    flex-wrap:wrap !important;
+    justify-content:flex-end !important;
+    row-gap:2px !important;
+  }
+  /* Ligne d'ajout "plat libre" : Qté + Nom du plat + bouton + */
+  #labo-content input[id^="platqty-"] {
+    width:40px !important;
+    font-size:11px !important;
+  }
+  #labo-content input[id^="platname-"] {
+    font-size:11px !important;
+    padding:4px 5px !important;
+  }
+  #labo-content button[onclick*="laboAddPlat"] {
+    padding:4px 6px !important;
+    font-size:11px !important;
   }
 }
 
