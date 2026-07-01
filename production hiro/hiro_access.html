@@ -3080,7 +3080,7 @@ function laboRenderFiche(shop,order){
       var _btnS='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
       var _pfActif=_platDeductActive[shop+'-pouletfrit']===800;
       var _pfBtnS=_btnS+'background:'+(_pfActif?'#1a5fa8':'var(--surface)')+';color:'+(_pfActif?'#fff':'var(--text)')+';border-color:'+(_pfActif?'#1a5fa8':'var(--border)')+';';
-      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-pouletfrit">'
+      return '<div style="display:flex;align-items:center;flex-wrap:wrap;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-pouletfrit">'
         +'<input id="vinp-'+shop+'-pouletfrit" type="number" min="0" value="'+(_pfRupt?0:_pfQty)+'" onchange="laboPatchQty(\''+shop+'\',\'pouletfrit\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_pfRupt?'#c0392b':'var(--text)')+';">Poulet frit'+(_pfRupt?' ⚠':'')+'</div>'
         +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
@@ -3103,7 +3103,7 @@ function laboRenderFiche(shop,order){
       var _bBase='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
       var _fpPtS=_bBase+'background:'+(_fpPtA?'#1a5fa8':'var(--surface)')+';color:'+(_fpPtA?'#fff':'var(--text)')+';border-color:'+(_fpPtA?'#1a5fa8':'var(--border)')+';';
       var _fpGdS=_bBase+'background:'+(_fpGdA?'#1a5fa8':'var(--surface)')+';color:'+(_fpGdA?'#fff':'var(--text)')+';border-color:'+(_fpGdA?'#1a5fa8':'var(--border)')+';';
-      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+_fpKey+'">'
+      return '<div style="display:flex;align-items:center;flex-wrap:wrap;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+_fpKey+'">'
         +'<input id="vinp-'+shop+'-'+_fpKey+'" type="number" min="0" value="'+_fpQty+'" onchange="laboPatchQty(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;">'+_fpName+'</div>'
         +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
