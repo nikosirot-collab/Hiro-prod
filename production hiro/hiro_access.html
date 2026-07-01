@@ -1933,6 +1933,39 @@ function laboTrashBtn(onclickJs){
   return '<button onclick="'+onclickJs+'" title="Supprimer" style="flex-shrink:0;border:none;background:transparent;color:var(--hint);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;">🗑</button>';
 }
 
+async function laboDeleteCatalogItem(shop,key){
+  var order=laboOrders[shop];
+  if(!order)return;
+  var fields={};
+  var isValidated=order.status==='validated';
+  var fieldKey=isValidated?'vqty_'+key:key;
+  if(isValidated){
+    fields[fieldKey]={integerValue:0};
+    fields[key]={integerValue:0};
+    order['vqty_'+key]=0; order[key]=0;
+  } else {
+    fields[fieldKey]={integerValue:0};
+    order[key]=0;
+  }
+  var libreStr=order.vlibre||order.libre||'{}';
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+  if(!libre.deleted)libre.deleted={};
+  libre.deleted[key]=true;
+  order.vlibre=JSON.stringify(libre);
+  fields['vlibre']={stringValue:order.vlibre};
+
+  var dStr=laboDs(laboDate);
+  var fieldPaths=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+fieldPaths;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'delete_'+key);
+    laboShowSaveToast(shop);
+    var el=document.getElementById('labo-fiche-'+shop);
+    if(el)el.innerHTML=laboRenderFiche(shop,order);
+  }catch(e){}
+}
+
 async function laboRemoveLibreItem(shop,groupKey,idx){
   var order=laboOrders[shop];
   if(!order)return;
@@ -2015,6 +2048,15 @@ async function laboPatchQty(shop,key,val){
   } else {
     fields[fieldKey]={integerValue:v};
     order[key]=v;
+  }
+  if(v>0){
+    var _libreStrQ=order.vlibre||order.libre||'{}';
+    var _libreQ={};try{_libreQ=JSON.parse(_libreStrQ);}catch(e){}
+    if(_libreQ.deleted&&_libreQ.deleted[key]){
+      delete _libreQ.deleted[key];
+      order.vlibre=JSON.stringify(_libreQ);
+      fields['vlibre']={stringValue:order.vlibre};
+    }
   }
   var dStr=laboDs(laboDate);
   var allKeys=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
@@ -2953,16 +2995,18 @@ function laboRenderFiche(shop,order){
     var isRupt=order['rupt_'+key];
     var hasPoids=CHR_POIDS_KEYS.indexOf(key)!==-1;
     var curPoids='';
-    if(hasPoids){try{var _lp=JSON.parse(order.vlibre||order.libre||'{}');if(_lp.poids&&_lp.poids[key])curPoids=_lp.poids[key];}catch(e){}}
+    var isDeleted=false;
+    try{var _lp=JSON.parse(order.vlibre||order.libre||'{}');if(hasPoids&&_lp.poids&&_lp.poids[key])curPoids=_lp.poids[key];if(_lp.deleted&&_lp.deleted[key])isDeleted=true;}catch(e){}
     var poidsField=hasPoids
       ?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
       +'<input type="number" min="0" step="0.1" placeholder="kg" value="'+curPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
       +'<span style="font-size:10px;color:var(--muted);">kg</span>'
       +'</div>'
       :'';
-    var trashBtn=(!hasPoids&&NO_TRASH_KEYS.indexOf(key)===-1)?laboTrashBtn('laboPatchQty(\''+shop+'\',\''+key+'\',0)'):'';
-    // N'afficher que si val > 0 — sauf pour les CHR avec poids (toujours afficher)
-    if(vqty===0&&!isRupt&&!hasPoids) return '';
+    var canTrash=!hasPoids&&NO_TRASH_KEYS.indexOf(key)===-1;
+    var trashBtn=canTrash?(isDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\''+shop+'\',\''+key+'\')')):'';
+    // N'afficher que si val > 0 — sauf pour les CHR avec poids ou un article marqué supprimé (toujours afficher)
+    if(vqty===0&&!isRupt&&!hasPoids&&!isDeleted) return '';
     return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
       +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
@@ -3012,12 +3056,15 @@ function laboRenderFiche(shop,order){
         +'</div>';
     }
     if(p.key==='villerolls'){
-      if(!p.val||p.val===0) return '';
+      var _villeDeleted=false;
+      try{var _lpv=JSON.parse(order.vlibre||order.libre||'{}');if(_lpv.deleted&&_lpv.deleted.villerolls)_villeDeleted=true;}catch(e){}
+      if((!p.val||p.val===0)&&!_villeDeleted) return '';
       var _rupt=order['rupt_villerolls'];
+      var _villeTrash=_villeDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\'ville\',\'villerolls\')');
       return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-ville-villerolls">'
         +'<input id="vinp-ville-villerolls" type="number" min="0" value="'+(_rupt?0:p.val)+'" onchange="laboPatchQty(\'ville\',\'villerolls\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_rupt?'#c0392b':'var(--text)')+';">Rolls'+(_rupt?' ⚠':'')+'</div>'
-        +laboTrashBtn('laboPatchQty(\'ville\',\'villerolls\',0)')
+        +_villeTrash
         +'</div>';
     }
     if(p.key==='pouletfrit'){
