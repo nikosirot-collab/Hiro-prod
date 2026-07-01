@@ -1637,6 +1637,8 @@ function laboShowShop(shop,el){
 
 function laboEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
+function laboJsEsc(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+
 function laboPRow(name,val){
   var zero=!val||val===0;
   return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);">'
@@ -1933,7 +1935,8 @@ function laboTrashBtn(onclickJs){
   return '<button onclick="'+onclickJs+'" title="Supprimer" style="flex-shrink:0;border:none;background:transparent;color:var(--hint);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;">🗑</button>';
 }
 
-async function laboDeleteCatalogItem(shop,key){
+async function laboDeleteCatalogItem(shop,key,displayName){
+  if(!confirm('Supprimer "'+displayName+'" de la commande ?'))return;
   var order=laboOrders[shop];
   if(!order)return;
   var fields={};
@@ -1966,7 +1969,8 @@ async function laboDeleteCatalogItem(shop,key){
   }catch(e){}
 }
 
-async function laboRemoveLibreItem(shop,groupKey,idx){
+async function laboRemoveLibreItem(shop,groupKey,idx,displayName){
+  if(!confirm('Supprimer "'+displayName+'" de la commande ?'))return;
   var order=laboOrders[shop];
   if(!order)return;
   var libreStr=order.vlibre||order.libre||'{}';
@@ -3004,7 +3008,7 @@ function laboRenderFiche(shop,order){
       +'</div>'
       :'';
     var canTrash=!hasPoids&&NO_TRASH_KEYS.indexOf(key)===-1;
-    var trashBtn=canTrash?(isDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\''+shop+'\',\''+key+'\')')):'';
+    var trashBtn=canTrash?(isDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\''+shop+'\',\''+key+'\',\''+laboJsEsc(name)+'\')')):'';
     // N'afficher que si val > 0 — sauf pour les CHR avec poids ou un article marqué supprimé (toujours afficher)
     if(vqty===0&&!isRupt&&!hasPoids&&!isDeleted) return '';
     return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
@@ -3060,7 +3064,7 @@ function laboRenderFiche(shop,order){
       try{var _lpv=JSON.parse(order.vlibre||order.libre||'{}');if(_lpv.deleted&&_lpv.deleted.villerolls)_villeDeleted=true;}catch(e){}
       if((!p.val||p.val===0)&&!_villeDeleted) return '';
       var _rupt=order['rupt_villerolls'];
-      var _villeTrash=_villeDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\'ville\',\'villerolls\')');
+      var _villeTrash=_villeDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\'ville\',\'villerolls\',\'Rolls\')');
       return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-ville-villerolls">'
         +'<input id="vinp-ville-villerolls" type="number" min="0" value="'+(_rupt?0:p.val)+'" onchange="laboPatchQty(\'ville\',\'villerolls\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(_rupt?'#c0392b':'var(--text)')+';">Rolls'+(_rupt?' ⚠':'')+'</div>'
@@ -3108,7 +3112,7 @@ function laboRenderFiche(shop,order){
         +'<input id="poids-inp-'+shop+'-'+_fpKey+'" type="number" min="0" step="0.1" placeholder="kg" value="'+_fpPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
         +'<span style="font-size:10px;color:var(--muted);">kg</span>'
         +'</div>'
-        +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'plats\','+_fpIdx+')')
+        +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'plats\','+_fpIdx+',\''+laboJsEsc(p.name)+'\')')
         +'</div>';
     }
     return makeRow(p.key,p.name,p.val);
@@ -3121,7 +3125,7 @@ function laboRenderFiche(shop,order){
       +'</div>';
   }
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
-  var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.forEach(function(i,idx){if(i.name&&i.qty>0)dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+i.name+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'tarte\','+idx+')')+'</div>';});}}catch(e){}}
+  var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.forEach(function(i,idx){if(i.name&&i.qty>0)dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+i.name+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'tarte\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
   var tapasRows=tapasList.filter(function(p){return p.key!=='brochettes';}).map(function(p){
     var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);
@@ -3161,11 +3165,11 @@ function laboRenderFiche(shop,order){
     LABO_CHR_KEYS.forEach(function(k){
       if(k==='chr_pain') return;
       var val=isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:(order[k]!==undefined?order[k]:0);
-      if(val>0) chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
+      chrContent+=makeRow(k,LABO_CHR_NAMES[k],val);
     });
     // Articles libres CHR
     var _libreStr=order.vlibre||order.libre||'';
-    if(_libreStr){try{var lc=JSON.parse(_libreStr);if(lc.chr){lc.chr.forEach(function(i,idx){if(i.name&&i.qty>0)chrContent+='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;flex:1;">'+i.name+'</div>'+laboTrashBtn('laboRemoveLibreItem(\'ville\',\'chr\','+idx+')')+'</div>';});}}catch(e){}}
+    if(_libreStr){try{var lc=JSON.parse(_libreStr);if(lc.chr){lc.chr.forEach(function(i,idx){if(i.name&&i.qty>0)chrContent+='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;flex:1;">'+i.name+'</div>'+laboTrashBtn('laboRemoveLibreItem(\'ville\',\'chr\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
     if(chrContent) chrRows=chrContent;
   }else{
     // Autres magasins: uniquement articles libres
@@ -3173,7 +3177,7 @@ function laboRenderFiche(shop,order){
     if(_libreStr2){try{var lc2=JSON.parse(_libreStr2);if(lc2.chr){var _ciRows=[];lc2.chr.forEach(function(i,idx){if(i.name&&i.qty>0)_ciRows.push('<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;">'
       +'<input type="number" min="0" value="'+i.qty+'" onchange="laboPatchLibreChr(\''+shop+'\','+idx+',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;">'+i.name+'</div>'
-      +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'chr\','+idx+')')
+      +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'chr\','+idx+',\''+laboJsEsc(i.name)+'\')')
       +'</div>');});if(_ciRows.length>0)chrRows=_ciRows.join('');}}catch(e){}}
   }
 
@@ -3182,9 +3186,11 @@ function laboRenderFiche(shop,order){
   if(shop==='ville'){
     var allPlats=[];
     var gyozaV=_v('gyoza');var siumaiV=_v('siumai');
-    if(gyozaV>0)allPlats.push({key:'gyoza',name:'Gyoza',val:gyozaV});
-    if(siumaiV>0)allPlats.push({key:'siumai',name:'Siu Mai',val:siumaiV});
     var _libreStr2=order.vlibre||order.libre||'';
+    var _deletedV={};
+    try{if(_libreStr2){var _lpd=JSON.parse(_libreStr2);if(_lpd.deleted)_deletedV=_lpd.deleted;}}catch(e){}
+    if(gyozaV>0||_deletedV.gyoza)allPlats.push({key:'gyoza',name:'Gyoza',val:gyozaV});
+    if(siumaiV>0||_deletedV.siumai)allPlats.push({key:'siumai',name:'Siu Mai',val:siumaiV});
     var _platsLibre=[];
     try{if(_libreStr2){var lpl=JSON.parse(_libreStr2);if(lpl.plats){_platsLibre=lpl.plats;lpl.plats.forEach(function(i,idx){if(i.name&&i.qty>0&&i.name.toLowerCase().indexOf('brochette')===-1)allPlats.push({key:'plat_'+i.name,name:i.name,val:i.qty,poids:i.poids||'',rawIdx:idx});});}}}catch(e){}
 
@@ -3196,6 +3202,7 @@ function laboRenderFiche(shop,order){
       platsColRows=allPlats.map(function(p){
         var noPoids=['gyoza','siumai'];
         var showPoids=noPoids.indexOf(p.key)===-1;
+        var isDeletedPlat=!showPoids&&!!_deletedV[p.key];
         var poidsVal=showPoids?(_poids[p.key]||p.poids||''):'';
         var _savedGrams=_platDeductSaved[p.key]||0;_platDeductActive[shop+'-'+p.key]=_savedGrams;
         var _ptA=_savedGrams===700;
@@ -3203,7 +3210,10 @@ function laboRenderFiche(shop,order){
         var _bBase='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
         var _ptS=_bBase+'background:'+(_ptA?'#1a5fa8':'var(--surface)')+';color:'+(_ptA?'#fff':'var(--text)')+';border-color:'+(_ptA?'#1a5fa8':'var(--border)')+';';
         var _gdS=_bBase+'background:'+(_gdA?'#1a5fa8':'var(--surface)')+';color:'+(_gdA?'#fff':'var(--text)')+';border-color:'+(_gdA?'#1a5fa8':'var(--border)')+';';
-        return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'          +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'          +(showPoids?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'          +'<button data-plat-btn="1" data-active="'+(_ptA?1:0)+'" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',700,this)" style="'+_ptS+'">Pt plat</button>'          +'<button data-plat-btn="1" data-active="'+(_gdA?1:0)+'" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',800,this)" style="'+_gdS+'">Gd plat</button>'          +'<input id="poids-inp-'+shop+'-'+p.key+'" type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'          +'<span style="font-size:10px;color:var(--muted);">kg</span>'          +'</div>':'')          +laboTrashBtn(showPoids?('laboRemoveLibreItem(\'ville\',\'plats\','+p.rawIdx+')'):('laboPatchQty(\''+shop+'\',\''+p.key+'\',0)'))          +'</div>';
+        var _platTrash=isDeletedPlat
+          ?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>'
+          :laboTrashBtn(showPoids?('laboRemoveLibreItem(\'ville\',\'plats\','+p.rawIdx+',\''+laboJsEsc(p.name)+'\')'):('laboDeleteCatalogItem(\''+shop+'\',\''+p.key+'\',\''+laboJsEsc(p.name)+'\')'));
+        return '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);">'          +'<input type="number" min="0" value="'+p.val+'" onchange="laboPatchQty(\''+shop+'\',\''+p.key+'\',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'          +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'          +(showPoids?'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'          +'<button data-plat-btn="1" data-active="'+(_ptA?1:0)+'" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',700,this)" style="'+_ptS+'">Pt plat</button>'          +'<button data-plat-btn="1" data-active="'+(_gdA?1:0)+'" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+p.key+'\',800,this)" style="'+_gdS+'">Gd plat</button>'          +'<input id="poids-inp-'+shop+'-'+p.key+'" type="number" min="0" step="0.1" placeholder="kg" value="'+poidsVal+'" onchange="laboPatchPoids(\''+shop+'\',\''+p.key+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'          +'<span style="font-size:10px;color:var(--muted);">kg</span>'          +'</div>':'')          +_platTrash          +'</div>';
       }).join('');
     }else{
       platsColRows='<div style="padding:10px 12px;font-size:12px;color:var(--hint);">Aucun plat</div>';
