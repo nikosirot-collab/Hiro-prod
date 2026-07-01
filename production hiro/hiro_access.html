@@ -3009,8 +3009,8 @@ function laboRenderFiche(shop,order){
       :'';
     var canTrash=!hasPoids&&NO_TRASH_KEYS.indexOf(key)===-1;
     var trashBtn=canTrash?(isDeleted?'<span style="font-size:9px;color:#c0392b;background:#fdecea;border-radius:4px;padding:2px 6px;font-weight:600;white-space:nowrap;">Supprimé</span>':laboTrashBtn('laboDeleteCatalogItem(\''+shop+'\',\''+key+'\',\''+laboJsEsc(name)+'\')')):'';
-    // N'afficher que si val > 0 — sauf pour les CHR avec poids ou un article marqué supprimé (toujours afficher)
-    if(vqty===0&&!isRupt&&!hasPoids&&!isDeleted) return '';
+    // N'afficher que si val > 0 — sauf article marqué supprimé (toujours afficher)
+    if(vqty===0&&!isRupt&&!isDeleted) return '';
     return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
       +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:vqty)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;color:'+(isRupt?'#c0392b':'var(--text)')+';">'+name+(isRupt?' ⚠':'')+'</div>'
