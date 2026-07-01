@@ -1635,6 +1635,8 @@ function laboShowShop(shop,el){
   laboRender();
 }
 
+function laboEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
 function laboPRow(name,val){
   var zero=!val||val===0;
   return '<div style="display:flex;align-items:baseline;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);">'
@@ -1879,6 +1881,49 @@ async function laboAddArticle(shop){
     // Vider les champs
     qtyInp.value='';nameInp.value='';
     // Re-render la fiche
+    var el=document.getElementById('labo-fiche-'+shop);
+    if(el)el.innerHTML=laboRenderFiche(shop,order);
+  }catch(e){}
+}
+
+async function laboAddPlat(shop){
+  var nameInp=document.getElementById('platname-'+shop);
+  var qtyInp=document.getElementById('platqty-'+shop);
+  if(!nameInp||!qtyInp)return;
+  var name=nameInp.value.trim();
+  var qty=parseInt(qtyInp.value)||0;
+  if(!name||!qty)return;
+
+  var order=laboOrders[shop];
+  if(!order){
+    laboOrders[shop]={shop:shop,date:laboDs(laboDate),ts:Date.now()};
+    order=laboOrders[shop];
+  }
+
+  var libreStr=order.vlibre||order.libre||'{}';
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+  if(!libre.plats)libre.plats=[];
+  var found=false;
+  libre.plats.forEach(function(i){if(i.name&&i.name.toLowerCase()===name.toLowerCase()){i.qty=(i.qty||0)+qty;found=true;}});
+  if(!found)libre.plats.push({name:name,qty:qty});
+  order.vlibre=JSON.stringify(libre);
+
+  var fields={'vlibre':{stringValue:order.vlibre}};
+  if(!order.ts){
+    order.ts=Date.now();
+    fields['ts']={integerValue:order.ts};
+    fields['shop']={stringValue:shop};
+    fields['date']={stringValue:laboDs(laboDate)};
+  }
+
+  var dStr=laboDs(laboDate);
+  var fieldPaths=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+fieldPaths;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'add_plat_'+name);
+    laboShowSaveToast(shop);
+    nameInp.value='';qtyInp.value='';
     var el=document.getElementById('labo-fiche-'+shop);
     if(el)el.innerHTML=laboRenderFiche(shop,order);
   }catch(e){}
@@ -2923,6 +2968,14 @@ function laboRenderFiche(shop,order){
   rightItems.push({key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')});
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
   if(shop==='dsm') rightItems.push({key:'pouletfrit',name:'Poulet frit',val:_v('pouletfrit')});
+  if(shop==='dsm'||shop==='mgt'||shop==='paita'){
+    var _libreStrPlat=order.vlibre||order.libre||'';
+    var _platsFree=[];
+    if(_libreStrPlat){try{var _lprF=JSON.parse(_libreStrPlat);if(_lprF.plats)_platsFree=_lprF.plats;}catch(e){}}
+    _platsFree.forEach(function(i,idx){
+      if(i.name&&i.qty>0) rightItems.push({key:'plat_'+idx,name:i.name,val:i.qty,isFreePlat:true});
+    });
+  }
   var rightRows=rightItems.map(function(p){
     if(p.key==='rizprod'){
       var _rizRupt=order['rupt_rizprod'];
@@ -2958,8 +3011,38 @@ function laboRenderFiche(shop,order){
         +'</div>'
         +'</div>';
     }
+    if(p.isFreePlat){
+      var _fpKey=p.key;
+      var _fpName=laboEsc(p.name);
+      var _fpQty=p.val;
+      var _fpPoids='';var _fpGrams=0;
+      try{var _lpfp=JSON.parse(order.vlibre||order.libre||'{}');if(_lpfp.poids&&_lpfp.poids[_fpKey])_fpPoids=_lpfp.poids[_fpKey];_fpGrams=(_lpfp.platDeduct&&_lpfp.platDeduct[_fpKey])||0;}catch(e){}
+      _platDeductActive[shop+'-'+_fpKey]=_fpGrams;
+      var _fpPtA=_fpGrams===700;
+      var _fpGdA=_fpGrams===800;
+      var _bBase='padding:2px 5px;font-size:9px;border:1px solid;border-radius:4px;cursor:pointer;white-space:nowrap;';
+      var _fpPtS=_bBase+'background:'+(_fpPtA?'#1a5fa8':'var(--surface)')+';color:'+(_fpPtA?'#fff':'var(--text)')+';border-color:'+(_fpPtA?'#1a5fa8':'var(--border)')+';';
+      var _fpGdS=_bBase+'background:'+(_fpGdA?'#1a5fa8':'var(--surface)')+';color:'+(_fpGdA?'#fff':'var(--text)')+';border-color:'+(_fpGdA?'#1a5fa8':'var(--border)')+';';
+      return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+_fpKey+'">'
+        +'<input id="vinp-'+shop+'-'+_fpKey+'" type="number" min="0" value="'+_fpQty+'" onchange="laboPatchQty(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;min-width:0;">'+_fpName+'</div>'
+        +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">'
+        +'<button data-plat-btn="1" data-active="'+(_fpPtA?1:0)+'" data-grams="700" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+_fpKey+'\',700,this)" style="'+_fpPtS+'">Pt plat</button>'
+        +'<button data-plat-btn="1" data-active="'+(_fpGdA?1:0)+'" data-grams="800" onclick="laboTogglePlatDeduction(\''+shop+'\',\''+_fpKey+'\',800,this)" style="'+_fpGdS+'">Gd plat</button>'
+        +'<input id="poids-inp-'+shop+'-'+_fpKey+'" type="number" min="0" step="0.1" placeholder="kg" value="'+_fpPoids+'" onchange="laboPatchPoids(\''+shop+'\',\''+_fpKey+'\',this.value)" style="width:54px;height:28px;border:1px solid var(--border);border-radius:6px;font-size:12px;text-align:center;background:var(--bg);color:var(--text);">'
+        +'<span style="font-size:10px;color:var(--muted);">kg</span>'
+        +'</div>'
+        +'</div>';
+    }
     return makeRow(p.key,p.name,p.val);
   }).join('');
+  if(shop==='dsm'||shop==='mgt'||shop==='paita'){
+    rightRows+='<div style="display:flex;align-items:center;padding:6px 8px;gap:6px;border-bottom:1px solid var(--border);">'
+      +'<input id="platqty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:13px;text-align:center;">'
+      +'<input id="platname-'+shop+'" type="text" placeholder="Nom du plat..." style="flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:12px;" onkeydown="if(event.key===\'Enter\')laboAddPlat(\''+shop+'\')">'
+      +'<button onclick="laboAddPlat(\''+shop+'\')" style="padding:4px 10px;border-radius:5px;border:none;background:'+color+';color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">+</button>'
+      +'</div>';
+  }
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
