@@ -2732,16 +2732,19 @@ async function loadCommandes(){
 </script>
 <script>
 // ── SÉCURITÉ ──
-async function loadSecLog(){
+async function loadSecLog(presenceDocs){
   var el=document.getElementById('sec-log');
   if(!el)return;
   var _slCache=_cacheGet('sec-log', 120000);
   if(_slCache)el.innerHTML=_slCache;
   try{
-    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
-    if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
-    var json=await res.json();
-    var docs=(json.documents||[]);
+    var docs=presenceDocs;
+    if(!docs){
+      var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
+      if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
+      var json=await res.json();
+      docs=(json.documents||[]);
+    }
     var now=Date.now();
     var limit48h=48*3600*1000; // 48h seulement
     var entries=[];
@@ -3015,7 +3018,7 @@ async function saveJoursOff(){
 }
 
 
-async function loadMonitoring(){
+async function loadMonitoring(presenceDocs){
   var now=Date.now();
   var SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
@@ -3040,26 +3043,30 @@ async function loadMonitoring(){
 
   // Charger tous les pings depuis Firebase
   var allDocs=[];
-  try{
-    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
-    if(res.ok){
-      var json=await res.json();
-      (json.documents||[]).forEach(function(doc){
-        if(!doc.fields)return;
-        var f=doc.fields;
-        var ts=f.ts?parseInt(f.ts.integerValue):0;
-        if(!ts)return;
-        allDocs.push({
-          iface:f.iface?f.iface.stringValue:'?',
-          shop:f.shop?f.shop.stringValue:'',
-          ts:ts,
-          online:f.online?f.online.booleanValue:undefined,
-          latency:f.latency?parseInt(f.latency.integerValue):null,
-          disabled:f.disabled&&f.disabled.booleanValue===true
-        });
-      });
-    }
-  }catch(e){}
+  var rawPresenceDocs=presenceDocs;
+  if(!rawPresenceDocs){
+    try{
+      var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
+      if(res.ok){
+        var json=await res.json();
+        rawPresenceDocs=json.documents||[];
+      }
+    }catch(e){}
+  }
+  (rawPresenceDocs||[]).forEach(function(doc){
+    if(!doc.fields)return;
+    var f=doc.fields;
+    var ts=f.ts?parseInt(f.ts.integerValue):0;
+    if(!ts)return;
+    allDocs.push({
+      iface:f.iface?f.iface.stringValue:'?',
+      shop:f.shop?f.shop.stringValue:'',
+      ts:ts,
+      online:f.online?f.online.booleanValue:undefined,
+      latency:f.latency?parseInt(f.latency.integerValue):null,
+      disabled:f.disabled&&f.disabled.booleanValue===true
+    });
+  });
 
   // Helper : trouver le meilleur ping pour une interface/shop
   var getBest=function(iface,shop){
@@ -3142,17 +3149,23 @@ async function loadStorageEstimate(){
   for(var i=0;i<COLLECTIONS.length;i++){
     var col=COLLECTIONS[i];
     try{
-      var res=await fetch(BASE+col.id+'?pageSize=100&key='+KEY);
-      var txt=await res.text();
-      var bytes=new TextEncoder().encode(txt).length;
-      var json=JSON.parse(txt);
-      var count=(json.documents||[]).length;
-      results.push({label:col.label,color:col.color,bytes:bytes,count:count});
-      totalBytes+=bytes;
+      var colBytes=0,colCount=0,pageToken='';
+      do{
+        var url=BASE+col.id+'?pageSize=300&key='+KEY+(pageToken?'&pageToken='+encodeURIComponent(pageToken):'');
+        var res=await fetch(url);
+        var txt=await res.text();
+        colBytes+=new TextEncoder().encode(txt).length;
+        var json=JSON.parse(txt);
+        colCount+=(json.documents||[]).length;
+        pageToken=json.nextPageToken||'';
+        if(pageToken) await delay(300);
+      }while(pageToken);
+      results.push({label:col.label,color:col.color,bytes:colBytes,count:colCount});
+      totalBytes+=colBytes;
     }catch(e){
       results.push({label:col.label,color:col.color,bytes:0,count:0,err:true});
     }
-    // Délai de 500ms entre chaque requête
+    // Délai de 500ms entre chaque collection
     if(i<COLLECTIONS.length-1) await delay(500);
   }
 
@@ -3239,8 +3252,8 @@ async function loadSecurite(){
 
     // Rendu appareils + historique
     _secRender();
-    loadSecLog();
-    loadMonitoring();
+    loadSecLog(docs);
+    loadMonitoring(docs);
   }catch(e){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur: '+e.message+'</div>';}
 }
 
