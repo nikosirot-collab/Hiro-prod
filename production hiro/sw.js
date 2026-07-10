@@ -1,5 +1,4 @@
 // ── Hiro Sushi Service Worker v2.1 ──
-const SW_VERSION = '2.1.0';
 const CACHE_NAME = 'hiro-cache-v5';
 const DB_NAME = 'hiro-offline-db';
 const DB_VERSION = 1;
@@ -16,6 +15,7 @@ const PRECACHE_URLS = [
   BASE + 'hiro_report.html',
   BASE + 'hiro_dock.html',
   BASE + 'hiro_planning_mgt.html',
+  BASE + 'logo.jpg',
 ];
 
 // ── Installation ──

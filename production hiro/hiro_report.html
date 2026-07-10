@@ -578,18 +578,31 @@ function shiftDay(n){
 }
 document.getElementById('reportDate').value=todayNC();
 
-// Fetch order
-async function fetchOrder(dateStr, shopId){
-  const res=await fetch(`${_BASE}/hiro-orders/order_${dateStr}_${shopId}?key=${_KEY}`);
-  if(!res.ok) return null;
-  const j=await res.json();
-  if(!j.fields) return null;
-  const o={};
-  Object.entries(j.fields).forEach(([k,v])=>{
-    if(v.integerValue!==undefined) o[k]=parseInt(v.integerValue);
-    else if(v.stringValue!==undefined) o[k]=v.stringValue;
-  });
-  return o;
+// Fetch les commandes des 5 boutiques en une seule requête batchGet (au lieu de 5 GET individuels)
+async function fetchAllOrders(dateStr){
+  const docRefs=SHOPS.map(s=>`projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/order_${dateStr}_${s.id}`);
+  try{
+    const res=await fetch(`https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents:batchGet?key=${_KEY}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({documents:docRefs})
+    });
+    if(!res.ok) return SHOPS.map(s=>({shop:s,order:null}));
+    const arr=await res.json();
+    const byName={};
+    (Array.isArray(arr)?arr:[]).forEach(item=>{ if(item.found) byName[item.found.name]=item.found; });
+    return SHOPS.map(s=>{
+      const doc=byName[`projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/order_${dateStr}_${s.id}`];
+      if(!doc||!doc.fields) return {shop:s,order:null};
+      const o={};
+      Object.entries(doc.fields).forEach(([k,v])=>{
+        if(v.integerValue!==undefined) o[k]=parseInt(v.integerValue);
+        else if(v.stringValue!==undefined) o[k]=v.stringValue;
+      });
+      return {shop:s,order:o};
+    });
+  }catch(e){
+    return SHOPS.map(s=>({shop:s,order:null}));
+  }
 }
 
 // Fetch rolls depuis hiro-production (clé: YYYY-MM-DD__r__shop)
@@ -639,7 +652,7 @@ async function loadReport(){
   document.getElementById('emptyState').style.display='none';
   try{
     const [results, rolls]=await Promise.all([
-      Promise.all(SHOPS.map(s=>fetchOrder(dateStr,s.id).then(o=>({shop:s,order:o})))),
+      fetchAllOrders(dateStr),
       fetchRolls(dateStr)
     ]);
     // Injecter les rolls dans chaque order
