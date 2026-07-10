@@ -2097,7 +2097,7 @@ function render() {
     <td class="td-total col-sep">${totRiz.asia||'—'}</td><td class="td-total">${fb(totRiz.asia/250)}</td>
     <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
     <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
-    <td class="td-blue-total">${fb(wMarmites)}</td>
+    <td class="td-blue-total">${fb(wMarmites*6)}</td>
   </tr>`;
 
   document.getElementById('foot-fish').innerHTML=`<tr>
