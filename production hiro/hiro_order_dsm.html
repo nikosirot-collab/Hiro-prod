@@ -1222,8 +1222,9 @@ if(_offlineQueue.length>0)showOfflineBanner();
       await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=iface&updateMask.fieldPaths=shop&updateMask.fieldPaths=devId&updateMask.fieldPaths=userName&updateMask.fieldPaths=ts&updateMask.fieldPaths=online&updateMask.fieldPaths=latency&updateMask.fieldPaths=device&updateMask.fieldPaths=browser&currentDocument.exists=true',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
     }catch(e){}
   }
+  window._sendPing=_sendPing;
   _sendPing();
-  setInterval(_sendPing,120000);
+  window._pingTimer=setInterval(_sendPing,120000);
 })();
 </script>
 
@@ -1302,14 +1303,28 @@ if(_offlineQueue.length>0)showOfflineBanner();
 
 
 <script>
-// ── Pause ping quand en arrière-plan ──
+// ── Pause ping + polling validation quand en arrière-plan ──
 (function(){
-  var _pingTimer=null;
-  function startPing(){if(!_pingTimer)_pingTimer=setInterval(window._sendPing||function(){},120000);}
-  function stopPing(){if(_pingTimer){clearInterval(_pingTimer);_pingTimer=null;}}
+  var _validWasPolling=false;
+  function startPing(){if(!window._pingTimer&&window._sendPing)window._pingTimer=setInterval(window._sendPing,120000);}
+  function stopPing(){if(window._pingTimer){clearInterval(window._pingTimer);window._pingTimer=null;}}
   document.addEventListener('visibilitychange',function(){
-    if(document.hidden){stopPing();}
-    else{if(window._sendPing)window._sendPing();startPing();}
+    if(document.hidden){
+      stopPing();
+      if(typeof _validPollInterval!=='undefined'&&_validPollInterval){
+        _validWasPolling=true;
+        clearInterval(_validPollInterval);
+        _validPollInterval=null;
+      }
+    } else {
+      if(window._sendPing)window._sendPing();
+      startPing();
+      if(_validWasPolling){
+        _validWasPolling=false;
+        if(typeof checkValidationStatus==='function')checkValidationStatus();
+        _validPollInterval=setInterval(checkValidationStatus,8000);
+      }
+    }
   });
 })();
 </script>

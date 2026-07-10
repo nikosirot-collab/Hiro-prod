@@ -15,6 +15,7 @@ const PRECACHE_URLS = [
   BASE + 'hiro_labo.html',
   BASE + 'hiro_report.html',
   BASE + 'hiro_dock.html',
+  BASE + 'hiro_planning_mgt.html',
 ];
 
 // ── Installation ──
@@ -45,6 +46,21 @@ self.addEventListener('activate', function(e){
 });
 
 // ── Fetch ──
+var _FS_CACHE_LIMIT = 400;
+var _fsCachePruning = false;
+function _pruneFirestoreCache(cache){
+  if(_fsCachePruning) return;
+  _fsCachePruning = true;
+  cache.keys().then(function(keys){
+    var fsKeys = keys.filter(function(k){ return k.url.includes('firestore.googleapis.com'); });
+    if(fsKeys.length > _FS_CACHE_LIMIT){
+      var excess = fsKeys.length - _FS_CACHE_LIMIT;
+      var toDelete = fsKeys.slice(0, excess);
+      return Promise.all(toDelete.map(function(k){ return cache.delete(k); }));
+    }
+  }).catch(function(){}).then(function(){ _fsCachePruning = false; });
+}
+
 self.addEventListener('fetch', function(e){
   var url = e.request.url;
 
@@ -52,10 +68,10 @@ self.addEventListener('fetch', function(e){
   if(url.includes('firestore.googleapis.com')){
     e.respondWith(
       fetch(e.request.clone()).then(function(res){
-        // Mettre en cache les réponses GET réussies
+        // Mettre en cache les réponses GET réussies (bornée à _FS_CACHE_LIMIT entrées)
         if(e.request.method === 'GET' && res.ok){
           var clone = res.clone();
-          caches.open(CACHE_NAME).then(function(c){ c.put(e.request, clone); });
+          caches.open(CACHE_NAME).then(function(c){ c.put(e.request, clone); _pruneFirestoreCache(c); });
         }
         return res;
       }).catch(function(){

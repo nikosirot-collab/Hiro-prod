@@ -3856,7 +3856,7 @@ if(!navigator.onLine){
 
   window._sendPing=_sendPing;
   _sendPing();
-  setInterval(_sendPing,120000);
+  window._pingTimer=setInterval(_sendPing,120000);
   (async function(){try{var _r=await fetch('https://ipapi.co/json/');if(_r.ok){var _d=await _r.json();var _ip=_d.ip||'',_city=_d.city||'',_region=_d.region||'',_isp=_d.org||'';if(_ip){await fetch(_PING_API+'/'+_devId+'?key='+_PING_KEY+'&updateMask.fieldPaths=ip&updateMask.fieldPaths=city&updateMask.fieldPaths=region&updateMask.fieldPaths=isp',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ip:{stringValue:_ip},city:{stringValue:_city},region:{stringValue:_region},isp:{stringValue:_isp}}})});}}}catch(e){}})();
   window.addEventListener('beforeunload',function(){
     try{
@@ -3993,9 +3993,10 @@ if(_offlineQueueAP.length>0)showOfflineBanner();
 // ── Pause ping quand en arrière-plan ──
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
-    if(typeof _pingTimer!=='undefined'&&_pingTimer){clearInterval(_pingTimer);}
+    if(window._pingTimer){clearInterval(window._pingTimer);window._pingTimer=null;}
   } else {
     if(window._sendPing) window._sendPing();
+    if(!window._pingTimer&&window._sendPing) window._pingTimer=setInterval(window._sendPing,120000);
   }
 });
 </script>

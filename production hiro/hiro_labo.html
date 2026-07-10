@@ -424,8 +424,8 @@ function renderRizRoll(){
 }
 
 function renderAll(){
-  renderCmd();
-  renderRizRoll();
+  if(document.getElementById('page-cmd').classList.contains('active')) renderCmd();
+  if(document.getElementById('page-rizroll').classList.contains('active')) renderRizRoll();
 }
 
 // ── FETCH ──

@@ -1186,6 +1186,16 @@ function setFishV(d,s,f,v,auto){
 
 function weekDocId(){return 'week_'+ds(mondayOf(weekOff));}
 
+// Évite de perdre le focus d'un input pendant une saisie quand le poll se déclenche
+function _cmdTableFocused(){
+  var ae=document.activeElement;
+  if(!ae) return false;
+  return ['body-riz','body-fish','body-rolls','body-thon'].some(function(id){
+    var el=document.getElementById(id);
+    return el&&el.contains(ae);
+  });
+}
+
 function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
     if(remote){
@@ -1223,7 +1233,7 @@ function subscribeWeek(){
       _setStatus(true);
       _scheduleSave(weekDocId());
     }
-    render();
+    if(!_cmdTableFocused()) render();
     if(document.getElementById('page-recette').classList.contains('active')) loadProductionDuJour();
   }, 30000);
 }
@@ -1242,6 +1252,7 @@ function showPage(p, el) {
   else if(event&&event.target) event.target.classList.add('active');
   if(p==='stat'){ renderRecap(); if(!_histoLoaded) loadHistorique(); }
   if(p==='commandes') loadCommandes();
+  else{if(cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}}
   if(p==='recette') loadProductionDuJour();
   if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
   else{secPollStop();stopNetMonitor();secPollStop();}
@@ -1838,6 +1849,8 @@ function switchHistTab(id){
   });
 }
 
+var _nextWeekCache={};
+
 function render() {
   const todayDs = ds(TODAY_NC);
   let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
@@ -2003,9 +2016,16 @@ function render() {
       const dLun = dayOf(weekOff+1, 0); const dsLun = ds(dLun);
       const nextDocId = 'week_'+ds(mondayOf(weekOff+1));
 
-      // Charge les données semaine suivante si pas déjà disponibles
-      _fbGet(nextDocId).then(nextData => {
-        const nd = nextData || {};
+      // Charge les données semaine suivante si pas déjà disponibles (cache 60s pour éviter un fetch à chaque render())
+      const _cachedNext=_nextWeekCache[nextDocId];
+      const _nextPromise=(_cachedNext&&(Date.now()-_cachedNext.ts)<60000)
+        ? Promise.resolve(_cachedNext.data)
+        : _fbGet(nextDocId).then(nextData=>{
+            const nd0=nextData||{};
+            _nextWeekCache[nextDocId]={data:nd0,ts:Date.now()};
+            return nd0;
+          });
+      _nextPromise.then(nd => {
         const vLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{vLun[s]=(prodIsOff(s,dsLun)||prodIsRizPoisson(s,dsLun))?0:(nd[dsLun+'__'+s]||0);});
         const fdLun = {}; ['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s],isFete);});
         const lunByShop = {}; ['dsm','mgt','paita','ville'].forEach(s=>{
