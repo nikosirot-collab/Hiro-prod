@@ -449,7 +449,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
               <th colspan="2" class="col-sep">Asia</th>
               <th class="col-sep" rowspan="2">Marmites</th>
               <th rowspan="2">Temps prod (min)</th>
-              <th rowspan="2">Qté marmite riz</th>
+              <th rowspan="2">Kg riz</th>
             </tr>
             <tr>
               <th class="col-sep">Boules</th><th>Bacs</th>
@@ -1893,7 +1893,7 @@ function render() {
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
-      <td class="${dc2}">${totBacs>0?fb(marmites):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites*6):'—'}</td>
     </tr>`;
 
     // FISH — valeurs manuelles ou calculées automatiquement
