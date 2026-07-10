@@ -356,8 +356,9 @@ th {
   </div>
 </div>
 <script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
-const _PWD='1af5a601'; // hiro2026
+const _PWD='1af5a601';
 function checkPwd(){
   const v=document.getElementById('pwd-input').value;
   if(_h(v)===_PWD){
@@ -2365,7 +2366,7 @@ function cmdRow(name,val){
   var zero=!val||val===0;
   return '<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);">'
     +'<div style="font-size:20px;font-weight:700;font-family:DM Mono,monospace;min-width:36px;text-align:right;color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+(zero?'—':val)+'</div>'
-    +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+name+'</div>'
+    +'<div style="font-size:13px;font-weight:'+(zero?'400':'500')+';color:'+(zero?'var(--text-muted)':'var(--text)')+';">'+esc(name)+'</div>'
     +'</div>';
 }
 
@@ -2485,7 +2486,7 @@ function cmdRenderFiche(shop, order){
   // Dessert
   var dessertRows=_CMD_DESSERT.map(function(p){return cmdRow(p.name,getVal(p.key));}).join('');
   var libreStr=order.vlibre||order.libre||'';
-  if(libreStr){try{var lt=JSON.parse(libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+  if(libreStr){try{var lt=JSON.parse(libreStr);if(lt.tarte){lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;">'+esc(i.name)+'</div></div>';});}}catch(e){}}
   // Tapas
   var tapasKeys=shop==='ville'?['gnem','pnem','sesame','banhbao','samossa','brochettes']:['gyoza','gnem','pnem','sesame','banhbao'];
   var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sesame',banhbao:'Banh Bao',samossa:'Samossa',brochettes:'Brochettes'};
@@ -2494,9 +2495,9 @@ function cmdRenderFiche(shop, order){
   var chrContent='';
   if(shop==='ville'){
     _CMD_CHR_KEYS.forEach(function(k){var v=getVal(k);if(v>0)chrContent+=cmdRow(_CMD_CHR_NAMES[k],v);});
-    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){lc.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+esc(i.name)+'</div></div>';});}}catch(e){}}
   }else{
-    if(libreStr){try{var lc2=JSON.parse(libreStr);if(lc2.chr){lc2.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+i.name+'</div></div>';});}}catch(e){}}
+    if(libreStr){try{var lc2=JSON.parse(libreStr);if(lc2.chr){lc2.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrContent+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;">'+esc(i.name)+'</div></div>';});}}catch(e){}}
   }
   var chrRows=chrContent||'<div style="padding:10px 12px;color:var(--text-muted);font-size:12px;">—</div>';
   // Plats chauds Ville
@@ -2596,7 +2597,7 @@ function exportCmdPDF(){
 
   function pdfRow(name,val){
     if(!val||val===0)return '';
-    return '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;">'+name+'</td><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:right;width:40px;">'+val+'</td></tr>';
+    return '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:11px;">'+esc(name)+'</td><td style="padding:4px 8px;border-bottom:1px solid #eee;font-size:13px;font-weight:700;text-align:right;width:40px;">'+val+'</td></tr>';
   }
 
   function pdfSection(title,rows){
@@ -2827,7 +2828,7 @@ async function loadSecLog(presenceDocs){
       list.forEach(function(e){
         var ifaceLabel={Commande:'📦','Hiro Prod':'🍱','Hiro Access':'👁','Hiro Labo':'🏭'}[e.iface]||e.iface;
         var shopLabel=e.shop&&e.shop!=='prod'&&e.shop!=='access'&&e.shop!=='labo'?(' — '+e.shop.toUpperCase()):'';
-        var deviceStr=e.device?(e.device+(e.browser?' · '+e.browser:'')):'' ;
+        var deviceStr=esc(e.device?(e.device+(e.browser?' · '+e.browser:'')):'');
         var timeStr=new Date(e.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
         var SHOP_C={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
         var shopColor=e.shop&&SHOP_C[e.shop]?SHOP_C[e.shop]:'#888';
@@ -2835,7 +2836,7 @@ async function loadSecLog(presenceDocs){
           +'<div style="font-size:12px;color:var(--text-muted);min-width:36px;">'+timeStr+'</div>'
           +'<div style="flex:1;min-width:0;">'
           +'<div style="font-size:12px;font-weight:600;">'
-          +(e.shop&&e.iface==='Commande'?'<span style="color:'+shopColor+';">'+e.shop.toUpperCase()+'</span>':e.userName||'—')
+          +(e.shop&&e.iface==='Commande'?'<span style="color:'+shopColor+';">'+esc(e.shop.toUpperCase())+'</span>':esc(e.userName||'—'))
           +' <span style="font-weight:400;color:var(--text-muted);">'+ifaceLabel+'</span></div>'
           +(deviceStr?'<div style="font-size:10px;color:var(--text-muted);">'+deviceStr+'</div>':'')
           +'</div>'
@@ -3411,9 +3412,9 @@ function secDevCard(e){
   var now=Date.now();
   var ago=e.ts>0?Math.round((now-e.ts)/60000):null;
   var agoStr=ago===null?'—':ago<1?'il y a 1min':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
-  var shopLabel=e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'';
-  var nameStr=e.userName||(shopLabel||'');
-  var deviceStr=(e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu';
+  var shopLabel=esc(e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'');
+  var nameStr=esc(e.userName||(shopLabel||''));
+  var deviceStr=esc((e.device&&e.browser)?e.device+' · '+e.browser:e.device?e.device:'Appareil inconnu');
   var isOld=ago!==null&&ago>1440;
   var isPending=e.pendingApproval;
   var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
@@ -3432,7 +3433,7 @@ function secDevCard(e){
     +(isPending?' <span style="color:#f39c12;font-size:10px;font-weight:700;">EN ATTENTE</span>':e.disabled?' <span style="color:#e74c3c;font-size:10px;font-weight:700;">DÉSACTIVÉ</span>':'')
     +'</div>'
     +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
-    +(e.city||e.ip?'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">📍 '+(e.city||e.ip)+(e.region?' · '+e.region:'')+(e.isp?' · '+e.isp:'')+'</div>':'')
+    +(e.city||e.ip?'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">📍 '+esc(e.city||e.ip)+(e.region?' · '+esc(e.region):'')+(e.isp?' · '+esc(e.isp):'')+'</div>':'')
     +'</div>'
     +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
     +rejectBtn
@@ -3777,7 +3778,7 @@ function renderChrCatalogue(){
   if(!list.length){el.innerHTML='<div style="padding:16px;color:var(--text-muted);font-size:13px;">Aucun article pour ce magasin.</div>';return;}
   el.innerHTML=list.map(function(name){
     return '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);gap:10px;">'
-      +'<div style="flex:1;font-size:13px;">'+name+'</div>'
+      +'<div style="flex:1;font-size:13px;">'+esc(name)+'</div>'
       +'<button onclick="chrCatalogueDelete(\''+name.replace(/'/g,"\\'")+'\')" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);font-size:16px;line-height:1;">×</button>'
       +'</div>';
   }).join('');

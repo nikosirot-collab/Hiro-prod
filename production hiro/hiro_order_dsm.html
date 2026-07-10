@@ -336,6 +336,7 @@ loadJoursOff();
 </div>
 
 <script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
 const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production';
@@ -606,14 +607,14 @@ async function showRecap(d){
   // Dessert
   var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
   // Tartes libres dans dessert
-  if(d.libre){try{var lp=JSON.parse(d.libre);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
+  if(d.libre){try{var lp=JSON.parse(d.libre);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
 
   // Tapas
   var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rRow(TAPAS_RECAP_NAMES[k],d[k]||0);}).join('');
 
   // CHR libre
   var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-  if(d.libre){try{var lc=JSON.parse(d.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
+  if(d.libre){try{var lc=JSON.parse(d.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
 
   el.innerHTML='<div class="recap-fiche">'
     +'<div class="recap-top">'
@@ -669,21 +670,21 @@ function renderDayOrder(order, dateStr, dayName, isVille){
     var dessertRows=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise']
       .map(function(k){return rRow({tiramisu:'Tiramisu',ananas:'Ananas',poebanane:'Poe banane',poecitrouille:'Poe citrouille',cheesemangue:'Cheese mangue',cheeseframboise:'Cheese framboise'}[k],order[k]||0);}).join('');
     // Tartes libres
-    if(order.libre){try{var lp=JSON.parse(order.libre);if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+    if(order.libre){try{var lp=JSON.parse(order.libre);if(lp.tarte)lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});}catch(e){}}
 
     var tapasKeys={'dsm':['gyoza','gnem','pnem','sesame','banhbao'],'mgt':['gyoza','gnem','pnem','sesame','banhbao'],'paita':['gyoza','gnem','pnem','sesame','banhbao'],'ville':['gnem','pnem','sesame','banhbao']};
     var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
     var tapasRows=(tapasKeys['dsm']||[]).map(function(k){return rRow(tapasNames[k],order[k]||0);}).join('');
 
     var chrRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
-    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';}).join('');}}catch(e){}}
+    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';}).join('');}}catch(e){}}
 
     var topSection;
     if(SHOP==='ville'){
       var platsRows='';
       if(order.gyoza) platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#1a5fa8">'+order.gyoza+'</div><div class="rh-name">Gyoza</div></div>';
       if(order.siumai) platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#1a5fa8">'+order.siumai+'</div><div class="rh-name">Siu Mai</div></div>';
-      if(order.libre){try{var lpl=JSON.parse(order.libre);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#1a5fa8">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+      if(order.libre){try{var lpl=JSON.parse(order.libre);if(lpl.plats)lpl.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty" style="color:#1a5fa8">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});}catch(e){}}
       if(!platsRows) platsRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
       topSection='<div class="rh-top-3">'
         +'<div class="rh-col"><div class="rh-col-title">Salade</div>'+saladeRows+'</div>'
@@ -779,10 +780,10 @@ async function loadRecap(){
     var rightRows=rR('Riz',_rizProd)+rR('Poke thon',getV('pokethon'))+rR('Poke saumon',getV('pokesaumon'));
     var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rR(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
     var libreStr=d.libre||d.vlibre||'';
-    if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';});}}catch(e){}}
+    if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
     var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+i.name+'</div></div>';}).join('');}}}catch(e){}}
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
 
     var statusBadge=isVal
       ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
@@ -879,18 +880,18 @@ async function loadHistorique(){
         var _ls=o.libre||'';
         var _lparsed=null;
         if(_ls){try{_lparsed=JSON.parse(_ls);}catch(e){}}
-        if(_lparsed&&_lparsed.tarte)_lparsed.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});
+        if(_lparsed&&_lparsed.tarte)_lparsed.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});
         // Tapas
         var tapasKeys=IS_VILLE?['gnem','pnem','sesame','banhbao']:['gyoza','gnem','pnem','sesame','banhbao'];
         var tapasRows=tapasKeys.map(function(k){return rH(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
         // CHR
         var chrRows='';
-        if(_lparsed&&_lparsed.chr){_lparsed.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}
+        if(_lparsed&&_lparsed.chr){_lparsed.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});}
         // Plats chauds Ville
         var platsRows='';
         if(IS_VILLE){
           platsRows+=rH('Gyoza',getV('gyoza'))+rH('Siu Mai',getV('siumai'));
-          if(_ls){try{var lpl2=JSON.parse(_ls);if(lpl2.plats)lpl2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+i.name+'</div></div>';});}catch(e){}}
+          if(_ls){try{var lpl2=JSON.parse(_ls);if(lpl2.plats)lpl2.plats.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){platsRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});}catch(e){}}
         }
         // Construire les colonnes — uniquement si non vide
         var cols=[];
@@ -1047,7 +1048,7 @@ function showValidationNotif(d){
 
   // Libres
   var libreRows='';
-  if(d.libre){try{var lib=JSON.parse(d.libre);Object.values(lib).forEach(function(items){if(!Array.isArray(items))return;items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+i.name+'</div></div>';});});}catch(e){}}
+  if(d.libre){try{var lib=JSON.parse(d.libre);Object.values(lib).forEach(function(items){if(!Array.isArray(items))return;items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+esc(i.name)+'</div></div>';});});}catch(e){}}
   if(libreRows) sectionsHtml+='<div class="valid-notif-section"><div class="valid-notif-section-title">Autres</div>'+libreRows+'</div>';
 
   var alertBanner='';

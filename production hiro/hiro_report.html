@@ -523,6 +523,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('report-login-
 </div>
 
 <script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 const _KEY  = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _BASE = 'https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents';
 
@@ -743,7 +744,7 @@ function renderReport(dateStr, results){
         rows+=`<div class="shop-row"><span class="shop-row-name">${P[k]||k}</span><span class="shop-row-qty">${q}</span></div>`;
         total+=q;
       }));
-      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${i.name}</span><span class="shop-row-qty">${i.qty}</span></div>`;total+=i.qty;});});}catch(e){}}
+      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${esc(i.name)}</span><span class="shop-row-qty">${i.qty}</span></div>`;total+=i.qty;});});}catch(e){}}
     }
     c.innerHTML=`
       <div class="shop-header">

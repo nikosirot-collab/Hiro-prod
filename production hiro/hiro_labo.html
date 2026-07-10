@@ -271,10 +271,11 @@ function mkSection(title, rows){
   if(!rows) return '';
   return '<div class="section"><div class="sec-title">'+title+'</div>'+rows+'</div>';
 }
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function mkRow(name, val, libre){
   if(!val||val===0) return '';
   var cls = libre ? 'item-libre' : 'item-row';
-  return '<div class="'+cls+'"><div class="item-qty">'+val+'</div><div class="item-name">'+name+'</div></div>';
+  return '<div class="'+cls+'"><div class="item-qty">'+val+'</div><div class="item-name">'+esc(name)+'</div></div>';
 }
 
 // ── RENDER CARTE BOUTIQUE ──
@@ -358,7 +359,7 @@ function renderShopCard(shop){
 
   // Note
   var noteHtml = order.note
-    ? '<div style="padding:7px 10px;font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);">'+order.note+'</div>'
+    ? '<div style="padding:7px 10px;font-size:11px;color:var(--muted);font-style:italic;border-top:1px solid var(--border);">'+esc(order.note)+'</div>'
     : '';
 
   return '<div class="shop-card">'+
