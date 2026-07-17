@@ -420,6 +420,7 @@ async function loadAll(){
   }
   renderAll();
   loadThonFournisseurWeek();
+  setInterval(loadThonFournisseurWeek,15000);
 }
 function renderAll(){renderStock();renderCF();renderFoursView();}
 
