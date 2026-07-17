@@ -607,14 +607,15 @@ async function showRecap(d){
   // Dessert
   var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rRow(DESSERT_RECAP_NAMES[k],d[k]||0);}).join('');
   // Tartes libres dans dessert
-  if(d.libre){try{var lp=JSON.parse(d.libre);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
+  var _libreDessert=d.vlibre||d.libre;
+  if(_libreDessert){try{var lp=JSON.parse(_libreDessert);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
 
   // Tapas
   var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rRow(TAPAS_RECAP_NAMES[k],d[k]||0);}).join('');
 
   // CHR libre
   var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-  if(d.libre){try{var lc=JSON.parse(d.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
+  if(_libreDessert){try{var lc=JSON.parse(_libreDessert);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
 
   el.innerHTML='<div class="recap-fiche">'
     +'<div class="recap-top">'
@@ -779,7 +780,7 @@ async function loadRecap(){
     try{var _rRes=await fetch(_API_PROD+'/week_'+ds(mondayOf(_recapDate))+'?key='+_KEY);if(_rRes.ok){var _rJson=await _rRes.json();if(_rJson.fields){var _rKey=_recapDs(_recapDate)+'--'+SHOP;if(_rJson.fields[_rKey]&&_rJson.fields[_rKey].integerValue!==undefined)_rizProd=parseInt(_rJson.fields[_rKey].integerValue);}}}catch(e){}
     var rightRows=rR('Riz',_rizProd)+rR('Poke thon',getV('pokethon'))+rR('Poke saumon',getV('pokesaumon'));
     var dessertRows=DESSERT_RECAP_KEYS.map(function(k){return rR(DESSERT_RECAP_NAMES[k],getV(k));}).join('');
-    var libreStr=d.libre||d.vlibre||'';
+    var libreStr=d.vlibre||d.libre||'';
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
     var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
@@ -1048,7 +1049,8 @@ function showValidationNotif(d){
 
   // Libres
   var libreRows='';
-  if(d.libre){try{var lib=JSON.parse(d.libre);Object.values(lib).forEach(function(items){if(!Array.isArray(items))return;items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+esc(i.name)+'</div></div>';});});}catch(e){}}
+  var _libreNotif=d.vlibre||d.libre;
+  if(_libreNotif){try{var lib=JSON.parse(_libreNotif);Object.values(lib).forEach(function(items){if(!Array.isArray(items))return;items.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){libreRows+='<div class="valid-notif-row"><div class="valid-notif-qty">'+i.qty+'</div><div class="valid-notif-name">'+esc(i.name)+'</div></div>';});});}catch(e){}}
   if(libreRows) sectionsHtml+='<div class="valid-notif-section"><div class="valid-notif-section-title">Autres</div>'+libreRows+'</div>';
 
   var alertBanner='';
