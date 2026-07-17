@@ -312,6 +312,26 @@ function mondayOfCurrentWeek(){
   const d=_todayNC();const dow=d.getDay();const diff=dow===0?-6:1-dow;
   d.setDate(d.getDate()+diff);d.setHours(0,0,0,0);return d;
 }
+function thonDeliveryDays(){
+  const monday=mondayOfCurrentWeek();
+  const labels=['Lun','Mar','Mer','Jeu','Ven','Sam'];
+  return labels.map(function(label,i){
+    const d=new Date(monday.getTime());d.setDate(d.getDate()+i);
+    return{label:label,dateStr:_fmtDate(d)};
+  });
+}
+async function assignThonFournisseur(dStr,fournisseurId){
+  const monday=_fmtDate(mondayOfCurrentWeek());
+  const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
+  try{
+    await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+monday+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{[fsKey]:{stringValue:fournisseurId}}})
+    });
+  }catch(e){}
+  S.thonFournisseurs[dStr]=fournisseurId;
+  renderFoursView();
+}
 async function loadThonFournisseurWeek(){
   try{
     const mondayDs=_fmtDate(mondayOfCurrentWeek());
@@ -974,6 +994,20 @@ function renderFourCardFVCF(four){
     });
   }
 
+  let thonSec='';
+  if(['pescana','pacific tuna'].indexOf((four.nom||'').trim().toLowerCase())!==-1){
+    thonSec='<div class="sec-label">Commandes Thon</div>';
+    thonDeliveryDays().forEach(function(day){
+      const assigned=S.thonFournisseurs[day.dateStr]===four.id;
+      thonSec+='<div class="cmd-art-line">'+
+        '<span class="cmd-art-name">'+day.label+' '+fmtDate(day.dateStr)+'</span>'+
+        (assigned
+          ?'<span style="color:var(--mgt);font-weight:600;font-size:12px;">✓ Assigné</span>'
+          :'<button class="btn-recu" onclick="assignThonFournisseur(\''+day.dateStr+'\',\''+four.id+'\')">Assigner</button>')+
+        '</div>';
+    });
+  }
+
   return'<div class="four-card" id="fv-cf-four-card-'+four.id+'">'+
     '<div class="four-head"><div class="four-head-info" onclick="toggleFourFVCF(\''+four.id+'\')">'+
     '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-cf-four-arrow-'+four.id+'">&#8964;</span>'+
@@ -983,7 +1017,7 @@ function renderFourCardFVCF(four){
     '</div>'+
     '</div></div>'+
     '<div class="four-body" id="fv-cf-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
-    stockSec+
+    stockSec+thonSec+
     '</div></div>';
 }
 
