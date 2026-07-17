@@ -270,9 +270,11 @@ const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases
 
 // ── State ──
 const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[]};
-const closedFours=new Set();
-const closedFoursCF=new Set();
-const closedFoursFV=new Set();
+function loadOpenSet(key){try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'));}catch(e){return new Set();}}
+function saveOpenSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch(e){}}
+const openFours=loadOpenSet('hiro-dock-open-stock');
+const openFoursCF=loadOpenSet('hiro-dock-open-cf');
+const openFoursFV=loadOpenSet('hiro-dock-open-fv');
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -369,7 +371,7 @@ function renderStock(){
   let html='';
   S.fournisseurs.forEach(function(four){
     const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
-    html+=renderFourCard(four,arts,!closedFours.has(four.id));
+    html+=renderFourCard(four,arts,openFours.has(four.id));
   });
   if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
@@ -422,8 +424,9 @@ function renderArtRow(a){
 function toggleFour(id){
   const body=document.getElementById('four-body-'+id),arrow=document.getElementById('four-arrow-'+id);
   if(!body)return;
-  if(closedFours.has(id)){closedFours.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
-  else{closedFours.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  if(openFours.has(id)){openFours.delete(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  else{openFours.add(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  saveOpenSet('hiro-dock-open-stock',openFours);
 }
 
 // ── FOURNISSEURS CRUD (Stock) ──
@@ -607,7 +610,7 @@ function renderCF(){
   let html='';
   S.cf_fournisseurs.forEach(function(four){
     const arts=S.cf_articles.filter(function(a){return a.fournisseurId===four.id;});
-    html+=renderFourCardCF(four,arts,!closedFoursCF.has(four.id));
+    html+=renderFourCardCF(four,arts,openFoursCF.has(four.id));
   });
   if(!html)html='<div class="empty-msg" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;">Aucun fournisseur — créez-en un pour commencer.</div>';
   el.innerHTML=html;
@@ -650,8 +653,9 @@ function renderArtRowCF(a){
 function toggleFourCF(id){
   const body=document.getElementById('cf-four-body-'+id),arrow=document.getElementById('cf-four-arrow-'+id);
   if(!body)return;
-  if(closedFoursCF.has(id)){closedFoursCF.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
-  else{closedFoursCF.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  if(openFoursCF.has(id)){openFoursCF.delete(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  else{openFoursCF.add(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  saveOpenSet('hiro-dock-open-cf',openFoursCF);
 }
 function showNewFourFormCF(){
   document.getElementById('cf-new-four-form').style.display='flex';
@@ -824,7 +828,7 @@ function renderFoursView(){
   let html='';
   S.fournisseurs.forEach(function(four){
     const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
-    const isOpen=!closedFoursFV.has(four.id);
+    const isOpen=openFoursFV.has(four.id);
     const pending=S.commandes.filter(function(c){return c.fournisseurId===four.id&&c.status==='pending';});
     const badge=pending.length?'<span style="font-size:10px;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;border-radius:20px;padding:1px 7px;margin-left:6px;font-weight:600;">'+pending.length+' en att.</span>':'';
 
@@ -915,8 +919,9 @@ function renderFoursView(){
 function toggleFourFV(id){
   const body=document.getElementById('fv-four-body-'+id),arrow=document.getElementById('fv-four-arrow-'+id);
   if(!body)return;
-  if(closedFoursFV.has(id)){closedFoursFV.delete(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
-  else{closedFoursFV.add(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  if(openFoursFV.has(id)){openFoursFV.delete(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  else{openFoursFV.add(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  saveOpenSet('hiro-dock-open-fv',openFoursFV);
 }
 
 async function passerCommande(fourId){
