@@ -308,20 +308,26 @@ function nextDelivery(jours){
   const dt=new Date(now.getTime());dt.setDate(dt.getDate()+min);
   return _fmtDate(dt);
 }
-function mondayOfCurrentWeek(){
-  const d=_todayNC();const dow=d.getDay();const diff=dow===0?-6:1-dow;
-  d.setDate(d.getDate()+diff);d.setHours(0,0,0,0);return d;
+function mondayOf(d){
+  const dt=new Date(d.getTime());const dow=dt.getDay();const diff=dow===0?-6:1-dow;
+  dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;
+}
+function mondayForDateStr(dStr){
+  const p=dStr.split('-');
+  return mondayOf(new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])));
 }
 function thonDeliveryDays(){
-  const monday=mondayOfCurrentWeek();
-  const labels=['Lun','Mar','Mer','Jeu','Ven','Sam'];
-  return labels.map(function(label,i){
-    const d=new Date(monday.getTime());d.setDate(d.getDate()+i);
-    return{label:label,dateStr:_fmtDate(d)};
-  });
+  const labels=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  const out=[];
+  let d=_todayNC();d.setHours(0,0,0,0);
+  while(out.length<6){
+    if(d.getDay()!==0){out.push({label:labels[d.getDay()],dateStr:_fmtDate(d)});}
+    d=new Date(d.getTime());d.setDate(d.getDate()+1);
+  }
+  return out;
 }
 async function assignThonFournisseur(dStr,fournisseurId){
-  const monday=_fmtDate(mondayOfCurrentWeek());
+  const monday=_fmtDate(mondayForDateStr(dStr));
   const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
   try{
     await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+monday+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
@@ -333,7 +339,7 @@ async function assignThonFournisseur(dStr,fournisseurId){
   renderFoursView();
 }
 async function unassignThonFournisseur(dStr){
-  const monday=_fmtDate(mondayOfCurrentWeek());
+  const monday=_fmtDate(mondayForDateStr(dStr));
   const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
   try{
     await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+monday+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
@@ -346,12 +352,14 @@ async function unassignThonFournisseur(dStr){
 }
 async function loadThonFournisseurWeek(){
   try{
-    const mondayDs=_fmtDate(mondayOfCurrentWeek());
-    const res=await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+mondayDs+'?key='+_KEY);
-    if(!res.ok)return;
-    const j=await res.json();
+    const days=thonDeliveryDays();
+    const mondays=[...new Set(days.map(function(day){return _fmtDate(mondayForDateStr(day.dateStr));}))];
     const outF={},outKg={};
-    if(j.fields){
+    await Promise.all(mondays.map(async function(mondayDs){
+      const res=await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+mondayDs+'?key='+_KEY);
+      if(!res.ok)return;
+      const j=await res.json();
+      if(!j.fields)return;
       Object.keys(j.fields).forEach(function(k){
         const dk=k.replace(/--/g,'__');
         if(dk.endsWith('__thon_fournisseur')&&j.fields[k].stringValue){
@@ -360,7 +368,7 @@ async function loadThonFournisseurWeek(){
           outKg[dk.replace('__thon_kg','')]=parseInt(j.fields[k].integerValue);
         }
       });
-    }
+    }));
     S.thonFournisseurs=outF;
     S.thonKg=outKg;
     renderFoursView();
