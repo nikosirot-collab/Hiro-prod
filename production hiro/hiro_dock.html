@@ -265,7 +265,7 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[]};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[]};
 const closedFours=new Set();
 const closedFoursCF=new Set();
 const closedFoursFV=new Set();
@@ -275,6 +275,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
 function getStock(artId){return S.mouvements.filter(function(m){return m.articleId===artId;}).reduce(function(sum,m){return sum+m.delta;},0);}
+function getStockCF(artId){return S.cf_mouvements.filter(function(m){return m.articleId===artId;}).reduce(function(sum,m){return sum+m.delta;},0);}
 function _todayNC(){return new Date(Date.now()+(11*3600000)+new Date().getTimezoneOffset()*60000);}
 function _fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function today(){return _fmtDate(_todayNC());}
@@ -314,14 +315,14 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[fours,arts,cfFours,cfArts,stocks,commandes,mouvements]=await Promise.all([
+  const[fours,arts,cfFours,cfArts,stocks,commandes,mouvements,cfMouvements]=await Promise.all([
     fbLoad('fournisseurs'),fbLoad('articles'),
     fbLoad('cf-fournisseurs'),fbLoad('cf-articles'),
-    fbLoad('stocks'),fbLoad('commandes'),fbLoad('mouvements')
+    fbLoad('stocks'),fbLoad('commandes'),fbLoad('mouvements'),fbLoad('cf-mouvements')
   ]);
   S.fournisseurs=fours;S.articles=arts;
   S.cf_fournisseurs=cfFours;S.cf_articles=cfArts;
-  S.stocks=stocks;S.commandes=commandes;S.mouvements=mouvements;
+  S.stocks=stocks;S.commandes=commandes;S.mouvements=mouvements;S.cf_mouvements=cfMouvements;
   if(!S.mouvements.length&&S.stocks.length){
     S.mouvements=S.stocks.filter(function(s){return s.qte>0;}).map(function(s){
       return{id:uid(),articleId:s.articleId,delta:s.qte,type:'initial',date:today(),note:''};
@@ -610,11 +611,13 @@ function renderFourCardCF(four,arts,isOpen){
     '</div></div>';
 }
 function renderArtRowCF(a){
+  const qte=getStockCF(a.id);
   return'<div class="art-row" id="cf-art-row-'+a.id+'">'+
     '<div class="art-info">'+
     '<div class="art-name">'+esc(a.nom)+'</div>'+
     (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
+    '<span class="art-qte" onclick="editQteCF(\''+a.id+'\')">×'+qte+'</span>'+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArtCF(\''+a.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteArtCF(\''+a.id+'\')">✕</button>'+
@@ -752,6 +755,24 @@ async function deleteArtCF(id){
   if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
   S.cf_articles=S.cf_articles.filter(function(x){return x.id!==id;});
   await fbSave('cf-articles',S.cf_articles);
+  renderCF();
+}
+function editQteCF(id){
+  const row=document.getElementById('cf-art-row-'+id);
+  const span=row&&row.querySelector('.art-qte');if(!span)return;
+  const qte=getStockCF(id);
+  span.outerHTML='<input class="cmd-inp" style="width:52px;" id="cf-eq-'+id+'" type="number" min="0" value="'+qte+'" '+
+    'onkeydown="if(event.key===\'Enter\')this.blur();if(event.key===\'Escape\')renderCF();" onblur="saveQteCF(\''+id+'\')">';
+  const inp=document.getElementById('cf-eq-'+id);if(inp){inp.focus();inp.select();}
+}
+async function saveQteCF(id){
+  const inp=document.getElementById('cf-eq-'+id);if(!inp)return;
+  const newQte=Math.max(0,parseInt(inp.value)||0);
+  const delta=newQte-getStockCF(id);
+  if(delta!==0){
+    S.cf_mouvements.push({id:uid(),articleId:id,delta:delta,type:'ajustement',date:today(),note:''});
+    await fbSave('cf-mouvements',S.cf_mouvements);
+  }
   renderCF();
 }
 
