@@ -780,6 +780,7 @@ function thonKgStandard(t){
   return arrondi+' kg';
 }
 let _thonFormule='base';
+const _thonKgAutoSaved=new Set();
 function getThonKg(t){
   return _thonFormule==='standard'?thonKgStandard(t):thonKg(t);
 }
@@ -1216,10 +1217,15 @@ function render(){
         const elTot=document.getElementById('thon-sat-total');
         if(elTot) elTot.textContent=totSam||'—';
         const elKg=document.getElementById('thon-sat-kg-input');
+        const override=data[dStr+'__thon_kg'];
+        const autoVal=extractKgNum(thonKgStandard(totSam));
         if(elKg){
-          const override=data[dStr+'__thon_kg'];
           elKg.value=override!==undefined?override:extractKgNum(getThonKg(totSam));
           updateThonFooter();
+        }
+        if(override===undefined&&autoVal&&!_thonKgAutoSaved.has(dStr)){
+          _thonKgAutoSaved.add(dStr);
+          saveThonKg(dStr,autoVal);
         }
       });
     } else {
@@ -1231,6 +1237,11 @@ function render(){
       const tNext=tDsm+tMgt+tPaita+tVille;
       const _thonKgDefault=extractKgNum(getThonKg(tNext));
       const _thonKgVal=data[dStr+'__thon_kg']!==undefined?data[dStr+'__thon_kg']:_thonKgDefault;
+      const _thonKgAutoVal=extractKgNum(thonKgStandard(tNext));
+      if(data[dStr+'__thon_kg']===undefined&&_thonKgAutoVal&&!_thonKgAutoSaved.has(dStr)){
+        _thonKgAutoSaved.add(dStr);
+        saveThonKg(dStr,_thonKgAutoVal);
+      }
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
         <td class="${dc2} vt2">${tDsm||'—'}</td>
