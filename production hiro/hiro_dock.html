@@ -251,7 +251,7 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[]};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[]};
 const closedFours=new Set();
 const closedFoursCF=new Set();
 const closedFoursFV=new Set();
@@ -260,7 +260,7 @@ const closedFoursFV=new Set();
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
-function getStock(artId){const s=S.stocks.find(function(x){return x.articleId===artId;});return s?s.qte:0;}
+function getStock(artId){return S.mouvements.filter(function(m){return m.articleId===artId;}).reduce(function(sum,m){return sum+m.delta;},0);}
 function _todayNC(){return new Date(Date.now()+(11*3600000)+new Date().getTimezoneOffset()*60000);}
 function _fmtDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function today(){return _fmtDate(_todayNC());}
@@ -300,14 +300,20 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[fours,arts,cfFours,cfArts,stocks,commandes]=await Promise.all([
+  const[fours,arts,cfFours,cfArts,stocks,commandes,mouvements]=await Promise.all([
     fbLoad('fournisseurs'),fbLoad('articles'),
     fbLoad('cf-fournisseurs'),fbLoad('cf-articles'),
-    fbLoad('stocks'),fbLoad('commandes')
+    fbLoad('stocks'),fbLoad('commandes'),fbLoad('mouvements')
   ]);
   S.fournisseurs=fours;S.articles=arts;
   S.cf_fournisseurs=cfFours;S.cf_articles=cfArts;
-  S.stocks=stocks;S.commandes=commandes;
+  S.stocks=stocks;S.commandes=commandes;S.mouvements=mouvements;
+  if(!S.mouvements.length&&S.stocks.length){
+    S.mouvements=S.stocks.filter(function(s){return s.qte>0;}).map(function(s){
+      return{id:uid(),articleId:s.articleId,delta:s.qte,type:'initial',date:today(),note:''};
+    });
+    await fbSave('mouvements',S.mouvements);
+  }
   renderAll();
 }
 function renderAll(){renderStock();renderCF();renderFoursView();}
@@ -369,7 +375,7 @@ function renderArtRow(a){
     '<div class="art-name">'+esc(a.nom)+'</div>'+
     (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
-    '<span class="art-qte">×'+qte+'</span>'+
+    '<span class="art-qte" onclick="editQte(\''+a.id+'\')">×'+qte+'</span>'+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteArt(\''+a.id+'\')">✕</button>'+
@@ -506,6 +512,24 @@ async function deleteArt(id){
   if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
   S.articles=S.articles.filter(function(x){return x.id!==id;});
   await fbSave('articles',S.articles);
+  renderStock();renderFoursView();
+}
+function editQte(id){
+  const row=document.getElementById('art-row-'+id);
+  const span=row&&row.querySelector('.art-qte');if(!span)return;
+  const qte=getStock(id);
+  span.outerHTML='<input class="cmd-inp" style="width:52px;" id="eq-'+id+'" type="number" min="0" value="'+qte+'" '+
+    'onkeydown="if(event.key===\'Enter\')this.blur();if(event.key===\'Escape\')renderStock();" onblur="saveQte(\''+id+'\')">';
+  const inp=document.getElementById('eq-'+id);if(inp){inp.focus();inp.select();}
+}
+async function saveQte(id){
+  const inp=document.getElementById('eq-'+id);if(!inp)return;
+  const newQte=Math.max(0,parseInt(inp.value)||0);
+  const delta=newQte-getStock(id);
+  if(delta!==0){
+    S.mouvements.push({id:uid(),articleId:id,delta:delta,type:'ajustement',date:today(),note:''});
+    await fbSave('mouvements',S.mouvements);
+  }
   renderStock();renderFoursView();
 }
 
@@ -793,13 +817,11 @@ async function passerCommande(fourId){
 async function marquerRecu(cmdId){
   const cmd=S.commandes.find(function(c){return c.id===cmdId;});if(!cmd)return;
   cmd.lignes.forEach(function(l){
-    const idx=S.stocks.findIndex(function(s){return s.articleId===l.articleId;});
-    if(idx>=0){S.stocks[idx].qte+=l.qte;}
-    else{S.stocks.push({articleId:l.articleId,qte:l.qte});}
+    S.mouvements.push({id:uid(),articleId:l.articleId,delta:l.qte,type:'entree',date:today(),note:cmdId});
   });
   const ci=S.commandes.findIndex(function(c){return c.id===cmdId;});
   S.commandes[ci].status='received';
-  await Promise.all([fbSave('stocks',S.stocks),fbSave('commandes',S.commandes)]);
+  await Promise.all([fbSave('mouvements',S.mouvements),fbSave('commandes',S.commandes)]);
   renderFoursView();
   renderStock();
 }
