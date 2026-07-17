@@ -501,7 +501,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       <thead><tr>
         <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
         <th>DSM</th><th>MGT</th><th>Paita</th><th>Ville</th>
-        <th>Total tranches</th><th>Kg à commander</th>
+        <th>Total tranches</th><th>Kg à commander</th><th>Fournisseur</th>
       </tr></thead>
       <tbody id="body-thon"></tbody>
       <tfoot id="foot-thon"></tfoot>
@@ -799,6 +799,31 @@ async function saveThonKg(dStr,val){
   await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${encodeURIComponent('`'+fsKey+'`')}&key=${_KEY}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
+  }).catch(()=>{});
+}
+let _dockFournisseurs=[];
+async function loadDockFournisseurs(){
+  try{
+    const res=await fetch(`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents/hiro-dock/fournisseurs?key=${_KEY}`);
+    if(!res.ok)return;
+    const j=await res.json();
+    _dockFournisseurs=(j.fields&&j.fields.list)?JSON.parse(j.fields.list.stringValue):[];
+    render();
+  }catch(e){}
+}
+function fournisseurOptionsHtml(selectedId){
+  let opts='<option value="">—</option>';
+  _dockFournisseurs.forEach(f=>{
+    opts+='<option value="'+f.id+'"'+(f.id===selectedId?' selected':'')+'>'+esc(f.nom)+'</option>';
+  });
+  return opts;
+}
+async function saveThonFournisseur(dStr,val){
+  const monday=ds(mondayOf(weekOff));
+  const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
+  await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${encodeURIComponent('`'+fsKey+'`')}&key=${_KEY}`,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{[fsKey]:{stringValue:val}}})
   }).catch(()=>{});
 }
 function updateThonFooter(){
@@ -1173,6 +1198,7 @@ function render(){
         <td class="${dc2} vt2" id="thon-sat-ville">—</td>
         <td class="${dc2} vmono" style="font-weight:600" id="thon-sat-total">—</td>
         <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
+        <td class="${dc2}" style="padding:4px 6px;"><select style="width:110px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--dsm);background:var(--bg);" onchange="saveThonFournisseur('${dStr}',this.value)">${fournisseurOptionsHtml(data[dStr+'__thon_fournisseur']||'')}</select></td>
       </tr>`;
 
       // Charge les données semaine suivante depuis Firebase
@@ -1216,6 +1242,7 @@ function render(){
         <td class="${dc2} vt2">${tVille||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
         <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" value="${_thonKgVal}" min="0" step="5" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
+        <td class="${dc2}" style="padding:4px 6px;"><select style="width:110px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--dsm);background:var(--bg);" onchange="saveThonFournisseur('${dStr}',this.value)">${fournisseurOptionsHtml(data[dStr+'__thon_fournisseur']||'')}</select></td>
       </tr>`;
     }
     thonTbl+=thonTblRow;
@@ -1564,6 +1591,7 @@ function _histoRender(hData,monday){
 document.getElementById('weekLabel').textContent=fmtWeek(0);
 document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity='0.3';
 subscribeWeek();
+loadDockFournisseurs();
 </script>
 
 <script>
