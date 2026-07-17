@@ -102,6 +102,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 
 /* VUE FOURNISSEURS — sections */
 .sec-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:7px 14px 5px;background:#faf9f6;border-bottom:1px solid var(--border);}
+.fv-section-title{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--hint);padding:16px 2px 8px;}
+.fv-section-title:first-child{padding-top:0;}
 
 /* Stock réel */
 .stock-line{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-bottom:1px solid var(--border);font-size:13px;}
@@ -275,6 +277,7 @@ function saveOpenSet(key,set){try{localStorage.setItem(key,JSON.stringify([...se
 const openFours=loadOpenSet('hiro-dock-open-stock');
 const openFoursCF=loadOpenSet('hiro-dock-open-cf');
 const openFoursFV=loadOpenSet('hiro-dock-open-fv');
+const openFoursFVCF=loadOpenSet('hiro-dock-open-fv-cf');
 
 // ── Utils ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
@@ -677,7 +680,7 @@ async function addFourCF(){
   const contact=document.getElementById('cf-new-four-contact').value.trim();
   S.cf_fournisseurs.push({id:uid(),nom,telephone,email,contact});
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
-  hideNewFourFormCF();renderCF();
+  hideNewFourFormCF();renderCF();renderFoursView();
 }
 function editFourNameCF(id){
   const four=S.cf_fournisseurs.find(function(f){return f.id===id;});if(!four)return;
@@ -710,7 +713,7 @@ async function saveFourNameCF(id){
   S.cf_fournisseurs[idx].email=email;
   S.cf_fournisseurs[idx].contact=contact;
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
-  renderCF();
+  renderCF();renderFoursView();
 }
 async function deleteFourCF(id){
   const four=S.cf_fournisseurs.find(function(f){return f.id===id;});if(!four)return;
@@ -719,7 +722,7 @@ async function deleteFourCF(id){
   if(!confirm(msg))return;
   S.cf_fournisseurs=S.cf_fournisseurs.filter(function(f){return f.id!==id;});
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
-  renderCF();
+  renderCF();renderFoursView();
 }
 function showAddArtCF(fourId){
   const form=document.getElementById('cf-art-add-form-'+fourId);
@@ -750,7 +753,7 @@ async function addArtCF(fourId){
   const unite=document.getElementById('cf-aan-unite-'+fourId).value;
   S.cf_articles.push({id:uid(),nom,unite,fournisseurId:fourId});
   await fbSave('cf-articles',S.cf_articles);
-  renderCF();
+  renderCF();renderFoursView();
 }
 function editArtCF(id){
   const a=S.cf_articles.find(function(x){return x.id===id;});if(!a)return;
@@ -776,14 +779,14 @@ async function saveArtCF(id){
   const idx=S.cf_articles.findIndex(function(a){return a.id===id;});if(idx===-1)return;
   S.cf_articles[idx]={...S.cf_articles[idx],nom,unite};
   await fbSave('cf-articles',S.cf_articles);
-  renderCF();
+  renderCF();renderFoursView();
 }
 async function deleteArtCF(id){
   const a=S.cf_articles.find(function(x){return x.id===id;});if(!a)return;
   if(!confirm('Supprimer l\'article "'+a.nom+'" ?'))return;
   S.cf_articles=S.cf_articles.filter(function(x){return x.id!==id;});
   await fbSave('cf-articles',S.cf_articles);
-  renderCF();
+  renderCF();renderFoursView();
 }
 function editQteCF(id){
   const row=document.getElementById('cf-art-row-'+id);
@@ -803,6 +806,7 @@ async function saveQteCF(id){
   }
   inp.outerHTML='<span class="art-qte" id="qval-'+id+'" onclick="editQteCF(\''+id+'\')">×'+newQte+'</span>';
   flashEl(document.getElementById('qval-'+id));
+  renderFoursView();
 }
 async function stepQteCF(id,delta){
   const cur=getStockCF(id);
@@ -812,6 +816,7 @@ async function stepQteCF(id,delta){
   const el=document.getElementById('qval-'+id);
   if(el){el.textContent='×'+newQte;flashEl(el);}
   await fbSave('cf-mouvements',S.cf_mouvements);
+  renderFoursView();
 }
 
 // ════════════════════════════════
@@ -819,101 +824,145 @@ async function stepQteCF(id,delta){
 // ════════════════════════════════
 function renderFoursView(){
   const view=document.getElementById('fours-view');if(!view)return;
-  if(!S.fournisseurs.length){
+  if(!S.fournisseurs.length&&!S.cf_fournisseurs.length){
     view.innerHTML='<div class="placeholder"><div class="placeholder-icon">🚚</div>'+
       '<div class="placeholder-title">Aucun fournisseur</div>'+
-      '<div class="placeholder-desc">Ajoutez des fournisseurs dans l\'onglet Stock pour commencer.</div></div>';
+      '<div class="placeholder-desc">Ajoutez des fournisseurs dans les onglets Stock ou CF pour commencer.</div></div>';
     return;
   }
   let html='';
-  S.fournisseurs.forEach(function(four){
-    const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
-    const isOpen=openFoursFV.has(four.id);
-    const pending=S.commandes.filter(function(c){return c.fournisseurId===four.id&&c.status==='pending';});
-    const badge=pending.length?'<span style="font-size:10px;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;border-radius:20px;padding:1px 7px;margin-left:6px;font-weight:600;">'+pending.length+' en att.</span>':'';
-
-    // Section stock réel
-    let stockSec='<div class="sec-label">Stock réel</div>';
-    if(!arts.length){
-      stockSec+='<div class="empty-msg">Aucun article pour ce fournisseur.</div>';
-    }else{
-      arts.forEach(function(a){
-        stockSec+='<div class="stock-line"><span>'+esc(a.nom)+'</span>'+
-          '<span class="stock-qte">×'+getStock(a.id)+' '+esc(a.unite)+'</span></div>';
-      });
-    }
-
-    // Section nouvelle commande
-    let cmdSec='';
-    if(arts.length){
-      const joursHint=four.jours&&four.jours.length?'<span style="text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px;color:var(--dsm);">'+four.jours.join(' · ')+'</span>':'';
-      const suggestDate=nextDelivery(four.jours);
-      cmdSec='<div class="sec-label">Nouvelle commande'+joursHint+'</div><div class="cmd-form">';
-      arts.forEach(function(a){
-        cmdSec+='<div class="cmd-art-line">'+
-          '<span class="cmd-art-name">'+esc(a.nom)+'<span class="cmd-art-unite"> · '+esc(a.unite)+'</span></span>'+
-          '<input class="cmd-inp" id="cmd-inp-'+four.id+'-'+a.id+'" type="number" min="0" placeholder="0">'+
-          '</div>';
-      });
-      cmdSec+='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;">'+
-        '<span style="font-size:12px;color:var(--muted);flex-shrink:0;">Livraison le</span>'+
-        '<input class="f-inp" type="date" id="cmd-date-'+four.id+'" value="'+suggestDate+'" style="flex:1;padding:6px 10px;font-size:13px;">'+
-        '</div>'+
-        '<div class="form-btns" style="margin-top:8px;">'+
-        '<button class="btn-save" onclick="passerCommande(\''+four.id+'\')">Passer la commande</button>'+
-        '</div></div>';
-    }
-
-    // Section en attente
-    let pendingSec='';
-    if(pending.length){
-      pendingSec='<div class="sec-label">En attente</div>';
-      pending.forEach(function(cmd){
-        const detail=cmd.lignes.map(function(l){
-          const art=S.articles.find(function(a){return a.id===l.articleId;});
-          return(art?esc(art.nom):'?')+' ×'+l.qte;
-        }).join(', ');
-        pendingSec+='<div class="cmd-row">'+
-          '<span class="cmd-date" title="Commandé le '+fmtDate(cmd.date)+'">Liv. '+fmtDate(cmd.dateLivraison||cmd.date)+'</span>'+
-          '<span class="cmd-detail">'+detail+'</span>'+
-          '<button class="btn-recu" onclick="marquerRecu(\''+cmd.id+'\')">Reçu ✓</button>'+
-          '</div>';
-      });
-    }
-
-    // Section historique
-    const received=S.commandes
-      .filter(function(c){return c.fournisseurId===four.id&&c.status==='received';})
-      .sort(function(a,b){return b.date.localeCompare(a.date);});
-    let histSec='';
-    if(received.length){
-      histSec='<div class="sec-label">Historique</div>';
-      received.forEach(function(cmd){
-        const detail=cmd.lignes.map(function(l){
-          const art=S.articles.find(function(a){return a.id===l.articleId;});
-          return(art?esc(art.nom):'?')+' ×'+l.qte;
-        }).join(', ');
-        histSec+='<div class="cmd-row">'+
-          '<span class="cmd-date">'+fmtDate(cmd.date)+'</span>'+
-          '<span class="cmd-detail">'+detail+'</span>'+
-          '<span class="cmd-received">✓ reçu</span>'+
-          '</div>';
-      });
-    }
-
-    html+='<div class="four-card" id="fv-four-card-'+four.id+'">'+
-      '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
-      '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
-      '<div style="flex:1;min-width:0;">'+
-      '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
-      fourContactLine(four)+
-      '</div>'+
-      '</div></div>'+
-      '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
-      stockSec+cmdSec+pendingSec+histSec+
-      '</div></div>';
-  });
+  if(S.fournisseurs.length){
+    html+='<div class="fv-section-title">Fournisseurs Stock</div>';
+    S.fournisseurs.forEach(function(four){html+=renderFourCardFV(four);});
+  }
+  if(S.cf_fournisseurs.length){
+    html+='<div class="fv-section-title">Fournisseurs CF</div>';
+    S.cf_fournisseurs.forEach(function(four){html+=renderFourCardFVCF(four);});
+  }
   view.innerHTML=html;
+}
+
+function renderFourCardFV(four){
+  const arts=S.articles.filter(function(a){return a.fournisseurId===four.id;});
+  const isOpen=openFoursFV.has(four.id);
+  const pending=S.commandes.filter(function(c){return c.fournisseurId===four.id&&c.status==='pending';});
+  const badge=pending.length?'<span style="font-size:10px;background:#fef3e2;border:1px solid #d4900a;color:#7a4f00;border-radius:20px;padding:1px 7px;margin-left:6px;font-weight:600;">'+pending.length+' en att.</span>':'';
+
+  // Section stock réel
+  let stockSec='<div class="sec-label">Stock réel</div>';
+  if(!arts.length){
+    stockSec+='<div class="empty-msg">Aucun article pour ce fournisseur.</div>';
+  }else{
+    arts.forEach(function(a){
+      stockSec+='<div class="stock-line"><span>'+esc(a.nom)+'</span>'+
+        '<span class="stock-qte">×'+getStock(a.id)+' '+esc(a.unite)+'</span></div>';
+    });
+  }
+
+  // Section nouvelle commande
+  let cmdSec='';
+  if(arts.length){
+    const joursHint=four.jours&&four.jours.length?'<span style="text-transform:none;letter-spacing:0;font-weight:400;margin-left:8px;color:var(--dsm);">'+four.jours.join(' · ')+'</span>':'';
+    const suggestDate=nextDelivery(four.jours);
+    cmdSec='<div class="sec-label">Nouvelle commande'+joursHint+'</div><div class="cmd-form">';
+    arts.forEach(function(a){
+      cmdSec+='<div class="cmd-art-line">'+
+        '<span class="cmd-art-name">'+esc(a.nom)+'<span class="cmd-art-unite"> · '+esc(a.unite)+'</span></span>'+
+        '<input class="cmd-inp" id="cmd-inp-'+four.id+'-'+a.id+'" type="number" min="0" placeholder="0">'+
+        '</div>';
+    });
+    cmdSec+='<div style="display:flex;align-items:center;gap:8px;margin-top:10px;">'+
+      '<span style="font-size:12px;color:var(--muted);flex-shrink:0;">Livraison le</span>'+
+      '<input class="f-inp" type="date" id="cmd-date-'+four.id+'" value="'+suggestDate+'" style="flex:1;padding:6px 10px;font-size:13px;">'+
+      '</div>'+
+      '<div class="form-btns" style="margin-top:8px;">'+
+      '<button class="btn-save" onclick="passerCommande(\''+four.id+'\')">Passer la commande</button>'+
+      '</div></div>';
+  }
+
+  // Section en attente
+  let pendingSec='';
+  if(pending.length){
+    pendingSec='<div class="sec-label">En attente</div>';
+    pending.forEach(function(cmd){
+      const detail=cmd.lignes.map(function(l){
+        const art=S.articles.find(function(a){return a.id===l.articleId;});
+        return(art?esc(art.nom):'?')+' ×'+l.qte;
+      }).join(', ');
+      pendingSec+='<div class="cmd-row">'+
+        '<span class="cmd-date" title="Commandé le '+fmtDate(cmd.date)+'">Liv. '+fmtDate(cmd.dateLivraison||cmd.date)+'</span>'+
+        '<span class="cmd-detail">'+detail+'</span>'+
+        '<button class="btn-recu" onclick="marquerRecu(\''+cmd.id+'\')">Reçu ✓</button>'+
+        '</div>';
+    });
+  }
+
+  // Section historique
+  const received=S.commandes
+    .filter(function(c){return c.fournisseurId===four.id&&c.status==='received';})
+    .sort(function(a,b){return b.date.localeCompare(a.date);});
+  let histSec='';
+  if(received.length){
+    histSec='<div class="sec-label">Historique</div>';
+    received.forEach(function(cmd){
+      const detail=cmd.lignes.map(function(l){
+        const art=S.articles.find(function(a){return a.id===l.articleId;});
+        return(art?esc(art.nom):'?')+' ×'+l.qte;
+      }).join(', ');
+      histSec+='<div class="cmd-row">'+
+        '<span class="cmd-date">'+fmtDate(cmd.date)+'</span>'+
+        '<span class="cmd-detail">'+detail+'</span>'+
+        '<span class="cmd-received">✓ reçu</span>'+
+        '</div>';
+    });
+  }
+
+  return'<div class="four-card" id="fv-four-card-'+four.id+'">'+
+    '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
+    '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
+    '<div style="flex:1;min-width:0;">'+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
+    fourContactLine(four)+
+    '</div>'+
+    '</div></div>'+
+    '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
+    stockSec+cmdSec+pendingSec+histSec+
+    '</div></div>';
+}
+
+function renderFourCardFVCF(four){
+  const arts=S.cf_articles.filter(function(a){return a.fournisseurId===four.id;});
+  const isOpen=openFoursFVCF.has(four.id);
+
+  let stockSec='<div class="sec-label">Stock réel</div>';
+  if(!arts.length){
+    stockSec+='<div class="empty-msg">Aucun article pour ce fournisseur.</div>';
+  }else{
+    arts.forEach(function(a){
+      stockSec+='<div class="stock-line"><span>'+esc(a.nom)+'</span>'+
+        '<span class="stock-qte">×'+getStockCF(a.id)+' '+esc(a.unite)+'</span></div>';
+    });
+  }
+
+  return'<div class="four-card" id="fv-cf-four-card-'+four.id+'">'+
+    '<div class="four-head"><div class="four-head-info" onclick="toggleFourFVCF(\''+four.id+'\')">'+
+    '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-cf-four-arrow-'+four.id+'">&#8964;</span>'+
+    '<div style="flex:1;min-width:0;">'+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+
+    fourContactLine(four)+
+    '</div>'+
+    '</div></div>'+
+    '<div class="four-body" id="fv-cf-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
+    stockSec+
+    '</div></div>';
+}
+
+function toggleFourFVCF(id){
+  const body=document.getElementById('fv-cf-four-body-'+id),arrow=document.getElementById('fv-cf-four-arrow-'+id);
+  if(!body)return;
+  if(openFoursFVCF.has(id)){openFoursFVCF.delete(id);body.style.display='none';if(arrow)arrow.classList.remove('open');}
+  else{openFoursFVCF.add(id);body.style.display='block';if(arrow)arrow.classList.add('open');}
+  saveOpenSet('hiro-dock-open-fv-cf',openFoursFVCF);
 }
 
 function toggleFourFV(id){
