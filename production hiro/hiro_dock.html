@@ -183,6 +183,13 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
         <input class="f-inp" id="new-four-inp" type="text" placeholder="Nom du fournisseur"
           onkeydown="if(event.key==='Enter')addFour();if(event.key==='Escape')hideNewFourForm();">
       </div>
+      <div class="form-row">
+        <input class="f-inp" id="new-four-tel" type="tel" placeholder="Téléphone">
+        <input class="f-inp" id="new-four-email" type="email" placeholder="Email">
+      </div>
+      <div class="form-row">
+        <input class="f-inp" id="new-four-contact" type="text" placeholder="Nom du contact">
+      </div>
       <div class="jours-row" id="new-four-jours">
         <span class="jour-chip" onclick="toggleJour(this)">Lun</span>
         <span class="jour-chip" onclick="toggleJour(this)">Mar</span>
@@ -207,6 +214,13 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
       <div class="form-row">
         <input class="f-inp" id="cf-new-four-inp" type="text" placeholder="Nom du fournisseur"
           onkeydown="if(event.key==='Enter')addFourCF();if(event.key==='Escape')hideNewFourFormCF();">
+      </div>
+      <div class="form-row">
+        <input class="f-inp" id="cf-new-four-tel" type="tel" placeholder="Téléphone">
+        <input class="f-inp" id="cf-new-four-email" type="email" placeholder="Email">
+      </div>
+      <div class="form-row">
+        <input class="f-inp" id="cf-new-four-contact" type="text" placeholder="Nom du contact">
       </div>
       <div class="form-btns">
         <button class="btn-cancel" onclick="hideNewFourFormCF()">Annuler</button>
@@ -348,13 +362,23 @@ function renderStock(){
   el.innerHTML=html;
 }
 
+function fourContactLine(four){
+  const parts=[];
+  if(four.contact)parts.push(esc(four.contact));
+  if(four.telephone)parts.push('<a href="tel:'+esc(four.telephone)+'" style="color:inherit;" onclick="event.stopPropagation()">'+esc(four.telephone)+'</a>');
+  if(four.email)parts.push('<a href="mailto:'+esc(four.email)+'" style="color:inherit;" onclick="event.stopPropagation()">'+esc(four.email)+'</a>');
+  return parts.length?'<div class="fv-jours">'+parts.join(' · ')+'</div>':'';
+}
 function renderFourCard(four,arts,isOpen){
   const artRows=arts.map(function(a){return renderArtRow(a);}).join('');
   return'<div class="four-card" id="four-card-'+four.id+'">'+
     '<div class="four-head" id="four-head-'+four.id+'">'+
     '<div class="four-head-info" onclick="toggleFour(\''+four.id+'\')">'+
     '<span class="four-arrow'+(isOpen?' open':'')+'" id="four-arrow-'+four.id+'">&#8964;</span>'+
+    '<div style="flex:1;min-width:0;">'+
     '<span class="four-name">'+esc(four.nom)+'</span>'+
+    fourContactLine(four)+
+    '</div>'+
     '<span class="four-count">'+arts.length+'</span>'+
     '</div>'+
     '<div class="four-actions">'+
@@ -400,12 +424,18 @@ function hideNewFourForm(){
   document.getElementById('new-four-form').style.display='none';
   document.getElementById('new-four-btn').style.display='flex';
   document.querySelectorAll('#new-four-jours .jour-chip').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('new-four-tel').value='';
+  document.getElementById('new-four-email').value='';
+  document.getElementById('new-four-contact').value='';
 }
 async function addFour(){
   const inp=document.getElementById('new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   const jours=[...document.querySelectorAll('#new-four-jours .jour-chip.on')].map(function(c){return c.textContent.trim();});
-  S.fournisseurs.push({id:uid(),nom,jours});
+  const telephone=document.getElementById('new-four-tel').value.trim();
+  const email=document.getElementById('new-four-email').value.trim();
+  const contact=document.getElementById('new-four-contact').value.trim();
+  S.fournisseurs.push({id:uid(),nom,jours,telephone,email,contact});
   await fbSave('fournisseurs',S.fournisseurs);
   hideNewFourForm();renderStock();renderFoursView();
 }
@@ -425,6 +455,11 @@ function editFourName(id){
     '<button class="btn-ic ok" onclick="saveFourName(\''+id+'\')">✓</button>'+
     '<button class="btn-ic" onclick="renderStock()">✕</button>'+
     '</div>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<input class="e-inp" id="efn-tel-'+id+'" type="tel" placeholder="Téléphone" value="'+esc(four.telephone||'')+'">'+
+    '<input class="e-inp" id="efn-email-'+id+'" type="email" placeholder="Email" value="'+esc(four.email||'')+'">'+
+    '</div>'+
+    '<input class="e-inp" id="efn-contact-'+id+'" type="text" placeholder="Nom du contact" value="'+esc(four.contact||'')+'">'+
     '<div class="jours-row" id="efn-jours-'+id+'">'+chips+'</div>'+
     '</div>';
   document.getElementById('efn-'+id).focus();
@@ -434,8 +469,14 @@ async function saveFourName(id){
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   const idx=S.fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
   const jours=[...document.querySelectorAll('#efn-jours-'+id+' .jour-chip.on')].map(function(c){return c.textContent.trim();});
+  const telephone=document.getElementById('efn-tel-'+id).value.trim();
+  const email=document.getElementById('efn-email-'+id).value.trim();
+  const contact=document.getElementById('efn-contact-'+id).value.trim();
   S.fournisseurs[idx].nom=nom;
   S.fournisseurs[idx].jours=jours;
+  S.fournisseurs[idx].telephone=telephone;
+  S.fournisseurs[idx].email=email;
+  S.fournisseurs[idx].contact=contact;
   await fbSave('fournisseurs',S.fournisseurs);
   renderStock();renderFoursView();
 }
@@ -552,7 +593,10 @@ function renderFourCardCF(four,arts,isOpen){
     '<div class="four-head" id="cf-four-head-'+four.id+'">'+
     '<div class="four-head-info" onclick="toggleFourCF(\''+four.id+'\')">'+
     '<span class="four-arrow'+(isOpen?' open':'')+'" id="cf-four-arrow-'+four.id+'">&#8964;</span>'+
+    '<div style="flex:1;min-width:0;">'+
     '<span class="four-name">'+esc(four.nom)+'</span>'+
+    fourContactLine(four)+
+    '</div>'+
     '<span class="four-count">'+arts.length+'</span>'+
     '</div>'+
     '<div class="four-actions">'+
@@ -590,11 +634,17 @@ function showNewFourFormCF(){
 function hideNewFourFormCF(){
   document.getElementById('cf-new-four-form').style.display='none';
   document.getElementById('cf-new-four-btn').style.display='flex';
+  document.getElementById('cf-new-four-tel').value='';
+  document.getElementById('cf-new-four-email').value='';
+  document.getElementById('cf-new-four-contact').value='';
 }
 async function addFourCF(){
   const inp=document.getElementById('cf-new-four-inp');
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
-  S.cf_fournisseurs.push({id:uid(),nom});
+  const telephone=document.getElementById('cf-new-four-tel').value.trim();
+  const email=document.getElementById('cf-new-four-email').value.trim();
+  const contact=document.getElementById('cf-new-four-contact').value.trim();
+  S.cf_fournisseurs.push({id:uid(),nom,telephone,email,contact});
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
   hideNewFourFormCF();renderCF();
 }
@@ -602,11 +652,18 @@ function editFourNameCF(id){
   const four=S.cf_fournisseurs.find(function(f){return f.id===id;});if(!four)return;
   const head=document.getElementById('cf-four-head-'+id);
   head.innerHTML=
-    '<div style="display:flex;align-items:center;gap:8px;flex:1;">'+
+    '<div style="display:flex;flex-direction:column;gap:8px;flex:1;padding:4px 0;">'+
+    '<div style="display:flex;align-items:center;gap:8px;">'+
     '<input class="e-inp" id="cf-efn-'+id+'" type="text" value="'+esc(four.nom)+'" '+
     'onkeydown="if(event.key===\'Enter\')saveFourNameCF(\''+id+'\');if(event.key===\'Escape\')renderCF();">'+
     '<button class="btn-ic ok" onclick="saveFourNameCF(\''+id+'\')">✓</button>'+
     '<button class="btn-ic" onclick="renderCF()">✕</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;">'+
+    '<input class="e-inp" id="cf-efn-tel-'+id+'" type="tel" placeholder="Téléphone" value="'+esc(four.telephone||'')+'">'+
+    '<input class="e-inp" id="cf-efn-email-'+id+'" type="email" placeholder="Email" value="'+esc(four.email||'')+'">'+
+    '</div>'+
+    '<input class="e-inp" id="cf-efn-contact-'+id+'" type="text" placeholder="Nom du contact" value="'+esc(four.contact||'')+'">'+
     '</div>';
   document.getElementById('cf-efn-'+id).focus();
 }
@@ -614,7 +671,13 @@ async function saveFourNameCF(id){
   const inp=document.getElementById('cf-efn-'+id);
   const nom=inp.value.trim();if(!nom){inp.focus();return;}
   const idx=S.cf_fournisseurs.findIndex(function(f){return f.id===id;});if(idx===-1)return;
+  const telephone=document.getElementById('cf-efn-tel-'+id).value.trim();
+  const email=document.getElementById('cf-efn-email-'+id).value.trim();
+  const contact=document.getElementById('cf-efn-contact-'+id).value.trim();
   S.cf_fournisseurs[idx].nom=nom;
+  S.cf_fournisseurs[idx].telephone=telephone;
+  S.cf_fournisseurs[idx].email=email;
+  S.cf_fournisseurs[idx].contact=contact;
   await fbSave('cf-fournisseurs',S.cf_fournisseurs);
   renderCF();
 }
@@ -782,7 +845,10 @@ function renderFoursView(){
     html+='<div class="four-card" id="fv-four-card-'+four.id+'">'+
       '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
       '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
+      '<div style="flex:1;min-width:0;">'+
       '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
+      fourContactLine(four)+
+      '</div>'+
       '</div></div>'+
       '<div class="four-body" id="fv-four-body-'+four.id+'"'+(isOpen?'':' style="display:none;"')+'>'+
       stockSec+cmdSec+pendingSec+histSec+
