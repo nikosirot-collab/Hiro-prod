@@ -63,7 +63,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .art-info{flex:1;min-width:0;}
 .art-name{font-size:13px;}
 .art-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-.art-qte{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:1px 8px;flex-shrink:0;}
+.qte-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.qte-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--dsm);font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;-webkit-tap-highlight-color:transparent;}
+.qte-btn:active{background:var(--dsm-l);}
+.art-qte{font-size:11px;font-family:'DM Mono',monospace;color:var(--dsm);background:var(--dsm-l);border-radius:4px;padding:4px 9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background-color .25s,color .25s;}
+.art-qte.flash{background:var(--mgt-l);color:var(--mgt);}
 .art-actions{display:flex;gap:4px;flex-shrink:0;}
 
 /* BOUTON / FORMULAIRE ARTICLE */
@@ -274,6 +278,14 @@ const closedFoursFV=new Set();
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(d){if(!d)return'';const p=d.split('-');return p.length<3?d:p[2]+'/'+p[1];}
+function flashEl(el){if(!el)return;el.classList.add('flash');setTimeout(function(){el.classList.remove('flash');},600);}
+function qteCtrlHtml(id,qte,stepFn,editFn){
+  return'<div class="qte-ctrl">'+
+    '<button type="button" class="qte-btn" onclick="'+stepFn+'(\''+id+'\',-1)">−</button>'+
+    '<span class="art-qte" id="qval-'+id+'" onclick="'+editFn+'(\''+id+'\')">×'+qte+'</span>'+
+    '<button type="button" class="qte-btn" onclick="'+stepFn+'(\''+id+'\',1)">+</button>'+
+    '</div>';
+}
 function getStock(artId){return S.mouvements.filter(function(m){return m.articleId===artId;}).reduce(function(sum,m){return sum+m.delta;},0);}
 function getStockCF(artId){return S.cf_mouvements.filter(function(m){return m.articleId===artId;}).reduce(function(sum,m){return sum+m.delta;},0);}
 function _todayNC(){return new Date(Date.now()+(11*3600000)+new Date().getTimezoneOffset()*60000);}
@@ -400,7 +412,7 @@ function renderArtRow(a){
     '<div class="art-name">'+esc(a.nom)+'</div>'+
     (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
-    '<span class="art-qte" onclick="editQte(\''+a.id+'\')">×'+qte+'</span>'+
+    qteCtrlHtml(a.id,qte,'stepQte','editQte')+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArt(\''+a.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteArt(\''+a.id+'\')">✕</button>'+
@@ -572,7 +584,19 @@ async function saveQte(id){
     S.mouvements.push({id:uid(),articleId:id,delta:delta,type:'ajustement',date:today(),note:''});
     await fbSave('mouvements',S.mouvements);
   }
-  renderStock();renderFoursView();
+  inp.outerHTML='<span class="art-qte" id="qval-'+id+'" onclick="editQte(\''+id+'\')">×'+newQte+'</span>';
+  flashEl(document.getElementById('qval-'+id));
+  renderFoursView();
+}
+async function stepQte(id,delta){
+  const cur=getStock(id);
+  const newQte=Math.max(0,cur+delta);
+  if(newQte===cur)return;
+  S.mouvements.push({id:uid(),articleId:id,delta:newQte-cur,type:'ajustement',date:today(),note:''});
+  const el=document.getElementById('qval-'+id);
+  if(el){el.textContent='×'+newQte;flashEl(el);}
+  await fbSave('mouvements',S.mouvements);
+  renderFoursView();
 }
 
 // ════════════════════════════════
@@ -617,7 +641,7 @@ function renderArtRowCF(a){
     '<div class="art-name">'+esc(a.nom)+'</div>'+
     (a.unite?'<div class="art-meta">'+esc(a.unite)+'</div>':'')+
     '</div>'+
-    '<span class="art-qte" onclick="editQteCF(\''+a.id+'\')">×'+qte+'</span>'+
+    qteCtrlHtml(a.id,qte,'stepQteCF','editQteCF')+
     '<div class="art-actions">'+
     '<button class="btn-ic" onclick="editArtCF(\''+a.id+'\')">✎</button>'+
     '<button class="btn-ic del" onclick="deleteArtCF(\''+a.id+'\')">✕</button>'+
@@ -773,7 +797,17 @@ async function saveQteCF(id){
     S.cf_mouvements.push({id:uid(),articleId:id,delta:delta,type:'ajustement',date:today(),note:''});
     await fbSave('cf-mouvements',S.cf_mouvements);
   }
-  renderCF();
+  inp.outerHTML='<span class="art-qte" id="qval-'+id+'" onclick="editQteCF(\''+id+'\')">×'+newQte+'</span>';
+  flashEl(document.getElementById('qval-'+id));
+}
+async function stepQteCF(id,delta){
+  const cur=getStockCF(id);
+  const newQte=Math.max(0,cur+delta);
+  if(newQte===cur)return;
+  S.cf_mouvements.push({id:uid(),articleId:id,delta:newQte-cur,type:'ajustement',date:today(),note:''});
+  const el=document.getElementById('qval-'+id);
+  if(el){el.textContent='×'+newQte;flashEl(el);}
+  await fbSave('cf-mouvements',S.cf_mouvements);
 }
 
 // ════════════════════════════════
