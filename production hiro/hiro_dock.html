@@ -271,7 +271,7 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[]};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[],thonFournisseurs:{}};
 function loadOpenSet(key){try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'));}catch(e){return new Set();}}
 function saveOpenSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch(e){}}
 const openFours=loadOpenSet('hiro-dock-open-stock');
@@ -307,6 +307,35 @@ function nextDelivery(jours){
   days.forEach(function(d){let diff=d-cur;if(diff<=0)diff+=7;if(diff<min)min=diff;});
   const dt=new Date(now.getTime());dt.setDate(dt.getDate()+min);
   return _fmtDate(dt);
+}
+function mondayOfCurrentWeek(){
+  const d=_todayNC();const dow=d.getDay();const diff=dow===0?-6:1-dow;
+  d.setDate(d.getDate()+diff);d.setHours(0,0,0,0);return d;
+}
+async function loadThonFournisseurWeek(){
+  try{
+    const mondayDs=_fmtDate(mondayOfCurrentWeek());
+    const res=await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+mondayDs+'?key='+_KEY);
+    if(!res.ok)return;
+    const j=await res.json();
+    const out={};
+    if(j.fields){
+      Object.keys(j.fields).forEach(function(k){
+        const dk=k.replace(/--/g,'__');
+        if(dk.endsWith('__thon_fournisseur')&&j.fields[k].stringValue){
+          out[dk.replace('__thon_fournisseur','')]=j.fields[k].stringValue;
+        }
+      });
+    }
+    S.thonFournisseurs=out;
+    renderFoursView();
+  }catch(e){}
+}
+function thonBadgeHtml(fournisseurId){
+  const dates=Object.keys(S.thonFournisseurs).filter(function(d){return S.thonFournisseurs[d]===fournisseurId;}).sort();
+  if(!dates.length)return'';
+  const label=dates.map(function(d){return fmtDate(d);}).join(', ');
+  return'<span style="font-size:10px;background:var(--dsm-l);border:1px solid var(--dsm);color:var(--dsm);border-radius:20px;padding:1px 7px;margin-left:6px;font-weight:600;">🐟 Thon '+label+'</span>';
 }
 
 // ── Firestore ──
@@ -347,6 +376,7 @@ async function loadAll(){
     await fbSave('mouvements',S.mouvements);
   }
   renderAll();
+  loadThonFournisseurWeek();
 }
 function renderAll(){renderStock();renderCF();renderFoursView();}
 
@@ -921,7 +951,7 @@ function renderFourCardFV(four){
     '<div class="four-head"><div class="four-head-info" onclick="toggleFourFV(\''+four.id+'\')">'+
     '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-four-arrow-'+four.id+'">&#8964;</span>'+
     '<div style="flex:1;min-width:0;">'+
-    '<span class="four-name">'+esc(four.nom)+'</span>'+badge+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+badge+thonBadgeHtml(four.id)+
     fourContactLine(four)+
     '</div>'+
     '</div></div>'+
@@ -948,7 +978,7 @@ function renderFourCardFVCF(four){
     '<div class="four-head"><div class="four-head-info" onclick="toggleFourFVCF(\''+four.id+'\')">'+
     '<span class="four-arrow'+(isOpen?' open':'')+'" id="fv-cf-four-arrow-'+four.id+'">&#8964;</span>'+
     '<div style="flex:1;min-width:0;">'+
-    '<span class="four-name">'+esc(four.nom)+'</span>'+
+    '<span class="four-name">'+esc(four.nom)+'</span>'+thonBadgeHtml(four.id)+
     fourContactLine(four)+
     '</div>'+
     '</div></div>'+
