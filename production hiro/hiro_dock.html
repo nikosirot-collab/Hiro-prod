@@ -271,7 +271,7 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[],thonFournisseurs:{}};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[],thonFournisseurs:{},thonKg:{}};
 function loadOpenSet(key){try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'));}catch(e){return new Set();}}
 function saveOpenSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch(e){}}
 const openFours=loadOpenSet('hiro-dock-open-stock');
@@ -332,22 +332,37 @@ async function assignThonFournisseur(dStr,fournisseurId){
   S.thonFournisseurs[dStr]=fournisseurId;
   renderFoursView();
 }
+async function unassignThonFournisseur(dStr){
+  const monday=_fmtDate(mondayOfCurrentWeek());
+  const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
+  try{
+    await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+monday+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{[fsKey]:{stringValue:''}}})
+    });
+  }catch(e){}
+  delete S.thonFournisseurs[dStr];
+  renderFoursView();
+}
 async function loadThonFournisseurWeek(){
   try{
     const mondayDs=_fmtDate(mondayOfCurrentWeek());
     const res=await fetch('https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-production/week_'+mondayDs+'?key='+_KEY);
     if(!res.ok)return;
     const j=await res.json();
-    const out={};
+    const outF={},outKg={};
     if(j.fields){
       Object.keys(j.fields).forEach(function(k){
         const dk=k.replace(/--/g,'__');
         if(dk.endsWith('__thon_fournisseur')&&j.fields[k].stringValue){
-          out[dk.replace('__thon_fournisseur','')]=j.fields[k].stringValue;
+          outF[dk.replace('__thon_fournisseur','')]=j.fields[k].stringValue;
+        }else if(dk.endsWith('__thon_kg')&&j.fields[k].integerValue!==undefined){
+          outKg[dk.replace('__thon_kg','')]=parseInt(j.fields[k].integerValue);
         }
       });
     }
-    S.thonFournisseurs=out;
+    S.thonFournisseurs=outF;
+    S.thonKg=outKg;
     renderFoursView();
   }catch(e){}
 }
@@ -999,10 +1014,11 @@ function renderFourCardFVCF(four){
     thonSec='<div class="sec-label">Commandes Thon</div>';
     thonDeliveryDays().forEach(function(day){
       const assigned=S.thonFournisseurs[day.dateStr]===four.id;
+      const kg=S.thonKg[day.dateStr];
       thonSec+='<div class="cmd-art-line">'+
-        '<span class="cmd-art-name">'+day.label+' '+fmtDate(day.dateStr)+'</span>'+
+        '<span class="cmd-art-name">'+day.label+' '+fmtDate(day.dateStr)+'<span class="cmd-art-unite"> · '+(kg!==undefined?kg+' kg':'—')+'</span></span>'+
         (assigned
-          ?'<span style="color:var(--mgt);font-weight:600;font-size:12px;">✓ Assigné</span>'
+          ?'<span style="color:var(--mgt);font-weight:600;font-size:12px;margin-right:6px;">✓ Assigné</span><button class="btn-ic del" onclick="unassignThonFournisseur(\''+day.dateStr+'\')" title="Retirer">✕</button>'
           :'<button class="btn-recu" onclick="assignThonFournisseur(\''+day.dateStr+'\',\''+four.id+'\')">Assigner</button>')+
         '</div>';
     });
