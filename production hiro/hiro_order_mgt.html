@@ -295,7 +295,7 @@ loadJoursOff();
 <tr><td class="td-product">Petit nem</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('pnem',-1)">&#8722;</button><input class="qty-inp" id="q-pnem" type="number" min="0" value="0" onchange="setQ('pnem',this.value)"><button class="qty-btn" onclick="adj('pnem',1)">+</button></div></td></tr>
 <tr><td class="td-product">Boule de sésame</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('sesame',-1)">&#8722;</button><input class="qty-inp" id="q-sesame" type="number" min="0" value="0" onchange="setQ('sesame',this.value)"><button class="qty-btn" onclick="adj('sesame',1)">+</button></div></td></tr>
 <tr><td class="td-product">Banh Bao</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('banhbao',-1)">&#8722;</button><input class="qty-inp" id="q-banhbao" type="number" min="0" value="0" onchange="setQ('banhbao',this.value)"><button class="qty-btn" onclick="adj('banhbao',1)">+</button></div></td></tr></tbody></table></div></div></div></div>
-<div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
+<div id="page-chr" class="page"><div class="main"><div class="section"><div class="section-header"><span class="section-title">CHR — Pain</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Pain</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('chr_pain',-1)">&#8722;</button><input class="qty-inp" id="q-chr_pain" type="number" min="0" value="0" onchange="setQ('chr_pain',this.value)"><button class="qty-btn" onclick="adj('chr_pain',1)">+</button></div></td></tr></tbody></table></div></div><div class="section" style="margin-top:12px"><div class="section-header"><span class="section-title">CHR — Marchandise</span></div><div id="libre-lines-chr" class="libre-lines"></div><button class="btn-add-line" data-page="chr" onclick="addLine(this.dataset.page)">+ Ajouter un article</button></div></div></div>
 
 <div id="page-riz" class="page"><div class="main" style="padding-top:12px;">
   <div class="section">
@@ -340,7 +340,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 const _API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders';
 const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _API_PROD='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-production';
-const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao'];
+const ALL_KEYS=['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux', 'rizprod', 'pokethon', 'pokesaumon', 'tataki', 'tiramisu', 'ananas', 'poebanane', 'poecitrouille', 'cheesemangue', 'cheeseframboise', 'gyoza', 'gnem', 'pnem', 'sesame', 'banhbao', 'chr_pain'];
 var SALADE_RECAP_KEYS=['bo','sin','thon','thai','plp','rouleaux','tataki'];
 var SALADE_RECAP_NAMES={bo:'Bun Bo',sin:'Singapour',thon:'Thon marine',thai:'Thai',plp:'Poulpe',rouleaux:'Rouleau',tataki:'Tataki'};
 var DESSERT_RECAP_KEYS=['tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise'];
@@ -613,9 +613,11 @@ async function showRecap(d){
   // Tapas
   var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rRow(TAPAS_RECAP_NAMES[k],d[k]||0);}).join('');
 
-  // CHR libre
-  var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-  if(_libreDessert){try{var lc=JSON.parse(_libreDessert);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
+  // CHR : pain fixe + libre
+  var chrRows='';
+  if(d.chr_pain>0) chrRows+='<div class="recap-libre-row"><div class="recap-qty">'+d.chr_pain+'</div><div class="recap-name">Pain</div></div>';
+  if(_libreDessert){try{var lc=JSON.parse(_libreDessert);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows+=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
+  if(!chrRows) chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
 
   el.innerHTML='<div class="recap-fiche">'
     +'<div class="recap-top">'
@@ -677,8 +679,10 @@ function renderDayOrder(order, dateStr, dayName, isVille){
     var tapasNames={gyoza:'Gyoza',gnem:'Grand nem',pnem:'Petit nem',sesame:'Sésame',banhbao:'Banh Bao'};
     var tapasRows=(tapasKeys['dsm']||[]).map(function(k){return rRow(tapasNames[k],order[k]||0);}).join('');
 
-    var chrRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
-    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows=ci.map(function(i){return '<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';}).join('');}}catch(e){}}
+    var chrRows='';
+    if(order.chr_pain>0) chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+order.chr_pain+'</div><div class="rh-name">Pain</div></div>';
+    if(order.libre){try{var lc=JSON.parse(order.libre);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0)chrRows+=ci.map(function(i){return '<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';}).join('');}}catch(e){}}
+    if(!chrRows) chrRows='<div style="padding:8px 10px;font-size:12px;color:var(--text-hint);">—</div>';
 
     var topSection;
     if('dsm'==='ville'){
@@ -783,8 +787,10 @@ async function loadRecap(){
     var libreStr=d.vlibre||d.libre||'';
     if(libreStr){try{var lp=JSON.parse(libreStr);if(lp.tarte){lp.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+='<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';});}}catch(e){}}
     var tapasRows=TAPAS_RECAP_KEYS.map(function(k){return rR(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
-    var chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
-    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
+    var chrRows='';
+    if(getV('chr_pain')>0) chrRows+='<div class="recap-libre-row"><div class="recap-qty">'+getV('chr_pain')+'</div><div class="recap-name">Pain</div></div>';
+    if(libreStr){try{var lc=JSON.parse(libreStr);if(lc.chr){var ci=lc.chr.filter(function(i){return i.name&&i.qty>0;});if(ci.length>0){chrRows+=ci.map(function(i){return '<div class="recap-libre-row"><div class="recap-qty">'+i.qty+'</div><div class="recap-name">'+esc(i.name)+'</div></div>';}).join('');}}}catch(e){}}
+    if(!chrRows) chrRows='<div style="padding:10px 12px;font-size:12px;color:var(--text-hint);">—</div>';
 
     var statusBadge=isVal
       ?'<span style="display:inline-block;padding:3px 12px;border-radius:20px;background:#e4f5ee;color:#0d7a52;font-size:12px;font-weight:600;">✓ Validée</span>'
@@ -887,6 +893,7 @@ async function loadHistorique(){
         var tapasRows=tapasKeys.map(function(k){return rH(TAPAS_RECAP_NAMES[k],getV(k));}).join('');
         // CHR
         var chrRows='';
+        if(getV('chr_pain')>0) chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+getV('chr_pain')+'</div><div class="rh-name">Pain</div></div>';
         if(_lparsed&&_lparsed.chr){_lparsed.chr.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){chrRows+='<div class="rh-libre-row"><div class="rh-qty">'+i.qty+'</div><div class="rh-name">'+esc(i.name)+'</div></div>';});}
         // Plats chauds Ville
         var platsRows='';

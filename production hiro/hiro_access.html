@@ -3269,13 +3269,16 @@ function laboRenderFiche(shop,order){
     if(_libreStr){try{var lc=JSON.parse(_libreStr);if(lc.chr){lc.chr.forEach(function(i,idx){if(i.name&&i.qty>0)chrContent+='<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:18px;font-weight:700;min-width:30px;text-align:right;">'+i.qty+'</div><div style="font-size:12px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'+laboTrashBtn('laboRemoveLibreItem(\'ville\',\'chr\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
     if(chrContent) chrRows=chrContent;
   }else{
-    // Autres magasins: uniquement articles libres
+    // Autres magasins: articles libres (+ Pain pour mgt, désormais commandé par le magasin)
+    var chrFixed=shop==='mgt'?makeRow('chr_pain','Pain',_v('chr_pain')):'';
     var _libreStr2=order.vlibre||order.libre||'';
+    var chrLibre='';
     if(_libreStr2){try{var lc2=JSON.parse(_libreStr2);if(lc2.chr){var _ciRows=[];lc2.chr.forEach(function(i,idx){if(i.name&&i.qty>0)_ciRows.push('<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;border-bottom:1px solid var(--border);background:#fef9f0;">'
       +'<input type="number" min="0" value="'+i.qty+'" onchange="laboPatchLibreChr(\''+shop+'\','+idx+',this.value)" style="width:64px;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'
       +laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'chr\','+idx+',\''+laboJsEsc(i.name)+'\')')
-      +'</div>');});if(_ciRows.length>0)chrRows=_ciRows.join('');}}catch(e){}}
+      +'</div>');});if(_ciRows.length>0)chrLibre=_ciRows.join('');}}catch(e){}}
+    if(chrFixed||chrLibre) chrRows=chrFixed+chrLibre;
   }
 
   // Plats chauds Ville — uniquement Gyoza et Siu Mai
