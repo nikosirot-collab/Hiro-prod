@@ -793,13 +793,19 @@ function setThonFormule(f){
   render();
 }
 function extractKgNum(s){if(!s||s==='—')return'';const m=s.match(/(\d+)/);return m?parseInt(m[1]):'';}
-async function saveThonKg(dStr,val){
+async function saveThonKg(dStr,val,manual){
   const v=parseInt(val);if(isNaN(v)||v<0)return;
   const monday=ds(mondayOf(weekOff));
   const fsKey=(dStr+'__thon_kg').replace(/__/g,'--');
-  await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${encodeURIComponent('`'+fsKey+'`')}&key=${_KEY}`,{
+  const fields={[fsKey]:{integerValue:v}};
+  if(manual){
+    const flagKey=(dStr+'__thon_kg_manual').replace(/__/g,'--');
+    fields[flagKey]={booleanValue:true};
+  }
+  const mask=Object.keys(fields).map(k=>encodeURIComponent('`'+k+'`')).join('&updateMask.fieldPaths=');
+  await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${mask}&key=${_KEY}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
+    body:JSON.stringify({fields})
   }).catch(()=>{});
 }
 let _dockFournisseurs=[];
@@ -1195,7 +1201,7 @@ function render(){
         <td class="${dc2} vt2" id="thon-sat-paita">—</td>
         <td class="${dc2} vt2" id="thon-sat-ville">—</td>
         <td class="${dc2} vmono" style="font-weight:600" id="thon-sat-total">—</td>
-        <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
+        <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value,true)"></td>
         <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
       </tr>`;
 
@@ -1223,9 +1229,9 @@ function render(){
           elKg.value=override!==undefined?override:extractKgNum(getThonKg(totSam));
           updateThonFooter();
         }
-        if(override===undefined&&autoVal&&!_thonKgAutoSaved.has(dStr)){
+        if(override===undefined&&!data[dStr+'__thon_kg_manual']&&autoVal&&!_thonKgAutoSaved.has(dStr)){
           _thonKgAutoSaved.add(dStr);
-          saveThonKg(dStr,autoVal);
+          saveThonKg(dStr,autoVal,false);
         }
       });
     } else {
@@ -1238,9 +1244,9 @@ function render(){
       const _thonKgDefault=extractKgNum(getThonKg(tNext));
       const _thonKgVal=data[dStr+'__thon_kg']!==undefined?data[dStr+'__thon_kg']:_thonKgDefault;
       const _thonKgAutoVal=extractKgNum(thonKgStandard(tNext));
-      if(data[dStr+'__thon_kg']===undefined&&_thonKgAutoVal&&!_thonKgAutoSaved.has(dStr)){
+      if(data[dStr+'__thon_kg']===undefined&&!data[dStr+'__thon_kg_manual']&&_thonKgAutoVal&&!_thonKgAutoSaved.has(dStr)){
         _thonKgAutoSaved.add(dStr);
-        saveThonKg(dStr,_thonKgAutoVal);
+        saveThonKg(dStr,_thonKgAutoVal,false);
       }
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
@@ -1249,7 +1255,7 @@ function render(){
         <td class="${dc2} vt2">${tPaita||'—'}</td>
         <td class="${dc2} vt2">${tVille||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
-        <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" value="${_thonKgVal}" min="0" step="5" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
+        <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" value="${_thonKgVal}" min="0" step="5" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value,true)"></td>
         <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
       </tr>`;
     }
