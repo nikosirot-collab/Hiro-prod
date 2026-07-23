@@ -3001,6 +3001,12 @@ function laboRenderFicheRie(){
             if(val>0) items.push({name:LABO_CHR_NAMES[k],qty:val});
           });
         }
+        // Pour le MGT : ajouter le Pain (CHR fixe commandable par le magasin)
+        if(s==='mgt'&&row.libre==='chr'){
+          var om=laboOrders[s]||{};
+          var valPain=om.status==='validated'&&om['vqty_chr_pain']!==undefined?parseInt(om['vqty_chr_pain'])||0:(parseInt(om['chr_pain'])||0);
+          if(valPain>0) items.push({name:'Pain',qty:valPain});
+        }
         var inner=items.map(function(i){ return '<b>'+i.qty+'</b> '+i.name; }).join('<br>');
         html+='<td style="'+cssValL+'border-left:'+bBold+';" colspan="2">'+inner+'</td>';
       });
