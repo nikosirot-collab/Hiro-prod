@@ -3436,6 +3436,7 @@ function parseUA(ua){
 
 function secDevCard(e){
   var now=Date.now();
+  var isSelf=e.devId===localStorage.getItem('hiro-dev-id');
   var ago=e.ts>0?Math.round((now-e.ts)/60000):null;
   var agoStr=ago===null?'—':ago<1?'il y a 1min':ago<60?'il y a '+ago+' min':ago<1440?'il y a '+Math.round(ago/60)+'h':'il y a '+Math.round(ago/1440)+'j';
   var shopLabel=esc(e.shop&&SEC_SHOP_LABELS[e.shop]!==undefined?SEC_SHOP_LABELS[e.shop]:e.shop?e.shop.toUpperCase():'');
@@ -3445,11 +3446,11 @@ function secDevCard(e){
   var isPending=e.pendingApproval;
   var disabledStyle=e.disabled&&!isPending?'opacity:.4;':'';
   var statusDot='<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+(e.isOnline?'#27ae60':isOld?'#ddd':'#bbb')+';"></div>';
-  var btnLabel=isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver');
-  var btnColor=isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c');
-  var btnAction=isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')';
-  var deleteBtn=isOld&&!isPending?'<button onclick="secDeleteDevice(\''+e.devId+'\')" style="padding:4px 8px;border-radius:6px;border:none;background:#bbb;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">🗑</button>':'';
-  var rejectBtn=isPending?'<button onclick="secRejectDevice(\''+e.devId+'\')" style="padding:4px 10px;border-radius:6px;border:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">Refuser</button>':'';
+  var btnLabel=isSelf?'Cet appareil':(isPending?'Approuver':(e.disabled?'Réactiver':'Désactiver'));
+  var btnColor=isSelf?'#999':(isPending?'#f39c12':(e.disabled?'#0d7a52':'#e74c3c'));
+  var btnAction=isSelf?'':(isPending?'secApproveDevice(\''+e.devId+'\')':'secToggleDevice(\''+e.devId+'\','+(!e.disabled)+')');
+  var deleteBtn=isOld&&!isPending&&!isSelf?'<button onclick="secDeleteDevice(\''+e.devId+'\')" style="padding:4px 8px;border-radius:6px;border:none;background:#bbb;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">🗑</button>':'';
+  var rejectBtn=isPending&&!isSelf?'<button onclick="secRejectDevice(\''+e.devId+'\')" style="padding:4px 10px;border-radius:6px;border:none;background:#e74c3c;color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;margin-left:4px;">Refuser</button>':'';
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;'+disabledStyle+'">'
     +statusDot
     +'<div style="flex:1;min-width:0;">'
@@ -3461,7 +3462,7 @@ function secDevCard(e){
     +'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">'+deviceStr+' · '+agoStr+'</div>'
     +(e.city||e.ip?'<div style="font-size:10px;color:var(--text-muted);margin-top:1px;">📍 '+esc(e.city||e.ip)+(e.region?' · '+esc(e.region):'')+(e.isp?' · '+esc(e.isp):'')+'</div>':'')
     +'</div>'
-    +'<button onclick="'+btnAction+'" style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;cursor:pointer;flex-shrink:0;">'+btnLabel+'</button>'
+    +'<button '+(isSelf?'disabled':'onclick="'+btnAction+'"')+' style="padding:4px 10px;border-radius:6px;border:none;background:'+btnColor+';color:#fff;font-size:10px;font-weight:600;flex-shrink:0;'+(isSelf?'opacity:.5;cursor:default;':'cursor:pointer;')+'">'+btnLabel+'</button>'
     +rejectBtn
     +deleteBtn
     +'</div>';
@@ -3527,6 +3528,7 @@ function startNetMonitor(){runNetTest();if(!_netInterval)_netInterval=setInterva
 function stopNetMonitor(){if(_netInterval){clearInterval(_netInterval);_netInterval=null;}}
 
 async function secDeleteDevice(devId){
+  if(devId===localStorage.getItem('hiro-dev-id')){alert('Impossible de supprimer votre propre appareil.');return;}
   if(!confirm('Supprimer cet appareil ?')) return;
   try{
     await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY,{method:'DELETE'});
@@ -3535,6 +3537,7 @@ async function secDeleteDevice(devId){
 }
 
 async function secToggleDevice(devId, disable){
+  if(devId===localStorage.getItem('hiro-dev-id')){alert('Impossible de désactiver votre propre appareil.');return;}
   try{
     var fields={disabled:{booleanValue:disable}};
     await _fbFetch(_PRESENCE_API+'/'+devId+'?key='+_SEC_KEY+'&updateMask.fieldPaths=disabled',{
