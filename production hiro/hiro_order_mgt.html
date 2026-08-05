@@ -472,6 +472,30 @@ function showRecapOverlay(d){
 }
 
 
+function buildConfirmDetailHtml(){
+  var rows=[];
+  ALL_KEYS.forEach(function(k){
+    var v=qty[k]||0;
+    if(v<=0)return;
+    var label=k;
+    var input=document.getElementById('q-'+k);
+    var tr=input&&input.closest('tr');
+    var cell=tr&&tr.querySelector('.td-product');
+    if(cell&&cell.childNodes[0])label=cell.childNodes[0].textContent.trim();
+    else if(k==='rizprod')label='Riz';
+    else if(k==='villerolls')label='Rolls';
+    rows.push({name:label,qty:v});
+  });
+  if(libreItems)Object.values(libreItems).forEach(function(arr){
+    if(Array.isArray(arr))arr.forEach(function(i){
+      if(i.name&&i.qty>0)rows.push({name:i.name,qty:i.qty});
+    });
+  });
+  if(!rows.length)return '<div style="padding:10px 0;font-size:13px;color:#888;text-align:center;">Aucun article</div>';
+  return rows.map(function(r){
+    return '<div class="rh-row"><div class="rh-qty">'+r.qty+'</div><div class="rh-name">'+esc(r.name)+'</div></div>';
+  }).join('');
+}
 function showConfirmModal(){
   if(!_joursOffLoaded){
     // Attendre le chargement des jours off avant d'autoriser l'envoi
@@ -486,11 +510,8 @@ function showConfirmModal(){
     },200);
     return;
   }
-  var tot=0;
-  ALL_KEYS.forEach(function(k){tot+=(qty[k]||0);});
-  if(libreItems)Object.values(libreItems).forEach(function(arr){if(Array.isArray(arr))arr.forEach(function(i){tot+=(i.qty||0);});});
   document.getElementById('confirm-date').textContent=fmtDate(getTomorrow());
-  document.getElementById('confirm-total').textContent=tot;
+  document.getElementById('confirm-detail').innerHTML=buildConfirmDetailHtml();
   document.getElementById('confirm-modal').style.display='flex';
 }
 var _pendingSend=null;
@@ -1243,14 +1264,14 @@ if(_offlineQueue.length>0)showOfflineBanner();
 
 <!-- Modale confirmation envoi -->
 <div id="confirm-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:300px;width:90%;text-align:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:340px;width:90%;text-align:center;">
     <div style="font-size:28px;margin-bottom:8px;">📋</div>
     <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Confirmer l'envoi</div>
-    <div style="font-size:13px;color:#888;margin-bottom:6px;">Livraison <span id="confirm-date" style="font-weight:600;color:#1a1916;"></span></div>
-    <div style="font-size:13px;color:#888;margin-bottom:20px;"><span id="confirm-total" style="font-weight:700;font-size:16px;color:#1a1916;"></span> articles</div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px;">Livraison <span id="confirm-date" style="font-weight:600;color:#1a1916;"></span></div>
+    <div id="confirm-detail" style="text-align:left;max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;"></div>
     <div style="display:flex;gap:8px;">
-      <button onclick="document.getElementById('confirm-modal').style.display='none'" style="flex:1;padding:11px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;">Annuler</button>
-      <button id="confirm-btn-ok" onclick="confirmSend()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#0d7a52;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Envoyer ✓</button>
+      <button onclick="document.getElementById('confirm-modal').style.display='none'" style="flex:1;padding:11px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;">Modifier la commande</button>
+      <button id="confirm-btn-ok" onclick="confirmSend()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#0d7a52;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Confirmer l'envoi</button>
     </div>
   </div>
 </div>
