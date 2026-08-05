@@ -406,6 +406,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
             <th colspan="2" class="col-sep">Asia</th>
             <th class="col-sep" rowspan="2">Marmites</th>
             <th rowspan="2">Temps (min)</th>
+            <th rowspan="2">Kg riz</th>
           </tr>
           <tr>
             <th class="col-sep">Boules</th><th>Bacs</th>
@@ -1153,6 +1154,7 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites*6):'—'}</td>
     </tr>`;
 
     const fcv=(s,f,cls)=>{const val=gfv(s,f);return val!==undefined?`<span class="${cls}">${val}</span>`:'—';};
@@ -1282,6 +1284,7 @@ function render(){
     <td class="td-tot col-sep">${totRiz.asia||'—'}</td><td class="td-tot">${fb(totRiz.asia/250)}</td>
     <td class="td-btot col-sep">${fb(wMarmites)}</td>
     <td class="td-btot">${fb(wTemps)} min (~${fb(Math.round(wTemps/7*10)/10)}/j)</td>
+    <td class="td-btot">${fb(wMarmites*6)}</td>
   </tr>`;
 
   if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
