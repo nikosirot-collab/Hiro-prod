@@ -952,6 +952,8 @@ function subscribeWeek(){
 }
 
 function renderWithState(){
+  // Ne pas écraser une saisie en cours dans le champ kg de thon
+  if(document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains('thon-kg-input'))return;
   // Sauvegarde les IDs ouverts
   const openIds=new Set();
   document.querySelectorAll('.day-body.open').forEach(el=>openIds.add(el.id));
@@ -1226,7 +1228,7 @@ function render(){
         const elKg=document.getElementById('thon-sat-kg-input');
         const isManual=data[dStr+'__thon_kg_manual']===true;
         const override=data[dStr+'__thon_kg'];
-        if(elKg){
+        if(elKg&&document.activeElement!==elKg){
           elKg.value=isManual&&override!==undefined?override:extractKgNum(getThonKg(totSam));
           updateThonFooter();
         }
