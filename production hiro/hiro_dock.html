@@ -254,12 +254,9 @@ if(localStorage.getItem('hiro-ok')==='1')document.getElementById('login-screen')
 
   <!-- PAGE ASIA -->
   <div id="page-asia" class="page">
-    <div class="placeholder">
-      <div class="badge-wip">En construction</div>
-      <div class="placeholder-icon">🔄</div>
-      <div class="placeholder-title">Remontée labo Asia</div>
-      <div class="placeholder-desc">Interface de remontée des données de production du labo Asia vers l'entrepôt.</div>
-    </div>
+    <div id="asia-add-form" class="art-add-form" style="display:none;"></div>
+    <button class="btn-new" id="asia-add-btn" onclick="showAddAsiaArt()">+ Ajouter un article</button>
+    <div id="asia-content"></div>
   </div>
 
 </div>
@@ -271,7 +268,7 @@ const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 const _DOCK='https://firestore.googleapis.com/v1/projects/'+_PROJECT+'/databases/(default)/documents/hiro-dock';
 
 // ── State ──
-const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[],thonFournisseurs:{},thonKg:{}};
+const S={fournisseurs:[],articles:[],cf_fournisseurs:[],cf_articles:[],stocks:[],commandes:[],mouvements:[],cf_mouvements:[],asia_articles:[],asia_sorties:[],thonFournisseurs:{},thonKg:{}};
 function loadOpenSet(key){try{return new Set(JSON.parse(localStorage.getItem(key)||'[]'));}catch(e){return new Set();}}
 function saveOpenSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set]));}catch(e){}}
 const openFours=loadOpenSet('hiro-dock-open-stock');
@@ -404,14 +401,16 @@ async function fbSave(doc,arr){
 async function loadAll(){
   document.getElementById('stock-content').innerHTML='<div class="empty-msg">Chargement...</div>';
   document.getElementById('cf-content').innerHTML='<div class="empty-msg">Chargement...</div>';
-  const[fours,arts,cfFours,cfArts,stocks,commandes,mouvements,cfMouvements]=await Promise.all([
+  const[fours,arts,cfFours,cfArts,stocks,commandes,mouvements,cfMouvements,asiaArticles,asiaSorties]=await Promise.all([
     fbLoad('fournisseurs'),fbLoad('articles'),
     fbLoad('cf-fournisseurs'),fbLoad('cf-articles'),
-    fbLoad('stocks'),fbLoad('commandes'),fbLoad('mouvements'),fbLoad('cf-mouvements')
+    fbLoad('stocks'),fbLoad('commandes'),fbLoad('mouvements'),fbLoad('cf-mouvements'),
+    fbLoad('asia_articles'),fbLoad('asia_sorties')
   ]);
   S.fournisseurs=fours;S.articles=arts;
   S.cf_fournisseurs=cfFours;S.cf_articles=cfArts;
   S.stocks=stocks;S.commandes=commandes;S.mouvements=mouvements;S.cf_mouvements=cfMouvements;
+  S.asia_articles=asiaArticles;S.asia_sorties=asiaSorties;
   if(!S.mouvements.length&&S.stocks.length){
     S.mouvements=S.stocks.filter(function(s){return s.qte>0;}).map(function(s){
       return{id:uid(),articleId:s.articleId,delta:s.qte,type:'initial',date:today(),note:''};
@@ -422,7 +421,7 @@ async function loadAll(){
   loadThonFournisseurWeek();
   setInterval(loadThonFournisseurWeek,15000);
 }
-function renderAll(){renderStock();renderCF();renderFoursView();}
+function renderAll(){renderStock();renderCF();renderFoursView();renderAsia();}
 
 // ── Nav ──
 function showPage(id,tab){
@@ -1087,6 +1086,108 @@ async function marquerRecu(cmdId){
   S.commandes[ci].status='received';
   await Promise.all([fbSave('mouvements',S.mouvements),fbSave('commandes',S.commandes)]);
   renderFoursView();
+  renderStock();
+}
+
+// ════════════════════════════════
+// ASIA — sorties de stock vers le labo Asia
+// ════════════════════════════════
+function renderAsia(){
+  const el=document.getElementById('asia-content');if(!el)return;
+
+  let body='<div class="sec-label">Sortie vers Asia</div>';
+  if(!S.asia_articles.length){
+    body+='<div class="empty-msg">Aucun article — ajoutez-en pour commencer.</div>';
+  }else{
+    body+='<div class="cmd-form">';
+    S.asia_articles.forEach(function(artId){
+      const a=S.articles.find(function(x){return x.id===artId;});
+      if(!a)return;
+      body+='<div class="cmd-art-line">'+
+        '<span class="cmd-art-name">'+esc(a.nom)+'<span class="cmd-art-unite"> · '+esc(a.unite)+' · stock '+getStock(a.id)+'</span></span>'+
+        '<input class="cmd-inp" id="asia-inp-'+a.id+'" type="number" min="0" placeholder="0">'+
+        '<button class="btn-ic del" style="margin-left:8px;" onclick="removeAsiaArt(\''+a.id+'\')" title="Retirer">✕</button>'+
+        '</div>';
+    });
+    body+='<div class="form-btns" style="margin-top:10px;">'+
+      '<button class="btn-save" onclick="validateAsiaSortie()">Valider la sortie</button>'+
+      '</div></div>';
+  }
+
+  const hist=S.asia_sorties.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,20);
+  let histBody='<div class="sec-label">Historique</div>';
+  if(!hist.length){
+    histBody+='<div class="empty-msg">Aucune sortie enregistrée.</div>';
+  }else{
+    hist.forEach(function(s){
+      const detail=s.lignes.map(function(l){
+        const art=S.articles.find(function(a){return a.id===l.articleId;});
+        return(art?esc(art.nom):'?')+' ×'+l.qte;
+      }).join(', ');
+      histBody+='<div class="cmd-row"><span class="cmd-date">'+fmtDate(s.date)+'</span><span class="cmd-detail">'+detail+'</span></div>';
+    });
+  }
+
+  el.innerHTML='<div class="four-card">'+body+'</div><div class="four-card" style="margin-top:12px;">'+histBody+'</div>';
+}
+
+function showAddAsiaArt(){
+  const form=document.getElementById('asia-add-form');
+  const btn=document.getElementById('asia-add-btn');
+  if(!form)return;
+  const available=S.articles.filter(function(a){return S.asia_articles.indexOf(a.id)===-1;});
+  form.style.display='flex';
+  if(btn)btn.style.display='none';
+  if(!available.length){
+    form.innerHTML='<div class="empty-msg">Tous les articles du Stock sont déjà dans la liste Asia.</div>'+
+      '<div class="form-btns"><button class="btn-cancel" onclick="hideAddAsiaArt()">Fermer</button></div>';
+    return;
+  }
+  const options=available.map(function(a){
+    const four=S.fournisseurs.find(function(f){return f.id===a.fournisseurId;});
+    return'<option value="'+a.id+'">'+esc(a.nom)+(four?' — '+esc(four.nom):'')+'</option>';
+  }).join('');
+  form.innerHTML='<div class="form-row"><select class="f-sel" id="asia-sel-art">'+options+'</select></div>'+
+    '<div class="form-btns">'+
+    '<button class="btn-cancel" onclick="hideAddAsiaArt()">Annuler</button>'+
+    '<button class="btn-save" onclick="addAsiaArt()">Ajouter</button>'+
+    '</div>';
+}
+function hideAddAsiaArt(){
+  const form=document.getElementById('asia-add-form');
+  const btn=document.getElementById('asia-add-btn');
+  if(form){form.style.display='none';form.innerHTML='';}
+  if(btn)btn.style.display='flex';
+}
+async function addAsiaArt(){
+  const sel=document.getElementById('asia-sel-art');if(!sel||!sel.value)return;
+  S.asia_articles.push(sel.value);
+  await fbSave('asia_articles',S.asia_articles);
+  hideAddAsiaArt();
+  renderAsia();
+}
+async function removeAsiaArt(artId){
+  const a=S.articles.find(function(x){return x.id===artId;});
+  if(!confirm('Retirer "'+(a?a.nom:'cet article')+'" de la liste Asia ?'))return;
+  S.asia_articles=S.asia_articles.filter(function(id){return id!==artId;});
+  await fbSave('asia_articles',S.asia_articles);
+  renderAsia();
+}
+async function validateAsiaSortie(){
+  const lignes=[];
+  S.asia_articles.forEach(function(artId){
+    const inp=document.getElementById('asia-inp-'+artId);
+    const qte=inp?parseInt(inp.value)||0:0;
+    if(qte>0)lignes.push({articleId:artId,qte:qte});
+  });
+  if(!lignes.length)return;
+  const sortieId=uid();
+  lignes.forEach(function(l){
+    S.mouvements.push({id:uid(),articleId:l.articleId,delta:-l.qte,type:'sortie_asia',date:today(),note:sortieId});
+  });
+  S.asia_sorties.push({id:sortieId,date:today(),lignes:lignes});
+  await Promise.all([fbSave('mouvements',S.mouvements),fbSave('asia_sorties',S.asia_sorties)]);
+  renderAsia();
   renderStock();
 }
 
