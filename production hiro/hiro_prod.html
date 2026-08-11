@@ -934,6 +934,7 @@ async function _fbSaveAll(docId) {
     Object.entries(data).forEach(([k,v])=>{
       const ek=_encKey(k);
       if(typeof v==='number') fields[ek]={integerValue:v};
+      else if(typeof v==='boolean') fields[ek]={booleanValue:v};
       else fields[ek]={stringValue:String(v)};
     });
     fields['init']={stringValue:'true'};
