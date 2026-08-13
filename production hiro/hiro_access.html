@@ -502,7 +502,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       <thead><tr>
         <th style="text-align:left;padding-left:12px;min-width:90px">Date</th>
         <th>DSM</th><th>MGT</th><th>Paita</th><th>Ville</th>
-        <th>Total tranches</th><th>Kg à commander</th><th>Fournisseur</th>
+        <th>Total tranches</th><th>Kg suggéré</th><th>Kg commander</th><th>Fournisseur</th>
       </tr></thead>
       <tbody id="body-thon"></tbody>
       <tfoot id="foot-thon"></tfoot>
@@ -793,19 +793,14 @@ function setThonFormule(f){
   render();
 }
 function extractKgNum(s){if(!s||s==='—')return'';const m=s.match(/(\d+)/);return m?parseInt(m[1]):'';}
-async function saveThonKg(dStr,val,manual){
+async function saveThonKg(dStr,val){
   const v=parseInt(val);if(isNaN(v)||v<0)return;
   const monday=ds(mondayOf(weekOff));
   const fsKey=(dStr+'__thon_kg').replace(/__/g,'--');
-  const fields={[fsKey]:{integerValue:v}};
-  if(manual){
-    const flagKey=(dStr+'__thon_kg_manual').replace(/__/g,'--');
-    fields[flagKey]={booleanValue:true};
-  }
-  const mask=Object.keys(fields).map(k=>encodeURIComponent('`'+k+'`')).join('&updateMask.fieldPaths=');
+  const mask=encodeURIComponent('`'+fsKey+'`');
   await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${mask}&key=${_KEY}`,{
     method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({fields})
+    body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
   }).catch(()=>{});
 }
 let _dockFournisseurs=[];
@@ -832,7 +827,12 @@ function fournisseurNameById(id){
 }
 function updateThonFooter(){
   let total=0;
-  document.querySelectorAll('.thon-kg-input').forEach(inp=>{const v=parseInt(inp.value);if(!isNaN(v)&&v>0)total+=v;});
+  document.querySelectorAll('.thon-kg-input').forEach(inp=>{
+    const v=parseInt(inp.value);
+    if(!isNaN(v)&&v>0){total+=v;return;}
+    const c=parseInt(inp.dataset.calc);
+    if(!isNaN(c)&&c>0)total+=c;
+  });
   const el=document.getElementById('thon-total-kg');
   if(el) el.textContent=total>0?total+' kg':'—';
 }
@@ -1183,7 +1183,7 @@ function render(){
     if(isDim){
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
-        <td colspan="5" style="text-align:center;color:var(--hint);font-size:12px;">Pas de commande</td>
+        <td colspan="6" style="text-align:center;color:var(--hint);font-size:12px;">Pas de commande</td>
       </tr>`;
     } else if(di===5){
       const dDim=dayOf(weekOff,6),dsDim=ds(dDim);
@@ -1197,6 +1197,7 @@ function render(){
       const dLun=dayOf(weekOff+1,0),dsLun=ds(dLun);
       const nextDocId='week_'+ds(mondayOf(weekOff+1));
 
+      const _thonSatManualVal=data[dStr+'__thon_kg']!==undefined?data[dStr+'__thon_kg']:'';
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
         <td class="${dc2} vt2" id="thon-sat-dsm">—</td>
@@ -1204,7 +1205,8 @@ function render(){
         <td class="${dc2} vt2" id="thon-sat-paita">—</td>
         <td class="${dc2} vt2" id="thon-sat-ville">—</td>
         <td class="${dc2} vmono" style="font-weight:600" id="thon-sat-total">—</td>
-        <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value,true)"></td>
+        <td class="${dc2} vmono" style="font-weight:600;color:var(--dsm)" id="thon-sat-kg-calc">—</td>
+        <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" data-calc="0" min="0" step="5" placeholder="kg" value="${_thonSatManualVal}" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
         <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
       </tr>`;
 
@@ -1225,13 +1227,11 @@ function render(){
         const totSam=['dsm','mgt','paita','ville'].reduce((sum,s)=>sum+(dimByShop[s]||0)+(lunByShop[s]||0),0);
         const elTot=document.getElementById('thon-sat-total');
         if(elTot) elTot.textContent=totSam||'—';
+        const calcVal=extractKgNum(getThonKg(totSam));
+        const elCalc=document.getElementById('thon-sat-kg-calc');
+        if(elCalc) elCalc.textContent=getThonKg(totSam);
         const elKg=document.getElementById('thon-sat-kg-input');
-        const isManual=data[dStr+'__thon_kg_manual']===true;
-        const override=data[dStr+'__thon_kg'];
-        if(elKg&&document.activeElement!==elKg){
-          elKg.value=isManual&&override!==undefined?override:extractKgNum(getThonKg(totSam));
-          updateThonFooter();
-        }
+        if(elKg){ elKg.dataset.calc=calcVal||0; updateThonFooter(); }
       });
     } else {
       const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
@@ -1240,8 +1240,9 @@ function render(){
       const getThonVal=s=>{if(laboIsOff(s,dsNext))return 0;const mk=dsNext+'__f__'+s+'__t';return data[mk]!==undefined?data[mk]:(fdNext[s]?.t||0);};
       const tDsm=getThonVal('dsm'),tMgt=getThonVal('mgt'),tPaita=getThonVal('paita'),tVille=getThonVal('ville');
       const tNext=tDsm+tMgt+tPaita+tVille;
-      const _thonKgDefault=extractKgNum(getThonKg(tNext));
-      const _thonKgVal=data[dStr+'__thon_kg_manual']===true&&data[dStr+'__thon_kg']!==undefined?data[dStr+'__thon_kg']:_thonKgDefault;
+      const _thonKgCalcStr=getThonKg(tNext);
+      const _thonKgCalcNum=extractKgNum(_thonKgCalcStr);
+      const _thonKgManualVal=data[dStr+'__thon_kg']!==undefined?data[dStr+'__thon_kg']:'';
       thonTblRow=`<tr>
         <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
         <td class="${dc2} vt2">${tDsm||'—'}</td>
@@ -1249,7 +1250,8 @@ function render(){
         <td class="${dc2} vt2">${tPaita||'—'}</td>
         <td class="${dc2} vt2">${tVille||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
-        <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" value="${_thonKgVal}" min="0" step="5" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value,true)"></td>
+        <td class="${dc2} vmono" style="font-weight:600;color:var(--dsm)">${_thonKgCalcStr}</td>
+        <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" data-calc="${_thonKgCalcNum||0}" value="${_thonKgManualVal}" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
         <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
       </tr>`;
     }
