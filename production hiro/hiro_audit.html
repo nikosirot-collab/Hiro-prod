@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
+<link rel="manifest" href="/Hiro-prod/production%20hiro/manifest-audit.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit — Contrôle qualité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0a0a;
+  --bg2:      #111111;
+  --surface:  #161616;
+  --surface2: #1e1e1e;
+  --border:   #2a2a2a;
+  --border2:  #333333;
+  --text:     #f0ede8;
+  --text-2:   #a0998f;
+  --text-3:   #4a4540;
+  --gold:     #c9a96e;
+  --ok:       #4caf82;
+  --miss:     #ff5c7a;
+  --warn:     #e8a94a;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.6;
+}
+.header{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:60px;
+  background:rgba(10,10,10,.92);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-mark{
+  width:30px;height:30px;border:1px solid var(--border2);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:15px;font-weight:900;
+  color:var(--gold);letter-spacing:-0.5px;
+}
+.logo-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--text);letter-spacing:.5px;}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-2);letter-spacing:2px;text-transform:uppercase;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:16px;}
+.clock{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-2);letter-spacing:1px;}
+.header-divider{width:1px;height:18px;background:var(--border);}
+
+.tabs{display:flex;gap:8px;padding:14px 32px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.tab-btn{
+  background:transparent;border:1px solid var(--border);color:var(--text-2);
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:500;
+  padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .15s;letter-spacing:.2px;
+}
+.tab-btn:hover{border-color:var(--border2);color:var(--text);}
+.tab-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+.main{padding:28px 32px;max-width:1120px;margin:0 auto;position:relative;z-index:1;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.panel-intro{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+.panel-intro-txt{font-size:12px;color:var(--text-2);font-weight:300;line-height:1.6;max-width:640px;}
+.btn-run{
+  display:flex;align-items:center;gap:8px;white-space:nowrap;
+  background:var(--text);color:var(--bg);border:none;padding:11px 22px;border-radius:8px;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;
+  transition:opacity .15s,transform .1s;letter-spacing:.3px;
+}
+.btn-run:hover{opacity:.88;}
+.btn-run:active{transform:scale(.97);}
+.btn-run:disabled{opacity:.3;cursor:not-allowed;transform:none;}
+
+.loading-box{display:none;flex-direction:column;align-items:center;gap:16px;padding:60px 20px;text-align:center;}
+.loading-box.active{display:flex;}
+.spinner{width:28px;height:28px;border:1px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-txt{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-3);letter-spacing:1px;}
+
+.summary-bar{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+.summary-cell{flex:1;background:var(--surface);padding:18px 20px;text-align:center;}
+.summary-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;line-height:1;margin-bottom:4px;}
+.summary-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:1.5px;text-transform:uppercase;}
+
+.section-title{display:flex;align-items:center;gap:12px;margin:24px 0 14px;}
+.section-title-text{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:2.5px;text-transform:uppercase;white-space:nowrap;}
+.section-title-line{flex:1;height:1px;background:var(--border);}
+
+.audit-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border2);border-radius:8px;padding:14px 18px;margin-bottom:10px;}
+.audit-card.crit{border-left-color:var(--miss);}
+.audit-card.warn{border-left-color:var(--warn);}
+.audit-card.info{border-left-color:var(--text-3);}
+.audit-card.ok{border-left-color:var(--ok);}
+.audit-card-top{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.audit-badge{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:4px;}
+.audit-badge.crit{background:#ff5c7a15;color:var(--miss);}
+.audit-badge.warn{background:#e8a94a15;color:var(--warn);}
+.audit-badge.info{background:#4a454015;color:var(--text-2);}
+.audit-badge.ok{background:#4caf8215;color:var(--ok);}
+.audit-card-title{font-size:13px;font-weight:500;color:var(--text);}
+.audit-card-detail{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-2);line-height:1.6;white-space:pre-wrap;}
+
+.file-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:14px;}
+.file-block-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.file-row{display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.file-row:last-child{border-bottom:none;}
+.file-row-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;min-width:130px;padding-top:2px;}
+.file-row-val{color:var(--text-2);font-family:'DM Mono',monospace;font-size:11.5px;word-break:break-all;line-height:1.6;}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;}
+.dot.ok{background:var(--ok);}
+.dot.miss{background:var(--miss);}
+
+.error-box{display:none;background:#ff5c7a0a;border:1px solid #ff5c7a25;border-radius:8px;padding:13px 16px;font-family:'DM Mono',monospace;font-size:11px;color:var(--miss);letter-spacing:.3px;margin-bottom:20px;}
+.error-box.active{display:block;}
+.empty{text-align:center;padding:60px 20px;}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.3;}
+.empty-txt{font-size:13px;color:var(--text-2);font-weight:300;line-height:1.7;}
+.fade-in{animation:fadeIn .35s ease forwards;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:700px){
+  .header,.tabs,.main{padding-left:16px;padding-right:16px;}
+  .summary-bar{flex-wrap:wrap;}
+  .summary-cell{min-width:45%;}
+  .file-row{flex-direction:column;gap:2px;}
+}
+</style>
+</head>
+<body>
+
+<div id="audit-login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0a0a;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#161616;border:1px solid #2a2a2a;border-radius:14px;padding:32px 28px;max-width:300px;width:90%;text-align:center;">
+    <div style="font-size:17px;font-weight:600;color:#f0ede8;margin-bottom:4px;">Hiro Audit</div>
+    <div style="font-size:12px;color:#666;margin-bottom:24px;">Accès restreint</div>
+    <input id="audit-pwd-input" type="password" placeholder="Mot de passe" style="width:100%;padding:10px 14px;border:1px solid #333;border-radius:8px;font-size:15px;margin-bottom:12px;background:#222;color:#f0ede8;outline:none;" onkeydown="if(event.key==='Enter')checkAuditPwd()">
+    <div id="audit-pwd-error" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:10px;">Mot de passe incorrect</div>
+    <button onclick="checkAuditPwd()" style="width:100%;padding:10px;background:#e74c3c;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Connexion</button>
+  </div>
+</div>
+<script>
+function checkAuditPwd(){var v=document.getElementById('audit-pwd-input').value;var h=5381;for(var i=0;i<v.length;i++)h=((h<<5)+h)+v.charCodeAt(i)|0;if((h>>>0).toString(16)==='1af5a601'){localStorage.setItem('hiro-ok','1');document.getElementById('audit-login-screen').style.display='none';}else{document.getElementById('audit-pwd-error').style.display='block';document.getElementById('audit-pwd-input').value='';document.getElementById('audit-pwd-input').focus();}}
+if(localStorage.getItem('hiro-ok')==='1') document.getElementById('audit-login-screen').style.display='none';
+</script>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">H</div>
+    <div>
+      <div class="logo-title">Hiro Audit</div>
+      <div class="logo-sub">Contrôle qualité</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="clock" id="clockEl">——:——</div>
+    <div class="header-divider"></div>
+    <div class="clock" style="color:var(--text-3);">NC</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabBtnData" onclick="switchTab('data')">🗄️ Données Firestore</button>
+  <button class="tab-btn" id="tabBtnCode" onclick="switchTab('code')">🧩 Code source</button>
+</div>
+
+<div class="main">
+
+  <!-- ONGLET DONNÉES -->
+  <div class="tab-panel active" id="panelData">
+    <div class="panel-intro">
+      <div class="panel-intro-txt">Contrôles en direct sur Firestore : semaines de production manquantes, commandes avec une boutique inconnue, commandes absentes sur les 7 derniers jours, valeurs de stock négatives, appareils désactivés/en attente, documents de configuration attendus.</div>
+      <button class="btn-run" id="btnRunData" onclick="runDataAudit()">Lancer l'audit</button>
+    </div>
+    <div class="error-box" id="dataErrorBox"></div>
+    <div class="loading-box" id="dataLoadingBox">
+      <div class="spinner"></div>
+      <div class="loading-txt">Interrogation de Firestore…</div>
+    </div>
+    <div id="dataResults"></div>
+    <div class="empty" id="dataEmpty">
+      <div class="empty-icon">◈</div>
+      <div class="empty-txt">Clique sur <strong>Lancer l'audit</strong><br>pour interroger les données en production</div>
+    </div>
+  </div>
+
+  <!-- ONGLET CODE SOURCE -->
+  <div class="tab-panel" id="panelCode">
+    <div class="panel-intro">
+      <div class="panel-intro-txt">Scan structurel des 10 interfaces HTML (via <code>fetch</code>, même origine) : config Firebase, collections référencées, manifest/service worker, liens croisés, mots de passe en dur. Scan mécanique par motifs — ne remplace pas une revue de code.</div>
+      <button class="btn-run" id="btnRunCode" onclick="runCodeAudit()">Lancer l'audit</button>
+    </div>
+    <div class="error-box" id="codeErrorBox"></div>
+    <div class="loading-box" id="codeLoadingBox">
+      <div class="spinner"></div>
+      <div class="loading-txt">Lecture des fichiers…</div>
+    </div>
+    <div id="codeResults"></div>
+    <div class="empty" id="codeEmpty">
+      <div class="empty-icon">◈</div>
+      <div class="empty-txt">Clique sur <strong>Lancer l'audit</strong><br>pour scanner le code des interfaces</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function updateClock(){
+  const n=new Date(new Date().toLocaleString('en-US',{timeZone:'Pacific/Noumea'}));
+  document.getElementById('clockEl').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+setInterval(updateClock,10000); updateClock();
+
+function switchTab(name){
+  document.getElementById('panelData').classList.toggle('active',name==='data');
+  document.getElementById('panelCode').classList.toggle('active',name==='code');
+  document.getElementById('tabBtnData').classList.toggle('active',name==='data');
+  document.getElementById('tabBtnCode').classList.toggle('active',name==='code');
+}
+
+function cardHtml(sev,title,detail){
+  const badge={crit:'Critique',warn:'Warning',info:'Info',ok:'OK'}[sev];
+  return `<div class="audit-card ${sev} fade-in">
+    <div class="audit-card-top"><span class="audit-badge ${sev}">${badge}</span><span class="audit-card-title">${esc(title)}</span></div>
+    ${detail?`<div class="audit-card-detail">${esc(detail)}</div>`:''}
+  </div>`;
+}
+
+/* ============================================================
+   ONGLET 1 — AUDIT DONNÉES FIRESTORE
+   ============================================================ */
+const _PROJECT='hiro-sushi-nc';
+const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+const _BASE=`https://firestore.googleapis.com/v1/projects/${_PROJECT}/databases/(default)/documents`;
+const SHOPS=['dsm','mgt','paita','ville','asia'];
+const ORDER_SHOPS=['dsm','mgt','paita','ville'];
+
+function dstr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function mondayOf(d){const x=new Date(d);const day=x.getDay();const diff=(day===0?-6:1-day);x.setDate(x.getDate()+diff);return x;}
+
+async function fbGet(path){
+  const res=await fetch(`${_BASE}/${path}?key=${_KEY}`);
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error(`HTTP ${res.status} sur ${path}`);
+  const j=await res.json();
+  if(!j.fields) return null;
+  const o={};
+  Object.entries(j.fields).forEach(([k,v])=>{
+    if(v.integerValue!==undefined) o[k]=parseInt(v.integerValue);
+    else if(v.doubleValue!==undefined) o[k]=parseFloat(v.doubleValue);
+    else if(v.stringValue!==undefined) o[k]=v.stringValue;
+    else if(v.booleanValue!==undefined) o[k]=v.booleanValue;
+    else if(v.timestampValue!==undefined) o[k]=v.timestampValue;
+  });
+  return o;
+}
+
+async function fbListNames(collection,pageSize){
+  // Liste les documents d'une collection (jusqu'à pageSize), triés par nom desc pour privilégier les plus récents.
+  const url=`${_BASE}/${collection}?pageSize=${pageSize}&orderBy=__name__ desc&key=${_KEY}`;
+  const res=await fetch(url);
+  if(!res.ok) throw new Error(`HTTP ${res.status} sur ${collection}`);
+  const j=await res.json();
+  return (j.documents||[]).map(d=>d.name.split('/').pop());
+}
+
+async function checkMissingWeeks(){
+  const findings=[];
+  const today=new Date();
+  const missing=[];
+  for(let i=0;i<8;i++){
+    const d=new Date(today); d.setDate(d.getDate()-7*i);
+    const monday=mondayOf(d);
+    const id='week_'+dstr(monday);
+    try{
+      const doc=await fbGet('hiro-production/'+id);
+      if(!doc) missing.push(id);
+    }catch(e){ missing.push(id+' (erreur: '+e.message+')'); }
+  }
+  if(missing.length){
+    findings.push({sev:'warn',title:`${missing.length} semaine(s) manquante(s) dans hiro-production (8 dernières semaines)`,detail:missing.join('\n')});
+  }else{
+    findings.push({sev:'ok',title:'Les 8 dernières semaines sont toutes présentes dans hiro-production'});
+  }
+  return findings;
+}
+
+async function checkOrphanOrderShops(){
+  const findings=[];
+  try{
+    const names=await fbListNames('hiro-orders',300);
+    const orphans=names.filter(n=>{
+      const parts=n.split('_'); const shop=parts[parts.length-1];
+      return !SHOPS.includes(shop);
+    });
+    if(orphans.length){
+      findings.push({sev:'crit',title:`${orphans.length} commande(s) hiro-orders avec une boutique inconnue`,detail:orphans.join('\n')});
+    }else{
+      findings.push({sev:'ok',title:`Aucune boutique inconnue parmi les ${names.length} commande(s) récente(s) analysée(s)`});
+    }
+  }catch(e){
+    findings.push({sev:'info',title:'Impossible de lister hiro-orders',detail:e.message});
+  }
+  return findings;
+}
+
+async function checkRecentOrdersMissing(){
+  const findings=[];
+  const missing=[];
+  for(let i=0;i<7;i++){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=dstr(d);
+    for(const shop of ORDER_SHOPS){
+      const id=`order_${ds}_${shop}`;
+      try{
+        const doc=await fbGet('hiro-orders/'+id);
+        if(!doc) missing.push(id);
+      }catch(e){ missing.push(id+' (erreur: '+e.message+')'); }
+    }
+  }
+  if(missing.length){
+    findings.push({sev:'info',title:`${missing.length} document(s) de commande absent(s) sur les 7 derniers jours`,detail:missing.join('\n')+'\n\nNote : une absence peut être normale (boutique fermée ce jour-là, commande non encore saisie). À vérifier au cas par cas.'});
+  }else{
+    findings.push({sev:'ok',title:'Une commande existe pour chaque boutique sur les 7 derniers jours'});
+  }
+  return findings;
+}
+
+async function checkNegativeStock(){
+  const findings=[];
+  const docsToScan=['stocks','articles','cf-articles'];
+  const negs=[];
+  for(const docId of docsToScan){
+    try{
+      const doc=await fbGet('hiro-dock/'+docId);
+      if(!doc) continue;
+      Object.entries(doc).forEach(([k,v])=>{
+        if(typeof v==='number' && v<0) negs.push(`hiro-dock/${docId}.${k} = ${v}`);
+      });
+    }catch(e){ /* ignore, doc optionnel */ }
+  }
+  if(negs.length){
+    findings.push({sev:'crit',title:`${negs.length} valeur(s) négative(s) détectée(s) dans hiro-dock`,detail:negs.join('\n')});
+  }else{
+    findings.push({sev:'ok',title:'Aucune valeur numérique négative détectée dans hiro-dock/stocks, articles, cf-articles'});
+  }
+  return findings;
+}
+
+async function checkPresence(){
+  const findings=[];
+  try{
+    const names=await fbListNames('hiro-presence',200);
+    const disabled=[]; const pending=[];
+    for(const n of names){
+      const doc=await fbGet('hiro-presence/'+n);
+      if(!doc) continue;
+      if(doc.disabled===true) disabled.push(n);
+      if(doc.pendingApproval===true) pending.push(n);
+    }
+    if(disabled.length) findings.push({sev:'info',title:`${disabled.length} appareil(s) désactivé(s) dans hiro-presence`,detail:disabled.join('\n')});
+    if(pending.length) findings.push({sev:'warn',title:`${pending.length} appareil(s) en attente d'approbation`,detail:pending.join('\n')});
+    if(!disabled.length && !pending.length) findings.push({sev:'ok',title:`Aucun appareil désactivé ou en attente parmi les ${names.length} recensé(s)`});
+  }catch(e){
+    findings.push({sev:'info',title:'Impossible de lister hiro-presence',detail:e.message});
+  }
+  return findings;
+}
+
+async function checkConfigDocs(){
+  const findings=[];
+  const expected=['jours-off','chr-catalog','order-password','tarte-catalog'];
+  const missing=[];
+  for(const id of expected){
+    try{
+      const doc=await fbGet('hiro-config/'+id);
+      if(!doc) missing.push(id);
+    }catch(e){ missing.push(id+' (erreur: '+e.message+')'); }
+  }
+  if(missing.length){
+    findings.push({sev:'warn',title:`Document(s) hiro-config attendu(s) mais absent(s)`,detail:missing.join('\n')});
+  }else{
+    findings.push({sev:'ok',title:'Tous les documents hiro-config attendus sont présents'});
+  }
+  return findings;
+}
+
+async function runDataAudit(){
+  const btn=document.getElementById('btnRunData');
+  btn.disabled=true;
+  document.getElementById('dataEmpty').style.display='none';
+  document.getElementById('dataResults').innerHTML='';
+  document.getElementById('dataErrorBox').className='error-box';
+  document.getElementById('dataLoadingBox').className='loading-box active';
+  try{
+    const groups=await Promise.all([
+      checkMissingWeeks(),
+      checkOrphanOrderShops(),
+      checkRecentOrdersMissing(),
+      checkNegativeStock(),
+      checkPresence(),
+      checkConfigDocs()
+    ]);
+    const all=groups.flat();
+    renderDataResults(all);
+  }catch(e){
+    const box=document.getElementById('dataErrorBox');
+    box.textContent='Erreur : '+e.message;
+    box.className='error-box active';
+  }
+  document.getElementById('dataLoadingBox').className='loading-box';
+  btn.disabled=false;
+}
+
+function renderDataResults(findings){
+  const crit=findings.filter(f=>f.sev==='crit').length;
+  const warn=findings.filter(f=>f.sev==='warn').length;
+  const info=findings.filter(f=>f.sev==='info').length;
+  const ok=findings.filter(f=>f.sev==='ok').length;
+  let html=`<div class="summary-bar fade-in">
+    <div class="summary-cell"><div class="summary-num" style="color:var(--miss)">${crit}</div><div class="summary-lbl">Critique</div></div>
+    <div class="summary-cell"><div class="summary-num" style="color:var(--warn)">${warn}</div><div class="summary-lbl">Warning</div></div>
+    <div class="summary-cell"><div class="summary-num" style="color:var(--text-2)">${info}</div><div class="summary-lbl">Info</div></div>
+    <div class="summary-cell"><div class="summary-num" style="color:var(--ok)">${ok}</div><div class="summary-lbl">OK</div></div>
+  </div>`;
+  const order={crit:0,warn:1,info:2,ok:3};
+  findings.sort((a,b)=>order[a.sev]-order[b.sev]);
+  findings.forEach(f=>{ html+=cardHtml(f.sev,f.title,f.detail); });
+  document.getElementById('dataResults').innerHTML=html;
+}
+
+/* ============================================================
+   ONGLET 2 — AUDIT CODE SOURCE
+   ============================================================ */
+const AUDIT_FILES=[
+  'hiro_prod.html','hiro_access.html','hiro_order_dsm.html','hiro_order_mgt.html',
+  'hiro_order_paita.html','hiro_order_ville.html','hiro_labo.html','hiro_report.html',
+  'hiro_dock.html','hiro_planning_mgt.html'
+];
+const EXPECTED_MANIFEST={
+  'hiro_prod.html':'manifest.json','hiro_access.html':'manifest-access.json',
+  'hiro_order_dsm.html':'manifest-order-dsm.json','hiro_order_mgt.html':'manifest-order-mgt.json',
+  'hiro_order_paita.html':'manifest-order-paita.json','hiro_order_ville.html':'manifest-order-ville.json',
+  'hiro_labo.html':'manifest-labo.json','hiro_report.html':'manifest-report.json',
+  'hiro_dock.html':'manifest-dock.json','hiro_planning_mgt.html':null
+};
+
+function extract(re,text){ const m=text.match(re); return m?m[1]:null; }
+function extractAll(re,text){ const out=[]; let m; const r=new RegExp(re,'g'); while((m=r.exec(text))){ out.push(m[1]); } return out; }
+
+async function scanFile(filename){
+  const res=await fetch(filename);
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text=await res.text();
+  const project=extract(/_PROJECT\s*=\s*'([^']+)'/,text);
+  const key=extract(/_KEY\s*=\s*'([^']+)'/,text) || extract(/_KEY\s*=\s*"([^"]+)"/,text);
+  const pwdHash=extract(/_PWD\s*=\s*'([^']+)'/,text);
+  const manifest=extract(/<link rel="manifest" href="([^"]+)">/,text);
+  const swReg=extract(/serviceWorker\.register\('([^']+)'\)/,text);
+  const collections=[...new Set(extractAll(/documents\/([a-zA-Z0-9_-]+)[/'"?`]/,text))]
+    .filter(c=>!['(default)'].includes(c));
+  const crossLinks=[...new Set(extractAll(/(hiro_[a-z_]+\.html)/,text))].filter(f=>f!==filename);
+  const todoCount=(text.match(/TODO|FIXME/g)||[]).length;
+  return {filename,project,key,pwdHash,manifest,swReg,collections,crossLinks,todoCount,size:text.length};
+}
+
+async function runCodeAudit(){
+  const btn=document.getElementById('btnRunCode');
+  btn.disabled=true;
+  document.getElementById('codeEmpty').style.display='none';
+  document.getElementById('codeResults').innerHTML='';
+  document.getElementById('codeErrorBox').className='error-box';
+  document.getElementById('codeLoadingBox').className='loading-box active';
+  try{
+    const results=await Promise.allSettled(AUDIT_FILES.map(scanFile));
+    renderCodeResults(results);
+  }catch(e){
+    const box=document.getElementById('codeErrorBox');
+    box.textContent='Erreur : '+e.message;
+    box.className='error-box active';
+  }
+  document.getElementById('codeLoadingBox').className='loading-box';
+  btn.disabled=false;
+}
+
+function renderCodeResults(results){
+  const ok=[]; const failed=[];
+  results.forEach((r,i)=>{
+    if(r.status==='fulfilled') ok.push(r.value);
+    else failed.push({filename:AUDIT_FILES[i],error:r.reason.message});
+  });
+
+  let html='';
+
+  if(failed.length){
+    html+=cardHtml('info',`${failed.length} fichier(s) non accessible(s) via fetch()`,
+      failed.map(f=>`${f.filename} — ${f.error}`).join('\n')+
+      '\n\nNormal si cette page est ouverte en local (file://) — le scan fonctionne une fois déployé sur GitHub Pages.');
+  }
+  if(!ok.length){ document.getElementById('codeResults').innerHTML=html; return; }
+
+  // Cohérence config Firebase
+  const projects=[...new Set(ok.map(r=>r.project).filter(Boolean))];
+  const keys=[...new Set(ok.map(r=>r.key).filter(Boolean))];
+  if(projects.length<=1 && keys.length<=1){
+    html+=cardHtml('ok','Tous les fichiers scannés utilisent le même projectId et la même clé API Firebase');
+  }else{
+    html+=cardHtml('crit','Divergence de configuration Firebase détectée',
+      'projectId trouvés: '+projects.join(', ')+'\nclés trouvées: '+keys.map(k=>k.slice(0,12)+'…').join(', '));
+  }
+
+  // Manifest / SW manquants
+  const missingManifest=ok.filter(r=>EXPECTED_MANIFEST[r.filename] && !r.manifest);
+  const noManifestExpected=ok.filter(r=>EXPECTED_MANIFEST[r.filename]===null && !r.manifest);
+  const wrongManifest=ok.filter(r=>EXPECTED_MANIFEST[r.filename] && r.manifest && !r.manifest.endsWith(EXPECTED_MANIFEST[r.filename]));
+  const noSw=ok.filter(r=>!r.swReg);
+  if(missingManifest.length||wrongManifest.length){
+    html+=cardHtml('crit','Manifest incorrect ou absent',
+      [...missingManifest.map(r=>r.filename+' : aucun manifest référencé'),
+       ...wrongManifest.map(r=>r.filename+' : référence '+r.manifest+' au lieu de '+EXPECTED_MANIFEST[r.filename])].join('\n'));
+  }
+  if(noManifestExpected.length){
+    html+=cardHtml('warn','Fichier(s) sans manifest PWA (déjà connu, pas un fichier attendu)',
+      noManifestExpected.map(r=>r.filename).join('\n'));
+  }
+  if(noSw.length){
+    html+=cardHtml('warn',`${noSw.length} fichier(s) sans enregistrement de service worker`,noSw.map(r=>r.filename).join('\n'));
+  }
+  if(!missingManifest.length && !wrongManifest.length && !noManifestExpected.length && !noSw.length){
+    html+=cardHtml('ok','Manifest et service worker corrects sur tous les fichiers scannés');
+  }
+
+  // Mot de passe (hash DJB2 local)
+  const withPwd=ok.filter(r=>r.pwdHash);
+  const pwdGroups={};
+  withPwd.forEach(r=>{ (pwdGroups[r.pwdHash]=pwdGroups[r.pwdHash]||[]).push(r.filename); });
+  const pwdGroupCount=Object.keys(pwdGroups).length;
+  if(withPwd.length){
+    html+=cardHtml(pwdGroupCount>1?'warn':'info',
+      `${withPwd.length} fichier(s) avec un écran de login par hash local (_PWD)`,
+      Object.entries(pwdGroups).map(([h,files])=>h+' → '+files.join(', ')).join('\n'));
+  }
+
+  // Liens croisés
+  const withLinks=ok.filter(r=>r.crossLinks.length);
+  if(withLinks.length){
+    html+=cardHtml('info','Références croisées vers d\'autres fichiers hiro_*.html détectées',
+      withLinks.map(r=>r.filename+' → '+r.crossLinks.join(', ')).join('\n'));
+  }else{
+    html+=cardHtml('ok','Aucune référence croisée entre fichiers — interfaces indépendantes');
+  }
+
+  // TODO/FIXME
+  const withTodo=ok.filter(r=>r.todoCount>0);
+  if(withTodo.length){
+    html+=cardHtml('info','Marqueurs TODO/FIXME laissés dans le code',
+      withTodo.map(r=>r.filename+' : '+r.todoCount).join('\n'));
+  }
+
+  // Détail par fichier
+  html+='<div class="section-title"><span class="section-title-text">Détail par fichier</span><div class="section-title-line"></div></div>';
+  ok.forEach(r=>{
+    html+=`<div class="file-block fade-in">
+      <div class="file-block-title">${esc(r.filename)}</div>
+      <div class="file-row"><div class="file-row-lbl">Firebase</div><div class="file-row-val">${esc(r.project||'—')} / ${r.key?r.key.slice(0,10)+'…':'—'}</div></div>
+      <div class="file-row"><div class="file-row-lbl">Collections</div><div class="file-row-val">${r.collections.length?esc(r.collections.join(', ')):'—'}</div></div>
+      <div class="file-row"><div class="file-row-lbl">Manifest</div><div class="file-row-val"><span class="dot ${r.manifest?'ok':'miss'}"></span>${esc(r.manifest||'aucun')}</div></div>
+      <div class="file-row"><div class="file-row-lbl">Service Worker</div><div class="file-row-val"><span class="dot ${r.swReg?'ok':'miss'}"></span>${esc(r.swReg||'aucun')}</div></div>
+      <div class="file-row"><div class="file-row-lbl">Liens croisés</div><div class="file-row-val">${r.crossLinks.length?esc(r.crossLinks.join(', ')):'aucun'}</div></div>
+    </div>`;
+  });
+
+  document.getElementById('codeResults').innerHTML=html;
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/sw.js').catch(e=>console.log('SW:',e));
+}
+</script>
+</body>
+</html>

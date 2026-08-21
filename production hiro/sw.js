@@ -15,6 +15,7 @@ const PRECACHE_URLS = [
   BASE + 'hiro_report.html',
   BASE + 'hiro_dock.html',
   BASE + 'hiro_planning_mgt.html',
+  BASE + 'hiro_audit.html',
   BASE + 'logo.jpg',
 ];
 
