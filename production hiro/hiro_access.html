@@ -3056,6 +3056,18 @@ function laboRenderFiche(shop,order){
         +'</div>';
     });
     html+='</div>';
+    // Section Poke — Poke thon
+    var ASIA_POKE=[{key:'pokethon',name:'Poke thon'}];
+    html+='<div>'
+      +'<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:4px 8px;background:#faf9f6;border-bottom:1px solid var(--border);">Poke</div>';
+    ASIA_POKE.forEach(function(p){
+      var cur=asiaOrder[p.key]||0;
+      html+='<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;">'
+        +'<input type="number" min="0" value="'+cur+'" onchange="laboPatchQty(\'asia\',\''+p.key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+        +'<div style="font-size:12px;font-weight:500;flex:1;">'+p.name+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
     // Champ ajout article libre
     html+='<div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;">'
       +'<input id="addqty-asia" type="number" min="0" placeholder="Qté" style="width:64px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-weight:700;text-align:center;">'
