@@ -3626,6 +3626,28 @@ function _laboRenderCore(el){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">'        +'<div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Pokés</div>'        +pokeSection+'</div>';
     }
 
+    // ── Récap Pokés classé par type (thon / saumon) ──
+    var pokeByType={pokethon:[],pokesaumon:[]};
+    var pokeTotals={pokethon:0,pokesaumon:0};
+    LABO_SHOPS.forEach(function(s){
+      var o=laboOrders[s];
+      if(!o) return;
+      var pt=o.pokethon!==undefined?parseInt(o.pokethon)||0:0;
+      var ps=o.pokesaumon!==undefined?parseInt(o.pokesaumon)||0:0;
+      if(pt>0){pokeByType.pokethon.push(LABO_LABELS[s]+' ×'+pt);pokeTotals.pokethon+=pt;}
+      if(ps>0){pokeByType.pokesaumon.push(LABO_LABELS[s]+' ×'+ps);pokeTotals.pokesaumon+=ps;}
+    });
+    var pokeRecapSection='';
+    if(pokeTotals.pokethon>0){
+      pokeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--dsm);min-width:70px;">Thon ('+pokeTotals.pokethon+')</div><div style="font-size:12px;color:var(--text);">'+pokeByType.pokethon.join(' · ')+'</div></div>';
+    }
+    if(pokeTotals.pokesaumon>0){
+      pokeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--mgt);min-width:70px;">Saumon ('+pokeTotals.pokesaumon+')</div><div style="font-size:12px;color:var(--text);">'+pokeByType.pokesaumon.join(' · ')+'</div></div>';
+    }
+    if(pokeRecapSection){
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap par type</div>'+pokeRecapSection+'</div>';
+    }
+
     el.innerHTML=cards;
   }else if(laboCurrentShop==='rie'){
     el.innerHTML=laboRenderFicheRie();
