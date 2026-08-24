@@ -71,12 +71,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .rr-card.total{border-color:var(--border-s);background:#faf9f6;}
 .rr-head{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;border-bottom:1px solid var(--border);}
 .rr-shop{font-size:15px;font-weight:700;}
-.rr-body{display:grid;grid-template-columns:repeat(3,1fr);}
-.rr-cell{padding:12px 8px;border-right:1px solid var(--border);text-align:center;}
+.rr-body{display:grid;grid-template-columns:repeat(5,1fr);}
+.rr-cell{padding:10px 4px;border-right:1px solid var(--border);text-align:center;}
 .rr-cell:last-child{border-right:none;}
-.rr-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
-.rr-val{font-size:24px;font-weight:700;font-family:'DM Mono',monospace;}
-.rr-val.dim{color:var(--hint);font-size:16px;font-weight:400;}
+.rr-label{font-size:8px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin-bottom:4px;}
+.rr-val{font-size:19px;font-weight:700;font-family:'DM Mono',monospace;}
+.rr-val.dim{color:var(--hint);font-size:14px;font-weight:400;}
 .rr-sub{font-size:10px;color:var(--hint);margin-top:2px;}
 .dim-banner{background:#fef3e2;border:1px solid #e6c070;border-radius:var(--r);padding:10px 14px;margin-bottom:10px;font-size:13px;color:#7a4f00;}
 body.dark{--bg:#111111;--surface:#1a1a1a;--border:#2a2a2a;--border-s:#3a3a3a;--text:#f0ede8;--muted:#888;--hint:#555;}
@@ -390,13 +390,16 @@ function renderRizRoll(){
   var html = '';
   if(isDim) html += '<div class="dim-banner">&#128204; Dimanche — pas de rolls</div>';
 
-  var totalRiz=0, totalRolls=0;
+  var totalRiz=0, totalRolls=0, totalPokeThon=0, totalPokeSaumon=0;
   var allShops=['dsm','mgt','paita','ville','asia'];
   allShops.forEach(function(s){
     var riz  = getRiz(s);
     var rolls= getRoll(s);
     var bacs = riz>0 ? Math.round(riz/250*10)/10 : 0;
-    totalRiz+=riz; totalRolls+=rolls;
+    var order = ordersData[s];
+    var pokeThon   = getVal(order,'pokethon');
+    var pokeSaumon = getVal(order,'pokesaumon');
+    totalRiz+=riz; totalRolls+=rolls; totalPokeThon+=pokeThon; totalPokeSaumon+=pokeSaumon;
     var color=COLORS[s], label=LABELS[s];
     html += '<div class="rr-card">'+
       '<div class="rr-head">'+
@@ -412,6 +415,8 @@ function renderRizRoll(){
             : '<div class="rr-val'+(rolls===0?' dim':'')+'">'+( rolls||'—')+'</div>'
           )+
         '</div>'+
+        '<div class="rr-cell"><div class="rr-label">Poke thon</div><div class="rr-val'+(pokeThon===0?' dim':'')+'">'+( pokeThon||'—')+'</div></div>'+
+        '<div class="rr-cell"><div class="rr-label">Poke saumon</div><div class="rr-val'+(pokeSaumon===0?' dim':'')+'">'+( pokeSaumon||'—')+'</div></div>'+
       '</div></div>';
   });
 
@@ -422,6 +427,8 @@ function renderRizRoll(){
       '<div class="rr-cell"><div class="rr-label">Riz total</div><div class="rr-val'+(totalRiz===0?' dim':'')+'">'+( totalRiz||'—')+'</div></div>'+
       '<div class="rr-cell"><div class="rr-label">Bacs total</div><div class="rr-val'+(totBacs===0?' dim':'')+'">'+( totBacs||'—')+'</div></div>'+
       '<div class="rr-cell"><div class="rr-label">Rolls total</div><div class="rr-val'+(totalRolls===0?' dim':'')+'">'+( totalRolls||'—')+'</div></div>'+
+      '<div class="rr-cell"><div class="rr-label">Poke thon tot.</div><div class="rr-val'+(totalPokeThon===0?' dim':'')+'">'+( totalPokeThon||'—')+'</div></div>'+
+      '<div class="rr-cell"><div class="rr-label">Poke saumon tot.</div><div class="rr-val'+(totalPokeSaumon===0?' dim':'')+'">'+( totalPokeSaumon||'—')+'</div></div>'+
     '</div></div>';
   el.innerHTML = html;
 }
@@ -453,7 +460,7 @@ async function fetchFishData(){
 }
 async function fetchOrders(){
   var dStr=ds(currentDate);
-  var shops=['dsm','mgt','paita','ville'];
+  var shops=['dsm','mgt','paita','ville','asia'];
   await Promise.all(shops.map(async function(s){
     try{
       var res=await fetch(_API+'/hiro-orders/order_'+dStr+'_'+s+'?key='+_KEY);
