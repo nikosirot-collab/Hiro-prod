@@ -1721,7 +1721,10 @@ function renderNuisiblesRO(d){
   if(d.entries.length===0){
     html+='<tr><td colspan="'+NUIS_COLS.length+'" style="padding:16px;text-align:center;color:var(--text-muted);">Aucune entrée</td></tr>';
   } else {
-    d.entries.forEach(function(e){
+    d.entries.slice().sort(function(a,b){
+      var ka=(a.date||'')+' '+(a.heure||''), kb=(b.date||'')+' '+(b.heure||'');
+      return ka<kb?-1:(ka>kb?1:0);
+    }).forEach(function(e){
       html+='<tr>';
       NUIS_COLS.forEach(function(c){ html+='<td style="padding:6px 8px;">'+esc(e[c.key]||'')+'</td>'; });
       html+='</tr>';

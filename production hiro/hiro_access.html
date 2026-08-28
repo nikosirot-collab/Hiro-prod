@@ -4285,7 +4285,10 @@ function renderNuisiblesAsiaRO(d){
   if(d.entries.length===0){
     html+='<tr><td colspan="'+NUIS_COLS.length+'" style="padding:16px;text-align:center;color:var(--muted);">Aucune entrée</td></tr>';
   } else {
-    d.entries.forEach(function(e,i){
+    d.entries.slice().sort(function(a,b){
+      var ka=(a.date||'')+' '+(a.heure||''), kb=(b.date||'')+' '+(b.heure||'');
+      return ka<kb?-1:(ka>kb?1:0);
+    }).forEach(function(e,i){
       html+='<tr style="background:'+(i%2===1?'rgba(0,0,0,0.03)':'transparent')+';">';
       NUIS_COLS.forEach(function(c){ html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);">'+esc(e[c.key]||'')+'</td>'; });
       html+='</tr>';

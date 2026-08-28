@@ -3118,6 +3118,8 @@ function _nuisEmpty(){ return {etablissement:'',responsable:'',adresse:'',presta
 
 function _nuisEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 
+function _nuisSortKey(e){ return (e.date||'')+' '+(e.heure||''); }
+
 function _nuisRenderTabs(){
   var el=document.getElementById('nuis-shop-tabs');
   if(!el)return;
@@ -3207,8 +3209,13 @@ function renderNuisibles(){
   if(d.entries.length===0){
     html+='<tr><td colspan="'+(NUIS_COLS.length+1)+'" style="padding:16px;text-align:center;color:var(--text-muted);">Aucune entrée</td></tr>';
   } else {
-    d.entries.forEach(function(e,i){
-      html+='<tr style="background:'+(i%2===1?'rgba(0,0,0,0.03)':'transparent')+';">';
+    var sortedEntries=d.entries.map(function(e,i){return {e:e,i:i};}).sort(function(a,b){
+      var ka=_nuisSortKey(a.e), kb=_nuisSortKey(b.e);
+      return ka<kb?-1:(ka>kb?1:0);
+    });
+    sortedEntries.forEach(function(pair,row){
+      var e=pair.e, i=pair.i;
+      html+='<tr style="background:'+(row%2===1?'rgba(0,0,0,0.03)':'transparent')+';">';
       NUIS_COLS.forEach(function(c){ html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+_nuisEsc(e[c.key])+'</td>'; });
       html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;">'
         +'<button onclick="nuisEditEntry('+i+')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Modifier">✏️</button>'
@@ -3282,7 +3289,10 @@ function printNuisibles(){
   var slug=_nuisCurrentSlug;
   var d=_nuisData[slug]||_nuisEmpty();
   var shop=NUIS_SHOPS.filter(function(s){return s.slug===slug;})[0]||{label:slug};
-  var rows=(d.entries||[]).map(function(e,i){
+  var rows=(d.entries||[]).slice().sort(function(a,b){
+    var ka=_nuisSortKey(a), kb=_nuisSortKey(b);
+    return ka<kb?-1:(ka>kb?1:0);
+  }).map(function(e,i){
     return '<tr style="background:'+(i%2===1?'#eaf2fb':'#fff')+';">'
       +NUIS_COLS.map(function(c){return '<td>'+_nuisEsc(e[c.key])+'</td>';}).join('')
       +'</tr>';
