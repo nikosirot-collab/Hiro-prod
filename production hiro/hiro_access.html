@@ -356,6 +356,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('nem-recap',this);loadNemRecap()">Nems / Sésame</div>
   <div class="nav-tab" onclick="showPage('historique',this)">Historique</div>
   <div class="nav-tab" onclick="showPage('cmd-histo',this);loadCmdHisto()">Histo. commandes</div>
+  <div class="nav-tab" onclick="showPage('nuisibles-asia',this);loadNuisiblesAsiaRO()">Nuisible Asia</div>
 </nav>
 
 <div class="week-bar">
@@ -558,6 +559,12 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         <div class="labo-tab" onclick="laboShowShop('rie',this)" style="padding:8px 14px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;">Rie</div>
       </div>
       <div id="labo-content"></div>
+    </div>
+  </div>
+
+  <div id="page-nuisibles-asia" class="page">
+    <div style="padding:1rem;">
+      <div id="nuisibles-asia-content"><div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div></div>
     </div>
   </div>
 
@@ -4228,6 +4235,65 @@ async function saveToChrCatalog(names,shop){
   }catch(e){}
 }
 loadChrCatalog();
+
+// ── Registre nuisibles Asia (lecture seule) ──
+const NUIS_ASIA_SLUG='asia-take-away';
+const _NUIS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-nuisibles';
+var NUIS_FIELDS=[
+  {key:'etablissement',label:'Établissement'},{key:'responsable',label:'Responsable'},
+  {key:'adresse',label:'Adresse'},{key:'prestataire',label:'Prestataire'},
+  {key:'frequencePrevue',label:'Fréquence prévue'}
+];
+var NUIS_COLS=[
+  {key:'date',label:'Date'},{key:'heure',label:'Heure'},{key:'zoneTraitee',label:'Zone traitée'},
+  {key:'traitementAction',label:'Traitement / Action'},{key:'produitMethode',label:'Produit / Méthode'},
+  {key:'quantiteDosage',label:'Quantité / Dosage'},{key:'technicien',label:'Technicien'},
+  {key:'actionCorrective',label:'Action corrective'}
+];
+async function loadNuisiblesAsiaRO(){
+  var el=document.getElementById('nuisibles-asia-content');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Chargement...</div>';
+  try{
+    var res=await fetch(_NUIS_API+'/'+NUIS_ASIA_SLUG+'?key='+_KEY);
+    if(!res.ok){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Aucune donnée pour le moment</div>';return;}
+    var json=await res.json();
+    var d={etablissement:'',responsable:'',adresse:'',prestataire:'',frequencePrevue:'',entries:[]};
+    if(json.fields){
+      NUIS_FIELDS.forEach(function(f){ d[f.key]=(json.fields[f.key]&&json.fields[f.key].stringValue)||''; });
+      if(json.fields.entries&&json.fields.entries.stringValue){
+        try{ d.entries=JSON.parse(json.fields.entries.stringValue)||[]; }catch(e){ d.entries=[]; }
+      }
+    }
+    renderNuisiblesAsiaRO(d);
+  }catch(e){el.innerHTML='<div style="text-align:center;color:var(--muted);padding:2rem;font-size:13px;">Erreur de chargement</div>';}
+}
+function renderNuisiblesAsiaRO(d){
+  var el=document.getElementById('nuisibles-asia-content');
+  if(!el)return;
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
+    +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;">Informations établissement</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">';
+  NUIS_FIELDS.forEach(function(f){
+    html+='<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:3px;">'+f.label+'</div><div style="font-size:13px;color:var(--text);">'+(esc(d[f.key])||'—')+'</div></div>';
+  });
+  html+='</div></div>';
+  html+='<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px;"><thead><tr style="background:var(--surface);">';
+  NUIS_COLS.forEach(function(c){ html+='<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">'+c.label+'</th>'; });
+  html+='</tr></thead><tbody>';
+  if(d.entries.length===0){
+    html+='<tr><td colspan="'+NUIS_COLS.length+'" style="padding:16px;text-align:center;color:var(--muted);">Aucune entrée</td></tr>';
+  } else {
+    d.entries.forEach(function(e,i){
+      html+='<tr style="background:'+(i%2===1?'rgba(0,0,0,0.03)':'transparent')+';">';
+      NUIS_COLS.forEach(function(c){ html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);">'+esc(e[c.key]||'')+'</td>'; });
+      html+='</tr>';
+    });
+  }
+  html+='</tbody></table></div>';
+  el.innerHTML=html;
+}
 </script>
 
 </body>

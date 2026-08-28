@@ -271,6 +271,7 @@ loadJoursOff();
   <div class="nav-tab" onclick="showPage('riz',this);loadRizSemaine()">Riz semaine</div>
   <div class="nav-tab" onclick="showPage('recap',this);loadRecap()">Récap</div>
   <div class="nav-tab" onclick="showPage('histo',this);loadHistorique()">Historique</div>
+  <div class="nav-tab" onclick="showPage('nuisibles',this);loadNuisiblesRO()">Registre nuisibles</div>
   
 </nav>
 <div id="page-salade" class="page active"><div class="main"><div class="section"><div class="section-header"><span class="section-title">Salade</span></div><div class="tbl-wrap"><table><thead><tr><th style="text-align:left;padding-left:12px">Produit</th><th>Quantité</th></tr></thead><tbody><tr><td class="td-product">Bun Bò</td><td class="td-qty"><div class="qty-wrap"><button class="qty-btn" onclick="adj('bo',-1)">&#8722;</button><input class="qty-inp" id="q-bo" type="number" min="0" value="0" onchange="setQ('bo',this.value)"><button class="qty-btn" onclick="adj('bo',1)">+</button></div></td></tr>
@@ -328,6 +329,9 @@ loadJoursOff();
     <button onclick="histoChangeWeek(1)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;color:var(--text);">→</button>
   </div>
   <div id="histo-content"><div class="histo-loading">Chargement...</div></div>
+</div></div>
+<div id="page-nuisibles" class="page"><div class="main" style="padding-top:12px;">
+  <div id="nuisibles-ro-content"><div class="histo-loading">Chargement...</div></div>
 </div></div>
 <div class="bottom-bar">
   <button class="btn-reset" onclick="resetAll()">Effacer</button>
@@ -1660,6 +1664,65 @@ async function saveToTarteCatalog(names){
   }catch(e){}
 }
 var _tarteCatalogReady=loadTarteCatalog();
+
+// ── Registre nuisibles (lecture seule) ──
+const NUIS_SLUG='hiro-dsm';
+const _NUIS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-nuisibles';
+var NUIS_FIELDS=[
+  {key:'etablissement',label:'Établissement'},{key:'responsable',label:'Responsable'},
+  {key:'adresse',label:'Adresse'},{key:'prestataire',label:'Prestataire'},
+  {key:'frequencePrevue',label:'Fréquence prévue'}
+];
+var NUIS_COLS=[
+  {key:'date',label:'Date'},{key:'heure',label:'Heure'},{key:'zoneTraitee',label:'Zone traitée'},
+  {key:'traitementAction',label:'Traitement / Action'},{key:'produitMethode',label:'Produit / Méthode'},
+  {key:'quantiteDosage',label:'Quantité / Dosage'},{key:'technicien',label:'Technicien'},
+  {key:'actionCorrective',label:'Action corrective'}
+];
+async function loadNuisiblesRO(){
+  var el=document.getElementById('nuisibles-ro-content');
+  if(!el)return;
+  el.innerHTML='<div class="histo-loading">Chargement...</div>';
+  try{
+    var res=await fetch(_NUIS_API+'/'+NUIS_SLUG+'?key='+_KEY);
+    if(!res.ok){el.innerHTML='<div class="histo-loading">Aucune donnée pour le moment</div>';return;}
+    var json=await res.json();
+    var d={etablissement:'',responsable:'',adresse:'',prestataire:'',frequencePrevue:'',entries:[]};
+    if(json.fields){
+      NUIS_FIELDS.forEach(function(f){ d[f.key]=(json.fields[f.key]&&json.fields[f.key].stringValue)||''; });
+      if(json.fields.entries&&json.fields.entries.stringValue){
+        try{ d.entries=JSON.parse(json.fields.entries.stringValue)||[]; }catch(e){ d.entries=[]; }
+      }
+    }
+    renderNuisiblesRO(d);
+  }catch(e){el.innerHTML='<div class="histo-loading">Erreur de chargement</div>';}
+}
+function renderNuisiblesRO(d){
+  var el=document.getElementById('nuisibles-ro-content');
+  if(!el)return;
+  var html='<div class="section" style="margin-bottom:14px;">'
+    +'<div class="section-header"><span class="section-title">Informations établissement</span></div>'
+    +'<div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;">';
+  NUIS_FIELDS.forEach(function(f){
+    html+='<div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:3px;">'+f.label+'</div><div style="font-size:13px;">'+(esc(d[f.key])||'—')+'</div></div>';
+  });
+  html+='</div></div>';
+  html+='<div class="section"><div class="section-header"><span class="section-title">Interventions</span></div>'
+    +'<div class="tbl-wrap"><table><thead><tr>';
+  NUIS_COLS.forEach(function(c){ html+='<th style="text-align:left;padding-left:8px;">'+c.label+'</th>'; });
+  html+='</tr></thead><tbody>';
+  if(d.entries.length===0){
+    html+='<tr><td colspan="'+NUIS_COLS.length+'" style="padding:16px;text-align:center;color:var(--text-muted);">Aucune entrée</td></tr>';
+  } else {
+    d.entries.forEach(function(e){
+      html+='<tr>';
+      NUIS_COLS.forEach(function(c){ html+='<td style="padding:6px 8px;">'+esc(e[c.key]||'')+'</td>'; });
+      html+='</tr>';
+    });
+  }
+  html+='</tbody></table></div></div>';
+  el.innerHTML=html;
+}
 </script>
 
 </body>

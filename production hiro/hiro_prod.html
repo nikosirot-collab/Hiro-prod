@@ -401,6 +401,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
   <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
   <div class="nav-tab" onclick="showPage('recette',this)">Recette</div>
+  <div class="nav-tab" onclick="showPage('nuisibles',this);loadNuisibles()">Nuisibles</div>
 </nav>
 
 <div class="main">
@@ -801,6 +802,17 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         </div>
         <div id="rolls-compo-table"></div>
       </div>
+    </div>
+  </div>
+
+  <div id="page-nuisibles" class="page">
+    <div class="section">
+      <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+        <span class="section-title">Registre nuisibles</span>
+        <button onclick="printNuisibles()" style="padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:none;font-size:12px;cursor:pointer;font-weight:600;">🖨 Imprimer</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="nuis-shop-tabs"></div>
+      <div id="nuisibles-content">Chargement...</div>
     </div>
   </div>
 </div>
@@ -3069,6 +3081,239 @@ async function saveJoursOff(){
       body:JSON.stringify({fields:fields})
     });
   }catch(e){}
+}
+
+
+// ── Registre Nuisibles ──
+var _NUIS_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-nuisibles';
+var NUIS_SHOPS=[
+  {slug:'hiro-dsm',       label:'DSM',             color:'#1a5fa8'},
+  {slug:'hiro-magenta',   label:'Magenta',         color:'#0d7a52'},
+  {slug:'hiro-paita',     label:'Paita',           color:'#b84a1a'},
+  {slug:'hiro-ville',     label:'Ville',           color:'#7a3db8'},
+  {slug:'asia-take-away', label:'Asia Take Away',  color:'#c8860a'}
+];
+var NUIS_FIELDS=[
+  {key:'etablissement',   label:'Établissement'},
+  {key:'responsable',     label:'Responsable'},
+  {key:'adresse',         label:'Adresse'},
+  {key:'prestataire',     label:'Prestataire'},
+  {key:'frequencePrevue', label:'Fréquence prévue'}
+];
+var NUIS_COLS=[
+  {key:'date',             label:'Date'},
+  {key:'heure',            label:'Heure'},
+  {key:'zoneTraitee',      label:'Zone traitée'},
+  {key:'traitementAction', label:'Traitement / Action'},
+  {key:'produitMethode',   label:'Produit / Méthode'},
+  {key:'quantiteDosage',   label:'Quantité / Dosage'},
+  {key:'technicien',       label:'Technicien'},
+  {key:'actionCorrective', label:'Action corrective'}
+];
+var _nuisCurrentSlug=NUIS_SHOPS[0].slug;
+var _nuisData={};
+var _nuisEditIdx=-1;
+
+function _nuisEmpty(){ return {etablissement:'',responsable:'',adresse:'',prestataire:'',frequencePrevue:'',entries:[]}; }
+
+function _nuisEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function _nuisRenderTabs(){
+  var el=document.getElementById('nuis-shop-tabs');
+  if(!el)return;
+  el.innerHTML=NUIS_SHOPS.map(function(s){
+    var active=s.slug===_nuisCurrentSlug;
+    return '<button onclick="nuisSetShop(\''+s.slug+'\')" style="padding:6px 14px;border-radius:20px;border:1px solid '+s.color+';background:'+(active?s.color:'none')+';color:'+(active?'#fff':s.color)+';font-size:12px;cursor:pointer;font-weight:600;font-family:\'DM Sans\',sans-serif;">'+s.label+'</button>';
+  }).join('');
+}
+
+function nuisSetShop(slug){
+  _nuisCurrentSlug=slug;
+  _nuisEditIdx=-1;
+  _nuisRenderTabs();
+  loadNuisibles();
+}
+
+async function loadNuisibles(){
+  _nuisRenderTabs();
+  var el=document.getElementById('nuisibles-content');
+  if(!el)return;
+  el.innerHTML='Chargement...';
+  var slug=_nuisCurrentSlug;
+  try{
+    var res=await fetch(_NUIS_API+'/'+slug+'?key='+_KEY);
+    if(res.ok){
+      var j=await res.json();
+      var d=_nuisEmpty();
+      if(j.fields){
+        NUIS_FIELDS.forEach(function(f){ d[f.key]=(j.fields[f.key]&&j.fields[f.key].stringValue)||''; });
+        if(j.fields.entries&&j.fields.entries.stringValue){
+          try{ d.entries=JSON.parse(j.fields.entries.stringValue)||[]; }catch(e){ d.entries=[]; }
+        }
+      }
+      _nuisData[slug]=d;
+    } else {
+      _nuisData[slug]=_nuisEmpty();
+    }
+  }catch(e){
+    _nuisData[slug]=_nuisData[slug]||_nuisEmpty();
+  }
+  renderNuisibles();
+}
+
+function _nuisFormHtml(d){
+  var editing=_nuisEditIdx>=0;
+  var e=editing?d.entries[_nuisEditIdx]:{};
+  var today=new Date().toISOString().slice(0,10);
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
+    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">'+(editing?'Modifier l\'entrée':'Ajouter une entrée')+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px;">'
+    +'<input id="nuis-f-date" type="date" value="'+(e.date||today)+'" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);">'
+    +'<input id="nuis-f-heure" type="time" value="'+(e.heure||'')+'" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);">';
+  [['zoneTraitee','Zone traitée'],['traitementAction','Traitement / Action'],['produitMethode','Produit / Méthode'],['quantiteDosage','Quantité / Dosage'],['technicien','Technicien'],['actionCorrective','Action corrective']].forEach(function(p){
+    html+='<input id="nuis-f-'+p[0]+'" placeholder="'+p[1]+'" value="'+_nuisEsc(e[p[0]])+'" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);">';
+  });
+  html+='</div><div style="display:flex;gap:8px;">'
+    +'<button onclick="nuisSubmitEntry()" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">'+(editing?'Enregistrer':'+ Ajouter')+'</button>';
+  if(editing) html+='<button onclick="nuisCancelEdit()" style="padding:9px 18px;background:none;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;">Annuler</button>';
+  html+='</div></div>';
+  return html;
+}
+
+function renderNuisibles(){
+  var el=document.getElementById('nuisibles-content');
+  if(!el)return;
+  var slug=_nuisCurrentSlug;
+  var d=_nuisData[slug]||_nuisEmpty();
+
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
+    +'<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:12px;">Informations établissement</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
+  NUIS_FIELDS.forEach(function(f){
+    html+='<div>'
+      +'<label style="display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px;">'+f.label+'</label>'
+      +'<input value="'+_nuisEsc(d[f.key])+'" onchange="nuisSaveField(\''+f.key+'\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--bg);color:var(--text);font-family:\'DM Sans\',sans-serif;">'
+      +'</div>';
+  });
+  html+='</div></div>';
+
+  html+=_nuisFormHtml(d);
+
+  html+='<div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">'
+    +'<thead><tr style="background:var(--surface);">';
+  NUIS_COLS.forEach(function(c){ html+='<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);">'+c.label+'</th>'; });
+  html+='<th style="padding:8px 10px;border-bottom:1px solid var(--border);"></th></tr></thead><tbody>';
+  if(d.entries.length===0){
+    html+='<tr><td colspan="'+(NUIS_COLS.length+1)+'" style="padding:16px;text-align:center;color:var(--text-muted);">Aucune entrée</td></tr>';
+  } else {
+    d.entries.forEach(function(e,i){
+      html+='<tr style="background:'+(i%2===1?'rgba(0,0,0,0.03)':'transparent')+';">';
+      NUIS_COLS.forEach(function(c){ html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);">'+_nuisEsc(e[c.key])+'</td>'; });
+      html+='<td style="padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;">'
+        +'<button onclick="nuisEditEntry('+i+')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;" title="Modifier">✏️</button>'
+        +'<button onclick="nuisDeleteEntry('+i+')" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:#c0392b;" title="Supprimer">🗑</button>'
+        +'</td></tr>';
+    });
+  }
+  html+='</tbody></table></div>';
+
+  el.innerHTML=html;
+}
+
+function nuisEditEntry(i){ _nuisEditIdx=i; renderNuisibles(); }
+function nuisCancelEdit(){ _nuisEditIdx=-1; renderNuisibles(); }
+
+async function nuisSubmitEntry(){
+  var slug=_nuisCurrentSlug;
+  var d=_nuisData[slug];
+  var entry={
+    date: document.getElementById('nuis-f-date').value,
+    heure: document.getElementById('nuis-f-heure').value,
+    zoneTraitee: document.getElementById('nuis-f-zoneTraitee').value,
+    traitementAction: document.getElementById('nuis-f-traitementAction').value,
+    produitMethode: document.getElementById('nuis-f-produitMethode').value,
+    quantiteDosage: document.getElementById('nuis-f-quantiteDosage').value,
+    technicien: document.getElementById('nuis-f-technicien').value,
+    actionCorrective: document.getElementById('nuis-f-actionCorrective').value
+  };
+  if(_nuisEditIdx>=0){ d.entries[_nuisEditIdx]=entry; _nuisEditIdx=-1; }
+  else { d.entries.push(entry); }
+  await nuisSaveEntries();
+  renderNuisibles();
+}
+
+async function nuisDeleteEntry(i){
+  if(!confirm('Supprimer cette entrée ?'))return;
+  var d=_nuisData[_nuisCurrentSlug];
+  d.entries.splice(i,1);
+  if(_nuisEditIdx===i)_nuisEditIdx=-1;
+  await nuisSaveEntries();
+  renderNuisibles();
+}
+
+async function nuisSaveEntries(){
+  var slug=_nuisCurrentSlug;
+  var d=_nuisData[slug];
+  try{
+    await fetch(_NUIS_API+'/'+slug+'?key='+_KEY+'&updateMask.fieldPaths=entries',{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{entries:{stringValue:JSON.stringify(d.entries)}}})
+    });
+  }catch(e){}
+}
+
+async function nuisSaveField(key,value){
+  var slug=_nuisCurrentSlug;
+  _nuisData[slug][key]=value;
+  var fields={};
+  fields[key]={stringValue:value};
+  try{
+    await fetch(_NUIS_API+'/'+slug+'?key='+_KEY+'&updateMask.fieldPaths='+key,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+  }catch(e){}
+}
+
+function printNuisibles(){
+  var slug=_nuisCurrentSlug;
+  var d=_nuisData[slug]||_nuisEmpty();
+  var shop=NUIS_SHOPS.filter(function(s){return s.slug===slug;})[0]||{label:slug};
+  var rows=(d.entries||[]).map(function(e,i){
+    return '<tr style="background:'+(i%2===1?'#eaf2fb':'#fff')+';">'
+      +NUIS_COLS.map(function(c){return '<td>'+_nuisEsc(e[c.key])+'</td>';}).join('')
+      +'</tr>';
+  }).join('');
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Registre nuisibles — '+shop.label+'</title><style>'
+    +'@page{size:A4 portrait;margin:12mm;}'
+    +'body{font-family:Arial,sans-serif;font-size:11px;color:#1a1916;margin:0;}'
+    +'.band{background:#8B1E1E;color:#fff;padding:14px 18px;border-radius:4px;margin-bottom:14px;}'
+    +'.band h1{font-size:16px;margin:0 0 4px;}'
+    +'.band div{font-size:11px;opacity:.9;}'
+    +'.info{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:16px;font-size:11px;}'
+    +'.info b{display:inline-block;min-width:110px;}'
+    +'table{width:100%;border-collapse:collapse;}'
+    +'th,td{border:1px solid #ccc;padding:5px 6px;text-align:left;font-size:10px;}'
+    +'th{background:#8B1E1E;color:#fff;}'
+    +'</style></head><body>'
+    +'<div class="band"><h1>Registre nuisibles — '+shop.label+'</h1><div>Édité le '+new Date().toLocaleDateString('fr-FR')+'</div></div>'
+    +'<div class="info">'
+    +'<div><b>Établissement :</b> '+_nuisEsc(d.etablissement)+'</div>'
+    +'<div><b>Responsable :</b> '+_nuisEsc(d.responsable)+'</div>'
+    +'<div><b>Adresse :</b> '+_nuisEsc(d.adresse)+'</div>'
+    +'<div><b>Prestataire :</b> '+_nuisEsc(d.prestataire)+'</div>'
+    +'<div><b>Fréquence prévue :</b> '+_nuisEsc(d.frequencePrevue)+'</div>'
+    +'</div>'
+    +'<table><thead><tr>'+NUIS_COLS.map(function(c){return '<th>'+c.label+'</th>';}).join('')+'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'<script>window.onload=function(){window.print();}<\/script>'
+    +'</body></html>';
+  var w=window.open('','_blank');
+  if(!w)return;
+  w.document.write(html);
+  w.document.close();
 }
 
 
