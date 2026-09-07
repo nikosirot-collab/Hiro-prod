@@ -950,12 +950,13 @@ async function _fbSaveAll(docId) {
       else fields[ek]={stringValue:String(v)};
     });
     fields['init']={stringValue:'true'};
+    const mask=Object.keys(fields).map(k=>'updateMask.fieldPaths='+encodeURIComponent('`'+k+'`')).join('&');
     const checkRes=await _fbFetch(`${_API}/${docId}?key=${_KEY}`);
     if(checkRes.status===429){_setStatus(false,429);return;}
     if(!checkRes.ok){
       await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{init:{stringValue:'true'}}})});
     }
-    const res=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
+    const res=await fetch(`${url}&${mask}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
     if(res.status===429){_setStatus(false,429);return;}
     _setStatus(res.ok);
   } catch(e){ _setStatus(false); }
