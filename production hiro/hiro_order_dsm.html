@@ -1465,6 +1465,11 @@ function renderRizSemaine(monday){
     html+=`<tr style="${bg}${_isOff?'opacity:0.5;':''}">
       <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}${offBadge}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
       <td style="padding:6px 8px;text-align:center;">
+        ${isLocked?`
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <span style="font-size:15px;font-weight:700;font-family:monospace;${val>0?'color:'+ACCENT+';':'color:var(--text-muted);'}">${val||'—'}</span>
+          <span style="font-size:9px;color:#c0392b;font-weight:600;line-height:1.2;">🔒 Contacter Asia pour<br>modification hors délai</span>
+        </div>`:`
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
           <button onclick="adjRiz('${dStr}',${val},-250)" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">−</button>
           <input type="number" min="0" step="250" value="${val||''}" placeholder="0"
@@ -1472,7 +1477,7 @@ function renderRizSemaine(monday){
             onchange="setRizSemaine('${dStr}',this.value)"
             id="riz-inp-${dStr}">
           <button onclick="adjRiz('${dStr}',${val},250)" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:16px;">+</button>
-        </div>
+        </div>`}
       </td>
       <td style="padding:6px 8px;text-align:center;">
         ${isDim?'<span style="color:var(--text-muted);font-size:12px;">—</span>':isLocked?`
@@ -1497,6 +1502,7 @@ function renderRizSemaine(monday){
 }
 
 function adjRiz(dStr,current,delta){
+  if(isRollLocked(dStr))return;
   const newVal=Math.max(0,(current||0)+delta);
   setRizSemaine(dStr,newVal);
 }
@@ -1560,6 +1566,7 @@ async function setRollSemaine(dStr,val){
   }
 }
 async function setRizSemaine(dStr,val){
+  if(isRollLocked(dStr)){renderRizSemaine(mondayOfOff(_rizWeekOff));return;}
   const v=Math.max(0,parseInt(val)||0);
   const monday=mondayOfOff(_rizWeekOff);
   const docId='week_'+dsRiz(monday);
