@@ -230,6 +230,8 @@ body {
 .section { margin-bottom: 1.5rem; }
 .recette-grid { display:grid; grid-template-columns:1fr; align-items:start; }
 @media(min-width:768px){ .recette-grid { grid-template-columns:1fr 1fr; gap:2rem; } }
+.suzumo-grid { display:grid; grid-template-columns:1fr; gap:14px; }
+@media(min-width:768px){ .suzumo-grid { grid-template-columns:1fr 1fr; } }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 8px;
@@ -803,6 +805,56 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         <div id="rolls-compo-table"></div>
       </div>
     </div>
+    <div class="section" style="margin-top:1.5rem;">
+      <div class="section-header">
+        <span class="section-title">Réglages machine Suzumo (nigiri)</span>
+      </div>
+      <div class="suzumo-grid">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:14px;">Riz du jour</div>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Pressure / Forming</span>
+              <input id="suz-jour-pressure" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Rice Compress</span>
+              <input id="suz-jour-compress" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Speed</span>
+              <input id="suz-jour-speed" type="number" step="10" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+          </div>
+          <button onclick="saveSuzumoReglages('jour')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
+          <span id="suz-jour-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:14px;">Riz de la veille</div>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Pressure / Forming</span>
+              <input id="suz-veille-pressure" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Rice Compress</span>
+              <input id="suz-veille-compress" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Speed</span>
+              <input id="suz-veille-speed" type="number" step="10" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+          </div>
+          <button onclick="saveSuzumoReglages('veille')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
+          <span id="suz-veille-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
+        </div>
+      </div>
+      <div style="margin-top:14px;max-width:600px;">
+        <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px;">Note (optionnel)</label>
+        <input id="suz-note" type="text" placeholder="ex: recalibré le 16/09 suite à nigiri cassants" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;">
+        <div id="suz-note-last" style="font-size:11px;color:var(--text-hint);margin-top:6px;"></div>
+      </div>
+    </div>
   </div>
 
   <div id="page-nuisibles" class="page">
@@ -1293,7 +1345,7 @@ function showPage(p, el) {
   if(p==='stat'){ renderRecap(); if(!_histoLoaded) loadHistorique(); }
   if(p==='commandes') loadCommandes();
   else{if(cmdPollTimer){clearInterval(cmdPollTimer);cmdPollTimer=null;}}
-  if(p==='recette') loadProductionDuJour();
+  if(p==='recette'){ loadProductionDuJour(); loadSuzumoReglages(); }
   if(p==='securite'){loadSecurite();secPollStart();startNetMonitor();loadMonitoring();}
   else{secPollStop();stopNetMonitor();}
 }
@@ -3980,6 +4032,82 @@ function calcRecette(v) {
   document.getElementById('res-sucre').textContent = Math.round(n * 0.4167);
   document.getElementById('res-sel').textContent = Math.round(n * 0.2);
   el.style.display = 'block';
+}
+
+// ── Réglages machine Suzumo (nigiri) ──
+var _SUZUMO_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
+var _SUZUMO_DEFAULTS={
+  jour:{pressure:0, rice_compress:0, speed:4200},
+  veille:{pressure:1, rice_compress:5, speed:3600}
+};
+
+async function loadSuzumoReglages(){
+  var vals=JSON.parse(JSON.stringify(_SUZUMO_DEFAULTS));
+  var note='', maj='';
+  try{
+    var res=await fetch(_SUZUMO_API+'/suzumo_reglages?key='+_KEY);
+    if(res.ok){
+      var j=await res.json();
+      if(j.fields){
+        if(j.fields.riz_jour&&j.fields.riz_jour.stringValue){
+          try{vals.jour=JSON.parse(j.fields.riz_jour.stringValue);}catch(e){}
+        }
+        if(j.fields.riz_veille&&j.fields.riz_veille.stringValue){
+          try{vals.veille=JSON.parse(j.fields.riz_veille.stringValue);}catch(e){}
+        }
+        if(j.fields.note&&j.fields.note.stringValue) note=j.fields.note.stringValue;
+        if(j.fields.derniere_maj&&j.fields.derniere_maj.stringValue) maj=j.fields.derniere_maj.stringValue;
+      }
+    }
+  }catch(e){}
+  document.getElementById('suz-jour-pressure').value=vals.jour.pressure;
+  document.getElementById('suz-jour-compress').value=vals.jour.rice_compress;
+  document.getElementById('suz-jour-speed').value=vals.jour.speed;
+  document.getElementById('suz-veille-pressure').value=vals.veille.pressure;
+  document.getElementById('suz-veille-compress').value=vals.veille.rice_compress;
+  document.getElementById('suz-veille-speed').value=vals.veille.speed;
+  document.getElementById('suz-note').value=note;
+  var lastEl=document.getElementById('suz-note-last');
+  if(lastEl) lastEl.textContent=maj?('Dernière mise à jour : '+new Date(maj).toLocaleString('fr-FR')):'';
+}
+
+async function saveSuzumoReglages(which){
+  var pEl=document.getElementById('suz-'+which+'-pressure');
+  var cEl=document.getElementById('suz-'+which+'-compress');
+  var sEl=document.getElementById('suz-'+which+'-speed');
+  var msgEl=document.getElementById('suz-'+which+'-msg');
+  var pressure=parseFloat(pEl.value), compress=parseFloat(cEl.value), speed=parseFloat(sEl.value);
+  if(isNaN(pressure)||isNaN(compress)||isNaN(speed)){
+    msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Valeurs invalides';
+    setTimeout(function(){msgEl.style.display='none';},3000);
+    return;
+  }
+  var fieldKey=which==='jour'?'riz_jour':'riz_veille';
+  var payload={pressure:pressure, rice_compress:compress, speed:speed};
+  var note=document.getElementById('suz-note').value||'';
+  var nowIso=new Date().toISOString();
+  var fields={};
+  fields[fieldKey]={stringValue:JSON.stringify(payload)};
+  fields['note']={stringValue:note};
+  fields['derniere_maj']={stringValue:nowIso};
+  var mask=['updateMask.fieldPaths='+fieldKey,'updateMask.fieldPaths=note','updateMask.fieldPaths=derniere_maj'].join('&');
+  try{
+    var res=await fetch(_SUZUMO_API+'/suzumo_reglages?key='+_KEY+'&'+mask,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    if(res.ok){
+      msgEl.style.display='inline';msgEl.style.color='#0d7a52';msgEl.textContent='✓ Enregistré';
+      var lastEl=document.getElementById('suz-note-last');
+      if(lastEl) lastEl.textContent='Dernière mise à jour : '+new Date(nowIso).toLocaleString('fr-FR');
+    } else {
+      msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Erreur';
+    }
+  }catch(e){
+    msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Erreur';
+  }
+  setTimeout(function(){msgEl.style.display='none';},3000);
 }
 </script>
 
