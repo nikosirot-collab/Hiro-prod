@@ -815,11 +815,11 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
           <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Pressure / Forming</span>
-              <input id="suz-jour-pressure" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+              <input id="suz-jour-pressure" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Rice Compress</span>
-              <input id="suz-jour-compress" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+              <input id="suz-jour-compress" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Speed</span>
@@ -834,11 +834,11 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
           <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Pressure / Forming</span>
-              <input id="suz-veille-pressure" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+              <input id="suz-veille-pressure" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Rice Compress</span>
-              <input id="suz-veille-compress" type="number" step="1" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+              <input id="suz-veille-compress" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <span style="font-size:13px;color:var(--text-muted);">Speed</span>
@@ -4038,7 +4038,7 @@ function calcRecette(v) {
 var _SUZUMO_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
 var _SUZUMO_DEFAULTS={
   jour:{pressure:0, rice_compress:0, speed:4200},
-  veille:{pressure:1, rice_compress:5, speed:3600}
+  veille:{pressure:1, rice_compress:2, speed:3600}
 };
 
 async function loadSuzumoReglages(){
