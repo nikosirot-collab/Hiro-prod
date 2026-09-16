@@ -232,6 +232,7 @@ body {
 @media(min-width:768px){ .recette-grid { grid-template-columns:1fr 1fr; gap:2rem; } }
 .suzumo-grid { display:grid; grid-template-columns:1fr; gap:14px; }
 @media(min-width:768px){ .suzumo-grid { grid-template-columns:1fr 1fr; } }
+@media(min-width:1100px){ .suzumo-grid { grid-template-columns:1fr 1fr 1fr; } }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 8px;
@@ -847,6 +848,29 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
           </div>
           <button onclick="saveSuzumoReglages('veille')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
           <span id="suz-veille-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <div style="display:flex;align-items:center;margin-bottom:6px;">
+            <span style="font-size:15px;font-weight:600;">Riz mélangé (Sunwhite)</span>
+            <span class="tag tag-fete">Temporaire</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-hint);margin-bottom:14px;">Rupture de stock riz sushi — à retirer au retour du stock normal</div>
+          <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Pressure / Forming</span>
+              <input id="suz-melange-pressure" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Rice Compress</span>
+              <input id="suz-melange-compress" type="number" step="1" min="-3" max="3" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:13px;color:var(--text-muted);">Speed</span>
+              <input id="suz-melange-speed" type="number" step="10" style="width:90px;padding:8px 10px;font-size:22px;font-family:'DM Mono',monospace;font-weight:500;border:1px solid var(--border-strong);border-radius:6px;background:var(--bg);color:var(--text);text-align:center;">
+            </div>
+          </div>
+          <button onclick="saveSuzumoReglages('melange')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
+          <span id="suz-melange-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
         </div>
       </div>
       <div style="margin-top:14px;max-width:600px;">
@@ -4038,7 +4062,8 @@ function calcRecette(v) {
 var _SUZUMO_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
 var _SUZUMO_DEFAULTS={
   jour:{pressure:0, rice_compress:0, speed:4200},
-  veille:{pressure:1, rice_compress:2, speed:3600}
+  veille:{pressure:1, rice_compress:2, speed:3600},
+  melange:{pressure:2, rice_compress:2, speed:3600}
 };
 
 async function loadSuzumoReglages(){
@@ -4055,6 +4080,9 @@ async function loadSuzumoReglages(){
         if(j.fields.riz_veille&&j.fields.riz_veille.stringValue){
           try{vals.veille=JSON.parse(j.fields.riz_veille.stringValue);}catch(e){}
         }
+        if(j.fields.riz_melange&&j.fields.riz_melange.stringValue){
+          try{vals.melange=JSON.parse(j.fields.riz_melange.stringValue);}catch(e){}
+        }
         if(j.fields.note&&j.fields.note.stringValue) note=j.fields.note.stringValue;
         if(j.fields.derniere_maj&&j.fields.derniere_maj.stringValue) maj=j.fields.derniere_maj.stringValue;
       }
@@ -4066,6 +4094,9 @@ async function loadSuzumoReglages(){
   document.getElementById('suz-veille-pressure').value=vals.veille.pressure;
   document.getElementById('suz-veille-compress').value=vals.veille.rice_compress;
   document.getElementById('suz-veille-speed').value=vals.veille.speed;
+  document.getElementById('suz-melange-pressure').value=vals.melange.pressure;
+  document.getElementById('suz-melange-compress').value=vals.melange.rice_compress;
+  document.getElementById('suz-melange-speed').value=vals.melange.speed;
   document.getElementById('suz-note').value=note;
   var lastEl=document.getElementById('suz-note-last');
   if(lastEl) lastEl.textContent=maj?('Dernière mise à jour : '+new Date(maj).toLocaleString('fr-FR')):'';
@@ -4082,7 +4113,7 @@ async function saveSuzumoReglages(which){
     setTimeout(function(){msgEl.style.display='none';},3000);
     return;
   }
-  var fieldKey=which==='jour'?'riz_jour':'riz_veille';
+  var fieldKey='riz_'+which;
   var payload={pressure:pressure, rice_compress:compress, speed:speed};
   var note=document.getElementById('suz-note').value||'';
   var nowIso=new Date().toISOString();
