@@ -233,6 +233,8 @@ body {
 .suzumo-grid { display:grid; grid-template-columns:1fr; gap:14px; }
 @media(min-width:768px){ .suzumo-grid { grid-template-columns:1fr 1fr; } }
 @media(min-width:1100px){ .suzumo-grid { grid-template-columns:1fr 1fr 1fr; } }
+.instr-grid { display:grid; grid-template-columns:1fr; gap:14px; }
+@media(min-width:768px){ .instr-grid { grid-template-columns:1fr 1fr; } }
 .section-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 8px;
@@ -877,6 +879,32 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         <label style="display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px;">Note (optionnel)</label>
         <input id="suz-note" type="text" placeholder="ex: recalibré le 16/09 suite à nigiri cassants" style="width:100%;padding:8px 12px;font-size:13px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;">
         <div id="suz-note-last" style="font-size:11px;color:var(--text-hint);margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="section" style="margin-top:1.5rem;">
+      <div class="section-header">
+        <span class="section-title">Instructions rinçage/cuisson</span>
+      </div>
+      <div class="instr-grid">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <div style="font-size:15px;font-weight:600;margin-bottom:14px;">Riz sushi japonica</div>
+          <textarea id="suz-instr-japonica" rows="6" style="width:100%;padding:10px 12px;font-size:13px;line-height:1.6;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;"></textarea>
+          <div style="margin-top:10px;">
+            <button onclick="saveSuzumoInstr('japonica')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
+            <span id="suz-instr-japonica-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;">
+          <div style="display:flex;align-items:center;margin-bottom:14px;">
+            <span style="font-size:15px;font-weight:600;">Riz mélangé (Sunwhite)</span>
+            <span class="tag tag-fete">Temporaire</span>
+          </div>
+          <textarea id="suz-instr-melange" rows="6" style="width:100%;padding:10px 12px;font-size:13px;line-height:1.6;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;resize:vertical;"></textarea>
+          <div style="margin-top:10px;">
+            <button onclick="saveSuzumoInstr('melange')" style="padding:9px 18px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
+            <span id="suz-instr-melange-msg" style="display:none;margin-left:10px;font-size:12px;font-weight:600;"></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -4065,9 +4093,14 @@ var _SUZUMO_DEFAULTS={
   veille:{pressure:1, rice_compress:2, speed:3600},
   melange:{pressure:2, rice_compress:2, speed:3600}
 };
+var _SUZUMO_INSTR_DEFAULTS={
+  japonica:"Rinçage : rincer normalement jusqu'à obtention d'une eau plus claire.\n\nCuisson : ratios eau/riz habituels, cuisson standard riz sushi.",
+  melange:"Ratio : maximum 20 à 30% de Sunwhite, le reste en riz sushi japonica.\n\nRinçage : rincer le riz sushi normalement ; rincer le Sunwhite a minima (1 rinçage rapide voire aucun) pour garder l'amidon de surface qui aide à la tenue. Mélanger les deux riz une fois rincés séparément, avant cuisson.\n\nCuisson : cuire le mélange comme le riz sushi habituel (mêmes ratios eau/riz, même mode de cuisson) — ne pas suivre les indications du paquet Sunwhite, prévues pour un riz d'accompagnement."
+};
 
 async function loadSuzumoReglages(){
   var vals=JSON.parse(JSON.stringify(_SUZUMO_DEFAULTS));
+  var instr=JSON.parse(JSON.stringify(_SUZUMO_INSTR_DEFAULTS));
   var note='', maj='';
   try{
     var res=await fetch(_SUZUMO_API+'/suzumo_reglages?key='+_KEY);
@@ -4083,6 +4116,8 @@ async function loadSuzumoReglages(){
         if(j.fields.riz_melange&&j.fields.riz_melange.stringValue){
           try{vals.melange=JSON.parse(j.fields.riz_melange.stringValue);}catch(e){}
         }
+        if(j.fields.instr_japonica&&j.fields.instr_japonica.stringValue) instr.japonica=j.fields.instr_japonica.stringValue;
+        if(j.fields.instr_melange&&j.fields.instr_melange.stringValue) instr.melange=j.fields.instr_melange.stringValue;
         if(j.fields.note&&j.fields.note.stringValue) note=j.fields.note.stringValue;
         if(j.fields.derniere_maj&&j.fields.derniere_maj.stringValue) maj=j.fields.derniere_maj.stringValue;
       }
@@ -4098,6 +4133,8 @@ async function loadSuzumoReglages(){
   document.getElementById('suz-melange-compress').value=vals.melange.rice_compress;
   document.getElementById('suz-melange-speed').value=vals.melange.speed;
   document.getElementById('suz-note').value=note;
+  document.getElementById('suz-instr-japonica').value=instr.japonica;
+  document.getElementById('suz-instr-melange').value=instr.melange;
   var lastEl=document.getElementById('suz-note-last');
   if(lastEl) lastEl.textContent=maj?('Dernière mise à jour : '+new Date(maj).toLocaleString('fr-FR')):'';
 }
@@ -4132,6 +4169,30 @@ async function saveSuzumoReglages(which){
       msgEl.style.display='inline';msgEl.style.color='#0d7a52';msgEl.textContent='✓ Enregistré';
       var lastEl=document.getElementById('suz-note-last');
       if(lastEl) lastEl.textContent='Dernière mise à jour : '+new Date(nowIso).toLocaleString('fr-FR');
+    } else {
+      msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Erreur';
+    }
+  }catch(e){
+    msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Erreur';
+  }
+  setTimeout(function(){msgEl.style.display='none';},3000);
+}
+
+async function saveSuzumoInstr(which){
+  var tEl=document.getElementById('suz-instr-'+which);
+  var msgEl=document.getElementById('suz-instr-'+which+'-msg');
+  var fieldKey='instr_'+which;
+  var fields={};
+  fields[fieldKey]={stringValue:tEl.value||''};
+  var mask='updateMask.fieldPaths='+fieldKey;
+  try{
+    var res=await fetch(_SUZUMO_API+'/suzumo_reglages?key='+_KEY+'&'+mask,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    if(res.ok){
+      msgEl.style.display='inline';msgEl.style.color='#0d7a52';msgEl.textContent='✓ Enregistré';
     } else {
       msgEl.style.display='inline';msgEl.style.color='#e74c3c';msgEl.textContent='Erreur';
     }
