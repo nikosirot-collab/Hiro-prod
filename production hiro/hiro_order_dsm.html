@@ -1273,6 +1273,19 @@ if(_offlineQueue.length>0)showOfflineBanner();
   </div>
 </div>
 
+<div id="fish-sync-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:24px 20px;max-width:340px;width:90%;text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;">🐟</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px;">Mettre à jour le poisson ?</div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px;">Pour <span id="fish-sync-date" style="font-weight:600;color:#1a1916;"></span>, avec cette nouvelle quantité de riz, la découpe correspondante serait :</div>
+    <div id="fish-sync-detail" style="text-align:left;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="cancelFishSync()" style="flex:1;padding:11px;border-radius:8px;border:1px solid #ddd;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;">Non, garder le poisson actuel</button>
+      <button onclick="confirmFishSync()" style="flex:1;padding:11px;border-radius:8px;border:none;background:#1a5fa8;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Oui, mettre à jour</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 // ── Service Worker Helper ──
@@ -1524,6 +1537,79 @@ function isRollLocked(dStr){
   // Surlendemain et au-delà -> modifiable
   return false;
 }
+
+// ── Synchronisation poisson (découpe) depuis le riz ──
+const FISH_DSM=[{r:500,t:150,s:150,a:50},{r:750,t:200,s:200,a:150},{r:1000,t:300,s:300,a:250},{r:1250,t:350,s:350,a:300},{r:1500,t:450,s:450,a:300},{r:1750,t:500,s:500,a:450},{r:2000,t:550,s:550,a:500}];
+function getFishDsm(riz){
+  if(!riz) return null;
+  const sorted=[...FISH_DSM].sort((a,b)=>a.r-b.r);
+  let row=sorted[0];
+  for(const ro of sorted){ if(riz>=ro.r) row=ro; else break; }
+  return {t:row.t,s:row.s,a:row.a};
+}
+// Poisson verrouillé si : jour actuel/passé, lendemain après 9h30, ou lundi dès samedi 9h30/dimanche
+function isFishLocked(dStr){
+  const now=new Date();
+  const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const ncHour=ncNow.getHours(), ncMin=ncNow.getMinutes(), ncDay=ncNow.getDay();
+  const afterCutoff=ncHour>9||(ncHour===9&&ncMin>=30);
+  const todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+  const tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
+  const targetDate=new Date(dStr+'T00:00:00');
+  if(targetDate<=todayNC) return true;
+  if(dsRiz(targetDate)===dsRiz(tomorrowNC)&&afterCutoff) return true;
+  if(targetDate.getDay()===1){
+    if(ncDay===6&&afterCutoff) return true;
+    if(ncDay===0) return true;
+  }
+  return false;
+}
+var _fishSyncTimer=null;
+function scheduleFishSyncPrompt(dStr,riz,docId){
+  if(_fishSyncTimer) clearTimeout(_fishSyncTimer);
+  _fishSyncTimer=setTimeout(function(){
+    _fishSyncTimer=null;
+    if(isFishLocked(dStr)) return;
+    const fd=getFishDsm(riz);
+    if(!fd) return;
+    showFishSyncModal(dStr,fd,docId);
+  },700);
+}
+function showFishSyncModal(dStr,fd,docId){
+  const d=new Date(dStr+'T00:00:00');
+  document.getElementById('fish-sync-date').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('fish-sync-detail').innerHTML=
+    '<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Thon</span><b>'+fd.t+' g</b></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Saumon</span><b>'+fd.s+' g</b></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;"><span>Aburi</span><b>'+fd.a+' g</b></div>';
+  window._fishSyncPending={dStr:dStr,fd:fd,docId:docId};
+  document.getElementById('fish-sync-modal').style.display='flex';
+}
+function cancelFishSync(){
+  document.getElementById('fish-sync-modal').style.display='none';
+  window._fishSyncPending=null;
+}
+async function confirmFishSync(){
+  const p=window._fishSyncPending;
+  if(!p) return;
+  document.getElementById('fish-sync-modal').style.display='none';
+  window._fishSyncPending=null;
+  const docId=p.docId;
+  const fields={};
+  ['t','s','a'].forEach(function(f){
+    const fsKey=(p.dStr+'__f__dsm__'+f).replace(/__/g,'--');
+    fields[fsKey]={integerValue:p.fd[f]};
+  });
+  const mask=Object.keys(fields).map(function(k){return 'updateMask.fieldPaths='+encodeURIComponent('`'+k+'`');}).join('&');
+  try{
+    await fetch(_API_PROD+'/'+docId+'?'+mask+'&key='+_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+  }catch(e){}
+}
+
 function adjRoll(dStr,current,delta){
   if(isRollLocked(dStr)) return;
   const newVal=Math.min(100,Math.max(0,(current||0)+delta));
@@ -1603,6 +1689,7 @@ async function setRizSemaine(dStr,val){
     const msg=document.getElementById('riz-save-msg');
     if(msg){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur réseau';setTimeout(()=>{msg.style.display='none';},2000);}
   }
+  scheduleFishSyncPrompt(dStr,v,docId);
 }
 </script>
 
