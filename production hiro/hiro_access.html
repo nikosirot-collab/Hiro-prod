@@ -1770,11 +1770,11 @@ function laboIsFishLocked(dateStr){
   return false;
 }
 
-function laboGetFish(shop,field){
-  var dStr=laboDs(laboDate);
+function laboGetFish(shop,field,dateStrOverride){
+  var dStr=dateStrOverride||laboDs(laboDate);
   var key=dStr+'__f__'+shop+'__'+field;
   if(field==='tamago'){
-    var dow=laboDate.getDay();
+    var dow=(dateStrOverride?new Date(dateStrOverride+'T00:00:00'):laboDate).getDay();
     var di=dow===0?6:dow-1;
     return laboFishData[key]!==undefined?laboFishData[key]:getTamago(shop,di);
   }
@@ -1787,6 +1787,10 @@ function laboGetFish(shop,field){
   var riz=laboFishData[rizKey]||0;
   var fd=getFish(shop,riz);
   return fd?fd[field]||0:0;
+}
+// Riz "production" pour une date arbitraire (indépendant de la commande — aperçu dimanche)
+function laboGetRizProd(shop,dateStr){
+  return laboFishData[dateStr+'__'+shop]||0;
 }
 function laboGetRiz(shop){
   var dStr=laboDs(laboDate);
@@ -3030,6 +3034,26 @@ function laboRenderFiche(shop,order){
   var dStr=laboDs(laboDate);
   var isOff=laboIsOff(shop,dStr);
   var isRizPoisson=laboIsRizPoisson(shop,dStr);
+  // Aperçu dimanche affiché à côté des quantités du samedi (pas de commande le dimanche)
+  var showSun=false, sunRiz=0, sunT=0, sunS=0, sunA=0;
+  if(shop!=='asia' && laboDate.getDay()===6){
+    var sunDate=new Date(laboDate); sunDate.setDate(sunDate.getDate()+1);
+    var sunStr=laboDs(sunDate);
+    if(!laboIsOff(shop,sunStr)){
+      showSun=true;
+      sunRiz=laboGetRizProd(shop,sunStr);
+      sunT=laboGetFish(shop,'t',sunStr);
+      sunS=laboGetFish(shop,'s',sunStr);
+      sunA=laboGetFish(shop,'a',sunStr);
+    }
+  }
+  function dualRow(key,name,satVal,sunVal,isRupt){
+    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
+      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:satVal)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:56px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<input type="number" value="'+sunVal+'" disabled style="width:56px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;background:var(--bg);opacity:.6;">'
+      +'<div style="font-size:12px;font-weight:500;flex:1;">'+name+(isRupt?' ⚠':'')+'</div>'
+      +'</div>';
+  }
 
   // ── Fiche Asia — saisie depuis le Access ──
   if(shop==='asia'){
@@ -3173,8 +3197,13 @@ function laboRenderFiche(shop,order){
     });
   }
   var rightRows=rightItems.map(function(p){
+    if(showSun&&(p.key==='f_t'||p.key==='f_s'||p.key==='f_a')){
+      var _sunVal=p.key==='f_t'?sunT:(p.key==='f_s'?sunS:sunA);
+      return dualRow(p.key,p.name,p.val,_sunVal,order['rupt_'+p.key]);
+    }
     if(p.key==='rizprod'){
       var _rizRupt=order['rupt_rizprod'];
+      if(showSun) return dualRow('rizprod','Riz',p.val,sunRiz,_rizRupt);
       return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-rizprod">'
         +'<input id="vinp-'+shop+'-rizprod" type="number" min="0" value="'+(_rizRupt?0:p.val)+'" onchange="laboPatchQty(\''+shop+'\',\'rizprod\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
         +'<div style="font-size:12px;font-weight:500;flex:1;">Riz'+(_rizRupt?' ⚠':'')+'</div>'
@@ -3358,15 +3387,16 @@ function laboRenderFiche(shop,order){
     ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">'+(order.ts?'Recu '+fmtT(order.ts)+' · ':'')+'Valide '+fmtT(order.validatedAt)+'</div><span class="valid-status-validated">Validee</span></div>'
     :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu a '+fmtT(order.ts)+'</div><span class="valid-status-pending">A valider</span></div>';
 
+  var sunColHeader=showSun?'<div style="display:flex;padding:2px 8px 4px;gap:6px;"><div style="width:56px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">SAM</div><div style="width:56px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">DIM</div></div>':'';
   var topSection=shop==='ville'
     ?'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-      +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'+'</div>'
+      +'<div>'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>'
       +'<div style="display:grid;grid-template-columns:1fr;border-bottom:3px solid var(--border);">'
       +'<div>'+colTitle('Plats chauds')+platsColRows+'</div>'+'</div>'
     :'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-      +'<div>'+colTitle('Poisson / Riz / Poke')+rightRows+'</div>'+'</div>';
+      +'<div>'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>';
 
   var bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);">'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
