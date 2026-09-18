@@ -1037,33 +1037,42 @@ function _show429Banner(){
 
 let _saving=false;
 let _saveTimeout=null;
+let _dirtyKeys=new Set();
+function _markDirty(k){ _dirtyKeys.add(k); }
 
 // Encode/decode keys pour Firestore (__ pose problème comme séparateur de champs)
 function _encKey(k){ return k.replace(/__/g,'--'); }
 function _decKey(k){ return k.replace(/--/g,'__'); }
 
 async function _fbSaveAll(docId) {
+  if(_dirtyKeys.size===0) return;
+  const keysToSave=[..._dirtyKeys];
+  _dirtyKeys.clear();
   _saving=true;
   try {
     const url=`${_API}/${docId}?key=${_KEY}`;
     const fields={};
-    Object.entries(data).forEach(([k,v])=>{
+    keysToSave.forEach(k=>{
+      const v=data[k];
+      if(v===undefined) return;
       const ek=_encKey(k);
       if(typeof v==='number') fields[ek]={integerValue:v};
       else if(typeof v==='boolean') fields[ek]={booleanValue:v};
       else fields[ek]={stringValue:String(v)};
     });
+    if(Object.keys(fields).length===0) return;
     fields['init']={stringValue:'true'};
     const mask=Object.keys(fields).map(k=>'updateMask.fieldPaths='+encodeURIComponent('`'+k+'`')).join('&');
     const checkRes=await _fbFetch(`${_API}/${docId}?key=${_KEY}`);
-    if(checkRes.status===429){_setStatus(false,429);return;}
+    if(checkRes.status===429){_setStatus(false,429);keysToSave.forEach(k=>_dirtyKeys.add(k));return;}
     if(!checkRes.ok){
       await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{init:{stringValue:'true'}}})});
     }
     const res=await fetch(`${url}&${mask}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
-    if(res.status===429){_setStatus(false,429);return;}
+    if(res.status===429){_setStatus(false,429);keysToSave.forEach(k=>_dirtyKeys.add(k));return;}
+    if(!res.ok){keysToSave.forEach(k=>_dirtyKeys.add(k));}
     _setStatus(res.ok);
-  } catch(e){ _setStatus(false); }
+  } catch(e){ _setStatus(false); keysToSave.forEach(k=>_dirtyKeys.add(k)); }
   finally{ setTimeout(()=>{ _saving=false; },3000); }
 }
 
@@ -1288,13 +1297,14 @@ function setV(d,s,v){
       if(fd){
         ['t','s','a'].forEach(f=>{
           const fk=d+'__f__'+shop+'__'+f;
-          if(data[fk]===undefined) data[fk]=fd[f]||0;
+          if(data[fk]===undefined){ data[fk]=fd[f]||0; _markDirty(fk); }
         });
       }
     });
   }
   // Modifier le riz
   data[k]=val;
+  _markDirty(k);
   // Recalcul poisson uniquement si pas verrouillé
   if(!isFishLocked(d)){
     ['dsm','mgt','paita','ville'].forEach(shop=>{
@@ -1305,14 +1315,14 @@ function setV(d,s,v){
           const fk=d+'__f__'+shop+'__'+f;
           const overrideKey=d+'__fo__'+shop+'__'+f; // flag override manuel
           // Recalculer sauf si override manuel explicite
-          if(!data[overrideKey]) data[fk]=fd[f];
+          if(!data[overrideKey]){ data[fk]=fd[f]; _markDirty(fk); }
         });
       }
     });
   }
   _scheduleSave(weekDocId());render();
 }
-function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_scheduleSave(weekDocId());render();}
+function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_markDirty(k);_scheduleSave(weekDocId());render();}
 function setFishV(d,s,f,v,auto){
   const k=d+'__f__'+s+'__'+f;
   const overrideKey=d+'__fo__'+s+'__'+f;
@@ -1324,6 +1334,7 @@ function setFishV(d,s,f,v,auto){
     if(isNaN(val)) return;
     data[k]=val;
     data[overrideKey]=true; // Marquer comme override manuel
+    _markDirty(k); _markDirty(overrideKey);
   }
   _scheduleSave(weekDocId());render();
 }
@@ -1344,6 +1355,7 @@ function subscribeWeek(){
   _fbPoll(weekDocId(), remote=>{
     if(remote){
       Object.assign(data, remote);
+      let filledSomething=false;
       for(let di=0;di<7;di++){
         const d=dayOf(weekOff,di);
         const dStr=ds(d);
@@ -1355,12 +1367,13 @@ function subscribeWeek(){
             if(fd){
               ['t','s','a'].forEach(f=>{
                 const fk=dStr+'__f__'+shop+'__'+f;
-                if(data[fk]===undefined) data[fk]=fd[f]||0;
+                if(data[fk]===undefined){ data[fk]=fd[f]||0; _markDirty(fk); filledSomething=true; }
               });
             }
           });
         } else {
-          // Jour libre : recalcul normal sauf override manuel
+          // Jour libre : recalcul local pour l'affichage uniquement (pas de sauvegarde auto —
+          // la synchro Firestore reste gérée par la modale "Mettre à jour le poisson ?" côté commandes)
           ['dsm','mgt','paita','ville'].forEach(shop=>{
             const riz=getV(dStr,shop);
             const fd=getFish(shop,riz,isFete);
@@ -1375,7 +1388,7 @@ function subscribeWeek(){
         }
       }
       _setStatus(true);
-      _scheduleSave(weekDocId());
+      if(filledSomething) _scheduleSave(weekDocId());
     }
     if(!_cmdTableFocused()) render();
     if(document.getElementById('page-recette').classList.contains('active')) loadProductionDuJour();
