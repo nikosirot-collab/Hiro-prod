@@ -3048,9 +3048,9 @@ function laboRenderFiche(shop,order){
     }
   }
   function dualRow(key,name,satVal,sunVal,isRupt){
-    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:6px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
-      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:satVal)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:56px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
-      +'<input type="number" value="'+sunVal+'" disabled style="width:56px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;background:var(--bg);opacity:.6;">'
+    return '<div style="display:flex;align-items:center;padding:4px 8px;gap:8px;border-bottom:1px solid var(--border);min-height:36px;" id="vrow-'+shop+'-'+key+'">'
+      +'<input id="vinp-'+shop+'-'+key+'" type="number" min="0" value="'+(isRupt?0:satVal)+'" onchange="laboPatchQty(\''+shop+'\',\''+key+'\',this.value)" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;">'
+      +'<input type="number" value="'+sunVal+'" disabled style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:14px;font-weight:700;text-align:center;font-family:DM Mono,monospace;background:var(--bg);opacity:.6;">'
       +'<div style="font-size:12px;font-weight:500;flex:1;">'+name+(isRupt?' ⚠':'')+'</div>'
       +'</div>';
   }
@@ -3387,7 +3387,7 @@ function laboRenderFiche(shop,order){
     ?'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">'+(order.ts?'Recu '+fmtT(order.ts)+' · ':'')+'Valide '+fmtT(order.validatedAt)+'</div><span class="valid-status-validated">Validee</span></div>'
     :'<div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Recu a '+fmtT(order.ts)+'</div><span class="valid-status-pending">A valider</span></div>';
 
-  var sunColHeader=showSun?'<div style="display:flex;padding:2px 8px 4px;gap:6px;"><div style="width:56px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">SAM</div><div style="width:56px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">DIM</div></div>':'';
+  var sunColHeader=showSun?'<div style="display:flex;padding:2px 8px 4px;gap:8px;"><div style="width:64px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">SAM</div><div style="width:64px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">DIM</div></div>':'';
   var topSection=shop==='ville'
     ?'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
       +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
