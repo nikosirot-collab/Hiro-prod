@@ -615,7 +615,7 @@ function calcRolls(riz,isDim){
   let v=0; for(const row of RTBL){if(riz>=row.r)v=row.v;else break;} return v;
 }
 
-async function fetchRolls(dateStr){
+async function fetchProdData(dateStr){
   const parts=dateStr.split('-');
   const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   const isDim=d.getDay()===0;
@@ -624,25 +624,26 @@ async function fetchRolls(dateStr){
   const monday=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const url=`${_BASE}/hiro-production/week_${monday}?key=${_KEY}`;
   const res=await fetch(url);
-  if(!res.ok) return {};
+  if(!res.ok) return {rolls:{},riz:{}};
   const j=await res.json();
-  if(!j.fields) return {};
-  const rolls={};
+  if(!j.fields) return {rolls:{},riz:{}};
+  const rolls={}, riz={};
   SHOPS.forEach(s=>{
-    // 1. Override manuel
+    // Riz du jour (production)
+    const vr=j.fields[`${dateStr}--${s.id}`];
+    if(vr&&vr.integerValue!==undefined) riz[s.id]=parseInt(vr.integerValue);
+    else if(vr&&vr.doubleValue!==undefined) riz[s.id]=Math.round(parseFloat(vr.doubleValue));
+    else riz[s.id]=0;
+    // 1. Override manuel rolls
     const vm=j.fields[`${dateStr}--r--${s.id}`];
     if(vm&&vm.integerValue!==undefined){ rolls[s.id]=parseInt(vm.integerValue); return; }
     if(vm&&vm.doubleValue!==undefined){ rolls[s.id]=Math.round(parseFloat(vm.doubleValue)); return; }
-    // 2. Ville et Asia : rolls directs seulement
+    // 2. Ville : rolls directs seulement
     if(s.id==='ville'){ rolls[s.id]=0; return; }
-    // 3. DSM/MGT/Paita : calculer depuis le riz
-    const vr=j.fields[`${dateStr}--${s.id}`];
-    let riz=0;
-    if(vr&&vr.integerValue!==undefined) riz=parseInt(vr.integerValue);
-    else if(vr&&vr.doubleValue!==undefined) riz=Math.round(parseFloat(vr.doubleValue));
-    rolls[s.id]=calcRolls(riz,isDim);
+    // 3. DSM/MGT/Paita/Asia : calculer depuis le riz
+    rolls[s.id]=calcRolls(riz[s.id],isDim);
   });
-  return rolls;
+  return {rolls, riz};
 }
 
 // Quantité affichée : version validée (vqty_) si la commande est validée et corrigée, sinon brute
@@ -658,18 +659,19 @@ async function loadReport(){
   document.getElementById('reportContent').style.display='none';
   document.getElementById('emptyState').style.display='none';
   try{
-    const [results, rolls]=await Promise.all([
+    const [results, prod]=await Promise.all([
       fetchAllOrders(dateStr),
-      fetchRolls(dateStr)
+      fetchProdData(dateStr)
     ]);
-    // Injecter les rolls dans chaque order
-    // Asia n'a pas d'interface de commande -> créer un order virtuel avec juste les rolls
+    // Injecter les rolls dans chaque order, et le riz pour Asia (pas de champ rizprod dans sa commande)
+    // Asia n'a pas d'interface de commande classique -> créer un order virtuel si besoin
     results.forEach(({shop,order})=>{
       if(order){
-        order['rolls']=rolls[shop.id]||0;
-      } else if(shop.id==='asia' && rolls['asia']>0){
-        // order virtuel pour Asia (rolls uniquement)
-        results.find(r=>r.shop.id==='asia').order = { rolls: rolls['asia'] };
+        order['rolls']=prod.rolls[shop.id]||0;
+        if(shop.id==='asia') order['rizprod']=prod.riz['asia']||0;
+      } else if(shop.id==='asia' && (prod.rolls['asia']>0 || prod.riz['asia']>0)){
+        // order virtuel pour Asia (riz + rolls)
+        results.find(r=>r.shop.id==='asia').order = { rolls: prod.rolls['asia']||0, rizprod: prod.riz['asia']||0 };
       }
     });
     setLoading(false);
