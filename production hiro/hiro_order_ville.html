@@ -1671,6 +1671,8 @@ function isFishLocked(dStr){
 }
 var _fishSyncTimer=null;
 function scheduleFishSyncPrompt(dStr,riz,docId){
+  // Ne proposer la synchro poisson que pour le lendemain (jour de production imminent)
+  if(dStr!==ds(getTomorrow())) return;
   if(_fishSyncTimer) clearTimeout(_fishSyncTimer);
   _fishSyncTimer=setTimeout(function(){
     _fishSyncTimer=null;
@@ -1684,9 +1686,9 @@ function showFishSyncModal(dStr,fd,docId){
   const d=new Date(dStr+'T00:00:00');
   document.getElementById('fish-sync-date').textContent=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('fish-sync-detail').innerHTML=
-    '<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Thon</span><b>'+fd.t+' g</b></div>'
-    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Saumon</span><b>'+fd.s+' g</b></div>'
-    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;"><span>Aburi</span><b>'+fd.a+' g</b></div>';
+    '<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Thon</span><b>'+fd.t+' tranches</b></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;border-bottom:1px solid var(--border);"><span>Saumon</span><b>'+fd.s+' tranches</b></div>'
+    +'<div style="display:flex;justify-content:space-between;padding:6px 12px;"><span>Aburi</span><b>'+fd.a+' tranches</b></div>';
   window._fishSyncPending={dStr:dStr,fd:fd,docId:docId};
   document.getElementById('fish-sync-modal').style.display='flex';
 }
