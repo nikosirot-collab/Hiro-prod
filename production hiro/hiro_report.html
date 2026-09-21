@@ -644,6 +644,11 @@ async function fetchRolls(dateStr){
   return rolls;
 }
 
+// Quantité affichée : version validée (vqty_) si la commande est validée et corrigée, sinon brute
+function ov(order,k){
+  return (order&&order.status==='validated'&&order['vqty_'+k]!==undefined) ? order['vqty_'+k] : ((order&&order[k])||0);
+}
+
 // Load
 async function loadReport(){
   const dateStr=document.getElementById('reportDate').value;
@@ -695,7 +700,7 @@ function renderReport(dateStr, results){
   let grandTotal=0, boutiquesOk=0;
   results.forEach(({order})=>{
     if(!order) return; boutiquesOk++;
-    allKeys.forEach(k=>{ const q=order[k]||0; totaux[k]+=q; grandTotal+=q; });
+    allKeys.forEach(k=>{ const q=ov(order,k); totaux[k]+=q; grandTotal+=q; });
   });
   let topK='',topV=0;
   Object.entries(totaux).forEach(([k,v])=>{ if(k!=='rizprod'&&v>topV){topV=v;topK=k;} });
@@ -740,11 +745,12 @@ function renderReport(dateStr, results){
     let total=0,rows='';
     if(order){
       CATEGORIES.forEach(cat=>cat.keys.forEach(k=>{
-        const q=order[k]||0; if(!q) return;
+        const q=ov(order,k); if(!q) return;
         rows+=`<div class="shop-row"><span class="shop-row-name">${P[k]||k}</span><span class="shop-row-qty">${q}</span></div>`;
         total+=q;
       }));
-      if(order.libre){try{const lb=JSON.parse(order.libre);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${esc(i.name)}</span><span class="shop-row-qty">${i.qty}</span></div>`;total+=i.qty;});});}catch(e){}}
+      const _libreStr=order.vlibre||order.libre;
+      if(_libreStr){try{const lb=JSON.parse(_libreStr);['chr','tarte'].forEach(t=>{if(lb[t])lb[t].filter(i=>i.qty>0).forEach(i=>{rows+=`<div class="shop-row"><span class="shop-row-name" style="font-style:italic">${esc(i.name)}</span><span class="shop-row-qty">${i.qty}</span></div>`;total+=i.qty;});});}catch(e){}}
     }
     c.innerHTML=`
       <div class="shop-header">
