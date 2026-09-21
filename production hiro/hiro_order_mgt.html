@@ -1526,7 +1526,13 @@ function renderRizSemaine(monday){
           <button onclick="adjRoll('${dStr}',${rollVal},10)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">+</button>
         </div>`}
       </td>
-      <td style="padding:6px 8px;text-align:center;font-size:11px;color:var(--text-muted);line-height:1.5;white-space:nowrap;">T ${fT}<br>S ${fS}<br>A ${fA}</td>
+      <td style="padding:6px 8px;text-align:center;">
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#fde8e8;color:#c0392b;font-weight:700;white-space:nowrap;">T ${fT}</span>
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#e8f0fd;color:#1a5fa8;font-weight:700;white-space:nowrap;">S ${fS}</span>
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#fff3e0;color:#c8860a;font-weight:700;white-space:nowrap;">A ${fA}</span>
+        </div>
+      </td>
       <td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-muted);">${bacs}</td>
     </tr>`;
   }
