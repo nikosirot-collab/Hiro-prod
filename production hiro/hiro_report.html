@@ -580,6 +580,26 @@ function shiftDay(n){
 }
 document.getElementById('reportDate').value=todayNC();
 
+// Défilement au doigt (swipe) sur le carrousel, en plus des flèches
+(function(){
+  var el=document.getElementById('carousel3d');
+  if(!el) return;
+  var startX=0, startY=0, dragging=false;
+  el.addEventListener('touchstart',function(e){
+    if(e.touches.length!==1) return;
+    startX=e.touches[0].clientX; startY=e.touches[0].clientY; dragging=true;
+  },{passive:true});
+  el.addEventListener('touchend',function(e){
+    if(!dragging) return; dragging=false;
+    var t=e.changedTouches&&e.changedTouches[0]; if(!t) return;
+    var dx=t.clientX-startX, dy=t.clientY-startY;
+    if(Math.abs(dx)>40 && Math.abs(dx)>Math.abs(dy)){
+      if(dx<0){ if(window.carouselNext) window.carouselNext(); }
+      else{ if(window.carouselPrev) window.carouselPrev(); }
+    }
+  },{passive:true});
+})();
+
 // Fetch les commandes des 5 boutiques en une seule requête batchGet (au lieu de 5 GET individuels)
 async function fetchAllOrders(dateStr){
   const docRefs=SHOPS.map(s=>`projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/order_${dateStr}_${s.id}`);
