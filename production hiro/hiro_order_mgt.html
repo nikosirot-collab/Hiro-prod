@@ -1461,6 +1461,7 @@ function renderRizSemaine(monday){
     +'<th style="text-align:left;padding-left:12px;min-width:100px;">Jour</th>'
     +'<th>Boules de riz</th>'
     +'<th>Rolls</th>'
+    +'<th>Poisson</th>'
     +'<th style="font-size:11px;color:var(--text-muted);">Bacs</th>'
     +'</tr></thead><tbody>';
   for(let di=0;di<7;di++){
@@ -1476,6 +1477,12 @@ function renderRizSemaine(monday){
     const rollVal=_rizData[rollKey]!==undefined?_rizData[rollKey]:rollCalc;
     const isLocked=isRollLocked(dStr);
     const bg=isToday?'background:var(--today);':'';
+    // Poisson : valeur figée si présente, sinon calculée depuis le riz du jour
+    const fKeyT=dStr+'__f__'+SHOP+'__t', fKeyS=dStr+'__f__'+SHOP+'__s', fKeyA=dStr+'__f__'+SHOP+'__a';
+    const fdCalc=getFishMgt(val);
+    const fT=_rizData[fKeyT]!==undefined?_rizData[fKeyT]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.t:0));
+    const fS=_rizData[fKeyS]!==undefined?_rizData[fKeyS]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.s:0));
+    const fA=_rizData[fKeyA]!==undefined?_rizData[fKeyA]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.a:0));
     // Badge jour off
     const _isOff=_JOURS_OFF.indexOf(dStr)!==-1;
     const _isRizPoisson=_JOURS_OFF_RP&&_JOURS_OFF_RP.indexOf(dStr)!==-1;
@@ -1519,6 +1526,7 @@ function renderRizSemaine(monday){
           <button onclick="adjRoll('${dStr}',${rollVal},10)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">+</button>
         </div>`}
       </td>
+      <td style="padding:6px 8px;text-align:center;font-size:11px;color:var(--text-muted);line-height:1.5;white-space:nowrap;">T ${fT}<br>S ${fS}<br>A ${fA}</td>
       <td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-muted);">${bacs}</td>
     </tr>`;
   }
