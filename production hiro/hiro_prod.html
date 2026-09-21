@@ -3035,7 +3035,7 @@ var SEC_SHOP_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',prod:'',acc
 
 // ── Jours off ──
 var _CONFIG_API='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config';
-// Format: {dsm:[{date:'2026-05-01',mode:'off'|'rizpoisson'},...], ...}
+// Format: {dsm:[{date:'2026-05-01',mode:'off'|'rizpoisson'|'rizpoissonroll'},...], ...}
 var _joursOffData={dsm:[],mgt:[],paita:[],ville:[]};
 var _SHOPS_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
 var _SHOPS_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8'};
@@ -3094,7 +3094,7 @@ function renderJoursOff(){
   if(!el)return;
   var todayStr=new Date().toISOString().slice(0,10);
 
-  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">Ajouter un jour off</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'    +'<input type="date" id="joff-date" min="'+todayStr+'" value="'+todayStr+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'    +'</div>'    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-off" value="off" checked> 🚫 Jour off complet</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rp" value="rizpoisson"> 🐟 Riz & Poisson uniquement</label>'    +'</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">Ajouter un jour off</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'    +'<input type="date" id="joff-date" min="'+todayStr+'" value="'+todayStr+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'    +'</div>'    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-off" value="off" checked> 🚫 Jour off complet</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rp" value="rizpoisson"> 🐟 Riz & Poisson uniquement</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rpr" value="rizpoissonroll"> 🍣 Riz, Poisson & Roll uniquement</label>'    +'</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
 
   ['dsm','mgt','paita','ville'].forEach(function(s){
     html+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid '+_SHOPS_COLORS[s]+';border-radius:8px;">'      +'<input type="checkbox" id="joff-'+s+'" style="accent-color:'+_SHOPS_COLORS[s]+'">'      +'<span style="font-size:13px;font-weight:600;color:'+_SHOPS_COLORS[s]+';">'+_SHOPS_LABELS[s]+'</span>'      +'</label>';
@@ -3122,8 +3122,8 @@ function renderJoursOff(){
       days.forEach(function(e){
         var dateObj=new Date(e.date+'T00:00:00');
         var label=dateObj.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-        var modeLabel=e.mode==='rizpoisson'?'🐟 Riz & Poisson':'🚫 Off complet';
-        var modeColor=e.mode==='rizpoisson'?'#0d7a52':'#c0392b';
+        var modeLabel=e.mode==='rizpoisson'?'🐟 Riz & Poisson':e.mode==='rizpoissonroll'?'🍣 Riz, Poisson & Roll':'🚫 Off complet';
+        var modeColor=e.mode==='rizpoisson'?'#0d7a52':e.mode==='rizpoissonroll'?'#1a5fa8':'#c0392b';
         html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px;">'          +'<div>'          +'<div style="font-size:12px;">'+label+'</div>'          +'<div style="font-size:10px;font-weight:600;color:'+modeColor+';">'+modeLabel+'</div>'          +'</div>'          +'<button onclick="removeJourOff(\''+s+'\',\''+e.date+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:0 4px;flex-shrink:0;">×</button>'          +'</div>';
       });
     }
@@ -3148,7 +3148,7 @@ function renderJoursOff(){
       days.forEach(function(e){
         var dateObj=new Date(e.date+'T00:00:00');
         var label=dateObj.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
-        var modeLabel=e.mode==='rizpoisson'?'🐟':'🚫';
+        var modeLabel=e.mode==='rizpoisson'?'🐟':e.mode==='rizpoissonroll'?'🍣':'🚫';
         html+='<div style="font-size:11px;color:var(--text-muted);padding:3px 0;border-bottom:1px solid var(--border);">'+modeLabel+' '+label+'</div>';
       });
       html+='</div>';
