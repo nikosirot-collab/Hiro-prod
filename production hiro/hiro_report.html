@@ -450,6 +450,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('report-login-
     <div class="clock" id="clockEl">——:——</div>
     <div class="header-divider"></div>
     <div class="clock" style="color:var(--text-3);">NC</div>
+    <button onclick="this.style.transform='rotate(360deg)';this.style.transition='transform .5s';setTimeout(function(){location.reload();},300)" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Recharger">↻</button>
   </div>
 </div>
 
