@@ -1558,6 +1558,7 @@ function renderRizSemaine(monday){
     +'<th style="text-align:left;padding-left:12px;min-width:100px;">Jour</th>'
     +'<th>Boules de riz</th>'
     +'<th>Rolls</th>'
+    +'<th>Poisson</th>'
     +'<th style="font-size:11px;color:var(--text-muted);">Bacs</th>'
     +'</tr></thead><tbody>';
   for(let di=0;di<7;di++){
@@ -1573,6 +1574,12 @@ function renderRizSemaine(monday){
     const rollVal=_rizData[rollKey]!==undefined?_rizData[rollKey]:rollCalc;
     const isLocked=isRollLocked(dStr);
     const bg=isToday?'background:var(--today);':'';
+    // Poisson : valeur figée si présente, sinon calculée depuis le riz du jour
+    const fKeyT=dStr+'__f__'+SHOP+'__t', fKeyS=dStr+'__f__'+SHOP+'__s', fKeyA=dStr+'__f__'+SHOP+'__a';
+    const fdCalc=getFishVille(val);
+    const fT=_rizData[fKeyT]!==undefined?_rizData[fKeyT]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.t:0));
+    const fS=_rizData[fKeyS]!==undefined?_rizData[fKeyS]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.s:0));
+    const fA=_rizData[fKeyA]!==undefined?_rizData[fKeyA]:(isFishLocked(dStr)?0:(fdCalc?fdCalc.a:0));
     // Badge jour off
     const _isOff=_JOURS_OFF.indexOf(dStr)!==-1;
     const _isRizPoisson=_JOURS_OFF_RP&&_JOURS_OFF_RP.indexOf(dStr)!==-1;
@@ -1615,6 +1622,13 @@ function renderRizSemaine(monday){
             id="roll-inp-${dStr}">
           <button onclick="adjRoll('${dStr}',${rollVal},10)" style="width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:13px;">+</button>
         </div>`}
+      </td>
+      <td style="padding:6px 8px;text-align:center;">
+        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#fde8e8;color:#c0392b;font-weight:700;white-space:nowrap;">T ${fT}</span>
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#e8f0fd;color:#1a5fa8;font-weight:700;white-space:nowrap;">S ${fS}</span>
+          <span style="display:inline-block;font-size:10px;padding:2px 6px;border-radius:8px;background:#fff3e0;color:#c8860a;font-weight:700;white-space:nowrap;">A ${fA}</span>
+        </div>
       </td>
       <td style="padding:6px 8px;text-align:center;font-size:13px;color:var(--text-muted);">${bacs}</td>
     </tr>`;
