@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
+<link rel="manifest" href="/Hiro-prod/production%20hiro/manifest-home.json">
+<meta name="theme-color" content="#1a1a1a">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Hiro Sushi</title>
+<meta name="apple-mobile-web-app-title" content="Hiro Sushi">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;--radius:14px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;}
+.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;gap:10px;height:56px;position:sticky;top:0;z-index:100;}
+.logo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+.app-header h1{font-size:15px;font-weight:500;letter-spacing:.02em;}
+.subtitle{font-size:11px;color:#999;margin-top:1px;}
+.main{padding:1.25rem 1rem 2rem;max-width:520px;margin:0 auto;}
+.section-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin:1.25rem 2px 8px;}
+.section-title:first-child{margin-top:0;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.tile{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;transition:border-color .15s,transform .1s;}
+.tile:active{transform:scale(.97);}
+.tile-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tile-label{font-size:13px;font-weight:600;color:var(--text);}
+.tile-sub{font-size:10px;color:var(--text-hint);margin-top:1px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1916;z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#222;border:1px solid #333;border-radius:14px;padding:32px 28px;max-width:300px;width:90%;text-align:center;">
+    <div style="font-size:17px;font-weight:600;color:#fff;margin-bottom:4px;" id="login-title">Hiro Sushi</div>
+    <div style="font-size:12px;color:#888;margin-bottom:24px;" id="login-sub">Accès personnel</div>
+    <input id="pwd-input" type="password" placeholder="Mot de passe" style="width:100%;padding:10px 14px;border:1px solid #444;border-radius:8px;font-size:15px;margin-bottom:12px;background:#333;color:#fff;outline:none;" onkeydown="if(event.key==='Enter')(window._homeSetupMode?setupHomePwd:checkHomePwd)()">
+    <input id="pwd-input-confirm" type="password" placeholder="Confirmer le mot de passe" style="display:none;width:100%;padding:10px 14px;border:1px solid #444;border-radius:8px;font-size:15px;margin-bottom:12px;background:#333;color:#fff;outline:none;" onkeydown="if(event.key==='Enter')setupHomePwd()">
+    <button id="login-btn" onclick="checkHomePwd()" style="width:100%;padding:10px;background:#1a1916;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;">Connexion</button>
+    <div id="pwd-error" style="color:#e74c3c;font-size:12px;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+<script>
+async function _sha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const _HOME_CFG='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/home-password';
+const _HOME_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+async function _fetchHomeHash(){
+  try{
+    var res=await fetch(_HOME_CFG+'?key='+_HOME_KEY);
+    if(res.status===404) return {exists:false};
+    if(!res.ok) return {error:true};
+    var j=await res.json();
+    if(j.fields&&j.fields.hash) return {exists:true,hash:j.fields.hash.stringValue};
+    return {exists:false};
+  }catch(e){return {error:true};}
+}
+window._homeSetupMode=false;
+
+async function setupHomePwd(){
+  var v=document.getElementById('pwd-input').value;
+  var v2=document.getElementById('pwd-input-confirm').value;
+  var err=document.getElementById('pwd-error');
+  if(!v||v.length<4){err.textContent='Mot de passe trop court (min 4 caractères)';err.style.display='block';return;}
+  if(v!==v2){err.textContent='Les mots de passe ne correspondent pas';err.style.display='block';return;}
+  var hash=await _sha256(v);
+  try{
+    var res=await fetch(_HOME_CFG+'?key='+_HOME_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{hash:{stringValue:hash}}})});
+    if(res.ok){localStorage.setItem('hiro-home-hash',hash);document.getElementById('login-screen').style.display='none';}
+    else{err.textContent='Erreur lors de la création';err.style.display='block';}
+  }catch(e){err.textContent='Erreur réseau';err.style.display='block';}
+}
+
+async function checkHomePwd(){
+  var v=document.getElementById('pwd-input').value;
+  var err=document.getElementById('pwd-error');
+  var r=await _fetchHomeHash();
+  if(r.error||!r.exists){err.textContent='Erreur de chargement, réessayez';err.style.display='block';return;}
+  var vHash=await _sha256(v);
+  if(vHash!==r.hash){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+  localStorage.setItem('hiro-home-hash',r.hash);document.getElementById('login-screen').style.display='none';
+}
+
+(async function(){
+  var stored=localStorage.getItem('hiro-home-hash');
+  var r=await _fetchHomeHash();
+  if(r.error) return; // erreur réseau : ne pas basculer en mode configuration par erreur
+  if(!r.exists){
+    window._homeSetupMode=true;
+    document.getElementById('login-title').textContent='Bienvenue';
+    document.getElementById('login-sub').textContent='Définissez votre mot de passe';
+    document.getElementById('pwd-input-confirm').style.display='block';
+    document.getElementById('login-btn').textContent='Définir';
+    document.getElementById('login-btn').onclick=setupHomePwd;
+    return;
+  }
+  if(stored&&stored===r.hash){document.getElementById('login-screen').style.display='none';return;}
+})();
+</script>
+
+<header class="app-header">
+  <img class="logo" src="/Hiro-prod/production%20hiro/logo.jpg" alt="Hiro Sushi">
+  <div><h1>Hiro Sushi</h1><div class="subtitle">Choisir une interface</div></div>
+</header>
+
+<div class="main">
+  <div class="section-title">Commande boutiques</div>
+  <div class="grid">
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_dsm.html'">
+      <div class="tile-icon" style="background:#e8f1fb;color:#1a5fa8;">📦</div>
+      <div><div class="tile-label">DSM</div><div class="tile-sub">Commande journalière</div></div>
+    </button>
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_mgt.html'">
+      <div class="tile-icon" style="background:#e4f5ee;color:#0d7a52;">📦</div>
+      <div><div class="tile-label">MGT</div><div class="tile-sub">Commande journalière</div></div>
+    </button>
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_paita.html'">
+      <div class="tile-icon" style="background:#fbeee5;color:#b84a1a;">📦</div>
+      <div><div class="tile-label">Paita</div><div class="tile-sub">Commande journalière</div></div>
+    </button>
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_ville.html'">
+      <div class="tile-icon" style="background:#f1e8fb;color:#7a3db8;">📦</div>
+      <div><div class="tile-label">Ville</div><div class="tile-sub">Commande journalière</div></div>
+    </button>
+  </div>
+
+  <div class="section-title">Gestion</div>
+  <div class="grid">
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_access.html'">
+      <div class="tile-icon" style="background:#eee;color:#555;">👁</div>
+      <div><div class="tile-label">Access</div><div class="tile-sub">Consultation</div></div>
+    </button>
+    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_prod.html'">
+      <div class="tile-icon" style="background:#e5e4e0;color:#1a1916;">🍱</div>
+      <div><div class="tile-label">Prod</div><div class="tile-sub">Cuisine centrale</div></div>
+    </button>
+  </div>
+</div>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/Hiro-prod/production%20hiro/sw.js').catch(function(){});
+}
+</script>
+
+</body>
+</html>
