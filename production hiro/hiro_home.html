@@ -105,10 +105,16 @@ async function checkHomePwd(){
 
 <header class="app-header">
   <img class="logo" src="/Hiro-prod/production%20hiro/logo.jpg" alt="Hiro Sushi">
-  <div><h1>Hiro Sushi</h1><div class="subtitle">Choisir une interface</div></div>
+  <div style="flex:1;"><h1>Hiro Sushi</h1><div class="subtitle">Choisir une interface</div></div>
+  <div id="clock" style="font-family:'DM Mono',monospace;font-size:11px;color:#aaa;white-space:nowrap;"></div>
 </header>
 
 <div class="main">
+  <div class="section-title">Aujourd'hui</div>
+  <div id="shop-summary" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+    <div style="padding:14px;text-align:center;color:var(--text-hint);font-size:12px;">Chargement...</div>
+  </div>
+
   <div class="section-title">Commande boutiques</div>
   <div class="grid">
     <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_dsm.html'">
@@ -146,6 +152,134 @@ async function checkHomePwd(){
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/Hiro-prod/production%20hiro/sw.js').catch(function(){});
 }
+</script>
+
+<script>
+const _KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+const SHOPS=[
+  {key:'dsm',label:'DSM',color:'#1a5fa8'},
+  {key:'mgt',label:'MGT',color:'#0d7a52'},
+  {key:'paita',label:'Paita',color:'#b84a1a'},
+  {key:'ville',label:'Ville',color:'#7a3db8'}
+];
+var _NOW_ONLINE_MS=90000;
+
+function updateClock(){
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  var dateStr=nc.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+  var hh=String(nc.getHours()).padStart(2,'0'), mm=String(nc.getMinutes()).padStart(2,'0');
+  var el=document.getElementById('clock');
+  if(el) el.textContent=dateStr+' · '+hh+':'+mm;
+}
+updateClock();
+setInterval(updateClock,30000);
+
+function dsHome(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function computeTomorrow(offList,rpList,rprList){
+  var now=new Date();
+  var nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  nc.setDate(nc.getDate()+(nc.getDay()===6?2:1));
+  while(offList.indexOf(dsHome(nc))!==-1||rpList.indexOf(dsHome(nc))!==-1||rprList.indexOf(dsHome(nc))!==-1){
+    nc.setDate(nc.getDate()+1);
+    if(nc.getDay()===0) nc.setDate(nc.getDate()+1);
+  }
+  return nc;
+}
+function fmtHM(ts){
+  var d=new Date(ts);
+  var nc=new Date(d.getTime()+d.getTimezoneOffset()*60000+11*3600000);
+  return String(nc.getHours()).padStart(2,'0')+':'+String(nc.getMinutes()).padStart(2,'0');
+}
+function agoStr(ts){
+  if(!ts) return '';
+  var mins=Math.round((Date.now()-ts)/60000);
+  if(mins<1) return '<1min';
+  if(mins<60) return mins+'min';
+  if(mins<1440) return Math.round(mins/60)+'h';
+  return Math.round(mins/1440)+'j';
+}
+
+async function loadShopSummary(){
+  var el=document.getElementById('shop-summary');
+  if(!el) return;
+
+  var presenceByShop={};
+  try{
+    var pRes=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?key='+_KEY);
+    if(pRes.ok){
+      var pJson=await pRes.json();
+      var now=Date.now();
+      (pJson.documents||[]).forEach(function(doc){
+        var f=doc.fields||{};
+        var shop=f.shop?f.shop.stringValue:'';
+        var iface=f.iface?f.iface.stringValue:'';
+        var disabled=f.disabled&&f.disabled.booleanValue===true;
+        if(iface!=='Commande'||!shop||disabled) return;
+        var ts=f.ts?parseInt(f.ts.integerValue):0;
+        if(!presenceByShop[shop]) presenceByShop[shop]={ts:0,online:false};
+        var cur=presenceByShop[shop];
+        if(ts>cur.ts) cur.ts=ts;
+        if((now-ts)<_NOW_ONLINE_MS) cur.online=true;
+      });
+    }
+  }catch(e){}
+
+  var joursOff={};
+  try{
+    var jRes=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY);
+    if(jRes.ok){
+      var jJson=await jRes.json();
+      SHOPS.forEach(function(s){
+        var raw=jJson.fields&&jJson.fields[s.key]?jJson.fields[s.key].stringValue:null;
+        var off=[],rp=[],rpr=[];
+        if(raw){
+          try{
+            var arr=JSON.parse(raw);
+            off=arr.filter(function(e){return e.mode==='off';}).map(function(e){return e.date;});
+            rp=arr.filter(function(e){return e.mode==='rizpoisson';}).map(function(e){return e.date;});
+            rpr=arr.filter(function(e){return e.mode==='rizpoissonroll';}).map(function(e){return e.date;});
+          }catch(e){}
+        }
+        joursOff[s.key]={off:off,rp:rp,rpr:rpr};
+      });
+    }
+  }catch(e){}
+
+  var shopData=SHOPS.map(function(s){
+    var jo=joursOff[s.key]||{off:[],rp:[],rpr:[]};
+    var tomorrow=computeTomorrow(jo.off,jo.rp,jo.rpr);
+    return {shop:s,docId:'order_'+dsHome(tomorrow)+'_'+s.key};
+  });
+
+  var orderResults=await Promise.all(shopData.map(function(d){
+    return fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-orders/'+d.docId+'?key='+_KEY)
+      .then(function(r){return r.ok?r.json():null;})
+      .catch(function(){return null;});
+  }));
+
+  var rowsHtml='';
+  shopData.forEach(function(d,i){
+    var s=d.shop;
+    var pres=presenceByShop[s.key];
+    var hasRecord=pres&&pres.ts>0;
+    var presDot=pres&&pres.online?'#27ae60':'#ccc';
+    var presLabel=pres&&pres.online?'En ligne':(hasRecord?'Hors ligne · '+agoStr(pres.ts):'Jamais connecté');
+    var oJson=orderResults[i];
+    var hasTs=oJson&&oJson.fields&&oJson.fields.ts;
+    var orderLabel=hasTs?('✅ Envoyée '+fmtHM(parseInt(oJson.fields.ts.integerValue))):'⏳ En attente';
+    var orderColor=hasTs?'#0d7a52':'#c8860a';
+    rowsHtml+='<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;'+(i<shopData.length-1?'border-bottom:1px solid var(--border);':'')+'">'
+      +'<div style="width:8px;height:8px;border-radius:50%;background:'+presDot+';flex-shrink:0;"></div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:'+s.color+';">'+s.label+'</div>'
+      +'<div style="font-size:10px;color:var(--text-hint);">'+presLabel+'</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:600;color:'+orderColor+';">'+orderLabel+'</div></div>'
+      +'</div>';
+  });
+  el.innerHTML=rowsHtml;
+}
+loadShopSummary();
+setInterval(loadShopSummary,60000);
 </script>
 
 </body>
