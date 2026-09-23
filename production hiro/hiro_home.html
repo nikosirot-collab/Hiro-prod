@@ -117,19 +117,19 @@ async function checkHomePwd(){
 
   <div class="section-title">Commande boutiques</div>
   <div class="grid">
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_dsm.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_dsm.html')">
       <div class="tile-icon" style="background:#e8f1fb;color:#1a5fa8;">📦</div>
       <div><div class="tile-label">DSM</div><div class="tile-sub">Commande journalière</div></div>
     </button>
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_mgt.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_mgt.html')">
       <div class="tile-icon" style="background:#e4f5ee;color:#0d7a52;">📦</div>
       <div><div class="tile-label">MGT</div><div class="tile-sub">Commande journalière</div></div>
     </button>
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_paita.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_paita.html')">
       <div class="tile-icon" style="background:#fbeee5;color:#b84a1a;">📦</div>
       <div><div class="tile-label">Paita</div><div class="tile-sub">Commande journalière</div></div>
     </button>
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_order_ville.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_ville.html')">
       <div class="tile-icon" style="background:#f1e8fb;color:#7a3db8;">📦</div>
       <div><div class="tile-label">Ville</div><div class="tile-sub">Commande journalière</div></div>
     </button>
@@ -137,16 +137,25 @@ async function checkHomePwd(){
 
   <div class="section-title">Gestion</div>
   <div class="grid">
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_access.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_access.html')">
       <div class="tile-icon" style="background:#eee;color:#555;">👁</div>
       <div><div class="tile-label">Access</div><div class="tile-sub">Consultation</div></div>
     </button>
-    <button class="tile" onclick="location.href='/Hiro-prod/production%20hiro/hiro_prod.html'">
+    <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_prod.html')">
       <div class="tile-icon" style="background:#e5e4e0;color:#1a1916;">🍱</div>
       <div><div class="tile-label">Prod</div><div class="tile-sub">Cuisine centrale</div></div>
     </button>
   </div>
 </div>
+
+<script>
+// Marque la provenance "hiro_home" pour cette page dans le navigateur qui la reçoit,
+// afin que le bouton de retour n'y apparaisse que si on est vraiment parti d'ici.
+function goTo(url){
+  try{sessionStorage.setItem('hiro-from-home','1');}catch(e){}
+  location.href=url;
+}
+</script>
 
 <script>
 if('serviceWorker' in navigator){
