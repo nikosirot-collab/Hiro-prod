@@ -692,6 +692,15 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
         <div id="pwd-change-msg" style="font-size:12px;margin-top:8px;display:none;"></div>
       </div>
 
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:24px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Mot de passe Hiro Home</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="new-home-pwd-input" type="password" placeholder="Nouveau mot de passe" style="flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;outline:none;">
+          <button onclick="changeHomePwd()" style="padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Changer</button>
+        </div>
+        <div id="home-pwd-change-msg" style="font-size:12px;margin-top:8px;display:none;"></div>
+      </div>
+
       <!-- Débit réseau -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -3958,6 +3967,28 @@ async function changeOrderPwd(){
   try{
     var hash=_h(pwd);
     var res=await _fbFetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{hash:{stringValue:hash}}})
+    });
+    if(res.ok){
+      msg.style.display='block';msg.style.color='#0d7a52';
+      msg.textContent='✓ Mot de passe mis à jour';
+      inp.value='';
+      setTimeout(function(){msg.style.display='none';},3000);
+    }
+  }catch(e){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur lors de la mise à jour';}
+}
+
+async function _sha256Home(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+async function changeHomePwd(){
+  var inp=document.getElementById('new-home-pwd-input');
+  var msg=document.getElementById('home-pwd-change-msg');
+  var pwd=inp.value.trim();
+  if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
+  try{
+    var hash=await _sha256Home(pwd);
+    var res=await _fbFetch(_CONFIG_API+'/home-password?key='+_SEC_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({fields:{hash:{stringValue:hash}}})
