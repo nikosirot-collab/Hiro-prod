@@ -4333,5 +4333,13 @@ async function chrCatalogueDelete(name){
 }
 </script>
 
+<script>
+// Ouverture directe d'un onglet via l'ancre d'URL (ex: hiro_prod.html#securite)
+if(location.hash==='#securite'){
+  var _secTab=document.querySelector('.nav-tab[onclick*="securite"]');
+  showPage('securite',_secTab);
+}
+</script>
+
 </body>
 </html>
