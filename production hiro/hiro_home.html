@@ -205,6 +205,7 @@ async function loadShopSummary(){
   if(!el) return;
 
   var presenceByShop={};
+  var pendingCount=0;
   try{
     var pRes=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?key='+_KEY);
     if(pRes.ok){
@@ -212,6 +213,7 @@ async function loadShopSummary(){
       var now=Date.now();
       (pJson.documents||[]).forEach(function(doc){
         var f=doc.fields||{};
+        if(f.pendingApproval&&f.pendingApproval.booleanValue===true) pendingCount++;
         var shop=f.shop?f.shop.stringValue:'';
         var iface=f.iface?f.iface.stringValue:'';
         var disabled=f.disabled&&f.disabled.booleanValue===true;
@@ -259,6 +261,13 @@ async function loadShopSummary(){
   }));
 
   var rowsHtml='';
+  if(pendingCount>0){
+    rowsHtml+='<div onclick="location.href=\'/Hiro-prod/production%20hiro/hiro_prod.html#securite\'" style="display:flex;align-items:center;gap:8px;padding:11px 14px;background:#fff8e1;border-bottom:1px solid var(--border);cursor:pointer;">'
+      +'<span style="font-size:14px;">⏳</span>'
+      +'<div style="flex:1;font-size:12px;font-weight:600;color:#b8860a;">'+pendingCount+' appareil'+(pendingCount>1?'s':'')+' en attente d\'approbation</div>'
+      +'<span style="font-size:12px;color:#b8860a;">→</span>'
+      +'</div>';
+  }
   shopData.forEach(function(d,i){
     var s=d.shop;
     var pres=presenceByShop[s.key];
