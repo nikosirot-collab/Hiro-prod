@@ -344,10 +344,31 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     <span id="sync-status" style="font-size:11px;color:#7fcf7f;">● Live</span>
     <span id="clock"></span>
     <span class="readonly-badge">LECTURE</span>
+    <button id="home-btn" onclick="goHome()" style="display:none;width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:15px;cursor:pointer;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Retour à l'accueil">🏠</button>
     <button id="theme-toggle" onclick="toggleTheme()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Mode sombre">🌙</button>
     <button onclick="this.style.transform='rotate(360deg)';this.style.transition='transform .5s';setTimeout(function(){location.reload();},300)" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Recharger">↻</button>
   </div>
 </header>
+
+<script>
+if(sessionStorage.getItem('hiro-from-home')==='1'){var _hb=document.getElementById('home-btn');if(_hb)_hb.style.display='flex';}
+async function _sha256Home(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+async function goHome(){
+  var v=prompt('Mot de passe Hiro Home :');
+  if(!v) return;
+  try{
+    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/home-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');
+    if(!r.ok){alert('Erreur de connexion');return;}
+    var j=await r.json();
+    var liveHash=j.fields&&j.fields.hash?j.fields.hash.stringValue:null;
+    if(!liveHash){alert('Erreur de connexion');return;}
+    var vHash=await _sha256Home(v);
+    if(vHash!==liveHash){alert('Mot de passe incorrect');return;}
+    localStorage.setItem('hiro-home-hash',liveHash);
+    location.href='/Hiro-prod/production%20hiro/hiro_home.html';
+  }catch(e){alert('Erreur réseau');}
+}
+</script>
 
 <nav class="nav">
   <div class="nav-tab active" onclick="showPage('riz',this)">Riz</div>
