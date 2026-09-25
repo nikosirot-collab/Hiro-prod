@@ -16,10 +16,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;--radius:14px;}
+:root{--bg:#161512;--surface:#211f1b;--border:#34322c;--border-strong:#4a473e;--text:#f0efe9;--text-muted:#a8a59c;--text-hint:#77746b;--radius:14px;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;}
-.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;gap:10px;height:56px;position:sticky;top:0;z-index:100;}
+.app-header{background:#1a1916;color:#fff;padding:0 1rem;display:flex;align-items:center;gap:10px;height:56px;position:sticky;top:0;z-index:100;}
 .logo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .app-header h1{font-size:15px;font-weight:500;letter-spacing:.02em;}
 .subtitle{font-size:11px;color:#999;margin-top:1px;}
@@ -119,19 +119,19 @@ async function checkHomePwd(){
   <div class="section-title">Commande boutiques</div>
   <div class="grid">
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_dsm.html')">
-      <div class="tile-icon" style="background:#e8f1fb;color:#1a5fa8;">📦</div>
+      <div class="tile-icon" style="background:#17324f;color:#5b9bdb;">📦</div>
       <div><div class="tile-label">DSM</div><div class="tile-sub">Commande journalière</div></div>
     </button>
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_mgt.html')">
-      <div class="tile-icon" style="background:#e4f5ee;color:#0d7a52;">📦</div>
+      <div class="tile-icon" style="background:#123c2c;color:#3ecb96;">📦</div>
       <div><div class="tile-label">MGT</div><div class="tile-sub">Commande journalière</div></div>
     </button>
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_paita.html')">
-      <div class="tile-icon" style="background:#fbeee5;color:#b84a1a;">📦</div>
+      <div class="tile-icon" style="background:#3a2013;color:#e8834a;">📦</div>
       <div><div class="tile-label">Paita</div><div class="tile-sub">Commande journalière</div></div>
     </button>
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_order_ville.html')">
-      <div class="tile-icon" style="background:#f1e8fb;color:#7a3db8;">📦</div>
+      <div class="tile-icon" style="background:#2c1f3f;color:#b98ce8;">📦</div>
       <div><div class="tile-label">Ville</div><div class="tile-sub">Commande journalière</div></div>
     </button>
   </div>
@@ -139,11 +139,11 @@ async function checkHomePwd(){
   <div class="section-title">Gestion</div>
   <div class="grid">
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_access.html')">
-      <div class="tile-icon" style="background:#eee;color:#555;">👁</div>
+      <div class="tile-icon" style="background:#2a2a28;color:#bbb;">👁</div>
       <div><div class="tile-label">Access</div><div class="tile-sub">Consultation</div></div>
     </button>
     <button class="tile" onclick="goTo('/Hiro-prod/production%20hiro/hiro_prod.html')">
-      <div class="tile-icon" style="background:#e5e4e0;color:#1a1916;">🍱</div>
+      <div class="tile-icon" style="background:#2a2925;color:#f0efe9;">🍱</div>
       <div><div class="tile-label">Prod</div><div class="tile-sub">Cuisine centrale</div></div>
     </button>
   </div>
@@ -272,10 +272,10 @@ async function loadShopSummary(){
 
   var rowsHtml='';
   if(pendingCount>0){
-    rowsHtml+='<div onclick="location.href=\'/Hiro-prod/production%20hiro/hiro_prod.html#securite\'" style="display:flex;align-items:center;gap:8px;padding:11px 14px;background:#fff8e1;border-bottom:1px solid var(--border);cursor:pointer;">'
+    rowsHtml+='<div onclick="location.href=\'/Hiro-prod/production%20hiro/hiro_prod.html#securite\'" style="display:flex;align-items:center;gap:8px;padding:11px 14px;background:#3a2f12;border-bottom:1px solid var(--border);cursor:pointer;">'
       +'<span style="font-size:14px;">⏳</span>'
-      +'<div style="flex:1;font-size:12px;font-weight:600;color:#b8860a;">'+pendingCount+' appareil'+(pendingCount>1?'s':'')+' en attente d\'approbation</div>'
-      +'<span style="font-size:12px;color:#b8860a;">→</span>'
+      +'<div style="flex:1;font-size:12px;font-weight:600;color:#e0b23c;">'+pendingCount+' appareil'+(pendingCount>1?'s':'')+' en attente d\'approbation</div>'
+      +'<span style="font-size:12px;color:#e0b23c;">→</span>'
       +'</div>';
   }
   shopData.forEach(function(d,i){
@@ -287,7 +287,7 @@ async function loadShopSummary(){
     var oJson=orderResults[i];
     var hasTs=oJson&&oJson.fields&&oJson.fields.ts;
     var orderLabel=hasTs?('✅ Envoyée '+fmtHM(parseInt(oJson.fields.ts.integerValue))):'⏳ En attente';
-    var orderColor=hasTs?'#0d7a52':'#c8860a';
+    var orderColor=hasTs?'#3ecb96':'#e0a83c';
     var dateLabel=d.tomorrow.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
     rowsHtml+='<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;'+(i<shopData.length-1?'border-bottom:1px solid var(--border);':'')+'">'
       +'<div style="width:8px;height:8px;border-radius:50%;background:'+presDot+';flex-shrink:0;"></div>'
