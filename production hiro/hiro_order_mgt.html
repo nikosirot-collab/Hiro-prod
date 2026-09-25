@@ -267,20 +267,8 @@ loadJoursOff();
 
 <script>
 if(sessionStorage.getItem('hiro-from-home')==='1'){var _hb=document.getElementById('home-btn');if(_hb)_hb.style.display='flex';}
-async function goHome(){
-  var v=prompt('Mot de passe Hiro Home :');
-  if(!v) return;
-  try{
-    var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/home-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');
-    if(!r.ok){alert('Erreur de connexion');return;}
-    var j=await r.json();
-    var liveHash=j.fields&&j.fields.hash?j.fields.hash.stringValue:null;
-    if(!liveHash){alert('Erreur de connexion');return;}
-    var vHash=await _sha256(v);
-    if(vHash!==liveHash){alert('Mot de passe incorrect');return;}
-    localStorage.setItem('hiro-home-hash',liveHash);
-    location.href='/Hiro-prod/production%20hiro/hiro_home.html';
-  }catch(e){alert('Erreur réseau');}
+function goHome(){
+  location.href='/Hiro-prod/production%20hiro/hiro_home.html';
 }
 </script>
 <div id="status-banner" class="status-banner pending">
