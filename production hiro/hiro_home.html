@@ -261,7 +261,7 @@ async function loadShopSummary(){
   var shopData=SHOPS.map(function(s){
     var jo=joursOff[s.key]||{off:[],rp:[],rpr:[]};
     var tomorrow=computeTomorrow(jo.off,jo.rp,jo.rpr);
-    return {shop:s,docId:'order_'+dsHome(tomorrow)+'_'+s.key};
+    return {shop:s,docId:'order_'+dsHome(tomorrow)+'_'+s.key,tomorrow:tomorrow};
   });
 
   var orderResults=await Promise.all(shopData.map(function(d){
@@ -288,11 +288,13 @@ async function loadShopSummary(){
     var hasTs=oJson&&oJson.fields&&oJson.fields.ts;
     var orderLabel=hasTs?('✅ Envoyée '+fmtHM(parseInt(oJson.fields.ts.integerValue))):'⏳ En attente';
     var orderColor=hasTs?'#0d7a52':'#c8860a';
+    var dateLabel=d.tomorrow.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
     rowsHtml+='<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;'+(i<shopData.length-1?'border-bottom:1px solid var(--border);':'')+'">'
       +'<div style="width:8px;height:8px;border-radius:50%;background:'+presDot+';flex-shrink:0;"></div>'
       +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;color:'+s.color+';">'+s.label+'</div>'
       +'<div style="font-size:10px;color:var(--text-hint);">'+presLabel+'</div></div>'
-      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:600;color:'+orderColor+';">'+orderLabel+'</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:11px;font-weight:600;color:'+orderColor+';">'+orderLabel+'</div>'
+      +'<div style="font-size:9px;color:var(--text-hint);margin-top:1px;">'+dateLabel+'</div></div>'
       +'</div>';
   });
   el.innerHTML=rowsHtml;
