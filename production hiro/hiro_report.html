@@ -433,8 +433,44 @@ body::before{
   </div>
 </div>
 <script>
-function checkReportPwd(){var v=document.getElementById('report-pwd-input').value;var h=5381;for(var i=0;i<v.length;i++)h=((h<<5)+h)+v.charCodeAt(i)|0;if((h>>>0).toString(16)==='1af5a601'){localStorage.setItem('hiro-ok','1');document.getElementById('report-login-screen').style.display='none';}else{document.getElementById('report-pwd-error').style.display='block';document.getElementById('report-pwd-input').value='';document.getElementById('report-pwd-input').focus();}}
-if(localStorage.getItem('hiro-ok')==='1') document.getElementById('report-login-screen').style.display='none';
+function _djb2(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
+async function _staffSha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const _STAFF_CFG='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/staff-password';
+const _STAFF_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+async function _fetchStaffHash(){
+  try{
+    var res=await fetch(_STAFF_CFG+'?key='+_STAFF_KEY);
+    if(res.status===404) return {exists:false};
+    if(!res.ok) return {error:true};
+    var j=await res.json();
+    if(j.fields&&j.fields.hash) return {exists:true,hash:j.fields.hash.stringValue};
+    return {exists:false};
+  }catch(e){return {error:true};}
+}
+async function checkReportPwd(){
+  var v=document.getElementById('report-pwd-input').value;
+  var err=document.getElementById('report-pwd-error');
+  var r=await _fetchStaffHash();
+  if(r.error){err.textContent='Erreur de connexion, réessayez';err.style.display='block';return;}
+  if(r.exists){
+    var vHash=await _staffSha256(v);
+    if(vHash!==r.hash){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('report-pwd-input').value='';document.getElementById('report-pwd-input').focus();return;}
+    localStorage.setItem('hiro-staff-hash',r.hash);
+    document.getElementById('report-login-screen').style.display='none';
+    return;
+  }
+  if(_djb2(v)!=='1af5a601'){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('report-pwd-input').value='';document.getElementById('report-pwd-input').focus();return;}
+  var newHash=await _staffSha256(v);
+  try{await fetch(_STAFF_CFG+'?key='+_STAFF_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{hash:{stringValue:newHash}}})});}catch(e){}
+  localStorage.setItem('hiro-staff-hash',newHash);
+  document.getElementById('report-login-screen').style.display='none';
+}
+(async function(){
+  var stored=localStorage.getItem('hiro-staff-hash');
+  if(!stored) return;
+  var r=await _fetchStaffHash();
+  if(r.exists && stored===r.hash) document.getElementById('report-login-screen').style.display='none';
+})();
 </script>
 
 <!-- HEADER -->
