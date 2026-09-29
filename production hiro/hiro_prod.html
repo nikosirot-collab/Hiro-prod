@@ -418,6 +418,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       <button class="week-btn" onclick="changeWeek(-1)">&#8592;</button>
       <span class="week-label" id="weekLabel"></span>
       <button class="week-btn" onclick="changeWeek(1)">&#8594;</button>
+      <button onclick="goToday()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);margin-left:4px;">Semaine en cours</button>
     </div>
     <div class="controls">
       <span class="tz-tag">Nouméa — GMT+11</span>
@@ -1427,14 +1428,23 @@ function showPage(p, el) {
   else{secPollStop();stopNetMonitor();}
 }
 
+function _maxWeekOff(){
+  const lastDayNextMonth=new Date(TODAY_NC.getFullYear(), TODAY_NC.getMonth()+2, 0);
+  const diffDays=Math.round((lastDayNextMonth-mondayOf(0))/86400000);
+  return Math.floor(diffDays/7);
+}
+
+function goToday(){ changeWeek(-weekOff); }
+
 function changeWeek(d){
   const newOff=weekOff+d;
-  if(newOff>1) return;
+  const maxOff=_maxWeekOff();
+  if(newOff>maxOff) return;
   if(newOff<0) return;
   weekOff=newOff;
   data={};
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
-  document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=1?'0.3':'1';
+  document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=maxOff?'0.3':'1';
   document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
   subscribeWeek();
   if(document.getElementById('page-stat').classList.contains('active')) renderRecap();
