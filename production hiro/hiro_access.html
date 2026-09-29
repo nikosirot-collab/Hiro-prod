@@ -398,7 +398,7 @@ function goHome(){
     <button class="wbtn" onclick="changeWeek(-1)">&#8592;</button>
     <span class="week-label" id="weekLabel"></span>
     <button class="wbtn" onclick="changeWeek(1)">&#8594;</button>
-    <button onclick="goToday()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);margin-left:4px;">Semaine en cours</button>
+    <button id="today-btn" onclick="goToday()" style="display:none;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);margin-left:4px;">Semaine en cours</button>
   </div>
   <div style="display:flex;align-items:center;gap:6px;">
     <span class="fete-tag" id="feteTag" style="display:none">&#127876; Fêtes</span>
@@ -1038,6 +1038,7 @@ function changeWeek(d){
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.wbtn[onclick="changeWeek(1)"]').style.opacity=weekOff>=maxOff?'0.3':'1';
   document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
+  var tb=document.getElementById('today-btn'); if(tb) tb.style.display=weekOff===0?'none':'inline-block';
   subscribeWeek();
 }
 

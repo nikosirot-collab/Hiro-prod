@@ -356,7 +356,7 @@ function goHome(){
     <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="section-title">Riz semaine</span>
-        <button onclick="rizGoToday()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);">Semaine en cours</button>
+        <button id="riz-today-btn" onclick="rizGoToday()" style="display:none;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);">Semaine en cours</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button onclick="rizChangeWeek(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">←</button>
@@ -1522,9 +1522,15 @@ function _rizMaxWeekOff(){
   return Math.floor(diffDays/7);
 }
 
+function _rizUpdateTodayBtn(){
+  var b=document.getElementById('riz-today-btn');
+  if(b) b.style.display=_rizWeekOff===0?'none':'inline-block';
+}
+
 function rizGoToday(){
   _rizWeekOff=0;
   loadRizSemaine();
+  _rizUpdateTodayBtn();
 }
 
 function rizChangeWeek(d){
@@ -1533,6 +1539,7 @@ function rizChangeWeek(d){
   if(_rizWeekOff+d<0)return; // min semaine courante
   _rizWeekOff+=d;
   loadRizSemaine();
+  _rizUpdateTodayBtn();
 }
 
 async function loadRizSemaine(){
