@@ -418,7 +418,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
       <button class="week-btn" onclick="changeWeek(-1)">&#8592;</button>
       <span class="week-label" id="weekLabel"></span>
       <button class="week-btn" onclick="changeWeek(1)">&#8594;</button>
-      <button id="today-btn" onclick="goToday()" style="display:none;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);margin-left:4px;">Semaine en cours</button>
+      <button id="today-btn" onclick="goToday()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);margin-left:4px;">Semaine en cours</button>
     </div>
     <div class="controls">
       <span class="tz-tag">Nouméa — GMT+11</span>
@@ -1446,7 +1446,7 @@ function changeWeek(d){
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.week-btn[onclick="changeWeek(1)"]').style.opacity=weekOff>=maxOff?'0.3':'1';
   document.querySelector('.week-btn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
-  var tb=document.getElementById('today-btn'); if(tb) tb.style.display=weekOff===0?'none':'inline-block';
+  var tb=document.getElementById('today-btn'); if(tb) tb.style.display=weekOff===0?'inline-block':'none';
   subscribeWeek();
   if(document.getElementById('page-stat').classList.contains('active')) renderRecap();
   if(document.getElementById('page-recette').classList.contains('active')) loadProductionDuJour();
