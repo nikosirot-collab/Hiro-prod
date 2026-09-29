@@ -1414,8 +1414,18 @@ function mondayOfOff(off){
 function fmtRizDate(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
 function dsRiz(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
+function _rizMaxWeekOff(){
+  const now=new Date();
+  const nc=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const today=new Date(nc.getFullYear(),nc.getMonth(),nc.getDate());
+  const lastDayNextMonth=new Date(today.getFullYear(),today.getMonth()+2,0);
+  const diffDays=Math.round((lastDayNextMonth-mondayOfOff(0))/86400000);
+  return Math.floor(diffDays/7);
+}
+
 function rizChangeWeek(d){
-  if(_rizWeekOff+d>1)return; // max semaine N+1
+  const maxOff=_rizMaxWeekOff();
+  if(_rizWeekOff+d>maxOff)return; // max = fin du mois suivant
   if(_rizWeekOff+d<0)return; // min semaine courante
   _rizWeekOff+=d;
   loadRizSemaine();
