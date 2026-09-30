@@ -969,13 +969,13 @@ function detectChanges(newData){
   }
 }
 
-let _lastDataStr='';
+let _lastDataStr=null;
 
 function subscribeWeek(){
   // Réinitialise le snapshot quand on change de semaine
   _snapshotLoaded=false;
   _openSnapshot={};
-  _lastDataStr='';
+  _lastDataStr=null;
   // Attendre les jours off avant de lancer le polling
   var _startPoll=function(){
     _fbPoll(weekDocId(), remote=>{
@@ -1038,7 +1038,7 @@ function changeWeek(d){
   if(newOff>maxOff) return;
   if(newOff<0) return;
   weekOff=newOff;
-  data={};_lastDataStr='';
+  data={};_lastDataStr=null;
   document.getElementById('weekLabel').textContent=fmtWeek(weekOff);
   document.querySelector('.wbtn[onclick="changeWeek(1)"]').style.opacity=weekOff>=maxOff?'0.3':'1';
   document.querySelector('.wbtn[onclick="changeWeek(-1)"]').style.opacity=weekOff<=0?'0.3':'1';
