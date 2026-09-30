@@ -686,6 +686,7 @@ function _fbCacheGet(docId){
 async function _fbGet(docId) {
   try {
     const res = await fetch(`${_API}/${docId}?key=${_KEY}`);
+    if (res.status === 404) { _setStatus(true); return null; }
     _setStatus(res.ok);
     if (!res.ok) return null;
     return _fromFirestore(await res.json());
