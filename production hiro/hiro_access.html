@@ -694,10 +694,13 @@ async function _fbGet(docId) {
 
 let _pollInterval = null;
 let _pollSlowdown = false;
+let _pollToken = 0;
 function _fbPoll(docId, onData, interval=5000) {
   if (_pollInterval) clearInterval(_pollInterval);
+  const myToken = ++_pollToken;
   const tryFetch = () => {
     _fbGet(docId).then(d=>{
+      if(myToken!==_pollToken) return; // réponse obsolète, une autre semaine a pris le relais
       if(d===null){
         if(!_pollSlowdown){
           _pollSlowdown=true;
