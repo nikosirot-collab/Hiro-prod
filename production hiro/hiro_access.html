@@ -709,7 +709,7 @@ function _fbPoll(docId, onData, interval=5000) {
           _pollInterval=setInterval(tryFetch,30000);
         }
         var cached=_fbCacheGet(docId);
-        if(cached) onData(cached);
+        onData(cached);
       } else {
         if(_pollSlowdown){
           _pollSlowdown=false;
