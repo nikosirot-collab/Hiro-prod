@@ -729,9 +729,9 @@ function _fbPoll(docId, onData, interval=5000) {
 <script>
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS=['dsm','mgt','paita','ville','asia'];
-// Marmite de riz : capacité en kg de riz cru. 1 bac = 250 boules = 3 kg de riz
+// Calculs de riz en kg CRU. 1 bac (250 boules) = 2,4 kg cru.
 const KG_MARMITE=5;
-const KG_PAR_BAC=3;
+const KG_PAR_BAC=2.4;
 const KG_FORFAIT_ROLLS=12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
 function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
 function calcMarmites(bacs,isDim){ return Math.round(calcKgRiz(bacs,isDim)/KG_MARMITE); }
