@@ -1158,9 +1158,9 @@ function _fbPoll(docId, onData, interval=8000) {
 <script>
 const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS = ['dsm','mgt','paita','ville','asia'];
-// Marmite de riz : capacité en kg de riz cru. 1 bac = 250 boules = 3 kg de riz
+// Calculs de riz en kg CRU. 1 bac (250 boules) = 2,4 kg cru.
 const KG_MARMITE = 5;
-const KG_PAR_BAC = 3;
+const KG_PAR_BAC = 2.4;
 const KG_FORFAIT_ROLLS = 12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
 // Mélange vinaigre/sucre/sel : dose par kg de riz cru
 const VIN_ML_PAR_KG = 100, SUCRE_G_PAR_KG = 50, SEL_G_PAR_KG = 20;
@@ -1522,7 +1522,7 @@ function renderRecap() {
     <div style="margin-bottom:16px;">
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;">Moyennes / jour — ${fmtWeek(weekOff)}</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-        ${card('Moy. kg de riz / jour',avgKg,'kg · (3 kg/bac + forfait rolls)','var(--dsm)')}
+        ${card('Moy. kg de riz / jour',avgKg,'kg · ('+KG_PAR_BAC+' kg/bac + forfait rolls)','var(--dsm)')}
         ${card('Moy. temps de prod / jour',avgTemps,'min / jour','#5b4bb5')}
         ${card('Moy. découpe totale / jour',avgThon,'tranches (thon+saumon+aburi)','var(--dsm)')}
       </div>
