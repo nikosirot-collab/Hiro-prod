@@ -315,7 +315,7 @@ function goHome(){
     <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:8px;">
         <span class="section-title">Riz semaine</span>
-        <button id="riz-today-btn" onclick="rizGoToday()" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);">Semaine en cours</button>
+        <button id="riz-today-btn" onclick="rizGoToday()" style="display:none;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:none;cursor:pointer;color:var(--text-muted);">Semaine en cours</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
         <button onclick="rizChangeWeek(-1)" style="width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:none;cursor:pointer;font-size:14px;">←</button>
@@ -1414,6 +1414,11 @@ function mondayOfOff(off){
   d.setDate(d.getDate()+diff+off*7);
   return new Date(d.getFullYear(),d.getMonth(),d.getDate());
 }
+function mondayOfDate(dStr){
+  const d=new Date(dStr+'T00:00:00');
+  d.setDate(d.getDate()+(d.getDay()===0?-6:1-d.getDay()));
+  return d;
+}
 function fmtRizDate(d){return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');}
 function dsRiz(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -1428,7 +1433,7 @@ function _rizMaxWeekOff(){
 
 function _rizUpdateTodayBtn(){
   var b=document.getElementById('riz-today-btn');
-  if(b) b.style.display=_rizWeekOff===0?'inline-block':'none';
+  if(b) b.style.display=_rizWeekOff===0?'none':'inline-block';
 }
 
 function rizGoToday(){
@@ -1446,10 +1451,12 @@ function rizChangeWeek(d){
   _rizUpdateTodayBtn();
 }
 
+var _rizLoadToken=0;
 async function loadRizSemaine(){
   const el=document.getElementById('riz-semaine-content');
   const labelEl=document.getElementById('riz-week-label');
   if(!el)return;
+  const myToken=++_rizLoadToken;
   labelEl.textContent=fmtRizWeek(_rizWeekOff);
   const monday=mondayOfOff(_rizWeekOff);
   const docId='week_'+dsRiz(monday);
@@ -1466,9 +1473,11 @@ async function loadRizSemaine(){
   }catch(e){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:2rem;font-size:13px;">Chargement...</div>'; }
   try{
     const res=await fetch(_API_PROD+'/'+docId+'?key='+_KEY);
+    if(myToken!==_rizLoadToken) return; // réponse obsolète, une autre semaine a pris le relais
     _rizData={};
     if(res.ok){
       const json=await res.json();
+      if(myToken!==_rizLoadToken) return;
       if(json.fields)Object.entries(json.fields).forEach(([k,v])=>{
         const dk=k.replace(/--/g,'__');
         if(v.integerValue!==undefined)_rizData[dk]=parseInt(v.integerValue);
@@ -1476,7 +1485,7 @@ async function loadRizSemaine(){
       try{localStorage.setItem(cacheKey,JSON.stringify(_rizData));}catch(e){}
     }
     renderRizSemaine(monday);
-  }catch(e){if(!localStorage.getItem(cacheKey))el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur de chargement</div>';}
+  }catch(e){if(myToken===_rizLoadToken&&!localStorage.getItem(cacheKey))el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:1rem;">Erreur de chargement</div>';}
 }
 
 
@@ -1683,8 +1692,7 @@ function adjRoll(dStr,current,delta){
 async function setRollSemaine(dStr,val){
   if(isRollLocked(dStr)) return;
   const v=Math.min(100,Math.max(0,parseInt(val)||0));
-  const monday=mondayOfOff(_rizWeekOff);
-  const docId='week_'+dsRiz(monday);
+  const docId='week_'+dsRiz(mondayOfDate(dStr));
   const key=dStr+'__r__'+SHOP;
   const fsKey=key.replace(/__/g,'--');
   _rizData[key]=v;
@@ -1719,7 +1727,7 @@ async function setRizSemaine(dStr,val){
   if(isRollLocked(dStr)){renderRizSemaine(mondayOfOff(_rizWeekOff));return;}
   const v=Math.max(0,parseInt(val)||0);
   const monday=mondayOfOff(_rizWeekOff);
-  const docId='week_'+dsRiz(monday);
+  const docId='week_'+dsRiz(mondayOfDate(dStr));
   const key=dStr+'__'+SHOP;
   const fsKey=key.replace(/__/g,'--');
   _rizData[key]=v;
