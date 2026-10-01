@@ -729,6 +729,12 @@ function _fbPoll(docId, onData, interval=5000) {
 <script>
 const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS=['dsm','mgt','paita','ville','asia'];
+// Marmite de riz : capacité en kg de riz cru. 1 bac = 250 boules = 3 kg de riz
+const KG_MARMITE=5;
+const KG_PAR_BAC=3;
+const KG_FORFAIT_ROLLS=12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
+function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
+function calcMarmites(bacs,isDim){ return Math.round(calcKgRiz(bacs,isDim)/KG_MARMITE); }
 // Date dynamique Nouméa GMT+11
 const _nowNC=new Date(new Date().getTime()+(11*3600000)+new Date().getTimezoneOffset()*60000);
 const TODAY_NC=new Date(_nowNC.getFullYear(),_nowNC.getMonth(),_nowNC.getDate());
@@ -1070,7 +1076,7 @@ function render(){
     const v={};SHOPS.forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=Math.round(totBacs/2+(isDim?0:2));
+    const marmites=calcMarmites(totBacs,isDim);
     const temps=Math.round(totBacs*5*10)/10;
     wBacs+=totBacs;wMarmites+=marmites;wTemps+=temps;
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
@@ -1212,7 +1218,7 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
-      <td class="${dc2}">${totBacs>0?fb(marmites*6):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites*KG_MARMITE):'—'}</td>
     </tr>`;
 
     const fcv=(s,f,cls)=>{const val=gfv(s,f);return val!==undefined?`<span class="${cls}">${val}</span>`:'—';};
@@ -1344,7 +1350,7 @@ function render(){
     <td class="td-tot col-sep">${totRiz.asia||'—'}</td><td class="td-tot">${fb(totRiz.asia/250)}</td>
     <td class="td-btot col-sep">${fb(wMarmites)}</td>
     <td class="td-btot">${fb(wTemps)} min (~${fb(Math.round(wTemps/7*10)/10)}/j)</td>
-    <td class="td-btot">${fb(wMarmites*6)}</td>
+    <td class="td-btot">${fb(wMarmites*KG_MARMITE)}</td>
   </tr>`;
 
   if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
@@ -1495,7 +1501,7 @@ function _histoRender(hData,monday){
     const riz={};SHOPS.forEach(s=>{riz[s]=hv(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=totB>0?Math.round(totB/2+(isDim?0:2)):0;
+    const marmites=totB>0?calcMarmites(totB,isDim):0;
     const temps=Math.round(totB*5*10)/10;
     wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
@@ -1625,7 +1631,7 @@ function _histoRender(hData,monday){
   if(sumEl) sumEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
     <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wBacs)} bacs</span>
     <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--dsm);">${wThon} thon</span>
-    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wMarmites*6)} kg riz</span>
+    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wMarmites*KG_MARMITE)} kg riz</span>
   </div>`;
 
   const wrap=(c)=>`<div class="tbl-wrap">${c}</div>`;
