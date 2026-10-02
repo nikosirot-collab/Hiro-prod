@@ -637,6 +637,15 @@ const _KEY = 'AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
 // ── Jours off — chargement anticipé ──
 var _laboJoursOffEarly={dsm:[],mgt:[],paita:[],ville:[]};
 var _laboJoursOffEarlyLoaded=false;
+var _laboEvents={dsm:[],mgt:[],paita:[],ville:[]};   // évènements : [{date,text}] (champs ev_<shop> de hiro-config/jours-off)
+function _laboParseEvents(j){
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    try{
+      var f=j.fields&&j.fields['ev_'+s];
+      if(f&&f.stringValue) _laboEvents[s]=JSON.parse(f.stringValue)||[];
+    }catch(e){_laboEvents[s]=[];}
+  });
+}
 var _laboJoursOffEarlyReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/jours-off?key='+_KEY)
   .then(function(res){return res.ok?res.json():null;})
   .then(function(j){
@@ -648,6 +657,7 @@ var _laboJoursOffEarlyReady=fetch('https://firestore.googleapis.com/v1/projects/
           _laboJoursOffEarly[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
         }
       });
+      _laboParseEvents(j);
     }
     _laboJoursOffEarlyLoaded=true;
   }).catch(function(){_laboJoursOffEarlyLoaded=true;});
@@ -1119,7 +1129,7 @@ function render(){
       <div class="day-head" onclick="toggleDay('riz${cardId}')">
         <div class="day-head-left">
           <div class="day-dot${isToday?' is-today':''}"></div>
-          <div><div class="day-name">${label}${tags}</div><div class="day-date">${short}</div></div>
+          <div><div class="day-name">${label}${tags}</div><div class="day-date">${short}${laboEvRizLine(dStr)}</div></div>
         </div>
         <div id="chev-riz${cardId}" class="day-chevron${openDefault}">&#8964;</div>
       </div>
@@ -1212,7 +1222,7 @@ function render(){
     const dc2=isToday?'td-today':'';
 
     rizTbl+=`<tr>
-      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span></td>
+      <td class="${dc}">${label}${isToday?`<span class="tag tag-today" style="font-size:10px">auj.</span>`:''}<span class="ds">${short}</span>${laboEvRizLine(dStr)}</td>
       <td class="${dc2} col-sep vmono">${v.dsm||'—'}</td><td class="${dc2}">${bacs.dsm||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.mgt||'—'}</td><td class="${dc2}">${bacs.mgt||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${bacs.paita||'—'}</td>
@@ -1720,6 +1730,7 @@ async function laboLoadJoursOff(){
             _laboJoursOff[s]=(j.fields[s].arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};});
           }
         });
+        _laboParseEvents(j);
       }
     }
   }catch(e){}
@@ -1741,6 +1752,12 @@ function laboIsRizPoissonRoll(shop,dateStr){
   return e&&e.mode==='rizpoissonroll';
 }
 var LABO_LABELS={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville',asia:'Asia'};
+function laboEvText(shop,dStr){var e=(_laboEvents[shop]||[]).find(function(e){return e.date===dStr;});return e?e.text:'';}
+function laboEvBadge(shop,dStr){var t=laboEvText(shop,dStr);return t?'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3e2;color:#b07000;font-weight:700;margin-left:6px;">📅 '+esc(t)+'</span>':'';}
+function laboEvRizLine(dStr){   // onglet Riz : une pastille par magasin concerné, préfixée du magasin
+  var h=['dsm','mgt','paita','ville'].map(function(s){var t=laboEvText(s,dStr);return t?'<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3e2;color:#b07000;font-weight:700;margin:2px 4px 0 0;">📅 '+LABO_LABELS[s]+' · '+esc(t)+'</span>':'';}).join('');
+  return h?'<span style="display:block;">'+h+'</span>':'';
+}
 var LABO_COLORS={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8',asia:'#c8860a'};
 
 var LABO_SALADE=[
@@ -3175,7 +3192,7 @@ function laboRenderFiche(shop,order){
   if(isOff){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+laboEvBadge(shop,dStr)+'</div>'
       +'<span style="font-size:11px;padding:3px 10px;border-radius:10px;background:#f5f5f5;color:#888;font-weight:600;">🚫 Jour off</span>'
       +'</div><div style="padding:20px;text-align:center;color:var(--hint);font-size:13px;">Magasin fermé ce jour</div></div>';
   }
@@ -3189,7 +3206,7 @@ function laboRenderFiche(shop,order){
     var _rpBadgeLabel=isRizPoissonRoll?'🍣 Riz, Poisson & Roll uniquement':'🐟 Riz & Poisson uniquement';
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+laboEvBadge(shop,dStr)+'</div>'
       +'<span style="font-size:11px;padding:3px 10px;border-radius:10px;background:'+_rpBadgeBg+';color:'+_rpBadgeColor+';font-weight:600;">'+_rpBadgeLabel+'</span>'
       +'</div>'
       +laboPRow('Riz',_rpRiz)+laboPRow('Thon',_rpT)+laboPRow('Saumon',_rpS)+laboPRow('Aburi',_rpA)
@@ -3201,7 +3218,7 @@ function laboRenderFiche(shop,order){
   if(!order||((!order.ts)&&order.status!=='validated')){
     return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'
+      +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+laboEvBadge(shop,dStr)+'</div>'
       +'<span class="valid-status-pending">En attente</span>'
       +'</div>'
       +'<div style="padding:12px;text-align:center;color:var(--hint);font-size:13px;border-bottom:1px solid var(--border);">Commande non reçue</div>'
@@ -3504,7 +3521,7 @@ function laboRenderFiche(shop,order){
 
   return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;">'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:2px solid var(--border);">'
-    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+'</div>'+statusBadge+'</div>'
+    +'<div style="font-size:16px;font-weight:700;color:'+color+'">'+label+laboEvBadge(shop,dStr)+'</div>'+statusBadge+'</div>'
     +topSection+bottomSection+validateBtn+'</div>';
 }
 
@@ -3707,7 +3724,8 @@ function _laboRenderCore(el){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;'+cardStyle+'" onclick="laboGoToShop(\''+s+'\')">'
         +'<div style="width:10px;height:10px;border-radius:50%;background:'+LABO_COLORS[s]+';flex-shrink:0;"></div>'
         +'<div><div style="font-size:13px;font-weight:600;">'+LABO_LABELS[s]+'</div>'
-        +'<div style="font-size:11px;color:var(--muted);">'+statusLabel+'</div></div>'
+        +'<div style="font-size:11px;color:var(--muted);">'+statusLabel+'</div>'
+        +(laboEvText(s,dStr)?'<div style="font-size:11px;font-weight:600;color:#b07000;">📅 '+esc(laboEvText(s,dStr))+'</div>':'')+'</div>'
         +'<div style="margin-left:auto;font-size:18px;">'+statusIcon+'</div></div>';
     });
     cards+='</div>';
