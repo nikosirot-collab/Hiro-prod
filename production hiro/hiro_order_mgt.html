@@ -194,6 +194,7 @@ const ACCENT='#0d7a52';
 var _JOURS_OFF=[];
 var _JOURS_OFF_RP=[];
 var _JOURS_OFF_RPR=[];
+var _EVENTS=[];   // évènements du magasin : [{date,text}] (champ ev_<SHOP> de hiro-config/jours-off)
 var _joursOffLoaded=false;
 async function loadJoursOff(){
   try{
@@ -212,6 +213,10 @@ async function loadJoursOff(){
           _JOURS_OFF=(j.fields[SHOP].arrayValue.values||[]).map(function(v){return v.stringValue;});
         }
       }
+      try{
+        var _evf=j.fields&&j.fields['ev_'+SHOP];
+        if(_evf&&_evf.stringValue) _EVENTS=JSON.parse(_evf.stringValue)||[];
+      }catch(e){_EVENTS=[];}
     }
   }catch(e){}
   _joursOffLoaded=true;
@@ -1539,8 +1544,10 @@ function renderRizSemaine(monday){
       :_isRizPoissonRoll
       ?'<span style="display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;background:#e8f0fd;color:#1a5fa8;font-weight:700;margin-left:4px;">🍣 Riz/Poisson/Roll</span>'
       :'';
+    const _ev=_EVENTS.find(function(e){return e.date===dStr;});
+    const evBadge=_ev?'<span style="display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;background:#fef3e2;color:#b07000;font-weight:700;margin-left:4px;">📅 '+esc(_ev.text)+'</span>':'';
     html+=`<tr style="${bg}${_isOff?'opacity:0.5;':''}">
-      <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}${offBadge}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
+      <td style="padding:8px 12px;font-weight:500;">${DAYS_RIZ[di]}${offBadge}${evBadge}<span style="display:block;font-size:10px;color:var(--text-muted);">${fmtRizDate(d)}</span></td>
       <td style="padding:6px 8px;text-align:center;">
         ${isLocked?`
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
