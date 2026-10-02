@@ -406,7 +406,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
   <div class="nav-tab" onclick="showPage('thon',this)">Commande Thon</div>
   <div class="nav-tab" onclick="showPage('stat',this)">Stats</div>
   <div class="nav-tab" onclick="showPage('commandes',this)">Commandes</div>
-  <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff()">Jours off</div>
+  <div class="nav-tab" onclick="showPage('joursoff',this);loadJoursOff();loadEvenements()">Jours off</div>
   <div class="nav-tab" onclick="showPage('securite',this)">Sécurité</div>
   <div class="nav-tab" onclick="showPage('catalogue',this);loadChrCatalogue()">Catalogue CHR</div>
   <div class="nav-tab" onclick="showPage('recette',this)">Recette</div>
@@ -624,6 +624,7 @@ if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen'
     <div class="main" style="padding-top:16px;">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:16px;">Gestion des jours off</div>
       <div id="joursoff-content">Chargement...</div>
+      <div id="evenements-content"></div>
     </div>
   </div>
 
@@ -3240,6 +3241,81 @@ async function saveJoursOff(){
       body:JSON.stringify({fields:fields})
     });
   }catch(e){}
+}
+
+// ── Évènements (affichés dans « Riz semaine » des interfaces magasin) ──
+// Champs additifs ev_<shop> du document jours-off : [{date:'2026-10-10', text:'...'}]
+var _evData={dsm:[],mgt:[],paita:[],ville:[]};
+async function _evFetch(){
+  var res=await fetch(_CONFIG_API+'/jours-off?key='+_KEY);
+  if(!res.ok) return false;
+  var j=await res.json();
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    _evData[s]=[];
+    var f=j.fields&&j.fields['ev_'+s];
+    if(f&&f.stringValue){try{_evData[s]=JSON.parse(f.stringValue)||[];}catch(e){}}
+  });
+  return true;
+}
+async function loadEvenements(){
+  if(!document.getElementById('evenements-content'))return;
+  try{await _evFetch();}catch(e){}
+  renderEvenements();
+}
+async function _evSave(shops){
+  var fields={},mask=[];
+  shops.forEach(function(s){fields['ev_'+s]={stringValue:JSON.stringify(_evData[s])};mask.push('updateMask.fieldPaths=ev_'+s);});
+  await fetch(_CONFIG_API+'/jours-off?key='+_KEY+'&'+mask.join('&'),{
+    method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+}
+async function addEvenement(){
+  var date=(document.getElementById('ev-date')||{}).value;
+  var text=((document.getElementById('ev-text')||{}).value||'').trim();
+  var shops=['dsm','mgt','paita','ville'].filter(function(s){var c=document.getElementById('ev-'+s);return c&&c.checked;});
+  if(!date||!text){alert('Date et texte obligatoires');return;}
+  if(shops.length===0){alert('Sélectionne au moins un magasin');return;}
+  try{ if(!(await _evFetch())){alert('Chargement impossible, réessaie');return;} }
+  catch(e){alert('Chargement impossible, réessaie');return;}   // jamais d'écriture sur une copie périmée
+  shops.forEach(function(s){
+    _evData[s]=_evData[s].filter(function(e){return e.date!==date;});
+    _evData[s].push({date:date,text:text});
+  });
+  await _evSave(shops);
+  renderEvenements();
+}
+async function removeEvenement(shop,date){
+  try{ if(!(await _evFetch())){alert('Chargement impossible, réessaie');return;} }
+  catch(e){alert('Chargement impossible, réessaie');return;}
+  _evData[shop]=_evData[shop].filter(function(e){return e.date!==date;});
+  await _evSave([shop]);
+  renderEvenements();
+}
+function renderEvenements(){
+  var el=document.getElementById('evenements-content'); if(!el)return;
+  var today=new Date().toISOString().slice(0,10);
+  var h='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:24px 0 8px;">Évènements</div>'
+   +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
+   +'<input type="date" id="ev-date" min="'+today+'" value="'+today+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'
+   +'<input type="text" id="ev-text" maxlength="40" placeholder="ex : Fête de la ville" style="flex:1;min-width:160px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'
+   +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    h+='<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border:1px solid '+_SHOPS_COLORS[s]+';border-radius:8px;"><input type="checkbox" id="ev-'+s+'" style="accent-color:'+_SHOPS_COLORS[s]+'"><span style="font-size:13px;font-weight:600;color:'+_SHOPS_COLORS[s]+';">'+_SHOPS_LABELS[s]+'</span></label>';
+  });
+  h+='</div><button onclick="addEvenement()" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">+ Ajouter</button></div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+  ['dsm','mgt','paita','ville'].forEach(function(s){
+    var items=_evData[s].filter(function(e){return e.date>=today;}).sort(function(a,b){return a.date>b.date?1:-1;});
+    h+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;"><div style="font-size:13px;font-weight:700;color:'+_SHOPS_COLORS[s]+';margin-bottom:10px;">'+_SHOPS_LABELS[s]+'</div>';
+    if(!items.length) h+='<div style="font-size:12px;color:var(--text-muted);">Aucun évènement</div>';
+    items.forEach(function(e){
+      var lbl=new Date(e.date+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px;"><div><div style="font-size:12px;">'+lbl+'</div><div style="font-size:10px;font-weight:600;color:#b07000;">📅 '+esc(e.text)+'</div></div>'
+        +'<button onclick="removeEvenement(\''+s+'\',\''+e.date+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:0 4px;">×</button></div>';
+    });
+    h+='</div>';
+  });
+  el.innerHTML=h+'</div>';
 }
 
 
