@@ -1169,7 +1169,9 @@ const VIN_ML_PAR_MARMITE = KG_MARMITE*VIN_ML_PAR_KG;
 const SUCRE_G_PAR_MARMITE = KG_MARMITE*SUCRE_G_PAR_KG;
 const SEL_G_PAR_MARMITE = KG_MARMITE*SEL_G_PAR_KG;
 function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
-function calcMarmites(bacs,isDim){ return Math.round(calcKgRiz(bacs,isDim)/KG_MARMITE); }
+// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké = 2 marmites (0 le dimanche) ; arrondi au-dessus
+const BACS_PAR_MARMITE = 2, MARMITES_FORFAIT = 2;
+function calcMarmites(bacs,isDim){ return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9); }
 // Date dynamique Nouméa GMT+11
 const _nowNC = new Date(new Date().getTime() + (11 * 3600000) + new Date().getTimezoneOffset() * 60000);
 const TODAY_NC = new Date(_nowNC.getFullYear(), _nowNC.getMonth(), _nowNC.getDate());
