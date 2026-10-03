@@ -1162,6 +1162,8 @@ const DAYS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche']
 const SHOPS = ['dsm','mgt','paita','ville','asia'];
 // Calculs de riz en kg CRU. 1 bac (250 boules) = 2,4 kg cru.
 const KG_MARMITE = 5;
+const DATE_MARMITE_5KG = '2026-10-02';   // à partir de cette date : marmites de 5 kg ; avant : 6 kg (ancien calcul conservé)
+const KG_MARMITE_AVANT = 6, DOSES_AVANT = {vin:600, sucre:250, sel:120};
 const KG_PAR_BAC = 2.4;
 const KG_FORFAIT_ROLLS = 12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
 // Mélange vinaigre/sucre/sel : dose par kg de riz cru
@@ -1170,9 +1172,14 @@ const VIN_ML_PAR_MARMITE = KG_MARMITE*VIN_ML_PAR_KG;
 const SUCRE_G_PAR_MARMITE = KG_MARMITE*SUCRE_G_PAR_KG;
 const SEL_G_PAR_MARMITE = KG_MARMITE*SEL_G_PAR_KG;
 function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
-// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké = 2 marmites (0 le dimanche) ; arrondi au-dessus
-const BACS_PAR_MARMITE = 2, MARMITES_FORFAIT = 2;
-function calcMarmites(bacs,isDim){ return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9); }
+// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké 12 kg = 2,4 marmites (0 le dimanche) ; arrondi au-dessus
+const BACS_PAR_MARMITE = 2, MARMITES_FORFAIT = 2.4;
+function kgMarmite(dStr){ return dStr<DATE_MARMITE_5KG?KG_MARMITE_AVANT:KG_MARMITE; }
+function dosesMarmite(dStr){ return dStr<DATE_MARMITE_5KG?DOSES_AVANT:{vin:VIN_ML_PAR_MARMITE,sucre:SUCRE_G_PAR_MARMITE,sel:SEL_G_PAR_MARMITE}; }
+function calcMarmites(bacs,isDim,dStr){
+  if(dStr&&dStr<DATE_MARMITE_5KG) return Math.round(bacs/2+(isDim?0:2));   // ancien calcul (marmites de 6 kg)
+  return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9);
+}
 // Date dynamique Nouméa GMT+11
 const _nowNC = new Date(new Date().getTime() + (11 * 3600000) + new Date().getTimezoneOffset() * 60000);
 const TODAY_NC = new Date(_nowNC.getFullYear(), _nowNC.getMonth(), _nowNC.getDate());
@@ -1490,7 +1497,7 @@ function renderRecap() {
     const d=dayOf(weekOff,di),dStr=ds(d),isDim=(di===6);
     const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
     const bacs=SHOPS.reduce((a,s)=>a+(v[s]>0?v[s]/250:0),0);
-    const marmites=bacs>0?calcMarmites(bacs,isDim):0;
+    const marmites=bacs>0?calcMarmites(bacs,isDim,dStr):0;
     const kgRizJour=bacs>0?calcKgRiz(bacs,isDim):0;
     const temps=Math.round(bacs*5*10)/10;
     SHOPS.forEach(s=>{totRiz[s]+=v[s];rizByDay[s].push(v[s]||0);});
@@ -1939,7 +1946,7 @@ async function loadWeekFromHistory(dateStr) {
   const v=(x)=>x||'—';
 
   // Totaux semaine
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0;
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRolls={dsm:0,mgt:0,paita:0,ville:0};
@@ -1954,9 +1961,9 @@ async function loadWeekFromHistory(dateStr) {
     const riz={};SHOPS.forEach(s=>{riz[s]=hv(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=totB>0?calcMarmites(totB,isDim):0;
+    const marmites=totB>0?calcMarmites(totB,isDim,dStr):0;
     const temps=Math.round(totB*5*10)/10;
-    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
+    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;wKgRiz+=marmites*kgMarmite(dStr);
     SHOPS.forEach(s=>{totRiz[s]+=riz[s];});
     const bg=isDim?'background:var(--bg);':'';
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
@@ -2025,7 +2032,7 @@ async function loadWeekFromHistory(dateStr) {
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);flex-shrink:0;">
       <div>
         <div style="font-size:14px;font-weight:600;">Semaine du ${wLabel}</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(wBacs)} bacs · ${wThon} tranches thon · ${Math.round(wMarmites*KG_MARMITE)} kg riz</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${Math.round(wBacs)} bacs · ${wThon} tranches thon · ${Math.round(wKgRiz)} kg riz</div>
       </div>
       <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-muted);line-height:1;">×</button>
     </div>
@@ -2056,7 +2063,7 @@ var _nextWeekCache={};
 
 function render() {
   const todayDs = ds(TODAY_NC);
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0;
   let rizR='',fishR='',rollR='',thonR='';
   let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
@@ -2071,9 +2078,9 @@ function render() {
     const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
     const bacs={}; SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=calcMarmites(totBacs,isDim);
+    const marmites=calcMarmites(totBacs,isDim,dStr);
     const temps=Math.round(totBacs*5*10)/10;
-    wBacs+=totBacs; wMarmites+=marmites; wTemps+=temps;
+    wBacs+=totBacs; wMarmites+=marmites; wTemps+=temps; wKgRiz+=marmites*kgMarmite(dStr);
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
 
     const dc=isToday?'td-day td-today-day':'td-day';
@@ -2090,7 +2097,7 @@ function render() {
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
-      <td class="${dc2}">${totBacs>0?fb(marmites*KG_MARMITE):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
 
     // FISH — valeurs manuelles ou calculées automatiquement
@@ -2296,7 +2303,7 @@ function render() {
     <td class="td-total col-sep">${totRiz.asia||'—'}</td><td class="td-total">${fb(totRiz.asia/250)}</td>
     <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
     <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
-    <td class="td-blue-total">${fb(wMarmites*KG_MARMITE)}</td>
+    <td class="td-blue-total">${fb(wKgRiz)}</td>
   </tr>`;
 
   document.getElementById('foot-fish').innerHTML=`<tr>
@@ -2579,7 +2586,7 @@ function cmdRow(name,val){
    var shopColors={dsm:'var(--dsm)',mgt:'var(--mgt)',paita:'var(--paita)',ville:'#7a3db8'};
    var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
    var todayMarmites=0,todayBacs={};
-   var totWeekMarmites=0;
+   var totWeekMarmites=0,totWeekVin=0;
    var rows='';
    for(var di=0;di<7;di++){
      var d=new Date(monday);d.setDate(d.getDate()+di);
@@ -2589,9 +2596,9 @@ function cmdRow(name,val){
      var riz={};allShops.forEach(function(s){riz[s]=getV(dStr,s);});
      var bacs={};allShops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
      var totBacs=allShops.reduce(function(a,s){return a+bacs[s];},0);
-     var marmites=totBacs>0?calcMarmites(totBacs,isDim):0;
+     var marmites=totBacs>0?calcMarmites(totBacs,isDim,dStr):0;
      if(isToday){todayMarmites=marmites;allShops.forEach(function(s){todayBacs[s]=bacs[s];});}
-     if(marmites>0) totWeekMarmites+=marmites;
+     if(marmites>0){totWeekMarmites+=marmites;totWeekVin+=marmites*dosesMarmite(dStr).vin;}
      var rowBg=isToday?'background:#f0f7ff;':'';
      var rowBorder=isToday?'border-left:3px solid var(--accent);':'border-left:3px solid transparent;';
      var dayLabel=DAYS[di].substring(0,3)+' <span style="color:var(--text-muted);">'+dStr.substring(5).replace('-','/')+'</span>'+(isToday?' <span style="font-size:9px;background:#1a5fa8;color:#fff;border-radius:3px;padding:1px 4px;vertical-align:middle;">auj.</span>':'')+'';
@@ -2602,7 +2609,7 @@ function cmdRow(name,val){
        +'<td style="padding:4px 6px;font-size:12px;white-space:nowrap;">'+dayLabel+'</td>'
        +shopCells
        +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:600;color:var(--accent);">'+(marmites>0?marmites:'—')+'</td>'
-       +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*VIN_ML_PAR_MARMITE)+' ml':'—')+'</td>'
+       +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(marmites>0?(marmites*dosesMarmite(dStr).vin)+' ml':'—')+'</td>'
      +'</tr>';
    }
    var thead='<thead><tr style="border-bottom:2px solid var(--border);background:var(--bg);">'
@@ -2617,7 +2624,7 @@ function cmdRow(name,val){
    var tfoot='<tfoot><tr style="border-top:2px solid var(--border);background:var(--bg);">'
      +'<td colspan="5" style="padding:4px 6px;font-size:11px;font-weight:600;text-align:right;color:var(--text-muted);">Total semaine</td>'
      +'<td style="padding:4px 6px;text-align:center;font-family:\'DM Mono\',monospace;font-size:13px;font-weight:700;color:var(--accent);">'+totWeekMarmites+'</td>'
-     +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+(totWeekMarmites*VIN_ML_PAR_MARMITE)+' ml</td>'
+     +'<td style="padding:4px 6px;text-align:center;font-size:12px;color:var(--text-muted);">'+totWeekVin+' ml</td>'
      +'</tr></tfoot>';
    var table='<div style="overflow-x:auto;margin-bottom:16px;">'
      +'<table style="width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">'
@@ -2636,17 +2643,17 @@ function cmdRow(name,val){
        +'<div style="display:flex;flex-direction:column;margin-bottom:12px;">'
          +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
            +'<span style="font-size:13px;min-width:120px;">Vinaigre de riz</span>'
-           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--dsm);">'+(todayMarmites*VIN_ML_PAR_MARMITE)+'</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--dsm);">'+(todayMarmites*dosesMarmite(todayStr).vin)+'</span>'
            +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">ml</span>'
          +'</div>'
          +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">'
            +'<span style="font-size:13px;min-width:120px;">Sucre</span>'
-           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--mgt);">'+(todayMarmites*SUCRE_G_PAR_MARMITE)+'</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--mgt);">'+(todayMarmites*dosesMarmite(todayStr).sucre)+'</span>'
            +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
          +'</div>'
          +'<div style="display:flex;align-items:baseline;justify-content:space-between;padding:8px 0;">'
            +'<span style="font-size:13px;min-width:120px;">Sel</span>'
-           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--paita);">'+(todayMarmites*SEL_G_PAR_MARMITE)+'</span>'
+           +'<span style="font-size:26px;font-weight:500;font-family:\'DM Mono\',monospace;color:var(--paita);">'+(todayMarmites*dosesMarmite(todayStr).sel)+'</span>'
            +'<span style="font-size:12px;color:var(--text-muted);min-width:24px;text-align:right;">g</span>'
          +'</div>'
        +'</div>'
