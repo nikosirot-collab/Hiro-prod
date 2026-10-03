@@ -741,12 +741,18 @@ const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SHOPS=['dsm','mgt','paita','ville','asia'];
 // Calculs de riz en kg CRU. 1 bac (250 boules) = 2,4 kg cru.
 const KG_MARMITE=5;
+const DATE_MARMITE_5KG='2026-10-02';   // à partir de cette date : marmites de 5 kg ; avant : 6 kg (ancien calcul conservé)
+const KG_MARMITE_AVANT=6;
 const KG_PAR_BAC=2.4;
 const KG_FORFAIT_ROLLS=12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
 function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
-// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké = 2 marmites (0 le dimanche) ; arrondi au-dessus
-const BACS_PAR_MARMITE=2, MARMITES_FORFAIT=2;
-function calcMarmites(bacs,isDim){ return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9); }
+// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké 12 kg = 2,4 marmites (0 le dimanche) ; arrondi au-dessus
+const BACS_PAR_MARMITE=2, MARMITES_FORFAIT=2.4;
+function kgMarmite(dStr){ return dStr<DATE_MARMITE_5KG?KG_MARMITE_AVANT:KG_MARMITE; }
+function calcMarmites(bacs,isDim,dStr){
+  if(dStr&&dStr<DATE_MARMITE_5KG) return Math.round(bacs/2+(isDim?0:2));   // ancien calcul (marmites de 6 kg)
+  return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9);
+}
 // Date dynamique Nouméa GMT+11
 const _nowNC=new Date(new Date().getTime()+(11*3600000)+new Date().getTimezoneOffset()*60000);
 const TODAY_NC=new Date(_nowNC.getFullYear(),_nowNC.getMonth(),_nowNC.getDate());
@@ -1073,7 +1079,7 @@ function toggleDay(id){
 
 function render(){
   const todayDs=ds(TODAY_NC);
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0;
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0;
   let rizCards='',fishCards='',rollCards='';
   let rizTbl='',fishTbl='',rollTbl='',thonTbl='',totTbl='';
   let totFS={dsm:{t:0,s:0,a:0,ta:0},mgt:{t:0,s:0,a:0,ta:0},paita:{t:0,s:0,a:0,ta:0},ville:{t:0,s:0,a:0,ta:0}};
@@ -1088,9 +1094,9 @@ function render(){
     const v={};SHOPS.forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=calcMarmites(totBacs,isDim);
+    const marmites=calcMarmites(totBacs,isDim,dStr);
     const temps=Math.round(totBacs*5*10)/10;
-    wBacs+=totBacs;wMarmites+=marmites;wTemps+=temps;
+    wBacs+=totBacs;wMarmites+=marmites;wTemps+=temps;wKgRiz+=marmites*kgMarmite(dStr);
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
 
     const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
@@ -1230,7 +1236,7 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites):'—'}</td>
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
-      <td class="${dc2}">${totBacs>0?fb(marmites*KG_MARMITE):'—'}</td>
+      <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
 
     const fcv=(s,f,cls)=>{const val=gfv(s,f);return val!==undefined?`<span class="${cls}">${val}</span>`:'—';};
@@ -1362,7 +1368,7 @@ function render(){
     <td class="td-tot col-sep">${totRiz.asia||'—'}</td><td class="td-tot">${fb(totRiz.asia/250)}</td>
     <td class="td-btot col-sep">${fb(wMarmites)}</td>
     <td class="td-btot">${fb(wTemps)} min (~${fb(Math.round(wTemps/7*10)/10)}/j)</td>
-    <td class="td-btot">${fb(wMarmites*KG_MARMITE)}</td>
+    <td class="td-btot">${fb(wKgRiz)}</td>
   </tr>`;
 
   if(document.getElementById('foot-fish')) document.getElementById('foot-fish').innerHTML=`<tr>
@@ -1499,7 +1505,7 @@ function _histoRender(hData,monday){
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s));return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
 
-  let wBacs=0,wMarmites=0,wThon=0,wTemps=0,wSaumon=0,wAburi=0;
+  let wBacs=0,wMarmites=0,wThon=0,wTemps=0,wSaumon=0,wAburi=0,wKgRiz=0;
   const wRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
   const wBacsS={dsm:0,mgt:0,paita:0};
   const wFish={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
@@ -1513,9 +1519,9 @@ function _histoRender(hData,monday){
     const riz={};SHOPS.forEach(s=>{riz[s]=hv(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=totB>0?calcMarmites(totB,isDim):0;
+    const marmites=totB>0?calcMarmites(totB,isDim,dStr):0;
     const temps=Math.round(totB*5*10)/10;
-    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;
+    wBacs+=totB;wMarmites+=marmites;wTemps+=temps;wKgRiz+=marmites*kgMarmite(dStr);
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
     const dayS=hfv(dStr,'dsm','s')+hfv(dStr,'mgt','s')+hfv(dStr,'paita','s')+hfv(dStr,'ville','s');
     const dayA=hfv(dStr,'dsm','a')+hfv(dStr,'mgt','a')+hfv(dStr,'paita','a')+hfv(dStr,'ville','a');
@@ -1643,7 +1649,7 @@ function _histoRender(hData,monday){
   if(sumEl) sumEl.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
     <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wBacs)} bacs</span>
     <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--dsm);">${wThon} thon</span>
-    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wMarmites*KG_MARMITE)} kg riz</span>
+    <span style="font-size:11px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:3px 10px;">${Math.round(wKgRiz)} kg riz</span>
   </div>`;
 
   const wrap=(c)=>`<div class="tbl-wrap">${c}</div>`;
