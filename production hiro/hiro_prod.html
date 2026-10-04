@@ -1219,6 +1219,7 @@ function dayOf(off, di) {
 function ds(d) {
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
+function _todayNcStr(){var n=new Date(new Date().getTime()+11*3600000+new Date().getTimezoneOffset()*60000);return ds(new Date(n.getFullYear(),n.getMonth(),n.getDate()));}
 function fmtS(d) {
   return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
 }
@@ -3141,7 +3142,7 @@ async function loadJoursOff(){
 }
 
 function _syncProdJoursOff(){
-  var today=new Date().toISOString().slice(0,10);
+  var today=_todayNcStr();
   ['dsm','mgt','paita','ville'].forEach(function(s){
     _prodJoursOff[s]=_joursOffData[s].filter(function(e){return e.date>=today;});
   });
@@ -3159,7 +3160,7 @@ function toggleJoffPast(){
 function renderJoursOff(){
   var el=document.getElementById('joursoff-content');
   if(!el)return;
-  var todayStr=new Date().toISOString().slice(0,10);
+  var todayStr=_todayNcStr();
 
   var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'    +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">Ajouter un jour off</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'    +'<input type="date" id="joff-date" min="'+todayStr+'" value="'+todayStr+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'    +'</div>'    +'<div style="display:flex;gap:8px;margin-bottom:12px;">'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-off" value="off" checked> 🚫 Jour off complet</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rp" value="rizpoisson"> 🐟 Riz & Poisson uniquement</label>'    +'<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;">'    +'<input type="radio" name="joff-mode" id="joff-mode-rpr" value="rizpoissonroll"> 🍣 Riz, Poisson & Roll uniquement</label>'    +'</div>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
 
@@ -3317,7 +3318,7 @@ async function removeEvenement(shop,date){
 }
 function renderEvenements(){
   var el=document.getElementById('evenements-content'); if(!el)return;
-  var today=new Date().toISOString().slice(0,10);
+  var today=_todayNcStr();
   var h='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:24px 0 8px;">Évènements</div>'
    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
@@ -3426,7 +3427,7 @@ async function loadNuisibles(){
 function _nuisFormHtml(d){
   var editing=_nuisEditIdx>=0;
   var e=editing?d.entries[_nuisEditIdx]:{};
-  var today=new Date().toISOString().slice(0,10);
+  var today=_todayNcStr();
   var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
     +'<div style="font-size:13px;font-weight:600;margin-bottom:12px;">'+(editing?'Modifier l\'entrée':'Ajouter une entrée')+'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px;">'
