@@ -479,6 +479,7 @@ async function checkPwd(){
               <th colspan="2" class="col-sep">Ville</th>
               <th colspan="2" class="col-sep">Asia</th>
               <th class="col-sep" rowspan="2">Marmites</th>
+              <th rowspan="2" title="Marmites réellement utilisées (à saisir)">Réelles</th>
               <th rowspan="2">Temps prod (min)</th>
               <th rowspan="2">Kg riz</th>
             </tr>
@@ -1408,6 +1409,14 @@ function setV(d,s,v){
   _scheduleSave(weekDocId());render();
 }
 function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_markDirty(k);_scheduleSave(weekDocId());render();}
+// Marmites réellement utilisées (saisie quotidienne, sert à affiner le calcul en fin de semaine)
+function getMarmReel(d){ const v=data[d+'__marm_reel']; return v===undefined?null:v; }
+function setMarmReel(d,v){
+  const n=parseInt(v);
+  if(v===''||isNaN(n)){ render(); return; }          // champ vidé : on ne supprime jamais une saisie, la valeur revient
+  const k=d+'__marm_reel'; data[k]=Math.max(0,n);
+  _markDirty(k); _scheduleSave(weekDocId()); render();
+}
 function setFishV(d,s,f,v,auto){
   const k=d+'__f__'+s+'__'+f;
   const overrideKey=d+'__fo__'+s+'__'+f;
@@ -2111,7 +2120,7 @@ var _nextWeekCache={};
 
 function render() {
   const todayDs = ds(TODAY_NC);
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0;
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0,wReel=0,wCalcSaisi=0,wNbReel=0;
   let rizR='',fishR='',rollR='',thonR='';
   let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
@@ -2130,6 +2139,8 @@ function render() {
     const marmites=mj.marmites;
     const temps=Math.round(totBacs*5*10)/10;
     wBacs+=totBacs; wMarmites+=marmites; wTemps+=temps; wKgRiz+=marmites*kgMarmite(dStr);
+    const mr=getMarmReel(dStr), ecartM=mr!==null?mr-marmites:0;
+    if(mr!==null){ wReel+=mr; wCalcSaisi+=marmites; wNbReel++; }
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
 
     const dc=isToday?'td-day td-today-day':'td-day';
@@ -2145,6 +2156,7 @@ function render() {
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
       <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}</td>
+      <td class="${dc2} col-sep"><input class="inp inp-sm" type="number" min="0" step="1" value="${mr!==null?mr:''}" placeholder="—" onchange="setMarmReel('${dStr}',this.value)">${mr!==null?`<span style="display:block;font-size:10px;font-weight:600;color:${ecartM>0?'#c8860a':ecartM<0?'#0d7a52':'var(--text-muted)'};">${ecartM>0?'+':''}${ecartM}</span>`:''}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
@@ -2343,6 +2355,7 @@ function render() {
   document.getElementById('body-rolls').innerHTML=rollR;
   document.getElementById('body-thon').innerHTML=thonR;
   // Footers
+  const ecartTot=wReel-wCalcSaisi, pctTot=wCalcSaisi>0?Math.round(ecartTot/wCalcSaisi*1000)/10:0;
   document.getElementById('foot-riz').innerHTML=`<tr>
     <td class="td-total td-day">Total semaine</td>
     <td class="td-total col-sep">${totRiz.dsm||'—'}</td><td class="td-total">${fb(totRiz.dsm/250)}</td>
@@ -2351,6 +2364,7 @@ function render() {
     <td class="td-total col-sep">${totRiz.ville||'—'}</td><td class="td-total">${fb(totRiz.ville/250)}</td>
     <td class="td-total col-sep">${totRiz.asia||'—'}</td><td class="td-total">${fb(totRiz.asia/250)}</td>
     <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
+    <td class="td-blue-total" title="Calculé sur les jours saisis : ${wCalcSaisi}">${wNbReel>0?fb(wReel)+` <span style="font-size:11px;opacity:0.75">(${ecartTot>0?'+':''}${ecartTot} · ${ecartTot>0?'+':''}${String(pctTot).replace('.',',')} %)</span>`:'—'}</td>
     <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
     <td class="td-blue-total">${fb(wKgRiz)}</td>
   </tr>`;
