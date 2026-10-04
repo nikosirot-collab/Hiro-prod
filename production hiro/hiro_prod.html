@@ -363,20 +363,39 @@ th {
 </div>
 <script>
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
-const _PWD='1af5a601';
-function checkPwd(){
-  const v=document.getElementById('pwd-input').value;
-  if(_h(v)===_PWD){
-    localStorage.setItem('hiro-ok','1');
-    document.getElementById('login-screen').style.display='none';
-  } else {
-    document.getElementById('pwd-error').style.display='block';
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').focus();
-  }
+async function _staffSha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const _STAFF_CFG='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/staff-password';
+const _STAFF_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
+async function _fetchStaffHash(){
+  try{
+    var res=await fetch(_STAFF_CFG+'?key='+_STAFF_KEY);
+    if(res.status===404) return {exists:false};
+    if(!res.ok) return {error:true};
+    var j=await res.json();
+    if(j.fields&&j.fields.hash) return {exists:true,hash:j.fields.hash.stringValue};
+    return {exists:false};
+  }catch(e){return {error:true};}
 }
-if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
+async function checkPwd(){
+  var v=document.getElementById('pwd-input').value;
+  var err=document.getElementById('pwd-error');
+  var r=await _fetchStaffHash();
+  if(r.error){err.textContent='Erreur de connexion, réessayez';err.style.display='block';return;}
+  if(r.exists){
+    var vHash=await _staffSha256(v);
+    if(vHash!==r.hash){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+    localStorage.setItem('hiro-staff-hash',r.hash);
+    document.getElementById('login-screen').style.display='none';
+    return;
+  }
+  err.textContent="Configuration manquante, contactez l'administrateur";err.style.display='block';
+}
+(async function(){
+  var stored=localStorage.getItem('hiro-staff-hash');
+  if(!stored) return;
+  var r=await _fetchStaffHash();
+  if(r.exists && stored===r.hash) document.getElementById('login-screen').style.display='none';
+})();
 // Déverrouillage partagé depuis hiro_home — n'interfère pas avec le mécanisme ci-dessus
 (async function(){var homeHash=localStorage.getItem('hiro-home-hash');if(!homeHash)return;try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/home-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');if(!r.ok)return;var j=await r.json();if(j.fields&&j.fields.hash&&j.fields.hash.stringValue===homeHash){document.getElementById('login-screen').style.display='none';}}catch(e){}})();
 </script>
@@ -3071,7 +3090,6 @@ var IFACE_LABELS={
 };
 var SHOP_COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#7a3db8',access:'#888',prod:'#1a1916',labo:'#555'};
 
-function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
 
 var SEC_IFACE_ORDER=[
   {key:'Hiro Prod',  label:'🍱 Hiro Prod',   color:'#1a1916'},
@@ -4077,7 +4095,7 @@ async function changeOrderPwd(){
   var pwd=inp.value.trim();
   if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
   try{
-    var hash=_h(pwd);
+    var hash=await _sha256Home(pwd);
     var res=await _fbFetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
       method:'PATCH',
       headers:{'Content-Type':'application/json'},
@@ -4142,7 +4160,7 @@ function secPollStop(){
       if(chkRes&&chkRes.ok){
         var chkJson=await chkRes.json();
         if(chkJson.fields&&chkJson.fields.disabled&&chkJson.fields.disabled.booleanValue===true){
-          localStorage.removeItem('hiro-ok');
+          localStorage.removeItem('hiro-staff-hash');localStorage.removeItem('hiro-ok');
           document.body.innerHTML="<div style='display:flex;align-items:center;justify-content:center;height:100vh;background:#1a1916;color:#fff;text-align:center;'>Acces desactive</div>";
           return;
         }
