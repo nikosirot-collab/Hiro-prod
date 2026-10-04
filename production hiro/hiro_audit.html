@@ -148,7 +148,6 @@ body::before{
   </div>
 </div>
 <script>
-function _djb2(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
 async function _staffSha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 const _STAFF_CFG='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/staff-password';
 const _STAFF_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
@@ -174,11 +173,7 @@ async function checkAuditPwd(){
     document.getElementById('audit-login-screen').style.display='none';
     return;
   }
-  if(_djb2(v)!=='1af5a601'){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('audit-pwd-input').value='';document.getElementById('audit-pwd-input').focus();return;}
-  var newHash=await _staffSha256(v);
-  try{await fetch(_STAFF_CFG+'?key='+_STAFF_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{hash:{stringValue:newHash}}})});}catch(e){}
-  localStorage.setItem('hiro-staff-hash',newHash);
-  document.getElementById('audit-login-screen').style.display='none';
+  err.textContent="Configuration manquante, contactez l'administrateur";err.style.display='block';
 }
 (async function(){
   var stored=localStorage.getItem('hiro-staff-hash');
