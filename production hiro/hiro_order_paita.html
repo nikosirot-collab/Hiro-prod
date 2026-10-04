@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hiro Order — Paita</title>
 <meta name="apple-mobile-web-app-title" content="Hiro Paita">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,8 +17,8 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>:root{--bg:#f5f4f0;--surface:#fff;--border:#e2e0d8;--border-strong:#c8c5ba;--text:#1a1916;--text-muted:#6b6860;--text-hint:#a09d96;--radius:8px;--today:#e8f5e9;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;padding-bottom:80px;}
-.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom));}
+.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);position:sticky;top:0;z-index:100;}
 .header-left{display:flex;align-items:center;gap:10px;}
 .logo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .app-header h1{font-size:15px;font-weight:500;letter-spacing:.02em;}
@@ -59,7 +59,7 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
 .btn-add-line{display:flex;align-items:center;gap:6px;padding:10px 14px;border:1px dashed var(--border-strong);border-radius:var(--radius);background:none;color:var(--text-muted);font-size:13px;cursor:pointer;width:100%;justify-content:center;font-family:'DM Sans',sans-serif;}
 .btn-add-line:active{background:var(--border);}
 .riz-note{font-size:11px;color:var(--text-hint);padding:6px 12px 8px;background:#faf9f6;border-top:1px solid var(--border);text-align:center;}
-.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:10px;z-index:100;}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;z-index:100;}
 .btn-send{flex:1;padding:13px;border-radius:var(--radius);border:none;background:var(--text);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;}
 .btn-send:active{opacity:.8;}.btn-send:disabled{opacity:.4;}
 .btn-reset{padding:13px 16px;border-radius:var(--radius);border:1px solid var(--border-strong);background:none;color:var(--text-muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
