@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#1a1a1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Hiro Labo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;padding-bottom:28px;}
 
-.hdr{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100;}
+.hdr{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;justify-content:space-between;height:calc(52px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);position:sticky;top:0;z-index:100;}
 .hdr-left{display:flex;align-items:center;gap:10px;}
 .logo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .hdr-title{font-size:15px;font-weight:500;}
@@ -35,7 +35,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .date-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border-s);background:none;cursor:pointer;font-size:17px;color:var(--text);display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 .date-lbl{flex:1;text-align:center;font-size:14px;font-weight:600;text-transform:capitalize;}
 
-.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;position:sticky;top:52px;z-index:99;}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;position:sticky;top:calc(52px + env(safe-area-inset-top));z-index:99;}
 .nav-tab{flex:1;padding:12px 8px;font-size:13px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;text-align:center;-webkit-tap-highlight-color:transparent;transition:color .15s;}
 .nav-tab.active{color:var(--text);font-weight:600;border-bottom-color:var(--text);}
 
