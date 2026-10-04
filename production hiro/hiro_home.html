@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>Hiro Sushi</title>
 <meta name="apple-mobile-web-app-title" content="Hiro Sushi">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +20,7 @@
 body.dark{--bg:#111111;--surface:#1a1a1a;--border:#2a2a2a;--border-strong:#3a3a3a;--text:#f0ede8;--text-muted:#8a8680;--text-hint:#6a6660;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;min-height:100vh;}
-.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;gap:10px;height:56px;position:sticky;top:0;z-index:100;}
+.app-header{background:var(--text);color:#fff;padding:0 1rem;display:flex;align-items:center;gap:10px;height:calc(56px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);position:sticky;top:0;z-index:100;}
 body.dark .app-header{background:#1a1916;}
 .logo{width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;}
 .app-header h1{font-size:15px;font-weight:500;letter-spacing:.02em;}
