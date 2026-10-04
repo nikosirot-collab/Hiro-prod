@@ -741,12 +741,46 @@ const KG_MARMITE_AVANT=6;
 const KG_PAR_BAC=2.4;
 const KG_FORFAIT_ROLLS=12; // forfait rolls/poké du lundi au samedi, 0 le dimanche
 function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS); }
-// Marmites : 1 marmite (5 kg cru) = 2 bacs ; forfait rolls/poké 12 kg = 2,4 marmites (0 le dimanche) ; arrondi au-dessus
-const BACS_PAR_MARMITE=2, MARMITES_FORFAIT=2.4;
+// Riz réel du jour (à partir du 02/10/2026) : boules + rolls + pokés, en kg CUIT -> kg CRU -> marmites de 5 kg
+const RATIO_CUIT_CRU=2.2;                                    // le riz pèse 2,2 fois plus une fois cuit
+const G_CUIT_BOULE=22, G_CUIT_ROLL=197, G_CUIT_POKE=250;      // g de riz cuit par pièce
+const NB_POKES_JOUR=31;                                       // 18 thon + 13 saumon, lundi-samedi (0 le dimanche)
+const NB_ROLLS_ASIA=14;                                       // rolls Asia par défaut, lundi-samedi (0 le dimanche)
 function kgMarmite(dStr){ return dStr<DATE_MARMITE_5KG?KG_MARMITE_AVANT:KG_MARMITE; }
-function calcMarmites(bacs,isDim,dStr){
-  if(dStr&&dStr<DATE_MARMITE_5KG) return Math.round(bacs/2+(isDim?0:2));   // ancien calcul (marmites de 6 kg)
-  return Math.ceil(bacs/BACS_PAR_MARMITE+(isDim?0:MARMITES_FORFAIT)-1e-9);
+function calcMarmites(bacs,isDim,dStr){   // ANCIEN calcul, uniquement pour les jours avant DATE_MARMITE_5KG (marmites de 6 kg)
+  return Math.round(bacs/2+(isDim?0:2));
+}
+// Rolls d'un magasin ce jour-là : même règle que Hiro Prod (jour off, valeur saisie, sinon paliers RTBL)
+function rollJour(s,dStr,isDim,riz,src){
+  src=src||data;
+  if(s==='asia'){ const a=src[dStr+'__r__asia']; return a!==undefined?a:(isDim?0:NB_ROLLS_ASIA); }
+  if(laboIsOff(s,dStr)||laboIsRizPoisson(s,dStr)) return 0;
+  const mk=dStr+'__r__'+s;
+  if(src[mk]!==undefined) return src[mk];
+  return s==='ville'?0:getRolls(riz,isDim);
+}
+function calcRizJour(dStr,isDim,riz,src){
+  const boules=SHOPS.reduce((a,s)=>a+(riz[s]||0),0);
+  const nbRolls=SHOPS.reduce((a,s)=>a+rollJour(s,dStr,isDim,riz[s]||0,src),0);
+  const nbPokes=isDim?0:NB_POKES_JOUR;
+  const kgB=boules*G_CUIT_BOULE/1000, kgR=nbRolls*G_CUIT_ROLL/1000, kgP=nbPokes*G_CUIT_POKE/1000;
+  const kgCru=(kgB+kgR+kgP)/RATIO_CUIT_CRU, m=kgCru/KG_MARMITE;
+  return {legacy:false,boules,nbRolls,nbPokes,kgB,kgR,kgP,kgCru,m,marmites:Math.ceil(m-1e-9)};   // -1e-9 : garde flottante
+}
+// Marmites du jour : ancien calcul avant le 02/10/2026, riz réel ensuite
+function marmitesJour(dStr,isDim,riz,totBacs,src){
+  if(dStr<DATE_MARMITE_5KG) return {legacy:true,marmites:calcMarmites(totBacs,isDim),kgCru:calcKgRiz(totBacs,isDim)};
+  return calcRizJour(dStr,isDim,riz,src);
+}
+function fr1(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',','); }
+// Détail du riz du jour (cartes « Par jour »)
+function rizDetailHtml(mj,marmites){
+  if(mj.legacy) return '';
+  return '<div class="divider"></div>'
+    +'<div class="data-row"><span class="data-label">Boules</span><span class="data-val">'+fr1(mj.kgB)+' kg cuit</span></div>'
+    +'<div class="data-row"><span class="data-label">Rolls</span><span class="data-val">'+fr1(mj.kgR)+' kg ('+mj.nbRolls+' rolls)</span></div>'
+    +'<div class="data-row"><span class="data-label">Pokés</span><span class="data-val">'+fr1(mj.kgP)+' kg ('+mj.nbPokes+' pokés)</span></div>'
+    +'<div class="data-row"><span class="data-label">Total</span><span class="data-val">'+fr1(mj.kgCru)+' kg cru · '+fr1(mj.m)+' → '+marmites+' marmites</span></div>';
 }
 // Date dynamique Nouméa GMT+11
 const _nowNC=new Date(new Date().getTime()+(11*3600000)+new Date().getTimezoneOffset()*60000);
@@ -1089,7 +1123,8 @@ function render(){
     const v={};SHOPS.forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=calcMarmites(totBacs,isDim,dStr);
+    const mj=marmitesJour(dStr,isDim,v,totBacs);
+    const marmites=mj.marmites;
     const temps=Math.round(totBacs*5*10)/10;
     wBacs+=totBacs;wMarmites+=marmites;wTemps+=temps;wKgRiz+=marmites*kgMarmite(dStr);
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
@@ -1148,6 +1183,7 @@ function render(){
           <div class="sum-cell"><div class="slbl">Temps prod</div><div class="sval" style="color:#5b4bb5">${totBacs>0?fb(temps)+' min':'—'}</div></div>
           <div class="sum-cell"><div class="slbl">Total bacs</div><div class="sval">${totBacs>0?fb(totBacs):'—'}</div></div>
         </div>
+        ${totBacs>0?rizDetailHtml(mj,marmites):''}
       </div>
     </div>`;
 
@@ -1229,7 +1265,7 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${bacs.paita||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2}">${bacs.ville||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
-      <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites):'—'}</td>
+      <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}</td>
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
@@ -1495,7 +1531,7 @@ async function loadHistorique(){
 }
 
 function _histoRender(hData,monday){
-  const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:0;};
+  const hv=(d,s)=>{if(laboIsOff(s,d))return 0;const k=d+'__'+s;return hData[k]!==undefined?hData[k]:0;};
   const hr=(d,s)=>hData[d+'__r__'+s]||0;
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s));return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
@@ -1514,7 +1550,7 @@ function _histoRender(hData,monday){
     const riz={};SHOPS.forEach(s=>{riz[s]=hv(dStr,s);});
     const bacs={};SHOPS.forEach(s=>{bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
     const totB=SHOPS.reduce((a,s)=>a+bacs[s],0);
-    const marmites=totB>0?calcMarmites(totB,isDim,dStr):0;
+    const marmites=totB>0?marmitesJour(dStr,isDim,riz,totB,hData).marmites:0;
     const temps=Math.round(totB*5*10)/10;
     wBacs+=totB;wMarmites+=marmites;wTemps+=temps;wKgRiz+=marmites*kgMarmite(dStr);
     const dayT=hfv(dStr,'dsm','t')+hfv(dStr,'mgt','t')+hfv(dStr,'paita','t')+hfv(dStr,'ville','t');
