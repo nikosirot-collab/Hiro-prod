@@ -246,6 +246,27 @@ var currentDate = getTomorrow();
 var ordersData  = {};
 var fishData    = {};
 var _poll       = null;
+var _jfPoll     = null;
+var _joursOff   = {dsm:[],mgt:[],paita:[],ville:[]};   // [{date,mode}] de hiro-config/jours-off (mode : off | rizpoisson | rizpoissonroll)
+function jourOffMode(shop,dStr){
+  var l=_joursOff[shop]; if(!l) return '';
+  var e=l.find(function(e){return e.date===dStr;});
+  return e?(e.mode||'off'):'';
+}
+async function loadJoursOff(){
+  try{
+    var res=await fetch(_API+'/hiro-config/jours-off?key='+_KEY);
+    if(!res.ok) return;
+    var j=await res.json();
+    if(!j.fields) return;
+    ['dsm','mgt','paita','ville'].forEach(function(s){
+      var f=j.fields[s];
+      if(f&&f.stringValue){ try{_joursOff[s]=JSON.parse(f.stringValue)||[];}catch(e){_joursOff[s]=[];} }
+      else if(f&&f.arrayValue){ _joursOff[s]=(f.arrayValue.values||[]).map(function(v){return {date:v.stringValue,mode:'off'};}); }
+      else _joursOff[s]=[];
+    });
+  }catch(e){}
+}
 
 document.getElementById('date-lbl').textContent = fmtFull(currentDate);
 
@@ -280,6 +301,7 @@ function getTamagoDefault(shop){
   return 0;
 }
 function getFish(shop, field){
+  if(jourOffMode(shop,ds(currentDate))==='off') return 0;   // magasin fermé : valeurs saisies conservées en base
   var key = ds(currentDate)+'__f__'+shop+'__'+field;
   if(field==='tamago'){
     // N'utiliser la valeur Firestore que si c'est un override positif explicite
@@ -289,9 +311,11 @@ function getFish(shop, field){
   }
   return fishData[key]||0;
 }
-function getRiz(shop){ return fishData[ds(currentDate)+'__'+shop]||0; }
+function getRiz(shop){ if(jourOffMode(shop,ds(currentDate))==='off') return 0; return fishData[ds(currentDate)+'__'+shop]||0; }
 function getRoll(shop){
   var dStr=ds(currentDate);
+  var _jm=jourOffMode(shop,dStr);
+  if(_jm==='off'||_jm==='rizpoisson') return 0;   // pas de rolls ce jour-là
   var manual=fishData[dStr+'__r__'+shop];
   if(manual!==undefined) return manual;
   return computeRolls(getRiz(shop), currentDate.getDay()===0);
@@ -330,6 +354,24 @@ function renderShopCard(shop){
   var headRight = '<div style="display:flex;align-items:center;gap:0;">'+timeHtml+badgeHtml+'</div>';
   var cardHead = '<div class="shop-head" style="border-bottom:3px solid '+color+';">'+
     '<div class="shop-name" style="color:'+color+'">'+label+'</div>'+headRight+'</div>';
+
+  var _jm=jourOffMode(shop,ds(currentDate));
+  if(_jm==='off'){
+    return '<div class="shop-card"><div class="shop-head" style="border-bottom:3px solid '+color+';">'+
+      '<div class="shop-name" style="color:'+color+'">'+label+'</div>'+
+      '<span class="badge" style="background:#f5f5f5;color:#888;">&#128683; Jour off</span></div>'+
+      '<div class="no-cmd">Magasin fermé ce jour</div></div>';
+  }
+  if(_jm==='rizpoisson'||_jm==='rizpoissonroll'){
+    var _isRPR=_jm==='rizpoissonroll';
+    var _rpRows=mkRow('Riz',getRiz(shop))+mkRow('Thon',getFish(shop,'t'))+mkRow('Saumon',getFish(shop,'s'))+mkRow('Aburi',getFish(shop,'a'));
+    if(_isRPR) _rpRows+=mkRow('Roll'+(isVille?'s':''), isVille?(getVal(order,'villerolls')||getRoll(shop)):getRoll(shop));
+    return '<div class="shop-card"><div class="shop-head" style="border-bottom:3px solid '+color+';">'+
+      '<div class="shop-name" style="color:'+color+'">'+label+'</div>'+
+      '<span class="badge" style="background:'+(_isRPR?'#e8f0fd':'#e4f5ee')+';color:'+(_isRPR?'#1a5fa8':'#0d7a52')+';">'+(_isRPR?'&#127843; Riz, Poisson &amp; Roll':'&#128031; Riz &amp; Poisson')+'</span></div>'+
+      mkSection('Poisson / Riz'+(_isRPR?' / Roll':''), _rpRows)+
+      '<div class="no-cmd">Pas de commande complète ce jour — seules ces quantités sont envoyées en production.</div></div>';
+  }
 
   if(!hasOrder){
     return '<div class="shop-card">'+cardHead+'<div class="no-cmd">Commande non reçue</div></div>';
@@ -428,8 +470,9 @@ function renderRizRoll(){
     var rolls= getRoll(s);
     var bacs = riz>0 ? Math.round(riz/250*10)/10 : 0;
     var order = ordersData[s];
-    var pokeThon   = getVal(order,'pokethon');
-    var pokeSaumon = getVal(order,'pokesaumon');
+    var _noPoke    = jourOffMode(s,ds(currentDate))!=='';   // jour off (tous types) : pas de poke
+    var pokeThon   = _noPoke?0:getVal(order,'pokethon');
+    var pokeSaumon = _noPoke?0:getVal(order,'pokesaumon');
     totalRiz+=riz; totalRolls+=rolls; totalPokeThon+=pokeThon; totalPokeSaumon+=pokeSaumon;
     var color=COLORS[s], label=LABELS[s];
     html += '<div class="rr-card">'+
@@ -511,8 +554,10 @@ async function fetchOrders(){
 }
 function startPolling(){
   if(_poll) clearInterval(_poll);
-  fetchFishData().then(function(){ fetchOrders(); });
+  Promise.all([fetchFishData(),loadJoursOff()]).then(function(){ fetchOrders(); });
   _poll=setInterval(fetchOrders,8000);
+  if(_jfPoll) clearInterval(_jfPoll);
+  _jfPoll=setInterval(function(){ loadJoursOff().then(renderAll); },60000);
 }
 
 if('serviceWorker' in navigator){
