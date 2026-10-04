@@ -1314,6 +1314,8 @@ function fb(x) { return x===0?'0':x%1===0?String(x):x.toFixed(1); }
 let isFete=false, weekOff=0, data={};
 
 function getV(d,s){const k=d+'__'+s;return data[k]!==undefined?data[k]:0;}
+// Riz effectif : 0 si le magasin est fermé (jour off complet) ce jour-là — la valeur saisie reste en base
+function getVEff(d,s){ return (_prodJoursOff[s]&&prodIsOff(s,d))?0:getV(d,s); }
 function getR(d,s){return data[d+'__r__'+s]||0;}
 
 // Poisson verrouillé si :
@@ -1515,7 +1517,7 @@ function renderRecap() {
 
   for(let di=0;di<7;di++){
     const d=dayOf(weekOff,di),dStr=ds(d),isDim=(di===6);
-    const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const v={};SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
     const bacs=SHOPS.reduce((a,s)=>a+(v[s]>0?v[s]/250:0),0);
     const marmites=bacs>0?calcMarmites(bacs,isDim,dStr):0;
     const kgRizJour=bacs>0?calcKgRiz(bacs,isDim):0;
@@ -1588,8 +1590,8 @@ function renderRecap() {
   for(let di=0;di<7;di++){
     const d=dayOf(weekOff-1,di),dStr=ds(d);
     const tot=prevWeekData
-      ?SHOPS.reduce((a,s)=>a+(prevWeekData.hData[dStr+'__'+s]||0),0)
-      :SHOPS.reduce((a,s)=>a+(getV(dStr,s)||0),0);
+      ?SHOPS.reduce((a,s)=>a+((_prodJoursOff[s]&&prodIsOff(s,dStr))?0:(prevWeekData.hData[dStr+'__'+s]||0)),0)
+      :SHOPS.reduce((a,s)=>a+(getVEff(dStr,s)||0),0);
     prevRizByDay.push(tot);
   }
 
@@ -1959,7 +1961,7 @@ async function loadWeekFromHistory(dateStr) {
   const wLabel=fmtS(monday)+' – '+fmtS(sunday);
 
   // Helpers
-  const hv=(d,s)=>{const k=d+'__'+s;return hData[k]!==undefined?hData[k]:0;};
+  const hv=(d,s)=>{if(_prodJoursOff[s]&&prodIsOff(s,d))return 0;const k=d+'__'+s;return hData[k]!==undefined?hData[k]:0;};
   const hr=(d,s)=>hData[d+'__r__'+s]||0;
   const hfv=(d,s,f)=>{const mk=d+'__f__'+s+'__'+f;const fd=getFish(s,hv(d,s),false);return hData[mk]!==undefined?hData[mk]:(fd?fd[f]:0);};
   const fb2=(x)=>x===0?'0':x%1===0?String(x):x.toFixed(1);
@@ -2095,7 +2097,7 @@ function render() {
     const isDim=(di===6), isToday=(dStr===todayDs);
     const label=DAYS[di];
 
-    const v={}; SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+    const v={}; SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
     const bacs={}; SHOPS.forEach(s=>{bacs[s]=v[s]>0?Math.round(v[s]/250*10)/10:0;});
     const totBacs=SHOPS.reduce((a,s)=>a+bacs[s],0);
     const marmites=calcMarmites(totBacs,isDim,dStr);
@@ -2376,7 +2378,7 @@ function _printCombined(type) {
     for(let di=0;di<7;di++){
       const d=dayOf(weekOff,di),dStr=ds(d),short=fmtS(d);
       const isDim=(di===6);
-      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const v={};SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
       const ar={
         dsm:(prodIsOff('dsm',dStr)||prodIsRizPoisson('dsm',dStr))?0:getRolls(v.dsm,isDim,isFete),
         mgt:(prodIsOff('mgt',dStr)||prodIsRizPoisson('mgt',dStr))?0:getRolls(v.mgt,isDim,isFete),
@@ -2398,7 +2400,7 @@ function _printCombined(type) {
     for(let di=0;di<7;di++){
       const d=dayOf(weekOff,di),dStr=ds(d);
       const isDim=(di===6);
-      const v={};SHOPS.forEach(s=>{v[s]=getV(dStr,s);});
+      const v={};SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
       const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s],isFete);});
       const gfv=(s,f)=>{const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:'');};
       rows+=`<tr>
@@ -2613,7 +2615,7 @@ function cmdRow(name,val){
      var dStr=ds(d);
      var isDim=di===6;
      var isToday=dStr===todayStr;
-     var riz={};allShops.forEach(function(s){riz[s]=getV(dStr,s);});
+     var riz={};allShops.forEach(function(s){riz[s]=getVEff(dStr,s);});
      var bacs={};allShops.forEach(function(s){bacs[s]=riz[s]>0?Math.round(riz[s]/250*10)/10:0;});
      var totBacs=allShops.reduce(function(a,s){return a+bacs[s];},0);
      var marmites=totBacs>0?calcMarmites(totBacs,isDim,dStr):0;
@@ -3131,7 +3133,7 @@ async function loadJoursOff(){
             _joursOffData[s]=[];
           }
         });
-        // Mettre à jour _prodJoursOff avec uniquement les entrées actives (>= aujourd'hui)
+        // Mettre à jour _prodJoursOff avec toutes les entrées (un jour off passé doit rester à zéro)
         _syncProdJoursOff();
       }
     } else if(res.status===404){
@@ -3142,9 +3144,8 @@ async function loadJoursOff(){
 }
 
 function _syncProdJoursOff(){
-  var today=_todayNcStr();
   ['dsm','mgt','paita','ville'].forEach(function(s){
-    _prodJoursOff[s]=_joursOffData[s].filter(function(e){return e.date>=today;});
+    _prodJoursOff[s]=_joursOffData[s].slice();
   });
 }
 
