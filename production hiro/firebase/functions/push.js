@@ -62,20 +62,25 @@ async function registerPush(body, deps) {
 }
 
 async function sendTest(body, deps) {
-  const err = await checkProof('test', body && body.password, deps);
+  const role = (body && body.role) || 'test';
+  if (!has(ROLE_PASSWORD, role)) return { status: 400, body: { ok: false, error: 'rôle invalide' } };
+  const err = await checkProof('test', body && body.password, deps);   // toujours le mot de passe staff
   if (err) return err;
-  const subs = await deps.listSubscriptions('test');
-  if (!subs.length) return { status: 404, body: { ok: false, error: 'aucun appareil de test enregistré' } };
-  const payload = JSON.stringify({ title: 'Hiro — test', body: 'Les notifications fonctionnent sur cet appareil.', url: './', tag: 'hiro-test' });
-  let sent = 0, failed = 0;
+  const subs = await deps.listSubscriptions(role);
+  if (!subs.length) return { status: 404, body: { ok: false, error: 'aucun appareil enregistré pour ce rôle' } };
+  const payload = JSON.stringify({ title: 'Hiro — test', body: role === 'test' ? 'Les notifications fonctionnent sur cet appareil.' : 'Test d\'envoi au rôle « ' + role + ' ».', url: './', tag: 'hiro-test-' + role });
+  let sent = 0, failed = 0; const details = [];
   for (const s of subs) {
-    try { await deps.send(s.subscription, payload); sent++; }
+    let host = ''; try { host = new URL(s.subscription.endpoint).hostname; } catch (e) { host = '?'; }
+    const d = { role, host, id: String(s.id).slice(0, 6), enregistréLe: s.createdAt || null };
+    try { const r = await deps.send(s.subscription, payload); sent++; d.statut = (r && r.statusCode) || 'ok'; }
     catch (e) {
-      failed++;
-      if (e && (e.statusCode === 404 || e.statusCode === 410)) await deps.markExpired(s.id);   // abonnement périmé : on le marque, on ne le supprime pas
+      failed++; d.statut = (e && e.statusCode) || 'erreur';
+      if (e && (e.statusCode === 404 || e.statusCode === 410)) await deps.markExpired(s.id);   // abonnement périmé : marqué, jamais supprimé
     }
+    details.push(d);
   }
-  return { status: 200, body: { ok: true, sent, failed } };
+  return { status: 200, body: { ok: true, sent, failed, details } };
 }
 
 module.exports = { registerPush, sendTest, validSubscription, ROLE_PASSWORD, ENDPOINT_HOSTS };

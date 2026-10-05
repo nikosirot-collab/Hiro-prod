@@ -98,8 +98,9 @@ async function notifyRole(msg) {
   const payload = JSON.stringify({ title: msg.title, body: msg.body, url: msg.url, tag: msg.tag });
   let sent = 0, failed = 0;
   for (const s of list) {
-    try { await pushDeps.send(s.subscription, payload); sent++; }
-    catch (e) { failed++; if (e && (e.statusCode === 404 || e.statusCode === 410)) await pushDeps.markExpired(s.id); }
+    let host = ''; try { host = new URL(s.subscription.endpoint).hostname; } catch (e) { host = '?'; }
+    try { const r = await pushDeps.send(s.subscription, payload); sent++; console.log('  appareil', String(s.id).slice(0, 6), host, 'enregistré le', s.createdAt ? new Date(s.createdAt + 11 * 3600000).toISOString().slice(0, 16) : '?', '=> statut', r && r.statusCode); }
+    catch (e) { failed++; console.log('  appareil', String(s.id).slice(0, 6), host, '=> ÉCHEC statut', e && e.statusCode, String(e && e.body || e && e.message || '').slice(0, 120)); if (e && (e.statusCode === 404 || e.statusCode === 410)) await pushDeps.markExpired(s.id); }
   }
   console.log('notification', msg.role, msg.tag, 'envoyées:', sent, 'échecs:', failed);
   return { sent, failed };

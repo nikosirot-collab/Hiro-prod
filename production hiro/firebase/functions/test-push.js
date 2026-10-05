@@ -108,6 +108,20 @@ const ok = (n) => console.log('  OK  ' + n);
   ok('test : seul l\'appareil de TEST reçoit (pas le magasin) ; abonnement périmé (410) marqué mais PAS supprimé');
   assert.deepStrictEqual(Object.keys(d.st.sent[0][1]).sort(), ['body', 'tag', 'title', 'url']); ok('contenu de la notification : titre, texte, page à ouvrir, étiquette');
 
+  // test d'envoi vers un rôle réel
+  d = makeDeps();
+  await registerPush({ role: 'access', subscription: goodSub('web.push.apple.com', '/acc1'), password: 'staff123' }, d);
+  await registerPush({ role: 'access', subscription: goodSub('web.push.apple.com', '/acc2'), password: 'staff123' }, d);
+  await registerPush({ role: 'prod', subscription: goodSub('web.push.apple.com', '/prod1'), password: 'staff123' }, d);
+  r = await sendTest({ role: 'access', password: 'staff123' }, d);
+  assert.strictEqual(r.status, 200); assert.strictEqual(r.body.sent, 2); assert.strictEqual(r.body.details.length, 2);
+  assert.ok(d.st.sent.every(([ep]) => /acc[12]$/.test(ep))); assert.ok(r.body.details.every((x) => x.role === 'access' && x.host === 'web.push.apple.com'));
+  ok('test vers le rôle Access : seuls ses 2 appareils reçoivent (pas Prod), détail par appareil renvoyé');
+  r = await sendTest({ role: 'admin', password: 'staff123' }, d); assert.strictEqual(r.status, 400);
+  r = await sendTest({ role: '__proto__', password: 'staff123' }, d); assert.strictEqual(r.status, 400);
+  r = await sendTest({ role: 'dsm', password: 'staff123' }, d); assert.strictEqual(r.status, 404);
+  ok('rôle inconnu -> 400 ; rôle sans appareil -> 404 ; la preuve reste le mot de passe staff');
+
   r = await sendTest({ password: 'faux' }, makeDeps()); assert.strictEqual(r.status, 403);
   r = await sendTest({}, makeDeps()); assert.strictEqual(r.status, 400);
   ok('envoi de test sans le bon mot de passe staff -> refusé');

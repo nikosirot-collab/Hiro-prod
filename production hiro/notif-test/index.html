@@ -50,6 +50,16 @@
   <label for="pwd">Mot de passe (staff pour Access et Prod, commandes pour les magasins)</label>
   <input id="pwd" type="password" autocomplete="current-password" placeholder="Mot de passe">
   <button id="btn-on">1) Activer les notifications sur cet appareil</button>
+  <label for="test-role" style="margin-top:6px">Envoyer le test à</label>
+  <select id="test-role" style="width:100%;padding:12px;font-size:16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);margin-bottom:12px;">
+    <option value="test">cet appareil (rôle « test »)</option>
+    <option value="access">les appareils Access</option>
+    <option value="prod">les appareils Prod</option>
+    <option value="dsm">les appareils DSM</option>
+    <option value="mgt">les appareils MGT</option>
+    <option value="paita">les appareils Paita</option>
+    <option value="ville">les appareils Ville</option>
+  </select>
   <button id="btn-test" class="sec">2) Envoyer une notification de test</button>
 </div>
 
@@ -130,10 +140,13 @@ $('btn-test').onclick = async function(){
   if (!pwd) { log('Saisis d\'abord le mot de passe staff.','warn'); return; }
   try{
     log('Envoi… (ferme maintenant l\'application : la notification doit arriver même fermée)');
-    var r = await post('pushTest', {password:pwd});
-    if (r.status===200 && r.body.ok) log('Envoyé à '+r.body.sent+' appareil(s)'+(r.body.failed?(', '+r.body.failed+' en échec'):'')+'. Si rien n\'apparaît dans quelques secondes, dis-le moi.','ok');
+    var role = $('test-role').value; var r = await post('pushTest', {password:pwd, role:role});
+    if (r.status===200 && r.body.ok) {
+      var det = (r.body.details||[]).map(function(d){ return '• '+d.host+' · fiche '+d.id+' · statut '+d.statut; }).join('\n');
+      log('Envoyé à '+r.body.sent+' appareil(s)'+(r.body.failed?(', '+r.body.failed+' en échec'):'')+' (rôle « '+role+' »).\n'+det+'\nSi rien n\'apparaît dans quelques secondes, dis-le moi.', r.body.failed?'warn':'ok');
+    }
     else if (r.status===403) log('Mot de passe staff incorrect.','ko');
-    else if (r.status===404) log('Aucun appareil enregistré : fais d\'abord l\'étape 1.','warn');
+    else if (r.status===404) log('Aucun appareil enregistré pour ce rôle : fais d\'abord l\'étape 1 en cochant ce rôle.','warn');
     else if (r.status===429) log('Trop d\'essais, réessaie dans quelques minutes.','ko');
     else log('Erreur ('+r.status+') : '+(r.body.error||'inconnue'),'ko');
   }catch(e){ log('Erreur : '+e.message,'ko'); }
