@@ -94,7 +94,7 @@ const E = require('./events');
 // Envoie un message à tous les appareils abonnés à un rôle ; marque (sans supprimer) les abonnements périmés
 async function notifyRole(msg) {
   const list = await pushDeps.listSubscriptions(msg.role);
-  if (!list.length) return { sent: 0, failed: 0 };
+  if (!list.length) { console.log('notification', msg.role, msg.tag, 'aucun appareil abonné à ce rôle'); return { sent: 0, failed: 0 }; }
   const payload = JSON.stringify({ title: msg.title, body: msg.body, url: msg.url, tag: msg.tag });
   let sent = 0, failed = 0;
   for (const s of list) {
@@ -106,7 +106,7 @@ async function notifyRole(msg) {
 }
 const snapData = (s) => (s && s.exists ? s.data() : null);
 // Les déclencheurs Firestore doivent être dans la région de la base (comme onOrderChange / onRizChange)
-const trig = { region: 'us-central1', secrets: [VAPID_PRIVATE], maxInstances: 5, memory: '128MiB' };
+const trig = { region: 'us-central1', secrets: [VAPID_PRIVATE], maxInstances: 5, memory: '256MiB' };
 const notifyColl = db.collection('hiro-notify');      // état interne (collection sans règle navigateur => refusée)
 
 // Commande reçue (-> Access) ou validée (-> le magasin)
@@ -136,7 +136,7 @@ exports.notifyApproval = onDocumentWritten({ ...trig, document: 'hiro-presence/{
   if (msg) await notifyRole(msg);
 });
 
-const sched = { region: 'australia-southeast1', timeZone: 'Pacific/Noumea', secrets: [VAPID_PRIVATE], memory: '128MiB', maxInstances: 1 };
+const sched = { region: 'australia-southeast1', timeZone: 'Pacific/Noumea', secrets: [VAPID_PRIVATE], memory: '256MiB', maxInstances: 1 };
 
 // Chaque minute : envoie les résumés de riz dont la dernière saisie date de plus de 2 minutes
 exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minutes' }, async () => {

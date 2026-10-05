@@ -46,6 +46,7 @@
     <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="paita" style="width:auto;margin:0 8px 0 0"> Paita : commande validée, rappel 14h</label>
     <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="ville" style="width:auto;margin:0 8px 0 0"> Ville : commande validée, rappel 14h</label>
   </div>
+  <div id="saved" style="font-size:13px;color:var(--muted);margin-bottom:10px"></div>
   <label for="pwd">Mot de passe (staff pour Access et Prod, commandes pour les magasins)</label>
   <input id="pwd" type="password" autocomplete="current-password" placeholder="Mot de passe">
   <button id="btn-on">1) Activer les notifications sur cet appareil</button>
@@ -77,6 +78,13 @@ function diag(){
   $('diag').innerHTML = h;
 }
 diag();
+// Rôles déjà enregistrés sur cet appareil (mémorisés ici après un enregistrement réussi)
+function savedRoles(){ try{ return JSON.parse(localStorage.getItem('notif-roles')||'[]'); }catch(e){ return []; } }
+function showSaved(){
+  var r = savedRoles();
+  [].slice.call(document.querySelectorAll('#roles input')).forEach(function(i){ i.checked = r.indexOf(i.value) !== -1; });
+  var el = $('saved'); if (el) el.textContent = r.length ? 'Cet appareil est enregistré pour : ' + r.join(', ') : 'Cet appareil n\'est enregistré pour aucun rôle réel.';
+}
 
 if (hasSW) navigator.serviceWorker.register('sw.js').catch(function(e){ log('Service worker : '+e.message,'ko'); });
 
@@ -109,6 +117,10 @@ $('btn-on').onclick = async function(){
       msg = r.status===403 ? 'Mot de passe incorrect pour « '+roles[k]+' ».' : r.status===429 ? 'Trop d\'essais, réessaie dans quelques minutes.' : 'Erreur ('+r.status+') pour « '+roles[k]+' » : '+(r.body.error||'inconnue');
       break;
     }
+    var okReal = done.filter(function(x){ return x !== 'test'; });
+    var prev = savedRoles(); okReal.forEach(function(x){ if (prev.indexOf(x) === -1) prev.push(x); });
+    try{ localStorage.setItem('notif-roles', JSON.stringify(prev)); }catch(e){}
+    showSaved();
     log((done.length ? '✓ Enregistré pour : '+done.join(', ')+'.\n' : '')+msg, cls);
   }catch(e){ log('Erreur : '+e.message,'ko'); }
 };
@@ -126,6 +138,7 @@ $('btn-test').onclick = async function(){
     else log('Erreur ('+r.status+') : '+(r.body.error||'inconnue'),'ko');
   }catch(e){ log('Erreur : '+e.message,'ko'); }
 };
+showSaved();
 </script>
 </body>
 </html>
