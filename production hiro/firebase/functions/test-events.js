@@ -43,11 +43,29 @@ assert.strictEqual(p.dueAt, 1000 + E.QUIET_MS);
 p = E.mergePending(p, [{ shop: 'dsm', date: '2026-10-05', before: 1250, after: 1500 }], 5000);
 assert.deepStrictEqual(p.changes['2026-10-05'], { before: 1000, after: 1500 }); assert.strictEqual(p.dueAt, 5000 + E.QUIET_MS); ok('plusieurs saisies de suite : avant = valeur initiale, après = valeur finale, envoi repoussé');
 let d = E.digestMessage('dsm', p.changes);
-assert.strictEqual(d.role, 'access'); assert.ok(d.body.includes('lun 5 : 1000 → 1500') && d.title.includes('DSM')); ok('notification : « lun 5 : 1000 → 1500 »');
+assert.strictEqual(d.role, 'access'); assert.ok(d.body.includes('lun 5 : riz 1000 → 1500') && d.title.includes('DSM') && !d.body.includes('poisson')); ok('notification : « lun 5 : riz 1000 → 1500 » (sans poisson quand il n\'a pas changé)');
 p = E.mergePending(p, [{ shop: 'dsm', date: '2026-10-05', before: 1500, after: 1000 }], 9000);
 assert.strictEqual(E.digestMessage('dsm', p.changes), null); ok('+ puis − pour revenir à la valeur de départ : AUCUNE notification');
 const many = {}; for (let i = 5; i <= 10; i++) many['2026-10-' + String(i).padStart(2, '0')] = { before: 0, after: 250 };
 d = E.digestMessage('mgt', many); assert.ok(d.body.includes('+ 3 autre(s) jour(s)') && d.body.split('\n').length === 4); ok('plus de 3 jours : résumé « + 3 autre(s) jour(s) »');
+
+// — poisson accompagnant le riz
+const FW = 'week_2026-10-05';
+let fc = E.fishChanges(FW, { '2026-10-08--f--mgt--t': 150, '2026-10-08--f--mgt--s': 170, '2026-10-08--f--mgt--a': 70 }, { '2026-10-08--f--mgt--t': 200, '2026-10-08--f--mgt--s': 170, '2026-10-08--f--mgt--a': 90, '2026-10-08--mgt': 750 }, MON);
+assert.deepStrictEqual(fc.map((x) => x.field + ':' + x.before + '>' + x.after).sort(), ['a:70>90', 't:150>200']); ok('poisson : seuls les champs thon/saumon/aburi réellement modifiés sont relevés (le saumon inchangé et le riz sont ignorés)');
+assert.strictEqual(E.fishChanges('week_2026-10-12', { '2026-10-12--f--mgt--t': 1 }, { '2026-10-12--f--mgt--t': 2 }, MON).length, 0);
+assert.strictEqual(E.fishChanges(FW, {}, { '2026-10-08--f--asia--t': 5, '2026-10-08--f--mgt--x': 5 }, MON).length, 0); ok('poisson : semaine suivante, Asia et champs inconnus ignorés');
+let pf = E.mergePending(null, [{ shop: 'mgt', date: '2026-10-08', before: 500, after: 750 }], 1000, [{ shop: 'mgt', date: '2026-10-08', field: 't', before: 150, after: 200 }, { shop: 'mgt', date: '2026-10-08', field: 'a', before: 70, after: 90 }]);
+pf = E.mergePending(pf, [{ shop: 'mgt', date: '2026-10-08', before: 750, after: 1000 }], 2000, [{ shop: 'mgt', date: '2026-10-08', field: 't', before: 200, after: 260 }]);
+assert.deepStrictEqual(pf.fish['2026-10-08--t'], { before: 150, after: 260 }); assert.deepStrictEqual(pf.fish['2026-10-08--a'], { before: 70, after: 90 }); ok('poisson fusionné comme le riz : valeur initiale -> valeur finale');
+let dm = E.digestMessage('mgt', pf.changes, pf.fish);
+assert.strictEqual(dm.body, 'jeu 8 : riz 500 → 1000 · poisson : thon 150 → 260, aburi 70 → 90'); ok('notification : « jeu 8 : riz 500 → 1000 · poisson : thon 150 → 260, aburi 70 → 90 »');
+dm = E.digestMessage('mgt', { '2026-10-08': { before: 500, after: 750 } }, { '2026-10-08--t': { before: 150, after: 150 }, '2026-10-08--s': { before: 170, after: 170 } });
+assert.strictEqual(dm.body, 'jeu 8 : riz 500 → 750'); ok('poisson inchangé (valeur finale = valeur de départ) : pas de ligne poisson');
+assert.strictEqual(E.digestMessage('mgt', { '2026-10-08': { before: 500, after: 500 } }, { '2026-10-08--t': { before: 150, after: 200 } }), null); ok('riz revenu à sa valeur de départ : aucune notification, même si le poisson a changé');
+dm = E.digestMessage('mgt', { '2026-10-08': { before: 0, after: 250 } }, undefined); assert.strictEqual(dm.body, 'jeu 8 : riz 0 → 250'); ok('ancien état en attente (sans poisson) : toujours géré');
+dm = E.digestMessage('ville', { '2026-10-08': { before: 100, after: 200 }, '2026-10-09': { before: 0, after: 150 } }, { '2026-10-09--tamago': { before: 0, after: 1 }, '2026-10-09--s': { before: 0, after: 40 } });
+assert.strictEqual(dm.body, 'jeu 8 : riz 100 → 200\nven 9 : riz 0 → 150 · poisson : saumon 0 → 40, tamago 0 → 1'); ok('plusieurs jours : le poisson est rattaché au bon jour, ordre thon/saumon/aburi/tamago');
 
 // — 3) approbation
 let a = E.presenceMessage({ ts: 1, online: true }, { pendingApproval: true, iface: 'Commande', shop: 'dsm', userName: 'Marie', device: 'iPhone', devId: 'dev-1' });

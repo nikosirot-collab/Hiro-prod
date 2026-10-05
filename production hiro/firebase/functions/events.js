@@ -55,22 +55,53 @@ function rizChanges(weekDocId, before, after, nowMs) {
   return out;
 }
 
+// Poisson (tranches de thon / saumon / aburi, et tamago) de la semaine en cours : champs « AAAA-MM-JJ--f--magasin--t|s|a|tamago »
+const FISH_NAMES = { t: 'thon', s: 'saumon', a: 'aburi', tamago: 'tamago' };
+function fishChanges(weekDocId, before, after, nowMs) {
+  const wm = /^week_(\d{4}-\d{2}-\d{2})$/.exec(weekDocId || '');
+  if (!wm || !after || wm[1] !== mondayOf(nc(nowMs).date)) return [];
+  const b = before || {}, out = [];
+  for (const k of Object.keys(after)) {
+    const m = /^(\d{4}-\d{2}-\d{2})--f--(dsm|mgt|paita|ville)--(t|s|a|tamago)$/.exec(k);
+    if (!m) continue;
+    const prev = Number(b[k] || 0), cur = Number(after[k] || 0);
+    if (prev !== cur) out.push({ shop: m[2], date: m[1], field: m[3], before: prev, after: cur });
+  }
+  return out;
+}
+
 // Fusionne des changements dans l'attente d'un magasin : on garde la PREMIÈRE valeur « avant » et la dernière « après »
-function mergePending(pending, changes, nowMs) {
-  const p = { changes: { ...((pending && pending.changes) || {}) } };
+function mergePending(pending, changes, nowMs, fish) {
+  const p = { changes: { ...((pending && pending.changes) || {}) }, fish: { ...((pending && pending.fish) || {}) } };
   for (const c of changes) {
     const old = p.changes[c.date];
     p.changes[c.date] = { before: old ? old.before : c.before, after: c.after };
+  }
+  for (const f of (fish || [])) {
+    const key = f.date + '--' + f.field, old = p.fish[key];
+    p.fish[key] = { before: old ? old.before : f.before, after: f.after };
   }
   p.dueAt = nowMs + QUIET_MS;      // chaque nouvelle saisie repousse l'envoi (on notifie quand le magasin a fini)
   return p;
 }
 
 // Au moment d'envoyer : seuls les jours dont la valeur finale diffère de la valeur initiale comptent
-function digestMessage(shop, changes) {
+function digestMessage(shop, changes, fish) {
   const net = Object.entries(changes || {}).filter(([, v]) => v.before !== v.after).sort(([a], [b]) => (a < b ? -1 : 1));
   if (!net.length) return null;                              // aller-retour (ex. +250 puis -250) : aucune notification
-  const lines = net.slice(0, 3).map(([d, v]) => `${dayFr(d)} : ${v.before} → ${v.after}`);
+  // poisson réellement modifié (valeur finale différente de la valeur de départ), par jour
+  const fishByDate = {};
+  for (const [k, v] of Object.entries(fish || {})) {
+    if (v.before === v.after) continue;
+    const [date, field] = [k.slice(0, 10), k.slice(12)];
+    (fishByDate[date] = fishByDate[date] || []).push([field, v]);
+  }
+  const order = ['t', 's', 'a', 'tamago'];
+  const lines = net.slice(0, 3).map(([d, v]) => {
+    const f = (fishByDate[d] || []).sort((x, y) => order.indexOf(x[0]) - order.indexOf(y[0]))
+      .map(([field, x]) => `${FISH_NAMES[field] || field} ${x.before} → ${x.after}`);
+    return `${dayFr(d)} : riz ${v.before} → ${v.after}` + (f.length ? ' · poisson : ' + f.join(', ') : '');
+  });
   if (net.length > 3) lines.push(`+ ${net.length - 3} autre(s) jour(s)`);
   return { role: 'access', title: '📊 Riz — ' + SHOPS[shop], body: lines.join('\n'), tag: 'riz-' + shop, url: URLS.access };
 }
@@ -111,4 +142,4 @@ function reminders(nowMs, shopsWithSubs, joursOffDoc, hasOrder) {
   return out;
 }
 
-module.exports = { SHOPS, URLS, QUIET_MS, orderMessages, rizChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
+module.exports = { SHOPS, URLS, QUIET_MS, FISH_NAMES, orderMessages, rizChanges, fishChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
