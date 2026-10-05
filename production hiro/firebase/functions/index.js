@@ -75,6 +75,8 @@ const pushDeps = {
     return q.docs.map((d) => ({ id: d.id, ...d.data() }));
   },
   markExpired: async (id) => { await subs.doc(id).set({ expired: true }, { merge: true }); },
+  hasSubscription: async (id) => (await subs.doc(id).get()).exists,
+  countSubscriptions: async (role) => (await subs.where('role', '==', role).where('expired', '==', false).count().get()).data().count,
   send: async (subscription, payload) => {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE.value());
     return webpush.sendNotification(subscription, payload, { TTL: 3600 });

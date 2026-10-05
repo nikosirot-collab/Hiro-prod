@@ -15,6 +15,8 @@ const ENDPOINT_HOSTS = [
   /\.notify\.windows\.com$/,
 ];
 
+const MAX_SUBS_PER_ROLE = 30;                         // plafond d'appareils par rôle (contre l'enregistrement en masse)
+const isHash = (h) => typeof h === 'string' && /^[0-9a-f]{64}$/.test(h);
 const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const safeEqual = (a, b) => {
   const A = Buffer.from(String(a)), B = Buffer.from(String(b));
@@ -50,13 +52,33 @@ async function checkProof(role, password, deps) {
   return null;
 }
 
+// Preuve par empreinte (hash) : celle que l'appareil a déjà mémorisée à la connexion. Même niveau de sécurité que la connexion des interfaces.
+async function checkHashProof(role, hash, deps) {
+  const now = deps.now();
+  const lim = await deps.checkLimit(now);
+  if (lim.blocked)
+    return { status: 429, body: { ok: false, error: 'trop d\'essais, réessayez dans quelques minutes', retryInSec: lim.retryInSec } };
+  const ref = await deps.getHash(PASSWORD_DOC[ROLE_PASSWORD[role]]);
+  if (!ref) return { status: 503, body: { ok: false, error: 'configuration manquante' } };
+  if (!safeEqual(hash, ref)) {
+    await deps.recordFail(now);
+    return { status: 403, body: { ok: false, error: 'empreinte incorrecte' } };
+  }
+  await deps.recordSuccess(now);
+  return null;
+}
+
 async function registerPush(body, deps) {
   const role = body && body.role, sub = body && body.subscription, pw = body && body.password;
   if (!has(ROLE_PASSWORD, role)) return { status: 400, body: { ok: false, error: 'rôle invalide' } };
   if (!validSubscription(sub)) return { status: 400, body: { ok: false, error: 'abonnement invalide' } };
-  const err = await checkProof(role, pw, deps);
+  const useHash = !!(body && body.hash !== undefined);
+  if (useHash && !isHash(body.hash)) return { status: 400, body: { ok: false, error: 'empreinte invalide' } };
+  const err = useHash ? await checkHashProof(role, body.hash, deps) : await checkProof(role, pw, deps);
   if (err) return err;
   const id = sha256(role + '|' + sub.endpoint).slice(0, 40);   // un appareil peut avoir plusieurs rôles (ex. Access + Prod)
+  if (!(await deps.hasSubscription(id)) && (await deps.countSubscriptions(role)) >= MAX_SUBS_PER_ROLE)
+    return { status: 409, body: { ok: false, error: 'trop d\'appareils enregistrés pour ce rôle' } };
   await deps.saveSubscription(id, { role, subscription: sub, createdAt: deps.now(), expired: false });
   return { status: 200, body: { ok: true } };
 }
@@ -83,4 +105,4 @@ async function sendTest(body, deps) {
   return { status: 200, body: { ok: true, sent, failed, details } };
 }
 
-module.exports = { registerPush, sendTest, validSubscription, ROLE_PASSWORD, ENDPOINT_HOSTS };
+module.exports = { registerPush, sendTest, validSubscription, ROLE_PASSWORD, ENDPOINT_HOSTS, MAX_SUBS_PER_ROLE };

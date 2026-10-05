@@ -2,7 +2,7 @@
 // Tests locaux des notifications (node test-push.js) : tout est simulé, rien ne sort vers Internet.
 const assert = require('assert');
 const { sha256, MAX_FAILS, WINDOW_MS } = require('./lib');
-const { registerPush, sendTest, validSubscription } = require('./push');
+const { registerPush, sendTest, validSubscription, MAX_SUBS_PER_ROLE } = require('./push');
 
 const P256 = 'B' + 'x'.repeat(86), AUTH = 'a'.repeat(22);
 const goodSub = (host = 'web.push.apple.com', path = '/wpush/v2/abc123') => ({ endpoint: `https://${host}${path}`, keys: { p256dh: P256, auth: AUTH } });
@@ -21,6 +21,8 @@ function makeDeps() {
     saveSubscription: async (id, d) => { st.saved[id] = d; },
     listSubscriptions: async (role) => Object.entries(st.saved).filter(([, d]) => d.role === role && !d.expired).map(([id, d]) => ({ id, ...d })),
     markExpired: async (id) => { st.expired.push(id); st.saved[id].expired = true; },
+    hasSubscription: async (id) => !!st.saved[id],
+    countSubscriptions: async (role) => Object.values(st.saved).filter((x) => x.role === role && !x.expired).length,
     send: async (sub, payload) => {
       if (sub.endpoint.includes('gone')) { const e = new Error('gone'); e.statusCode = 410; throw e; }
       st.sent.push([sub.endpoint, JSON.parse(payload)]);
@@ -92,6 +94,34 @@ const ok = (n) => console.log('  OK  ' + n);
   await registerPush({ role: 'prod', subscription: goodSub(), password: 'staff123' }, d);
   assert.strictEqual(Object.keys(d.st.saved).length, 2); assert.deepStrictEqual(Object.values(d.st.saved).map((x) => x.role).sort(), ['access', 'prod']);
   ok('un même appareil peut recevoir plusieurs rôles (Access + Prod)');
+
+  // — preuve par empreinte (hash mémorisé par l'appareil à la connexion)
+  d = makeDeps();
+  r = await registerPush({ role: 'access', subscription: goodSub(), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 200); assert.strictEqual(Object.keys(d.st.saved).length, 1); ok('empreinte staff correcte -> Access enregistré, sans mot de passe');
+  r = await registerPush({ role: 'dsm', subscription: goodSub('web.push.apple.com', '/d'), hash: sha256('order456') }, d);
+  assert.strictEqual(r.status, 200); ok('empreinte des commandes -> magasin enregistré');
+  d = makeDeps();
+  r = await registerPush({ role: 'access', subscription: goodSub(), hash: sha256('autre') }, d);
+  assert.strictEqual(r.status, 403); assert.strictEqual(Object.keys(d.st.saved).length, 0); assert.strictEqual(d.st.fails.length, 1); ok('empreinte périmée ou fausse -> 403, rien enregistré, échec compté (la page redemandera le mot de passe)');
+  r = await registerPush({ role: 'dsm', subscription: goodSub(), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 403); ok('l\'empreinte du staff ne vaut pas pour un rôle magasin (il faut celle des commandes)');
+  for (const bad of ['abc', 'G'.repeat(64), '', 123, null]) { r = await registerPush({ role: 'access', subscription: goodSub(), hash: bad }, makeDeps()); assert.strictEqual(r.status, 400); }
+  ok('empreinte mal formée -> 400');
+  d = makeDeps();
+  for (let i = 0; i < MAX_FAILS; i++) await registerPush({ role: 'access', subscription: goodSub(), hash: sha256('x' + i) }, d);
+  r = await registerPush({ role: 'access', subscription: goodSub(), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 429); ok('après ' + MAX_FAILS + ' empreintes fausses : 429, même la bonne est refusée');
+  d = makeDeps();
+  for (let i = 0; i < MAX_SUBS_PER_ROLE; i++) { r = await registerPush({ role: 'access', subscription: goodSub('web.push.apple.com', '/m' + i), hash: sha256('staff123') }, d); assert.strictEqual(r.status, 200); }
+  r = await registerPush({ role: 'access', subscription: goodSub('web.push.apple.com', '/de-trop'), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 409); assert.strictEqual(Object.keys(d.st.saved).length, MAX_SUBS_PER_ROLE);
+  r = await registerPush({ role: 'access', subscription: goodSub('web.push.apple.com', '/m3'), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 200);
+  r = await registerPush({ role: 'prod', subscription: goodSub('web.push.apple.com', '/de-trop'), hash: sha256('staff123') }, d);
+  assert.strictEqual(r.status, 200);
+  ok('plafond de ' + MAX_SUBS_PER_ROLE + ' appareils par rôle : le suivant est refusé (409), un appareil déjà enregistré peut se réenregistrer, les autres rôles ne sont pas touchés');
+  r = await registerPush({ role: 'access', subscription: goodSub(), hash: undefined, password: undefined }, makeDeps()); assert.strictEqual(r.status, 400); ok('ni mot de passe ni empreinte -> 400');
 
   // — test d'envoi
   d = makeDeps();
