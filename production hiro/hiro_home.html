@@ -245,9 +245,15 @@ async function loadShopSummary(){
   var presenceByShop={};
   var pendingCount=0;
   try{
-    var pRes=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?key='+_KEY);
+    // Toute la présence : Firestore renvoie 100 fiches par page par défaut, on suit donc le jeton de page
+    var pDocs=[],pTok='',pRes;
+    do{
+      pRes=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence?pageSize=300&key='+_KEY+(pTok?'&pageToken='+encodeURIComponent(pTok):''));
+      if(!pRes.ok) break;
+      var pPage=await pRes.json(); pDocs=pDocs.concat(pPage.documents||[]); pTok=pPage.nextPageToken||'';
+    }while(pTok);
     if(pRes.ok){
-      var pJson=await pRes.json();
+      var pJson={documents:pDocs};
       var now=Date.now();
       (pJson.documents||[]).forEach(function(doc){
         var f=doc.fields||{};
