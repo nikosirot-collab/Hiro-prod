@@ -225,3 +225,29 @@ self.addEventListener('message', function(e){
     self.skipWaiting();
   }
 });
+
+// ── Notifications push ──
+// Le serveur envoie {title, body, url, tag} ; on l'affiche, et un clic ouvre (ou ramène au premier plan) l'interface visée.
+self.addEventListener('push', function(e){
+  var d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (err) { d = { title: 'Hiro', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Hiro', {
+    body: d.body || '',
+    icon: BASE + 'icon-192.png',
+    badge: BASE + 'icon-192.png',
+    tag: d.tag || 'hiro',
+    data: { url: d.url || BASE + 'hiro_home.html' }
+  }));
+});
+
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || BASE + 'hiro_home.html';
+  var target = url.split('#')[0].split('?')[0];
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list){
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].url.split('#')[0].split('?')[0] === target && 'focus' in list[i]) return list[i].focus();
+    }
+    return self.clients.openWindow(url);
+  }));
+});
