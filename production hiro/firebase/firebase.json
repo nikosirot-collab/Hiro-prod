@@ -1,0 +1,9 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "hiro-auth",
+      "ignore": ["node_modules", "test.js"]
+    }
+  ]
+}
