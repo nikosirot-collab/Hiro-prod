@@ -4132,48 +4132,64 @@ async function secRejectDevice(devId){
   }catch(e){alert('Erreur');}
 }
 
-async function changeOrderPwd(){
-  var inp=document.getElementById('new-pwd-input');
-  var msg=document.getElementById('pwd-change-msg');
-  var pwd=inp.value.trim();
-  if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
-  try{
-    var hash=await _sha256Home(pwd);
-    var res=await _fbFetch(_CONFIG_API+'/order-password?key='+_SEC_KEY,{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{hash:{stringValue:hash}}})
-    });
-    if(res.ok){
-      msg.style.display='block';msg.style.color='#0d7a52';
-      msg.textContent='✓ Mot de passe mis à jour';
-      inp.value='';
-      setTimeout(function(){msg.style.display='none';},3000);
-    }
-  }catch(e){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur lors de la mise à jour';}
+// ── Changement des mots de passe (commandes / Home) : passe par une fonction serveur ──
+// Les documents de mot de passe ne sont plus modifiables depuis le navigateur (règles Firestore).
+// La fonction vérifie le mot de passe staff saisi dans la fenêtre de confirmation.
+var _PWD_FN='https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/changePassword';
+var _pwdBusy=false;
+function _askStaffPwd(){
+  return new Promise(function(resolve){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+    ov.innerHTML='<div style="background:var(--surface);color:var(--text);border-radius:12px;padding:20px;width:100%;max-width:340px;box-sizing:border-box;">'
+      +'<div style="font-size:14px;font-weight:600;margin-bottom:6px;">Confirmer avec le mot de passe staff</div>'
+      +'<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Par sécurité, le changement d\'un mot de passe demande le mot de passe staff.</div>'
+      +'<input id="_spw-inp" type="password" autocomplete="current-password" placeholder="Mot de passe staff" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:15px;outline:none;margin-bottom:12px;background:var(--surface);color:var(--text);">'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;">'
+      +'<button id="_spw-no" style="padding:8px 14px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text);font-size:13px;cursor:pointer;">Annuler</button>'
+      +'<button id="_spw-ok" style="padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Confirmer</button>'
+      +'</div></div>';
+    document.body.appendChild(ov);
+    var inp=ov.querySelector('#_spw-inp');
+    function done(v){ ov.remove(); resolve(v); }
+    ov.querySelector('#_spw-no').onclick=function(){done(null);};
+    ov.querySelector('#_spw-ok').onclick=function(){done(inp.value);};
+    ov.addEventListener('click',function(e){ if(e.target===ov) done(null); });
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter') done(inp.value); else if(e.key==='Escape') done(null); });
+    inp.focus();
+  });
 }
+function _pwdMsg(msg,color,text,autoHide){
+  msg.style.display='block'; msg.style.color=color; msg.textContent=text;
+  if(autoHide) setTimeout(function(){msg.style.display='none';},3000);
+}
+async function _changePwdViaServer(target,inpId,msgId){
+  if(_pwdBusy) return;
+  var inp=document.getElementById(inpId);
+  var msg=document.getElementById(msgId);
+  var pwd=inp.value.trim();
+  if(!pwd||pwd.length<4){_pwdMsg(msg,'#e74c3c','Mot de passe trop court (min 4 caractères)');return;}
+  _pwdBusy=true;
+  try{
+    var staff=await _askStaffPwd();
+    if(staff===null) return;                       // annulé : rien n'est envoyé
+    if(!staff){_pwdMsg(msg,'#e74c3c','Mot de passe staff requis');return;}
+    var ctl=new AbortController(), tm=setTimeout(function(){ctl.abort();},25000);
+    var res=await fetch(_PWD_FN,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,
+      body:JSON.stringify({target:target,newPassword:pwd,staffPassword:staff})});
+    clearTimeout(tm);
+    var j={}; try{j=await res.json();}catch(e){}
+    if(res.ok&&j.ok){ _pwdMsg(msg,'#0d7a52','✓ Mot de passe mis à jour',true); inp.value=''; }
+    else if(res.status===403){ _pwdMsg(msg,'#e74c3c','Mot de passe staff incorrect'); }
+    else if(res.status===429){ _pwdMsg(msg,'#e74c3c','Trop d\'essais, réessayez dans quelques minutes'); }
+    else { _pwdMsg(msg,'#e74c3c','Erreur lors de la mise à jour'); }
+  }catch(e){ _pwdMsg(msg,'#e74c3c','Erreur lors de la mise à jour'); }
+  finally{ _pwdBusy=false; }
+}
+async function changeOrderPwd(){ return _changePwdViaServer('order','new-pwd-input','pwd-change-msg'); }
 
 async function _sha256Home(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-async function changeHomePwd(){
-  var inp=document.getElementById('new-home-pwd-input');
-  var msg=document.getElementById('home-pwd-change-msg');
-  var pwd=inp.value.trim();
-  if(!pwd||pwd.length<4){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Mot de passe trop court (min 4 caractères)';return;}
-  try{
-    var hash=await _sha256Home(pwd);
-    var res=await _fbFetch(_CONFIG_API+'/home-password?key='+_SEC_KEY,{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{hash:{stringValue:hash}}})
-    });
-    if(res.ok){
-      msg.style.display='block';msg.style.color='#0d7a52';
-      msg.textContent='✓ Mot de passe mis à jour';
-      inp.value='';
-      setTimeout(function(){msg.style.display='none';},3000);
-    }
-  }catch(e){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur lors de la mise à jour';}
-}
+async function changeHomePwd(){ return _changePwdViaServer('home','new-home-pwd-input','home-pwd-change-msg'); }
 
 function secPollStart(){
   secPollStop();
