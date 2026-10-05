@@ -56,7 +56,7 @@ async function registerPush(body, deps) {
   if (!validSubscription(sub)) return { status: 400, body: { ok: false, error: 'abonnement invalide' } };
   const err = await checkProof(role, pw, deps);
   if (err) return err;
-  const id = sha256(sub.endpoint).slice(0, 40);
+  const id = sha256(role + '|' + sub.endpoint).slice(0, 40);   // un appareil peut avoir plusieurs rôles (ex. Access + Prod)
   await deps.saveSubscription(id, { role, subscription: sub, createdAt: deps.now(), expired: false });
   return { status: 200, body: { ok: true } };
 }

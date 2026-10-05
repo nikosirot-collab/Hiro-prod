@@ -31,14 +31,23 @@
 </style>
 </head>
 <body>
-<h1>🔔 Test des notifications</h1>
-<p class="sub">Page de test séparée des interfaces Hiro. Elle ne modifie rien dans tes commandes ni ta production.</p>
+<h1>🔔 Notifications Hiro</h1>
+<p class="sub">Page pilote séparée des interfaces Hiro. Elle ne modifie rien dans tes commandes ni ta production.</p>
 
 <div class="card" id="diag"></div>
 
 <div class="card">
-  <label for="pwd">Mot de passe staff</label>
-  <input id="pwd" type="password" autocomplete="current-password" placeholder="Mot de passe staff">
+  <label>Notifications réelles à recevoir sur cet appareil</label>
+  <div id="roles" style="margin-bottom:12px;font-size:15px;line-height:2">
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="access" style="width:auto;margin:0 8px 0 0"> Access : nouvelle commande, riz modifié</label>
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="prod" style="width:auto;margin:0 8px 0 0"> Prod : demandes d'approbation</label>
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="dsm" style="width:auto;margin:0 8px 0 0"> DSM : commande validée, rappel 14h</label>
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="mgt" style="width:auto;margin:0 8px 0 0"> MGT : commande validée, rappel 14h</label>
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="paita" style="width:auto;margin:0 8px 0 0"> Paita : commande validée, rappel 14h</label>
+    <label style="display:block;color:var(--text);margin:0"><input type="checkbox" value="ville" style="width:auto;margin:0 8px 0 0"> Ville : commande validée, rappel 14h</label>
+  </div>
+  <label for="pwd">Mot de passe (staff pour Access et Prod, commandes pour les magasins)</label>
+  <input id="pwd" type="password" autocomplete="current-password" placeholder="Mot de passe">
   <button id="btn-on">1) Activer les notifications sur cet appareil</button>
   <button id="btn-test" class="sec">2) Envoyer une notification de test</button>
 </div>
@@ -90,12 +99,17 @@ $('btn-on').onclick = async function(){
     var reg = await navigator.serviceWorker.ready;
     var sub = await reg.pushManager.getSubscription();
     if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(VAPID_PUBLIC)});
-    log('Enregistrement de l\'appareil…');
-    var r = await post('pushRegister', {role:'test', subscription:sub.toJSON(), password:pwd});
-    if (r.status===200 && r.body.ok) log('✓ Appareil enregistré. Tu peux maintenant envoyer une notification de test.','ok');
-    else if (r.status===403) log('Mot de passe staff incorrect.','ko');
-    else if (r.status===429) log('Trop d\'essais, réessaie dans quelques minutes.','ko');
-    else log('Erreur ('+r.status+') : '+(r.body.error||'inconnue'),'ko');
+    var roles = ['test'].concat([].slice.call(document.querySelectorAll('#roles input:checked')).map(function(i){ return i.value; }));
+    var done = [], msg = '', cls = 'ok';
+    for (var k = 0; k < roles.length; k++) {
+      log('Enregistrement : '+roles[k]+'…');
+      var r = await post('pushRegister', {role:roles[k], subscription:sub.toJSON(), password:pwd});
+      if (r.status===200 && r.body.ok) { done.push(roles[k]); continue; }
+      cls = 'ko';
+      msg = r.status===403 ? 'Mot de passe incorrect pour « '+roles[k]+' ».' : r.status===429 ? 'Trop d\'essais, réessaie dans quelques minutes.' : 'Erreur ('+r.status+') pour « '+roles[k]+' » : '+(r.body.error||'inconnue');
+      break;
+    }
+    log((done.length ? '✓ Enregistré pour : '+done.join(', ')+'.\n' : '')+msg, cls);
   }catch(e){ log('Erreur : '+e.message,'ko'); }
 };
 

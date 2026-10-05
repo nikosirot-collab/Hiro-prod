@@ -87,6 +87,12 @@ const ok = (n) => console.log('  OK  ' + n);
   await registerPush({ role: 'test', subscription: goodSub(), password: 'staff123' }, d);
   assert.strictEqual(Object.keys(d.st.saved).length, 1); ok('même appareil enregistré deux fois : une seule fiche');
 
+  d = makeDeps();
+  await registerPush({ role: 'access', subscription: goodSub(), password: 'staff123' }, d);
+  await registerPush({ role: 'prod', subscription: goodSub(), password: 'staff123' }, d);
+  assert.strictEqual(Object.keys(d.st.saved).length, 2); assert.deepStrictEqual(Object.values(d.st.saved).map((x) => x.role).sort(), ['access', 'prod']);
+  ok('un même appareil peut recevoir plusieurs rôles (Access + Prod)');
+
   // — test d'envoi
   d = makeDeps();
   r = await sendTest({ password: 'staff123' }, d);

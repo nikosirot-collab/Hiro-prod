@@ -83,3 +83,90 @@ const pushDeps = {
 
 exports.pushRegister = onRequest(opts, handle((body) => registerPush(body, pushDeps)));
 exports.pushTest = onRequest({ ...opts, secrets: [VAPID_PRIVATE] }, handle((body) => sendTest(body, pushDeps)));
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Notifications d'événements (phase 1)
+// ═══════════════════════════════════════════════════════════════════════════
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+const E = require('./events');
+
+// Envoie un message à tous les appareils abonnés à un rôle ; marque (sans supprimer) les abonnements périmés
+async function notifyRole(msg) {
+  const list = await pushDeps.listSubscriptions(msg.role);
+  if (!list.length) return { sent: 0, failed: 0 };
+  const payload = JSON.stringify({ title: msg.title, body: msg.body, url: msg.url, tag: msg.tag });
+  let sent = 0, failed = 0;
+  for (const s of list) {
+    try { await pushDeps.send(s.subscription, payload); sent++; }
+    catch (e) { failed++; if (e && (e.statusCode === 404 || e.statusCode === 410)) await pushDeps.markExpired(s.id); }
+  }
+  console.log('notification', msg.role, msg.tag, 'envoyées:', sent, 'échecs:', failed);
+  return { sent, failed };
+}
+const snapData = (s) => (s && s.exists ? s.data() : null);
+// Les déclencheurs Firestore doivent être dans la région de la base (comme onOrderChange / onRizChange)
+const trig = { region: 'us-central1', secrets: [VAPID_PRIVATE], maxInstances: 5, memory: '128MiB' };
+const notifyColl = db.collection('hiro-notify');      // état interne (collection sans règle navigateur => refusée)
+
+// Commande reçue (-> Access) ou validée (-> le magasin)
+exports.notifyOrder = onDocumentWritten({ ...trig, document: 'hiro-orders/{docId}' }, async (event) => {
+  const msgs = E.orderMessages(event.params.docId, snapData(event.data.before), snapData(event.data.after));
+  for (const m of msgs) await notifyRole(m);
+});
+
+// Riz de la semaine en cours : on mémorise la modification, l'envoi se fait 2 min après la dernière saisie
+exports.notifyRiz = onDocumentWritten({ ...trig, document: 'hiro-production/{docId}' }, async (event) => {
+  const changes = E.rizChanges(event.params.docId, snapData(event.data.before), snapData(event.data.after), Date.now());
+  if (!changes.length) return;
+  const shops = [...new Set(changes.map((c) => c.shop))];
+  for (const shop of shops) {
+    const ref = notifyColl.doc('riz-' + shop);
+    await db.runTransaction(async (tx) => {
+      const pending = snapData(await tx.get(ref));
+      const merged = E.mergePending(pending, changes.filter((c) => c.shop === shop), Date.now());
+      tx.set(ref, { shop, changes: merged.changes, dueAt: merged.dueAt });
+    });
+  }
+});
+
+// Demande d'approbation d'un nouvel appareil (-> Prod)
+exports.notifyApproval = onDocumentWritten({ ...trig, document: 'hiro-presence/{docId}' }, async (event) => {
+  const msg = E.presenceMessage(snapData(event.data.before), snapData(event.data.after));
+  if (msg) await notifyRole(msg);
+});
+
+const sched = { region: 'australia-southeast1', timeZone: 'Pacific/Noumea', secrets: [VAPID_PRIVATE], memory: '128MiB', maxInstances: 1 };
+
+// Chaque minute : envoie les résumés de riz dont la dernière saisie date de plus de 2 minutes
+exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minutes' }, async () => {
+  const now = Date.now();
+  const due = await notifyColl.where('dueAt', '<=', now).get();
+  for (const doc of due.docs) {
+    const data = await db.runTransaction(async (tx) => {
+      const d = snapData(await tx.get(doc.ref));
+      if (!d || d.dueAt == null || d.dueAt > now) return null;           // déjà traité ou repoussé par une nouvelle saisie
+      tx.update(doc.ref, { dueAt: null, changes: {}, lastFlush: now });  // update : remplace entièrement la liste
+      return d;
+    });
+    if (!data) continue;
+    const msg = E.digestMessage(data.shop, data.changes);
+    if (msg) await notifyRole(msg);
+  }
+});
+
+// 13 h 30 (Nouméa), du lundi au vendredi : rappel aux magasins abonnés qui n'ont pas encore envoyé la commande du lendemain
+exports.deadlineReminders = onSchedule({ ...sched, schedule: '30 13 * * 1-5' }, async () => {
+  const now = Date.now();
+  const subsSnap = await subs.where('expired', '==', false).get();
+  const shopsWithSubs = [...new Set(subsSnap.docs.map((d) => d.data().role).filter((r) => E.SHOPS[r]))];
+  if (!shopsWithSubs.length) return;
+  const jo = snapData(await db.doc('hiro-config/jours-off').get()) || {};
+  const today = E.nc(now).date, done = {};
+  for (const shop of shopsWithSubs) {
+    const date = E.deliveryDate(today, E.offDatesOf(jo, shop));
+    const o = snapData(await db.doc(`hiro-orders/order_${date}_${shop}`).get());
+    done[shop + '|' + date] = !!(o && o.ts);
+  }
+  for (const m of E.reminders(now, shopsWithSubs, jo, (shop, date) => done[shop + '|' + date])) await notifyRole(m);
+});

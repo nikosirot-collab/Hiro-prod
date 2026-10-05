@@ -1,0 +1,77 @@
+'use strict';
+// Tests locaux des événements (node test-events.js) : aucune connexion, dates fixées.
+const assert = require('assert');
+const E = require('./events');
+const ok = (n) => console.log('  OK  ' + n);
+const at = (y, m, d, h, mi) => Date.UTC(y, m - 1, d, h, mi) - 11 * 3600 * 1000;      // heure de Nouméa -> instant
+const MON = at(2026, 10, 5, 13, 30);                                                 // lundi 5 octobre 2026, 13 h 30 à Nouméa
+
+// — fuseau
+assert.deepStrictEqual(E.nc(MON), { date: '2026-10-05', hour: 13, minute: 30, dow: 1 });
+assert.strictEqual(E.nc(at(2026, 10, 5, 0, 10)).date, '2026-10-05'); assert.strictEqual(E.nc(at(2026, 10, 4, 23, 50)).date, '2026-10-04');
+ok('heure de Nouméa : minuit bien géré (UTC+11)');
+
+// — 1) commandes
+let r = E.orderMessages('order_2026-10-06_dsm', null, { ts: 1, date: '2026-10-06' });
+assert.strictEqual(r.length, 1); assert.strictEqual(r[0].role, 'access'); assert.ok(r[0].title.includes('DSM') && r[0].body.includes('mar 6 octobre')); ok('nouvelle commande DSM -> Access');
+assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', { ts: 1 }, { ts: 2 }).length, 0); ok('commande renvoyée (ts mis à jour) : pas une nouvelle commande');
+r = E.orderMessages('order_2026-10-06_mgt', { ts: 1 }, { ts: 1, status: 'validated' });
+assert.strictEqual(r.length, 1); assert.strictEqual(r[0].role, 'mgt'); assert.ok(r[0].title.includes('validée')); ok('commande validée -> le magasin concerné seulement');
+assert.strictEqual(E.orderMessages('order_2026-10-06_mgt', { ts: 1, status: 'validated' }, { ts: 2, status: 'validated' }).length, 0); ok('commande déjà validée puis modifiée : aucune notification');
+assert.strictEqual(E.orderMessages('order_2026-10-06_asia', null, { ts: 1 }).length, 0); ok('Asia (saisie directe) ignorée');
+assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', { ts: 1 }, null).length, 0); assert.strictEqual(E.orderMessages('autre_doc', null, { ts: 1 }).length, 0); assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', null, {}).length, 0); ok('suppression, nom inattendu, document vide : rien');
+r = E.orderMessages('order_2026-10-06_ville', null, { ts: 1, status: 'validated' }); assert.deepStrictEqual(r.map((x) => x.role), ['ville']); ok('arrive déjà validée : seul le magasin est prévenu, pas Access');
+
+// — 2) riz de la semaine en cours
+const W = 'week_2026-10-05';
+let c = E.rizChanges(W, { '2026-10-05--dsm': 1000 }, { '2026-10-05--dsm': 1250 }, MON);
+assert.deepStrictEqual(c, [{ shop: 'dsm', date: '2026-10-05', before: 1000, after: 1250 }]); ok('boules modifiées cette semaine -> changement détecté');
+assert.strictEqual(E.rizChanges('week_2026-10-12', { '2026-10-12--dsm': 1 }, { '2026-10-12--dsm': 2 }, MON).length, 0); ok('semaine suivante : ignorée (seule la semaine en cours compte)');
+assert.strictEqual(E.rizChanges('week_2026-09-28', { '2026-09-28--dsm': 1 }, { '2026-09-28--dsm': 2 }, MON).length, 0); ok('semaine passée : ignorée');
+c = E.rizChanges(W, { '2026-10-05--dsm': 1000 }, { '2026-10-05--dsm': 1000, '2026-10-05--f--dsm--t': 8, '2026-10-05--r--dsm': 60, init: 'true' }, MON);
+assert.strictEqual(c.length, 0); ok('poisson/rolls seuls modifiés, ou riz identique : aucune notification');
+c = E.rizChanges(W, { '2026-10-05--dsm': 1000 }, { '2026-10-05--dsm': 1250, '2026-10-05--f--dsm--t': 9 }, MON);
+assert.strictEqual(c.length, 1); ok('riz ET poisson modifiés ensemble : une seule modification de riz signalée');
+c = E.rizChanges(W, undefined, { '2026-10-05--mgt': 750, '2026-10-06--asia': 100 }, MON);
+assert.deepStrictEqual(c, [{ shop: 'mgt', date: '2026-10-05', before: 0, after: 750 }]); ok('première saisie (avant = rien) comptée ; Asia ignoré');
+assert.strictEqual(E.rizChanges(W, { '2026-10-05--dsm': 5 }, { '2026-10-05--dsm': 5 }, at(2026, 10, 11, 12, 0)).length, 0);
+assert.strictEqual(E.rizChanges(W, {}, { '2026-10-11--dsm': 250 }, at(2026, 10, 11, 12, 0)).length, 1); ok('dimanche : la semaine en cours reste celle du lundi précédent');
+
+// — fusion et envoi différé
+let p = E.mergePending(null, [{ shop: 'dsm', date: '2026-10-05', before: 1000, after: 1250 }], 1000);
+assert.strictEqual(p.dueAt, 1000 + E.QUIET_MS);
+p = E.mergePending(p, [{ shop: 'dsm', date: '2026-10-05', before: 1250, after: 1500 }], 5000);
+assert.deepStrictEqual(p.changes['2026-10-05'], { before: 1000, after: 1500 }); assert.strictEqual(p.dueAt, 5000 + E.QUIET_MS); ok('plusieurs saisies de suite : avant = valeur initiale, après = valeur finale, envoi repoussé');
+let d = E.digestMessage('dsm', p.changes);
+assert.strictEqual(d.role, 'access'); assert.ok(d.body.includes('lun 5 : 1000 → 1500') && d.title.includes('DSM')); ok('notification : « lun 5 : 1000 → 1500 »');
+p = E.mergePending(p, [{ shop: 'dsm', date: '2026-10-05', before: 1500, after: 1000 }], 9000);
+assert.strictEqual(E.digestMessage('dsm', p.changes), null); ok('+ puis − pour revenir à la valeur de départ : AUCUNE notification');
+const many = {}; for (let i = 5; i <= 10; i++) many['2026-10-' + String(i).padStart(2, '0')] = { before: 0, after: 250 };
+d = E.digestMessage('mgt', many); assert.ok(d.body.includes('+ 3 autre(s) jour(s)') && d.body.split('\n').length === 4); ok('plus de 3 jours : résumé « + 3 autre(s) jour(s) »');
+
+// — 3) approbation
+let a = E.presenceMessage({ ts: 1, online: true }, { pendingApproval: true, iface: 'Commande', shop: 'dsm', userName: 'Marie', device: 'iPhone', devId: 'dev-1' });
+assert.strictEqual(a.role, 'prod'); assert.ok(a.body.includes('Marie') && a.body.includes('DSM') && a.body.includes('iPhone')); ok('nouvel appareil en attente -> Prod');
+assert.strictEqual(E.presenceMessage({ pendingApproval: true }, { pendingApproval: true, ts: 2 }), null); ok('battement de présence pendant l\'attente : pas de répétition');
+assert.strictEqual(E.presenceMessage({ pendingApproval: true }, { pendingApproval: false }), null);
+assert.strictEqual(E.presenceMessage(null, { pendingApproval: true, rejected: true }), null);
+assert.strictEqual(E.presenceMessage(null, { online: true }), null); assert.strictEqual(E.presenceMessage(null, null), null); ok('approuvé, rejeté, présence normale, suppression : rien');
+a = E.presenceMessage({ pendingApproval: false }, { pendingApproval: true, devId: 'd' }); assert.ok(a && a.body.includes('appareil inconnu')); ok('nouvelle demande après un refus : de nouveau notifiée');
+
+// — 4) date de livraison et rappels
+const none = new Set();
+assert.strictEqual(E.deliveryDate('2026-10-05', none), '2026-10-06'); ok('lundi -> mardi');
+assert.strictEqual(E.deliveryDate('2026-10-09', none), '2026-10-10'); ok('vendredi -> samedi (livraison du samedi)');
+assert.strictEqual(E.deliveryDate('2026-10-08', new Set(['2026-10-09'])), '2026-10-10'); ok('jeudi, vendredi en jour off -> samedi');
+assert.strictEqual(E.deliveryDate('2026-10-09', new Set(['2026-10-10'])), '2026-10-12'); ok('vendredi, samedi en jour off -> lundi (le dimanche est sauté)');
+assert.strictEqual(E.deliveryDate('2026-10-07', new Set(['2026-10-08', '2026-10-09', '2026-10-10'])), '2026-10-12'); ok('plusieurs jours off de suite -> prochain jour ouvert');
+assert.deepStrictEqual([...E.offDatesOf({ dsm: '[{"date":"2026-10-06","mode":"off"},{"date":"2026-10-07","mode":"rizpoisson"}]' }, 'dsm')], ['2026-10-06', '2026-10-07']);
+assert.deepStrictEqual([...E.offDatesOf({ dsm: ['2026-10-06'] }, 'dsm')], ['2026-10-06']); assert.strictEqual(E.offDatesOf({ dsm: '{pas du json' }, 'dsm').size, 0); assert.strictEqual(E.offDatesOf(null, 'dsm').size, 0); ok('jours off : tous les types, ancien format, données abîmées -> sans erreur');
+
+let rm = E.reminders(MON, ['dsm', 'mgt', 'ville'], {}, (shop) => shop === 'mgt');
+assert.deepStrictEqual(rm.map((x) => x.role), ['dsm', 'ville']); assert.ok(rm[0].body.includes('mar 6 octobre') && rm[0].body.includes('14h00')); ok('13 h 30 lundi : rappel seulement aux magasins qui n\'ont PAS envoyé');
+assert.strictEqual(E.reminders(at(2026, 10, 10, 13, 30), ['dsm'], {}, () => false).length, 0); assert.strictEqual(E.reminders(at(2026, 10, 11, 13, 30), ['dsm'], {}, () => false).length, 0); ok('samedi et dimanche : aucun rappel');
+rm = E.reminders(MON, ['dsm'], { dsm: '[{"date":"2026-10-06","mode":"off"}]' }, (shop, date) => { assert.strictEqual(date, '2026-10-07'); return false; });
+assert.strictEqual(rm.length, 1); assert.ok(rm[0].body.includes('mer 7 octobre')); ok('demain en jour off : le rappel vise le prochain jour ouvert');
+assert.strictEqual(E.reminders(MON, ['asia', 'prod'], {}, () => false).length, 0); ok('rôles qui ne sont pas des magasins : ignorés');
+console.log('\nTous les tests passent.');

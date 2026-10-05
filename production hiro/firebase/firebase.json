@@ -6,7 +6,8 @@
       "ignore": [
         "node_modules",
         "test.js",
-        "test-push.js"
+        "test-push.js",
+        "test-events.js"
       ]
     }
   ]
