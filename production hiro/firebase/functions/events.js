@@ -11,7 +11,7 @@ const URLS = {
   dsm: SITE + 'hiro_order_dsm.html', mgt: SITE + 'hiro_order_mgt.html',
   paita: SITE + 'hiro_order_paita.html', ville: SITE + 'hiro_order_ville.html',
 };
-const QUIET_MS = 2 * 60 * 1000;          // un magasin qui ajuste le riz : on attend 2 minutes sans nouvelle saisie avant de notifier
+const QUIET_MS = 45 * 1000;              // un magasin qui ajuste le riz : on attend 45 secondes sans nouvelle saisie avant de notifier
 const NC_OFFSET_MS = 11 * 3600 * 1000;   // Nouméa = UTC+11, pas d'heure d'été
 
 const DAYS_SHORT = ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam'];

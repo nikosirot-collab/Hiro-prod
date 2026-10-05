@@ -147,8 +147,10 @@ exports.notifyApproval = onDocumentWritten({ ...trig, document: 'hiro-presence/{
 
 const sched = { region: 'australia-southeast1', timeZone: 'Pacific/Noumea', secrets: [VAPID_PRIVATE], memory: '256MiB', maxInstances: 1 };
 
-// Chaque minute : envoie les résumés de riz dont la dernière saisie date de plus de 2 minutes
-exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minutes' }, async () => {
+// Envoie les résumés de riz dont la dernière saisie date de plus de 45 secondes.
+// Lancée chaque minute ; s'il reste une saisie en attente, elle revérifie toutes les 5 secondes pendant la minute (sinon elle s'arrête tout de suite).
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function flushDueRiz() {
   const now = Date.now();
   const due = await notifyColl.where('dueAt', '<=', now).get();
   if (due.size) console.log('résumés de riz à envoyer :', due.size);
@@ -156,7 +158,7 @@ exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minute
     const data = await db.runTransaction(async (tx) => {
       const d = snapData(await tx.get(doc.ref));
       if (!d || d.dueAt == null || d.dueAt > now) return null;           // déjà traité ou repoussé par une nouvelle saisie
-      tx.update(doc.ref, { dueAt: null, changes: {}, fish: {}, lastFlush: now });  // update : remplace entièrement la liste
+      tx.update(doc.ref, { dueAt: null, changes: {}, fish: {}, lastFlush: now });  // update : remplace entièrement les listes
       return d;
     });
     if (!data) continue;
@@ -164,6 +166,12 @@ exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minute
     console.log('résumé riz', data.shop, JSON.stringify(data.changes), data.fish ? JSON.stringify(data.fish) : '', msg ? '=> notification' : '=> aucune (valeur finale = valeur de départ)');
     if (msg) await notifyRole(msg);
   }
+  const waiting = await notifyColl.where('dueAt', '>', Date.now()).limit(1).get();   // reste-t-il une saisie qui attend son tour ?
+  return !waiting.empty;
+}
+exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minutes', timeoutSeconds: 70 }, async () => {
+  const end = Date.now() + 55000;
+  while (await flushDueRiz() && Date.now() + 5000 < end) await sleep(5000);
 });
 
 // 13 h 30 (Nouméa), du lundi au vendredi : rappel aux magasins abonnés qui n'ont pas encore envoyé la commande du lendemain
