@@ -117,8 +117,10 @@ exports.notifyOrder = onDocumentWritten({ ...trig, document: 'hiro-orders/{docId
 
 // Riz de la semaine en cours : on mémorise la modification, l'envoi se fait 2 min après la dernière saisie
 exports.notifyRiz = onDocumentWritten({ ...trig, document: 'hiro-production/{docId}' }, async (event) => {
-  const changes = E.rizChanges(event.params.docId, snapData(event.data.before), snapData(event.data.after), Date.now());
-  if (!changes.length) return;
+  const docId = event.params.docId;
+  const changes = E.rizChanges(docId, snapData(event.data.before), snapData(event.data.after), Date.now());
+  if (!changes.length) { if (docId === 'week_' + E.mondayOf(E.nc(Date.now()).date)) console.log('riz', docId, ': aucune modification de boules'); return; }
+  console.log('riz', docId, ': modifications détectées', JSON.stringify(changes));
   const shops = [...new Set(changes.map((c) => c.shop))];
   for (const shop of shops) {
     const ref = notifyColl.doc('riz-' + shop);
@@ -142,6 +144,7 @@ const sched = { region: 'australia-southeast1', timeZone: 'Pacific/Noumea', secr
 exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minutes' }, async () => {
   const now = Date.now();
   const due = await notifyColl.where('dueAt', '<=', now).get();
+  if (due.size) console.log('résumés de riz à envoyer :', due.size);
   for (const doc of due.docs) {
     const data = await db.runTransaction(async (tx) => {
       const d = snapData(await tx.get(doc.ref));
@@ -151,6 +154,7 @@ exports.flushRizNotifications = onSchedule({ ...sched, schedule: 'every 1 minute
     });
     if (!data) continue;
     const msg = E.digestMessage(data.shop, data.changes);
+    console.log('résumé riz', data.shop, JSON.stringify(data.changes), msg ? '=> notification' : '=> aucune (valeur finale = valeur de départ)');
     if (msg) await notifyRole(msg);
   }
 });
