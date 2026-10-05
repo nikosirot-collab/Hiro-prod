@@ -4528,6 +4528,15 @@ function renderNuisiblesAsiaRO(d){
     });
   }
 
+  async function post(b){
+    var ctl=new AbortController(), tm=setTimeout(function(){ ctl.abort(); },25000);
+    try{
+      var res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify(b)});
+      var j={}; try{ j=await res.json(); }catch(e){}
+      return {status:res.status,body:j};
+    } finally { clearTimeout(tm); }
+  }
+
   var busy=false;
   window.pushBellClick=async function(){
     if(busy) return;
@@ -4542,16 +4551,21 @@ function renderNuisiblesAsiaRO(d){
       var reg=await navigator.serviceWorker.ready;
       var sub=await reg.pushManager.getSubscription();
       if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(VAPID)});
-      var pwd=await askPwd();
-      if(pwd===null) return;                                   // annulé : rien n'est enregistré
-      if(!pwd){ dlg('Mot de passe requis','Saisissez le mot de passe staff pour activer les notifications.'); return; }
-      var ctl=new AbortController(), tm=setTimeout(function(){ ctl.abort(); },25000);
-      var res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify({role:ROLE,subscription:sub.toJSON(),password:pwd})});
-      clearTimeout(tm);
-      var j={}; try{ j=await res.json(); }catch(e){}
-      if(res.ok&&j.ok){ try{ localStorage.setItem(KEY,'1'); }catch(e){} refresh(); dlg('✓ Notifications activées','Vous recevrez ici les nouvelles commandes, leurs modifications et les changements de riz.'); }
-      else if(res.status===403) dlg('Mot de passe incorrect','Le mot de passe staff est incorrect.');
-      else if(res.status===429) dlg('Trop d\'essais','Réessayez dans quelques minutes.');
+      // 1) l'appareil a déjà mémorisé l'empreinte du mot de passe à la connexion : aucune saisie
+      var h=''; try{ h=localStorage.getItem('hiro-staff-hash')||''; }catch(e){}
+      var r=null;
+      if(/^[0-9a-f]{64}$/.test(h)) r=await post({role:ROLE,subscription:sub.toJSON(),hash:h});
+      // 2) pas d'empreinte, ou périmée (mot de passe changé) : on demande le mot de passe, comme avant
+      if(!r||r.status===403){
+        var pwd=await askPwd();
+        if(pwd===null) return;                                   // annulé : rien n'est enregistré
+        if(!pwd){ dlg('Mot de passe requis','Saisissez le mot de passe staff pour activer les notifications.'); return; }
+        r=await post({role:ROLE,subscription:sub.toJSON(),password:pwd});
+      }
+      if(r.status===200&&r.body.ok){ try{ localStorage.setItem(KEY,'1'); }catch(e){} refresh(); dlg('✓ Notifications activées','Vous recevrez ici les nouvelles commandes, leurs modifications et les changements de riz.'); }
+      else if(r.status===403) dlg('Mot de passe incorrect','Le mot de passe staff est incorrect.');
+      else if(r.status===429) dlg('Trop d\'essais','Réessayez dans quelques minutes.');
+      else if(r.status===409) dlg('Trop d\'appareils','Trop d\'appareils sont déjà enregistrés pour les notifications Access.');
       else dlg('Erreur','Impossible d\'activer les notifications pour le moment.');
     }catch(e){ dlg('Erreur','Impossible d\'activer les notifications : '+(e&&e.message?e.message:'erreur réseau')); }
     finally{ busy=false; }
