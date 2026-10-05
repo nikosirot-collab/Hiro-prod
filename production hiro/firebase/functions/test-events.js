@@ -22,6 +22,26 @@ assert.strictEqual(E.orderMessages('order_2026-10-06_asia', null, { ts: 1 }).len
 assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', { ts: 1 }, null).length, 0); assert.strictEqual(E.orderMessages('autre_doc', null, { ts: 1 }).length, 0); assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', null, {}).length, 0); ok('suppression, nom inattendu, document vide : rien');
 r = E.orderMessages('order_2026-10-06_ville', null, { ts: 1, status: 'validated' }); assert.deepStrictEqual(r.map((x) => x.role), ['ville']); ok('arrive déjà validée : seul le magasin est prévenu, pas Access');
 
+// — modifications de commande par le magasin
+const O = (extra, ts = 100) => ({ ts, shop: 'dsm', date: '2026-10-06', bo: 3, gyoza: 0, rizprod: 500, libre: '{"chr":[],"tarte":[],"plats":[]}', ...extra });
+r = E.orderMessages('order_2026-10-06_dsm', O({}), O({ bo: 5, gyoza: 2 }, 200));
+assert.strictEqual(r.length, 1); assert.strictEqual(r[0].role, 'access'); assert.ok(r[0].title.startsWith('✏️ Commande DSM modifiée'));
+assert.strictEqual(r[0].body, 'Pour le mar 6 octobre : Bun Bò 3 → 5, Gyoza 0 → 2'); ok('commande renvoyée avec des quantités changées -> Access : « Bun Bò 3 → 5, Gyoza 0 → 2 »');
+assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', O({}), O({}, 200)).length, 0); ok('commande renvoyée à l\'identique : aucune notification');
+assert.strictEqual(E.orderMessages('order_2026-10-06_dsm', O({}), O({ rizprod: 750 }, 200)).length, 0); ok('seul le riz indicatif change : ignoré (le riz est notifié à part)');
+r = E.orderMessages('order_2026-10-06_dsm', O({ status: 'validated', vqty_bo: 3, validatedAt: 150 }), O({ status: 'validated', vqty_bo: 4, validatedAt: 150 }));
+assert.strictEqual(r.length, 0); ok('Access modifie une quantité validée (vqty_) : pas de notification (c\'est lui qui l\'a fait)');
+r = E.orderMessages('order_2026-10-06_dsm', O({ status: 'validated', vqty_bo: 3, validatedAt: 150 }), O({ bo: 6 }, 300));
+assert.strictEqual(r.length, 1); assert.ok(r[0].title.includes('(à revalider)')); assert.ok(r[0].body.includes('Bun Bò 3 → 6')); ok('le magasin modifie une commande déjà validée : « (à revalider) »');
+r = E.orderMessages('order_2026-10-06_dsm', O({ libre: '{"chr":[{"name":"Café","qty":1}]}' }), O({ libre: '{"chr":[{"name":"Café","qty":3},{"name":"Thé","qty":2}]}' }, 200));
+assert.strictEqual(r.length, 1); assert.ok(r[0].body.includes('Café (libre) 1 → 3') && r[0].body.includes('Thé (libre) 0 → 2')); ok('lignes libres ajoutées ou modifiées : signalées');
+r = E.orderMessages('order_2026-10-06_dsm', O({ libre: 'pas du json' }), O({ bo: 4, libre: '{pas du json' }, 200));
+assert.strictEqual(r.length, 1); ok('ligne libre illisible : ignorée, sans erreur');
+const big = {}; ['bo', 'sin', 'thai', 'thon', 'plp', 'rouleaux'].forEach((k) => { big[k] = 9; });
+r = E.orderMessages('order_2026-10-06_dsm', O({}), O(big, 200)); assert.ok(r[0].body.includes('+ ') && r[0].body.includes('autre(s) produit(s)')); ok('plus de 4 produits modifiés : résumé « + N autre(s) produit(s) »');
+r = E.orderMessages('order_2026-10-06_ville', { ts: 1, villerolls: 10 }, { ts: 2, villerolls: 20 }); assert.ok(r[0].body.includes('Rolls (Ville) 10 → 20')); ok('Ville : les rolls de la commande ont leur nom');
+r = E.orderMessages('order_2026-10-06_dsm', null, O({ bo: 9 })); assert.strictEqual(r.length, 1); assert.ok(r[0].title.startsWith('🆕')); ok('première commande : toujours « 🆕 Commande » (pas « modifiée »)');
+
 // — 2) riz de la semaine en cours
 const W = 'week_2026-10-05';
 let c = E.rizChanges(W, { '2026-10-05--dsm': 1000 }, { '2026-10-05--dsm': 1250 }, MON);

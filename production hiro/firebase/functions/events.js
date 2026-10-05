@@ -2,6 +2,7 @@
 // Logique des événements qui déclenchent une notification (sans Firebase : testable seule).
 // Formats réels de Firestore : champs de semaine « AAAA-MM-JJ--magasin » (le « -- » remplace « __ »).
 
+const PRODUCT_NAMES = require('./product-names');
 const SHOPS = { dsm: 'DSM', mgt: 'MGT', paita: 'Paita', ville: 'Ville' };
 const SITE = 'https://nikosirot-collab.github.io/Hiro-prod/production%20hiro/';
 const URLS = {
@@ -28,13 +29,49 @@ const dayFr = (s) => { const dt = parse(s); return `${DAYS_SHORT[dt.getUTCDay()]
 // Date et heure à Nouméa à partir d'un instant (ms)
 const nc = (ms) => { const dt = new Date(ms + NC_OFFSET_MS); return { date: fmt(dt), hour: dt.getUTCHours(), minute: dt.getUTCMinutes(), dow: dt.getUTCDay() }; };
 
-// ── 1) commandes : nouvelle commande -> Access ; validée -> le magasin ──────
+// ── 1) commandes : nouvelle -> Access ; modifiée par le magasin -> Access ; validée -> le magasin ──
+// Changements de quantités entre deux versions d'une commande (produits fixes + lignes libres). Les champs vqty_* (quantités
+// validées par Access) et « rizprod » ne comptent pas : on ne signale que ce que le MAGASIN a changé.
+function orderChanges(before, after) {
+  const b = before || {}, a = after || {}, out = [];
+  for (const [key, name] of Object.entries(PRODUCT_NAMES)) {
+    const prev = Number(b[key] || 0), cur = Number(a[key] || 0);
+    if (prev !== cur) out.push({ name, before: prev, after: cur });
+  }
+  const libre = (o) => {                                   // « libre » : {chr:[{name,qty}], tarte:[...], plats:[...]}
+    const m = {};
+    try {
+      const j = typeof o.libre === 'string' ? JSON.parse(o.libre) : (o.libre || {});
+      for (const [cat, list] of Object.entries(j || {})) {
+        if (!Array.isArray(list)) continue;
+        for (const it of list) if (it && it.name) { const k = cat + '|' + String(it.name).trim(); m[k] = (m[k] || 0) + Number(it.qty || 0); }
+      }
+    } catch (e) { /* ligne libre illisible : ignorée */ }
+    return m;
+  };
+  const lb = libre(b), la = libre(a);
+  for (const k of new Set([...Object.keys(lb), ...Object.keys(la)])) {
+    const prev = lb[k] || 0, cur = la[k] || 0;
+    if (prev !== cur) out.push({ name: k.split('|')[1] + ' (libre)', before: prev, after: cur });
+  }
+  return out;
+}
 function orderMessages(docId, before, after) {
   const m = /^order_(\d{4}-\d{2}-\d{2})_([a-z]+)$/.exec(docId || '');
   if (!m || !Object.prototype.hasOwnProperty.call(SHOPS, m[2]) || !after) return [];
   const [, date, shop] = m, label = SHOPS[shop], out = [];
   if (!(before && before.ts) && after.ts && after.status !== 'validated')
     out.push({ role: 'access', title: '🆕 Commande ' + label, body: 'Nouvelle commande reçue pour le ' + dateFr(date), tag: `order-${shop}-${date}`, url: URLS.access });
+  // Renvoyée par le magasin (le ts change seulement à l'envoi du magasin) avec de vraies différences de quantités
+  if (before && before.ts && after.ts && after.ts !== before.ts) {
+    const ch = orderChanges(before, after);
+    if (ch.length) {
+      const lines = ch.slice(0, 4).map((c) => `${c.name} ${c.before} → ${c.after}`);
+      if (ch.length > 4) lines.push(`+ ${ch.length - 4} autre(s) produit(s)`);
+      const revalidate = before.status === 'validated' && after.status !== 'validated';
+      out.push({ role: 'access', title: '✏️ Commande ' + label + ' modifiée' + (revalidate ? ' (à revalider)' : ''), body: 'Pour le ' + dateFr(date) + ' : ' + lines.join(', '), tag: `ordmod-${shop}-${date}`, url: URLS.access });
+    }
+  }
   if (!(before && before.status === 'validated') && after.status === 'validated')
     out.push({ role: shop, title: '✅ Commande validée', body: 'Votre commande du ' + dateFr(date) + ' a été validée', tag: `valid-${shop}-${date}`, url: URLS[shop] });
   return out;
@@ -142,4 +179,4 @@ function reminders(nowMs, shopsWithSubs, joursOffDoc, hasOrder) {
   return out;
 }
 
-module.exports = { SHOPS, URLS, QUIET_MS, FISH_NAMES, orderMessages, rizChanges, fishChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
+module.exports = { SHOPS, URLS, QUIET_MS, FISH_NAMES, orderChanges, orderMessages, rizChanges, fishChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
