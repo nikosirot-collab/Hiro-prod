@@ -148,7 +148,7 @@ function presenceMessage(before, after) {
   if (!after || after.pendingApproval !== true || after.rejected === true) return null;
   if (before && before.pendingApproval === true) return null;     // déjà en attente : pas de répétition
   const who = [after.userName, after.shop && SHOPS[after.shop]].filter(Boolean).join(' · ') || 'appareil inconnu';
-  return { role: 'prod', title: '🔐 Demande d\'approbation', body: `${after.iface || 'Interface'} — ${who}${after.device ? ' (' + after.device + ')' : ''}`, tag: 'approval-' + (after.devId || 'x'), url: URLS.prod };
+  return { role: 'prod', title: '🔐 Demande d\'approbation', body: `${after.iface || 'Interface'} — ${who}${after.device ? ' (' + after.device + ')' : ''}`, tag: 'approval-' + (after.devId || 'x'), url: URLS.prod + '#securite' };   // ouvre directement l'onglet Sécurité de Prod
 }
 
 // ── 4) rappel de l'heure limite (14h00 à Nouméa, lundi-vendredi) ────────────

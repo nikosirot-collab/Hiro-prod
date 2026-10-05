@@ -89,7 +89,7 @@ assert.strictEqual(dm.body, 'jeu 8 : riz 100 → 200\nven 9 : riz 0 → 150 · p
 
 // — 3) approbation
 let a = E.presenceMessage({ ts: 1, online: true }, { pendingApproval: true, iface: 'Commande', shop: 'dsm', userName: 'Marie', device: 'iPhone', devId: 'dev-1' });
-assert.strictEqual(a.role, 'prod'); assert.ok(a.body.includes('Marie') && a.body.includes('DSM') && a.body.includes('iPhone')); ok('nouvel appareil en attente -> Prod');
+assert.strictEqual(a.role, 'prod'); assert.ok(a.url.endsWith('hiro_prod.html#securite')); assert.ok(a.body.includes('Marie') && a.body.includes('DSM') && a.body.includes('iPhone')); ok('nouvel appareil en attente -> Prod');
 assert.strictEqual(E.presenceMessage({ pendingApproval: true }, { pendingApproval: true, ts: 2 }), null); ok('battement de présence pendant l\'attente : pas de répétition');
 assert.strictEqual(E.presenceMessage({ pendingApproval: true }, { pendingApproval: false }), null);
 assert.strictEqual(E.presenceMessage(null, { pendingApproval: true, rejected: true }), null);
