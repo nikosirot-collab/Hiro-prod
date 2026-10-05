@@ -3,7 +3,11 @@
     {
       "source": "functions",
       "codebase": "hiro-auth",
-      "ignore": ["node_modules", "test.js"]
+      "ignore": [
+        "node_modules",
+        "test.js",
+        "test-push.js"
+      ]
     }
   ]
 }

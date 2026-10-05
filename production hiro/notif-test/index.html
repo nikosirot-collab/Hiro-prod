@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Test notif">
+<meta name="theme-color" content="#1a1916">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="/Hiro-prod/production%20hiro/notif-test/manifest.json">
+<link rel="apple-touch-icon" href="/Hiro-prod/production%20hiro/apple-touch-icon.png">
+<title>Test notifications Hiro</title>
+<style>
+  :root{--bg:#f5f4f0;--surface:#fff;--text:#1a1916;--muted:#777;--border:#ddd;--ok:#0d7a52;--ko:#c0392b;--warn:#b07000;}
+  @media (prefers-color-scheme: dark){:root{--bg:#161614;--surface:#232321;--text:#f0efe9;--muted:#9a9a92;--border:#3a3a36;}}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--text);padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));}
+  h1{font-size:20px;margin:20px 0 4px;}
+  p.sub{color:var(--muted);font-size:13px;margin:0 0 16px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+  .row{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:5px 0;}
+  .row b{font-weight:600;text-align:right;}
+  .ok{color:var(--ok);} .ko{color:var(--ko);} .warn{color:var(--warn);}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  input{width:100%;padding:12px;font-size:16px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);margin-bottom:12px;}
+  button{width:100%;padding:14px;font-size:16px;font-weight:600;border:none;border-radius:10px;background:#1a1916;color:#fff;margin-bottom:10px;}
+  button.sec{background:none;color:var(--text);border:1px solid var(--border);}
+  button:disabled{opacity:.4;}
+  #log{font-size:13px;line-height:1.5;white-space:pre-wrap;}
+</style>
+</head>
+<body>
+<h1>🔔 Test des notifications</h1>
+<p class="sub">Page de test séparée des interfaces Hiro. Elle ne modifie rien dans tes commandes ni ta production.</p>
+
+<div class="card" id="diag"></div>
+
+<div class="card">
+  <label for="pwd">Mot de passe staff</label>
+  <input id="pwd" type="password" autocomplete="current-password" placeholder="Mot de passe staff">
+  <button id="btn-on">1) Activer les notifications sur cet appareil</button>
+  <button id="btn-test" class="sec">2) Envoyer une notification de test</button>
+</div>
+
+<div class="card"><div id="log">Prêt.</div></div>
+
+<script>
+var FN_BASE = 'https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/';
+var VAPID_PUBLIC = 'BH1jrYGo47bFhdzBcd2qnPLwb66L5cWzYYgzEoNAg24Z5TltsgVW2HakxXqE7Bw7-ifNkCPQgZFgFt3jAizimWs';
+var $ = function(id){ return document.getElementById(id); };
+function log(t, cls){ var d=$('log'); d.className=cls||''; d.textContent=t; }
+function b64ToBytes(b){ var p='='.repeat((4-b.length%4)%4), s=(b+p).replace(/-/g,'+').replace(/_/g,'/'), r=atob(s), o=new Uint8Array(r.length); for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i); return o; }
+
+var standalone = (window.navigator.standalone === true) || window.matchMedia('(display-mode: standalone)').matches;
+var hasSW = 'serviceWorker' in navigator, hasPush = 'PushManager' in window, hasNotif = 'Notification' in window;
+
+function diag(){
+  var perm = hasNotif ? Notification.permission : 'non disponible';
+  var rows = [
+    ['Application installée (écran d\'accueil)', standalone ? '<b class="ok">oui</b>' : '<b class="warn">non — voir ci-dessous</b>'],
+    ['Service worker', hasSW ? '<b class="ok">disponible</b>' : '<b class="ko">indisponible</b>'],
+    ['Notifications push', hasPush ? '<b class="ok">disponibles</b>' : '<b class="warn">indisponibles ici</b>'],
+    ['Autorisation', '<b class="'+(perm==='granted'?'ok':perm==='denied'?'ko':'warn')+'">'+perm+'</b>']
+  ];
+  var h = rows.map(function(r){ return '<div class="row"><span>'+r[0]+'</span>'+r[1]+'</div>'; }).join('');
+  if (!standalone) h += '<p class="warn" style="font-size:13px;margin:10px 0 0">Sur iPhone, les notifications ne fonctionnent que si cette page est ouverte depuis son icône sur l\'écran d\'accueil : dans Safari, bouton Partager → « Sur l\'écran d\'accueil », puis ouvre l\'icône.</p>';
+  $('diag').innerHTML = h;
+}
+diag();
+
+if (hasSW) navigator.serviceWorker.register('sw.js').catch(function(e){ log('Service worker : '+e.message,'ko'); });
+
+async function post(fn, body){
+  var res = await fetch(FN_BASE+fn, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  var j={}; try{ j=await res.json(); }catch(e){}
+  return {status:res.status, body:j};
+}
+
+$('btn-on').onclick = async function(){
+  var pwd = $('pwd').value;
+  if (!standalone) { log('Ouvre d\'abord cette page depuis l\'icône de l\'écran d\'accueil (voir l\'encadré orange).','warn'); return; }
+  if (!hasPush || !hasNotif) { log('Les notifications push ne sont pas disponibles sur cet appareil.','ko'); return; }
+  if (!pwd) { log('Saisis d\'abord le mot de passe staff.','warn'); return; }
+  try{
+    log('Demande d\'autorisation…');
+    var perm = await Notification.requestPermission();
+    diag();
+    if (perm !== 'granted') { log('Autorisation refusée. Réglages iPhone → Notifications → Test notif pour la réactiver.','ko'); return; }
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(VAPID_PUBLIC)});
+    log('Enregistrement de l\'appareil…');
+    var r = await post('pushRegister', {role:'test', subscription:sub.toJSON(), password:pwd});
+    if (r.status===200 && r.body.ok) log('✓ Appareil enregistré. Tu peux maintenant envoyer une notification de test.','ok');
+    else if (r.status===403) log('Mot de passe staff incorrect.','ko');
+    else if (r.status===429) log('Trop d\'essais, réessaie dans quelques minutes.','ko');
+    else log('Erreur ('+r.status+') : '+(r.body.error||'inconnue'),'ko');
+  }catch(e){ log('Erreur : '+e.message,'ko'); }
+};
+
+$('btn-test').onclick = async function(){
+  var pwd = $('pwd').value;
+  if (!pwd) { log('Saisis d\'abord le mot de passe staff.','warn'); return; }
+  try{
+    log('Envoi… (ferme maintenant l\'application : la notification doit arriver même fermée)');
+    var r = await post('pushTest', {password:pwd});
+    if (r.status===200 && r.body.ok) log('Envoyé à '+r.body.sent+' appareil(s)'+(r.body.failed?(', '+r.body.failed+' en échec'):'')+'. Si rien n\'apparaît dans quelques secondes, dis-le moi.','ok');
+    else if (r.status===403) log('Mot de passe staff incorrect.','ko');
+    else if (r.status===404) log('Aucun appareil enregistré : fais d\'abord l\'étape 1.','warn');
+    else if (r.status===429) log('Trop d\'essais, réessaie dans quelques minutes.','ko');
+    else log('Erreur ('+r.status+') : '+(r.body.error||'inconnue'),'ko');
+  }catch(e){ log('Erreur : '+e.message,'ko'); }
+};
+</script>
+</body>
+</html>

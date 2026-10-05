@@ -1,0 +1,13 @@
+{
+  "name": "Test notifications Hiro",
+  "short_name": "Test notif",
+  "start_url": "/Hiro-prod/production%20hiro/notif-test/index.html",
+  "scope": "/Hiro-prod/production%20hiro/notif-test/",
+  "display": "standalone",
+  "background_color": "#1a1916",
+  "theme_color": "#1a1916",
+  "icons": [
+    { "src": "/Hiro-prod/production%20hiro/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/Hiro-prod/production%20hiro/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
