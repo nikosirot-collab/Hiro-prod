@@ -3037,7 +3037,7 @@ async function loadSecLog(presenceDocs){
   try{
     var docs=presenceDocs;
     if(!docs){
-      var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
+      var res=await _presenceListAll();
       if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);font-size:12px;text-align:center;padding:8px;">Erreur</div>';return;}
       var json=await res.json();
       docs=(json.documents||[]);
@@ -3659,7 +3659,7 @@ async function loadMonitoring(presenceDocs){
   var rawPresenceDocs=presenceDocs;
   if(!rawPresenceDocs){
     try{
-      var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
+      var res=await _presenceListAll();
       if(res.ok){
         var json=await res.json();
         rawPresenceDocs=json.documents||[];
@@ -3814,11 +3814,23 @@ async function loadStorageEstimate(){
   el.innerHTML=html;
 }
 
+// Liste TOUTE la présence : Firestore renvoie 100 fiches par page par défaut, on suit donc le jeton de page (sinon les appareils
+// dont l'identifiant vient tard dans l'ordre alphabétique, dont les demandes d'approbation récentes, n'apparaissent pas)
+async function _presenceListAll(){
+  var docs=[], tok='', res, json;
+  do{
+    res=await _fbFetch(_PRESENCE_API+'?pageSize=300&key='+_SEC_KEY+(tok?'&pageToken='+encodeURIComponent(tok):''));
+    if(!res.ok) return res;                         // erreur : même comportement qu'avant
+    json=await res.json(); docs=docs.concat(json.documents||[]); tok=json.nextPageToken||'';
+  }while(tok);
+  return {ok:true,status:200,json:async function(){return {documents:docs};}};
+}
+
 async function loadSecurite(){
   var el=document.getElementById('sec-devices');
   if(!el)return;
   try{
-    var res=await _fbFetch(_PRESENCE_API+'?key='+_SEC_KEY);
+    var res=await _presenceListAll();
     if(!res.ok){el.innerHTML='<div style="color:var(--text-muted);text-align:center;padding:1rem;">Erreur de chargement</div>';return;}
     var json=await res.json();
     var docs=(json.documents||[]);
