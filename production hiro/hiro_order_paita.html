@@ -266,6 +266,7 @@ loadJoursOff();
     <div class="shop-badge" style="color:#b84a1a;border:1px solid #b84a1a44">Paita</div>
 
     <button id="home-btn" onclick="goHome()" style="display:none;width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:15px;cursor:pointer;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Retour à l'accueil">🏠</button>
+    <button id="push-btn" onclick="pushBellClick()" title="Notifications" style="display:none;position:relative;width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:15px;cursor:pointer;align-items:center;justify-content:center;transition:background .2s;">🔔</button>
     <button onclick="this.style.transform='rotate(360deg)';this.style.transition='transform .5s';setTimeout(function(){location.reload();},300)" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,0.25)'" onmouseleave="this.style.background='rgba(255,255,255,0.15)'" title="Recharger">↻</button>
   </div>
 </header>
@@ -1894,5 +1895,109 @@ function renderNuisiblesRO(d){
 }
 </script>
 
+<style>@media (max-width:480px){.app-header.has-push > div:last-child{gap:2px !important;}.app-header.has-push #push-btn{width:28px !important;}.app-header.has-push .header-left{gap:6px;}.app-header.has-push .shop-badge{padding:3px 6px;}}</style>
+<script>
+// ── Notifications push (Paita) : commande validée, rappel avant l'heure limite (14h00) ──
+(function(){
+  var ROLE='paita';
+  var FN='https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/pushRegister';
+  var VAPID='BH1jrYGo47bFhdzBcd2qnPLwb66L5cWzYYgzEoNAg24Z5TltsgVW2HakxXqE7Bw7-ifNkCPQgZFgFt3jAizimWs';
+  var KEY='hiro-push-'+ROLE;
+  var btn=document.getElementById('push-btn');
+  if(!btn) return;
+  var ua=navigator.userAgent||'';
+  var isIOS=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var standalone=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+  var canPush=('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);
+  if(!canPush&&!(isIOS&&!standalone)) return;          // appareil sans notifications possibles : pas de bouton
+  btn.style.display='flex';
+  var hd=document.querySelector('.app-header'); if(hd) hd.classList.add('has-push');   // pour la mise en page des petits écrans
+
+  function registered(){ try{ return localStorage.getItem(KEY)==='1'; }catch(e){ return false; } }
+  function refresh(){
+    var denied=canPush&&Notification.permission==='denied';
+    btn.innerHTML=denied?'🔕':'🔔'+(registered()?'<span style="position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#2ecc71;border:1px solid rgba(0,0,0,.3);"></span>':'');
+    btn.title=denied?'Notifications bloquées':registered()?'Notifications actives sur cet appareil':'Activer les notifications';
+  }
+  refresh();
+  // Si l'abonnement a disparu (application réinstallée), on le signale en retirant la pastille verte
+  if(canPush&&registered()){
+    navigator.serviceWorker.ready.then(function(reg){ return reg.pushManager.getSubscription(); })
+      .then(function(sub){ if(!sub){ try{ localStorage.removeItem(KEY); }catch(e){} refresh(); } }).catch(function(){});
+  }
+
+  function b64(b){ var p='='.repeat((4-b.length%4)%4),s=(b+p).replace(/-/g,'+').replace(/_/g,'/'),r=atob(s),o=new Uint8Array(r.length); for(var i=0;i<r.length;i++)o[i]=r.charCodeAt(i); return o; }
+  function overlay(inner){
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:1rem;';
+    ov.innerHTML='<div style="background:var(--surface);color:var(--text);border-radius:12px;padding:20px;width:100%;max-width:340px;box-sizing:border-box;">'+inner+'</div>';
+    document.body.appendChild(ov); return ov;
+  }
+  var BTN='padding:8px 16px;background:#1a1916;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;';
+  function dlg(title,text){
+    var ov=overlay('<div style="font-size:14px;font-weight:600;margin-bottom:8px;">'+title+'</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.5;white-space:pre-line;">'+text+'</div><div style="text-align:right;"><button id="_pn-ok" style="'+BTN+'">OK</button></div>');
+    ov.querySelector('#_pn-ok').onclick=function(){ ov.remove(); };
+    ov.addEventListener('click',function(e){ if(e.target===ov) ov.remove(); });
+  }
+  function askPwd(){
+    return new Promise(function(resolve){
+      var ov=overlay('<div style="font-size:14px;font-weight:600;margin-bottom:6px;">Activer les notifications</div>'
+        +'<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Saisissez le mot de passe des commandes pour confirmer.</div>'
+        +'<input id="_pn-pwd" type="password" autocomplete="current-password" placeholder="Mot de passe des commandes" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:15px;outline:none;margin-bottom:12px;background:var(--surface);color:var(--text);">'
+        +'<div style="display:flex;gap:8px;justify-content:flex-end;"><button id="_pn-no" style="padding:8px 14px;border-radius:6px;border:1px solid var(--border);background:none;color:var(--text);font-size:13px;cursor:pointer;">Annuler</button><button id="_pn-yes" style="'+BTN+'">Confirmer</button></div>');
+      var inp=ov.querySelector('#_pn-pwd');
+      function done(v){ ov.remove(); resolve(v); }
+      ov.querySelector('#_pn-no').onclick=function(){ done(null); };
+      ov.querySelector('#_pn-yes').onclick=function(){ done(inp.value); };
+      ov.addEventListener('click',function(e){ if(e.target===ov) done(null); });
+      inp.addEventListener('keydown',function(e){ if(e.key==='Enter') done(inp.value); else if(e.key==='Escape') done(null); });
+      inp.focus();
+    });
+  }
+
+  async function post(b){
+    var ctl=new AbortController(), tm=setTimeout(function(){ ctl.abort(); },25000);
+    try{
+      var res=await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify(b)});
+      var j={}; try{ j=await res.json(); }catch(e){}
+      return {status:res.status,body:j};
+    } finally { clearTimeout(tm); }
+  }
+
+  var busy=false;
+  window.pushBellClick=async function(){
+    if(busy) return;
+    if(isIOS&&!standalone){ dlg('Notifications','Pour recevoir les notifications, ajoutez cette page à l\'écran d\'accueil (bouton Partager, puis « Sur l\'écran d\'accueil »), puis ouvrez-la depuis son icône.'); return; }
+    if(!canPush){ dlg('Notifications','Ce navigateur ne permet pas les notifications.'); return; }
+    if(Notification.permission==='denied'){ dlg('Notifications bloquées','Les notifications sont refusées pour cette application. Réglages de l\'iPhone, Notifications, puis Hiro Paita, pour les réactiver.'); return; }
+    if(registered()){ dlg('Notifications actives','Les notifications sont actives sur cet appareil.\nPour les couper : Réglages de l\'iPhone, Notifications, puis Hiro Paita.'); return; }
+    busy=true;
+    try{
+      var perm=await Notification.requestPermission(); refresh();
+      if(perm!=='granted'){ dlg('Notifications non activées','L\'autorisation n\'a pas été accordée.'); return; }
+      var reg=await navigator.serviceWorker.ready;
+      var sub=await reg.pushManager.getSubscription();
+      if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(VAPID)});
+      // 1) l'appareil a déjà mémorisé l'empreinte du mot de passe à la connexion : aucune saisie
+      var h=''; try{ h=localStorage.getItem('hiro-order-hash-paita')||''; }catch(e){}
+      var r=null;
+      if(/^[0-9a-f]{64}$/.test(h)) r=await post({role:ROLE,subscription:sub.toJSON(),hash:h});
+      // 2) pas d'empreinte, ou périmée (mot de passe changé) : on demande le mot de passe, comme avant
+      if(!r||r.status===403){
+        var pwd=await askPwd();
+        if(pwd===null) return;                                   // annulé : rien n'est enregistré
+        if(!pwd){ dlg('Mot de passe requis','Saisissez le mot de passe des commandes pour activer les notifications.'); return; }
+        r=await post({role:ROLE,subscription:sub.toJSON(),password:pwd});
+      }
+      if(r.status===200&&r.body.ok){ try{ localStorage.setItem(KEY,'1'); }catch(e){} refresh(); dlg('✓ Notifications activées','Vous serez prévenu quand votre commande est validée, et rappelé avant l\'heure limite de 14h00.'); }
+      else if(r.status===403) dlg('Mot de passe incorrect','Le mot de passe des commandes est incorrect.');
+      else if(r.status===429) dlg('Trop d\'essais','Réessayez dans quelques minutes.');
+      else if(r.status===409) dlg('Trop d\'appareils','Trop d\'appareils sont déjà enregistrés pour les notifications Paita.');
+      else dlg('Erreur','Impossible d\'activer les notifications pour le moment.');
+    }catch(e){ dlg('Erreur','Impossible d\'activer les notifications : '+(e&&e.message?e.message:'erreur réseau')); }
+    finally{ busy=false; }
+  };
+})();
+</script>
 </body>
 </html>
