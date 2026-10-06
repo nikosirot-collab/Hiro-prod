@@ -480,7 +480,10 @@ async function checkPwd(){
               <th colspan="2" class="col-sep">Ville</th>
               <th colspan="2" class="col-sep">Asia</th>
               <th class="col-sep" rowspan="2">Marmites</th>
-              <th rowspan="2" title="Marmites réellement utilisées (à saisir)">Réelles</th>
+              <th rowspan="2" title="Marmites mises à cuire (à saisir)">Cuites</th>
+              <th rowspan="2" title="Marmites passées au vinaigre/sucre/sel (à saisir)">Mélangées</th>
+              <th rowspan="2" title="Marmites réellement utilisées dans la journée (à saisir)">Utilisées</th>
+              <th rowspan="2" title="Reste fin de service = reste veille + cuites − utilisées (calculé)">Reste</th>
               <th rowspan="2">Temps prod (min)</th>
               <th rowspan="2">Kg riz</th>
             </tr>
@@ -1418,6 +1421,14 @@ function setMarmReel(d,v){
   const k=d+'__marm_reel'; data[k]=Math.max(0,n);
   _markDirty(k); _scheduleSave(weekDocId()); render();
 }
+function getMarmCuit(d){ const v=data[d+'__marm_cuit']; return v===undefined?null:v; }
+function getMarmMel(d){ const v=data[d+'__marm_melange']; return v===undefined?null:v; }
+function setMarmChamp(d,champ,v){
+  const n=parseInt(v);
+  if(v===''||isNaN(n)){ render(); return; }          // champ vidé : on ne supprime jamais une saisie
+  const k=d+'__'+champ; data[k]=Math.max(0,n);
+  _markDirty(k); _scheduleSave(weekDocId()); render();
+}
 function setFishV(d,s,f,v,auto){
   const k=d+'__f__'+s+'__'+f;
   const overrideKey=d+'__fo__'+s+'__'+f;
@@ -2121,7 +2132,7 @@ var _nextWeekCache={};
 
 function render() {
   const todayDs = ds(TODAY_NC);
-  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0,wReel=0,wCalcSaisi=0,wNbReel=0;
+  let wBacs=0,wMarmites=0,wTemps=0,wThon=0,wKgRiz=0,wReel=0,wCalcSaisi=0,wNbReel=0,resteVeille=0;
   let rizR='',fishR='',rollR='',thonR='';
   let totFS={dsm:{t:0,s:0,a:0},mgt:{t:0,s:0,a:0},paita:{t:0,s:0,a:0},ville:{t:0,s:0,a:0}};
   let totRiz={dsm:0,mgt:0,paita:0,ville:0,asia:0};
@@ -2141,6 +2152,10 @@ function render() {
     const temps=Math.round(totBacs*5*10)/10;
     wBacs+=totBacs; wMarmites+=marmites; wTemps+=temps; wKgRiz+=marmites*kgMarmite(dStr);
     const mr=getMarmReel(dStr), ecartM=mr!==null?mr-marmites:0;
+    const mc=getMarmCuit(dStr), mm=getMarmMel(dStr);
+    const resteJour=(mc!==null&&mr!==null)?resteVeille+mc-mr:null;   // reste fin de service = reste veille + cuites − utilisées
+    const resteVeilleJ=resteVeille;
+    resteVeille=(resteJour!==null)?Math.max(0,resteJour):0;
     if(mr!==null){ wReel+=mr; wCalcSaisi+=marmites; wNbReel++; }
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
 
@@ -2156,8 +2171,11 @@ function render() {
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
-      <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}</td>
-      <td class="${dc2} col-sep"><input class="inp inp-sm" type="number" min="0" step="1" value="${mr!==null?mr:''}" placeholder="—" onchange="setMarmReel('${dStr}',this.value)">${mr!==null?`<span style="display:block;font-size:10px;font-weight:600;color:${ecartM>0?'#c8860a':ecartM<0?'#0d7a52':'var(--text-muted)'};">${ecartM>0?'+':''}${ecartM}</span>`:''}</td>
+      <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}${resteVeilleJ>0&&totBacs>0?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${resteVeilleJ} → cuire ${Math.max(0,marmites-resteVeilleJ)}</span>`:''}</td>
+      <td class="${dc2} col-sep"><input class="inp inp-sm" type="number" min="0" step="1" value="${mc!==null?mc:''}" placeholder="—" onchange="setMarmChamp('${dStr}','marm_cuit',this.value)"></td>
+      <td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="1" value="${mm!==null?mm:''}" placeholder="—" onchange="setMarmChamp('${dStr}','marm_melange',this.value)"></td>
+      <td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="1" value="${mr!==null?mr:''}" placeholder="—" onchange="setMarmReel('${dStr}',this.value)">${mr!==null?`<span style="display:block;font-size:10px;font-weight:600;color:${ecartM>0?'#c8860a':ecartM<0?'#0d7a52':'var(--text-muted)'};">${ecartM>0?'+':''}${ecartM}</span>`:''}</td>
+      <td class="${dc2}" style="font-weight:600;color:${resteJour!==null&&resteJour<0?'#c0392b':'var(--text)'};">${resteJour!==null?resteJour:'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
@@ -2365,7 +2383,10 @@ function render() {
     <td class="td-total col-sep">${totRiz.ville||'—'}</td><td class="td-total">${fb(totRiz.ville/250)}</td>
     <td class="td-total col-sep">${totRiz.asia||'—'}</td><td class="td-total">${fb(totRiz.asia/250)}</td>
     <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
+    <td class="td-blue-total"></td>
+    <td class="td-blue-total"></td>
     <td class="td-blue-total" title="Calculé sur les jours saisis : ${wCalcSaisi}">${wNbReel>0?fb(wReel)+` <span style="font-size:11px;opacity:0.75">(${ecartTot>0?'+':''}${ecartTot} · ${ecartTot>0?'+':''}${String(pctTot).replace('.',',')} %)</span>`:'—'}</td>
+    <td class="td-blue-total"></td>
     <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
     <td class="td-blue-total">${fb(wKgRiz)}</td>
   </tr>`;
