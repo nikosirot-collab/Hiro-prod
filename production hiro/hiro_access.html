@@ -857,6 +857,32 @@ function getFish(shop,riz){
   if(shop==='mgt'&&isFete)return{t:row.tf||row.t,s:row.sf||row.s,a:row.af||row.a};
   return{t:row.t,s:row.s,a:row.a};
 }
+// Poisson figé (même règle que hiro_prod.isFishLocked) : jour actuel/passé, lendemain après 9h30, lundi dès samedi 9h30/dimanche
+function fishLockedAcc(dStr){
+  const now=new Date();
+  const ncNow=new Date(now.getTime()+now.getTimezoneOffset()*60000+11*3600000);
+  const afterCutoff=ncNow.getHours()>9||(ncNow.getHours()===9&&ncNow.getMinutes()>=30);
+  const ncDay=ncNow.getDay();
+  const todayNC=new Date(ncNow.getFullYear(),ncNow.getMonth(),ncNow.getDate());
+  const tomorrowNC=new Date(todayNC.getFullYear(),todayNC.getMonth(),todayNC.getDate()+1);
+  const target=new Date(dStr+'T00:00:00');
+  if(target<=todayNC) return true;
+  if(target.getTime()===tomorrowNC.getTime()&&afterCutoff) return true;
+  if(target.getDay()===1){
+    if(ncDay===6&&afterCutoff) return true;
+    if(ncDay===0) return true;
+  }
+  return false;
+}
+// Quantité de poisson d'un magasin : jour figé ou saisie manuelle (__fo__) -> valeur stockée ; sinon recalculée depuis le riz (comme hiro_prod)
+function fishVal(dat,dStr,shop,f,riz){
+  const mk=dStr+'__f__'+shop+'__'+f;
+  const fd=getFish(shop,riz);
+  const calc=fd?fd[f]:0;
+  if(dat[mk]===undefined) return calc;
+  if(fd&&!fishLockedAcc(dStr)&&!dat[dStr+'__fo__'+shop+'__'+f]) return calc;
+  return dat[mk];
+}
 function getRolls(riz,isDim){
   if(isDim&&!isFete)return 0;
   if(!riz||riz<=0)return 0;
@@ -1134,7 +1160,7 @@ function render(){
       fd[s]=getFish(s,v[s]);
     });
     // gfv : 0 si off, normal si rizpoisson ou normal
-    const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+    const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;return fishVal(data,dStr,s,f,v[s]);};
     const gtv=(s)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__tamago';return data[mk]!==undefined?data[mk]:getTamago(s,di);};
     ['dsm','mgt','paita','ville'].forEach(s=>{
       totFS[s].t+=gfv(s,'t');totFS[s].s+=gfv(s,'s');totFS[s].a+=gfv(s,'a');totFS[s].ta+=gtv(s);
@@ -1303,8 +1329,7 @@ function render(){
       const fdDim={};['dsm','mgt','paita','ville'].forEach(s=>{fdDim[s]=getFish(s,vDim[s]);});
       const dimByShop={};['dsm','mgt','paita','ville'].forEach(s=>{
         if(laboIsOff(s,dsDim)){dimByShop[s]=0;return;}
-        const mk=dsDim+'__f__'+s+'__t';
-        dimByShop[s]=data[mk]!==undefined?data[mk]:(fdDim[s]?fdDim[s].t:0);
+        dimByShop[s]=fishVal(data,dsDim,s,'t',vDim[s]);
       });
       const dLun=dayOf(weekOff+1,0),dsLun=ds(dLun);
       const nextDocId='week_'+ds(mondayOf(weekOff+1));
@@ -1329,8 +1354,7 @@ function render(){
         const fdLun={};['dsm','mgt','paita','ville'].forEach(s=>{fdLun[s]=getFish(s,vLun[s]);});
         const lunByShop={};['dsm','mgt','paita','ville'].forEach(s=>{
           if(laboIsOff(s,dsLun)){lunByShop[s]=0;return;}
-          const mk=dsLun+'__f__'+s+'__t';
-          lunByShop[s]=nd[mk]!==undefined?nd[mk]:(fdLun[s]?fdLun[s].t:0);
+          lunByShop[s]=fishVal(nd,dsLun,s,'t',vLun[s]);
         });
         ['dsm','mgt','paita','ville'].forEach(s=>{
           const el=document.getElementById('thon-sat-'+s);
@@ -1349,7 +1373,7 @@ function render(){
       const dNext=dayOf(weekOff,di+1),dsNext=ds(dNext);
       const vNext={};['dsm','mgt','paita','ville'].forEach(s=>{vNext[s]=laboIsOff(s,dsNext)?0:getV(dsNext,s);});
       const fdNext={};['dsm','mgt','paita','ville'].forEach(s=>{fdNext[s]=getFish(s,vNext[s]);});
-      const getThonVal=s=>{if(laboIsOff(s,dsNext))return 0;const mk=dsNext+'__f__'+s+'__t';return data[mk]!==undefined?data[mk]:(fdNext[s]?.t||0);};
+      const getThonVal=s=>{if(laboIsOff(s,dsNext))return 0;return fishVal(data,dsNext,s,'t',vNext[s]);};
       const tDsm=getThonVal('dsm'),tMgt=getThonVal('mgt'),tPaita=getThonVal('paita'),tVille=getThonVal('ville');
       const tNext=tDsm+tMgt+tPaita+tVille;
       const _thonKgCalcStr=getThonKg(tNext);
@@ -4299,7 +4323,7 @@ function _printCombinedAccess(type){
       const isDim=(di===6);
       const v={};['dsm','mgt','paita','ville'].forEach(s=>{v[s]=laboIsOff(s,dStr)?0:getV(dStr,s);});
       const fd={};['dsm','mgt','paita','ville'].forEach(s=>{fd[s]=getFish(s,v[s]);});
-      const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;const mk=dStr+'__f__'+s+'__'+f;return data[mk]!==undefined?data[mk]:(fd[s]?fd[s][f]:0);};
+      const gfv=(s,f)=>{if(laboIsOff(s,dStr))return 0;return fishVal(data,dStr,s,f,v[s]);};
       rows+=`<tr>
         <td class="day${isDim?' dim':''}">${DAYS[di]}</td>
         <td class="sep">${gfv('dsm','t')}</td><td>${gfv('dsm','s')}</td><td>${gfv('dsm','a')}</td>
