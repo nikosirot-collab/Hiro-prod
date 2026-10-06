@@ -123,18 +123,19 @@ exports.notifyRiz = onDocumentWritten({ ...trig, document: 'hiro-production/{doc
   const docId = event.params.docId, before = snapData(event.data.before), after = snapData(event.data.after), now = Date.now();
   const changes = E.rizChanges(docId, before, after, now);
   const fish = E.fishChanges(docId, before, after, now);
-  if (!changes.length && !fish.length) { if (docId === 'week_' + E.mondayOf(E.nc(now).date)) console.log('riz', docId, ': aucune modification de boules ni de poisson'); return; }
-  console.log('riz', docId, ': modifications détectées', JSON.stringify(changes), changes.length || !fish.length ? '' : '(poisson seul)', fish.length ? 'poisson ' + JSON.stringify(fish) : '');
-  const shops = [...new Set(changes.concat(fish).map((c) => c.shop))];
+  const rolls = E.rollChanges(docId, before, after, now);
+  if (!changes.length && !fish.length && !rolls.length) { if (docId === 'week_' + E.mondayOf(E.nc(now).date)) console.log('riz', docId, ': aucune modification de boules, de poisson ni de rolls'); return; }
+  console.log('riz', docId, ': modifications détectées', JSON.stringify(changes), changes.length || !fish.length ? '' : '(poisson seul)', fish.length ? 'poisson ' + JSON.stringify(fish) : '', rolls.length ? 'rolls ' + JSON.stringify(rolls) : '');
+  const shops = [...new Set(changes.concat(fish, rolls).map((c) => c.shop))];
   for (const shop of shops) {
-    const rizList = changes.filter((c) => c.shop === shop), fishList = fish.filter((c) => c.shop === shop);
+    const rizList = changes.filter((c) => c.shop === shop), fishList = fish.filter((c) => c.shop === shop), rollList = rolls.filter((c) => c.shop === shop);
     const ref = notifyColl.doc('riz-' + shop);
     await db.runTransaction(async (tx) => {
       const pending = snapData(await tx.get(ref));
-      // Le poisson seul ne déclenche rien : on le garde seulement s'il accompagne une saisie de riz déjà en attente
-      if (!rizList.length && !(pending && pending.dueAt != null)) return;
-      const merged = E.mergePending(pending, rizList, now, fishList);
-      tx.set(ref, { shop, changes: merged.changes, fish: merged.fish, dueAt: merged.dueAt });
+      // Le poisson seul ne déclenche rien : on le garde seulement s'il accompagne une saisie de riz déjà en attente (le riz ou les rolls, eux, déclenchent)
+      if (!rizList.length && !rollList.length && !(pending && pending.dueAt != null)) return;
+      const merged = E.mergePending(pending, rizList, now, fishList, rollList);
+      tx.set(ref, { shop, changes: merged.changes, fish: merged.fish, rolls: merged.rolls, dueAt: merged.dueAt });
     });
   }
 });
@@ -158,12 +159,12 @@ async function flushDueRiz() {
     const data = await db.runTransaction(async (tx) => {
       const d = snapData(await tx.get(doc.ref));
       if (!d || d.dueAt == null || d.dueAt > now) return null;           // déjà traité ou repoussé par une nouvelle saisie
-      tx.update(doc.ref, { dueAt: null, changes: {}, fish: {}, lastFlush: now });  // update : remplace entièrement les listes
+      tx.update(doc.ref, { dueAt: null, changes: {}, fish: {}, rolls: {}, lastFlush: now });  // update : remplace entièrement les listes
       return d;
     });
     if (!data) continue;
-    const msg = E.digestMessage(data.shop, data.changes, data.fish);
-    console.log('résumé riz', data.shop, JSON.stringify(data.changes), data.fish ? JSON.stringify(data.fish) : '', msg ? '=> notification' : '=> aucune (valeur finale = valeur de départ)');
+    const msg = E.digestMessage(data.shop, data.changes, data.fish, data.rolls);
+    console.log('résumé riz', data.shop, JSON.stringify(data.changes), data.fish ? JSON.stringify(data.fish) : '', data.rolls ? JSON.stringify(data.rolls) : '', msg ? '=> notification' : '=> aucune (valeur finale = valeur de départ)');
     if (msg) await notifyRole(msg);
   }
   const waiting = await notifyColl.where('dueAt', '>', Date.now()).limit(1).get();   // reste-t-il une saisie qui attend son tour ?

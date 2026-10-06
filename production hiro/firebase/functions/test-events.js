@@ -87,6 +87,28 @@ dm = E.digestMessage('mgt', { '2026-10-08': { before: 0, after: 250 } }, undefin
 dm = E.digestMessage('ville', { '2026-10-08': { before: 100, after: 200 }, '2026-10-09': { before: 0, after: 150 } }, { '2026-10-09--tamago': { before: 0, after: 1 }, '2026-10-09--s': { before: 0, after: 40 } });
 assert.strictEqual(dm.body, 'jeu 8 : riz 100 → 200\nven 9 : riz 0 → 150 · poisson : saumon 0 → 40, tamago 0 → 1'); ok('plusieurs jours : le poisson est rattaché au bon jour, ordre thon/saumon/aburi/tamago');
 
+// — 2 bis) rolls
+let rc = E.rollChanges(W, { '2026-10-06--r--paita': 40 }, { '2026-10-06--r--paita': 60 }, MON);
+assert.deepStrictEqual(rc, [{ shop: 'paita', date: '2026-10-06', before: 40, after: 60 }]); ok('rolls modifiés : détectés avec la valeur déjà saisie');
+rc = E.rollChanges(W, {}, { '2026-10-06--r--ville': 50, '2026-10-06--r--asia': 30, '2026-10-06--f--ville--t': 3, '2026-10-06--ville': 500 }, MON);
+assert.deepStrictEqual(rc, [{ shop: 'ville', date: '2026-10-06', before: 0, after: 50 }]); ok('première saisie : avant = 0 ; asia, poisson et riz ignorés');
+assert.strictEqual(E.rollChanges(W, { '2026-10-06--r--dsm': 40 }, { '2026-10-06--r--dsm': 40, x: 1 }, MON).length, 0); ok('rolls inchangés : rien');
+assert.strictEqual(E.rollChanges('week_2026-10-12', {}, { '2026-10-12--r--dsm': 5 }, MON).length, 0); ok('rolls d\'une autre semaine : ignorés');
+assert.strictEqual(E.rizChanges(W, { '2026-10-06--r--dsm': 1 }, { '2026-10-06--r--dsm': 2 }, MON).length, 0); ok('les rolls ne comptent toujours pas comme du riz');
+let pr = E.mergePending(null, [], 1000, [], [{ shop: 'paita', date: '2026-10-06', before: 40, after: 60 }]);
+pr = E.mergePending(pr, [], 5000, [], [{ shop: 'paita', date: '2026-10-06', before: 60, after: 70 }]);
+assert.deepStrictEqual(pr.rolls, { '2026-10-06': { before: 40, after: 70 } }); assert.strictEqual(pr.dueAt, 5000 + E.QUIET_MS); ok('plusieurs saisies de rolls : première valeur « avant », dernière « après », délai repoussé');
+assert.strictEqual(E.digestMessage('paita', {}, {}, pr.rolls).body, 'mar 6 : rolls 40 → 70'); ok('rolls seuls : notification « rolls 40 → 70 »');
+pr = E.mergePending(pr, [], 9000, [], [{ shop: 'paita', date: '2026-10-06', before: 70, after: 40 }]);
+assert.strictEqual(E.digestMessage('paita', {}, {}, pr.rolls), null); ok('rolls revenus à la valeur de départ : aucune notification');
+assert.strictEqual(E.digestMessage('ville', {}, {}, { '2026-10-06': { before: 0, after: 60 } }).body, 'mar 6 : rolls fixés à 60'); ok('première saisie de rolls : « fixés à 60 »');
+assert.strictEqual(E.digestMessage('ville', {}, {}, { '2026-10-06': { before: 40, after: 0 } }).body, 'mar 6 : rolls 40 → auto'); ok('rolls effacés : « 40 → auto »');
+dm = E.digestMessage('mgt', { '2026-10-08': { before: 500, after: 750 } }, { '2026-10-08--t': { before: 150, after: 200 } }, { '2026-10-08': { before: 40, after: 60 }, '2026-10-09': { before: 0, after: 30 } });
+assert.strictEqual(dm.body, 'jeu 8 : riz 500 → 750 · poisson : thon 150 → 200 · rolls 40 → 60\nven 9 : rolls fixés à 30'); ok('riz + poisson + rolls sur un jour, rolls seuls sur un autre');
+assert.strictEqual(E.digestMessage('mgt', { '2026-10-08': { before: 500, after: 750 } }, {}, undefined).body, 'jeu 8 : riz 500 → 750'); ok('sans rolls : texte du riz inchangé');
+dm = E.digestMessage('mgt', { '2026-10-05': { before: 1, after: 2 }, '2026-10-06': { before: 1, after: 2 } }, {}, { '2026-10-07': { before: 1, after: 2 }, '2026-10-08': { before: 1, after: 2 } });
+assert.ok(dm.body.endsWith('+ 1 autre(s) jour(s)') && dm.body.split('\n').length === 4); ok('4 jours (riz et rolls mélangés) : 3 lignes + « + 1 autre(s) jour(s) »');
+
 // — 3) approbation
 let a = E.presenceMessage({ ts: 1, online: true }, { pendingApproval: true, iface: 'Commande', shop: 'dsm', userName: 'Marie', device: 'iPhone', devId: 'dev-1' });
 assert.strictEqual(a.role, 'prod'); assert.ok(a.url.endsWith('hiro_prod.html#securite')); assert.ok(a.body.includes('Marie') && a.body.includes('DSM') && a.body.includes('iPhone')); ok('nouvel appareil en attente -> Prod');
