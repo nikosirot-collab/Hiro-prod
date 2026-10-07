@@ -2829,7 +2829,7 @@ function cmdRenderFiche(shop, order){
 
 function exportCmdExcel(){
   // Récupérer les commandes chargées
-  var orders=window._cmdOrders||{};
+  var orders=cmdOrders||{};
   var shops=['dsm','mgt','paita','ville'];
   var shopLabels={dsm:'DSM',mgt:'MGT',paita:'Paita',ville:'Ville'};
   var keys=['bo','sin','thon','thai','plp','rouleaux','rizprod','villerolls','pokethon','pokesaumon','tataki','tiramisu','ananas','poebanane','poecitrouille','cheesemangue','cheeseframboise','gyoza','siumai','gnem','pnem','sesame','banhbao','samossa','brochettes'];
