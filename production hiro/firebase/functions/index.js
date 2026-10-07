@@ -190,3 +190,15 @@ exports.deadlineReminders = onSchedule({ ...sched, schedule: '30 13 * * 1-5' }, 
   }
   for (const m of E.reminders(now, shopsWithSubs, jo, (shop, date) => done[shop + '|' + date])) await notifyRole(m);
 });
+
+// Jeudi 10 h (Nouméa) : rappel aux magasins abonnés qui n'ont pas encore saisi le riz de la semaine suivante.
+// Lecture seule : aucune donnée n'est écrite ni modifiée.
+exports.weeklyRizReminder = onSchedule({ ...sched, schedule: '0 10 * * 4' }, async () => {
+  const now = Date.now();
+  const subsSnap = await subs.where('expired', '==', false).get();
+  const shopsWithSubs = [...new Set(subsSnap.docs.map((d) => d.data().role).filter((r) => E.SHOPS[r]))];
+  if (!shopsWithSubs.length) return;
+  const jo = snapData(await db.doc('hiro-config/jours-off').get()) || {};
+  const week = snapData(await db.doc('hiro-production/week_' + E.nextWeekMonday(now)).get());
+  for (const m of E.rizReminders(now, shopsWithSubs, jo, week)) await notifyRole(m);
+});

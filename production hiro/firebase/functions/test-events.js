@@ -134,4 +134,21 @@ assert.strictEqual(E.reminders(at(2026, 10, 10, 13, 30), ['dsm'], {}, () => fals
 rm = E.reminders(MON, ['dsm'], { dsm: '[{"date":"2026-10-06","mode":"off"}]' }, (shop, date) => { assert.strictEqual(date, '2026-10-07'); return false; });
 assert.strictEqual(rm.length, 1); assert.ok(rm[0].body.includes('mer 7 octobre')); ok('demain en jour off : le rappel vise le prochain jour ouvert');
 assert.strictEqual(E.reminders(MON, ['asia', 'prod'], {}, () => false).length, 0); ok('rôles qui ne sont pas des magasins : ignorés');
+
+// — 5) rappel du riz de la semaine suivante (jeudi 10 h)
+const THU = at(2026, 10, 8, 10, 0);                                                  // jeudi 8 octobre 2026, 10 h 00 à Nouméa
+assert.strictEqual(E.nextWeekMonday(THU), '2026-10-12'); assert.strictEqual(E.nextWeekMonday(at(2026, 10, 11, 23, 0)), '2026-10-12'); assert.strictEqual(E.nextWeekMonday(MON), '2026-10-12'); ok('lundi de la semaine suivante (dimanche et lundi compris)');
+let rr = E.rizReminders(THU, ['dsm', 'mgt'], {}, null);
+assert.deepStrictEqual(rr.map((x) => x.role), ['dsm', 'mgt']); assert.ok(rr[0].body.includes('lun 12 octobre') && rr[0].body.includes('dim 18 octobre') && rr[0].url.endsWith('hiro_order_dsm.html') && rr[0].tag === 'rizrappel-dsm-2026-10-12'); ok('jeudi 10 h, document absent : tous les magasins abonnés sont relancés');
+rr = E.rizReminders(THU, ['dsm', 'mgt'], {}, { '2026-10-14--dsm': 750, '2026-10-12--mgt': 0, '2026-10-13--mgt': 0 });
+assert.deepStrictEqual(rr.map((x) => x.role), ['mgt']); ok('riz saisi (un seul jour suffit) : pas de rappel ; que des 0 : rappel');
+assert.strictEqual(E.rizReminders(THU, ['dsm'], {}, { '2026-10-05--dsm': 500, '2026-10-19--dsm': 500 }).length, 1); ok('seul le riz de la semaine suivante compte (pas la semaine en cours ni celle d\'après)');
+for (const d of [5, 6, 7, 9, 10, 11]) assert.strictEqual(E.rizReminders(at(2026, 10, d, 10, 0), ['dsm'], {}, null).length, 0);
+ok('jeudi seulement : aucun rappel les autres jours');
+const closedMgt = { mgt: '[{"date":"2026-10-12","mode":"off"},{"date":"2026-10-13","mode":"rizpoisson"}]' };
+assert.strictEqual(E.rizReminders(THU, ['mgt'], closedMgt, { '2026-10-12--mgt': 500 }).length, 1); ok('riz saisi seulement sur un jour Fermé : ne compte pas, rappel');
+assert.strictEqual(E.rizReminders(THU, ['mgt'], closedMgt, { '2026-10-13--mgt': 500 }).length, 0); ok('riz saisi sur un jour « Riz & Poisson » : compte, pas de rappel');
+assert.strictEqual(E.rizReminders(THU, ['mgt'], { mgt: ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18'] }, null).length, 0); ok('magasin fermé les 7 jours : pas de rappel');
+assert.deepStrictEqual([...E.closedDatesOf(closedMgt, 'mgt')], ['2026-10-12']); assert.strictEqual(E.closedDatesOf({ mgt: '{pas du json' }, 'mgt').size, 0); assert.strictEqual(E.closedDatesOf(null, 'mgt').size, 0); ok('jours Fermé : seul le mode « off » est retenu, données illisibles ou absentes sans erreur');
+assert.strictEqual(E.rizReminders(THU, ['asia', 'prod'], {}, null).length, 0); ok('rôles qui ne sont pas des magasins : ignorés');
 console.log('\nTous les tests passent.');

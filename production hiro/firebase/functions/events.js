@@ -209,4 +209,30 @@ function reminders(nowMs, shopsWithSubs, joursOffDoc, hasOrder) {
   return out;
 }
 
-module.exports = { SHOPS, URLS, QUIET_MS, FISH_NAMES, orderChanges, orderMessages, rizChanges, rollChanges, fishChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
+// ── 5) rappel du riz de la semaine suivante (jeudi 10h00 à Nouméa) ──────────
+// Lundi de la semaine suivante (calendrier de Nouméa) à partir d'un instant (ms)
+function nextWeekMonday(nowMs) { return addDays(mondayOf(nc(nowMs).date), 7); }
+// Jours « Fermé » d'un magasin (mode « off » ou date seule) : les jours « Riz & Poisson » ont bien du riz, ils comptent
+function closedDatesOf(joursOffDoc, shop) {
+  const raw = joursOffDoc && joursOffDoc[shop];
+  let arr = [];
+  try { arr = typeof raw === 'string' ? JSON.parse(raw) : Array.isArray(raw) ? raw : []; } catch (e) { arr = []; }
+  return new Set(arr.filter((e) => typeof e === 'string' || (e && e.mode === 'off')).map((e) => (typeof e === 'string' ? e : e.date)).filter(Boolean));
+}
+// weekDoc : document hiro-production/week_<lundi suivant> (null s'il n'existe pas) ; champs « AAAA-MM-JJ--magasin »
+function rizReminders(nowMs, shopsWithSubs, joursOffDoc, weekDoc) {
+  const t = nc(nowMs);
+  if (t.dow !== 4) return [];                                 // jeudi seulement
+  const monday = nextWeekMonday(nowMs), days = [0, 1, 2, 3, 4, 5, 6].map((n) => addDays(monday, n));
+  const out = [];
+  for (const shop of shopsWithSubs) {
+    if (!Object.prototype.hasOwnProperty.call(SHOPS, shop)) continue;
+    const closed = closedDatesOf(joursOffDoc, shop), open = days.filter((d) => !closed.has(d));
+    if (!open.length) continue;                               // magasin fermé toute la semaine
+    if (open.some((d) => Number((weekDoc || {})[d + '--' + shop] || 0) > 0)) continue;   // riz déjà saisi
+    out.push({ role: shop, title: '🍚 Riz de la semaine prochaine', body: `Pensez à saisir le riz de la semaine du ${dateFr(monday)} au ${dateFr(days[6])}`, tag: `rizrappel-${shop}-${monday}`, url: URLS[shop] });
+  }
+  return out;
+}
+
+module.exports = { SHOPS, URLS, QUIET_MS, FISH_NAMES, orderChanges, orderMessages, rizChanges, rollChanges, fishChanges, mergePending, digestMessage, presenceMessage, deliveryDate, offDatesOf, reminders, nextWeekMonday, closedDatesOf, rizReminders, nc, mondayOf, addDays, dow, dateFr, dayFr };
