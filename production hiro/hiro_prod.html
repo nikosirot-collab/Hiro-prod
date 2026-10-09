@@ -1199,6 +1199,8 @@ function calcKgRiz(bacs,isDim){ return bacs*KG_PAR_BAC+(isDim?0:KG_FORFAIT_ROLLS
 // Riz réel du jour (à partir du 02/10/2026) : boules + rolls + pokés, en kg CUIT -> kg CRU -> marmites de 5 kg
 const RATIO_CUIT_CRU = 2.2;                                   // le riz pèse 2,2 fois plus une fois cuit
 const G_CUIT_BOULE = 22, G_CUIT_ROLL = 197, G_CUIT_POKE = 250; // g de riz cuit par pièce
+const DATE_ROLL_120 = '2026-10-12', G_CUIT_ROLL_120 = 11000/120;   // à partir du lundi 12/10 : 120 rolls par marmite de 5 kg (11 kg cuit) -> ~91,7 g ; avant : 197 g
+function gCuitRoll(dStr){ return dStr<DATE_ROLL_120?G_CUIT_ROLL:G_CUIT_ROLL_120; }
 const NB_POKES_JOUR = 31;                                      // 18 thon + 13 saumon, lundi-samedi (0 le dimanche)
 const NB_ROLLS_ASIA = 14;                                      // rolls Asia par défaut, lundi-samedi (0 le dimanche)
 function kgMarmite(dStr){ return dStr<DATE_MARMITE_5KG?KG_MARMITE_AVANT:KG_MARMITE; }
@@ -1219,7 +1221,7 @@ function calcRizJour(dStr,isDim,riz,src,fete){
   const boules=SHOPS.reduce((a,s)=>a+(riz[s]||0),0);
   const nbRolls=SHOPS.reduce((a,s)=>a+rollJour(s,dStr,isDim,riz[s]||0,src,fete),0);
   const nbPokes=isDim?0:NB_POKES_JOUR;
-  const kgB=boules*G_CUIT_BOULE/1000, kgR=nbRolls*G_CUIT_ROLL/1000, kgP=nbPokes*G_CUIT_POKE/1000;
+  const kgB=boules*G_CUIT_BOULE/1000, kgR=nbRolls*gCuitRoll(dStr)/1000, kgP=nbPokes*G_CUIT_POKE/1000;
   const kgCru=(kgB+kgR+kgP)/RATIO_CUIT_CRU, m=kgCru/KG_MARMITE;
   return {legacy:false,boules,nbRolls,nbPokes,kgB,kgR,kgP,kgCru,m,marmites:Math.ceil(m-1e-9)};   // -1e-9 : garde flottante
 }
