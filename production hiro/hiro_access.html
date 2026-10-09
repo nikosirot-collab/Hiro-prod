@@ -1161,6 +1161,8 @@ function render(){
     const resteVeilleJ=resteVeille;
     resteVeille=(_mc!==undefined&&_mr!==undefined)?Math.max(0,resteVeilleJ+_mc-_mr):0;
     const aCuireHtml=(resteVeilleJ>0&&totBacs>0)?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${resteVeilleJ} → cuire ${Math.max(0,marmites-resteVeilleJ)}</span>`:'';
+    // Marmites réellement cuites (saisies dans Hiro Prod), si renseignées
+    const cuitesHtml=(_mc!==undefined)?`<span style="display:block;font-size:10px;font-weight:600;color:#b84a1a;white-space:nowrap;">cuites ${_mc}</span>`:'';
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
 
     const fd={};['dsm','mgt','paita','ville'].forEach(s=>{
@@ -1213,7 +1215,7 @@ function render(){
         </div>
         <div class="divider"></div>
         <div class="sum-grid">
-          <div class="sum-cell"><div class="slbl">Marmites</div><div class="sval" style="color:var(--dsm)">${totBacs>0?fb(marmites):'—'}</div>${aCuireHtml}</div>
+          <div class="sum-cell"><div class="slbl">Marmites</div><div class="sval" style="color:var(--dsm)">${totBacs>0?fb(marmites):'—'}</div>${aCuireHtml}${cuitesHtml}</div>
           <div class="sum-cell"><div class="slbl">Temps prod</div><div class="sval" style="color:#5b4bb5">${totBacs>0?fb(temps)+' min':'—'}</div></div>
           <div class="sum-cell"><div class="slbl">Total bacs</div><div class="sval">${totBacs>0?fb(totBacs):'—'}</div></div>
         </div>
@@ -1299,7 +1301,7 @@ function render(){
       <td class="${dc2} col-sep vmono">${v.paita||'—'}</td><td class="${dc2}">${bacs.paita||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.ville||'—'}</td><td class="${dc2}">${bacs.ville||'—'}</td>
       <td class="${dc2} col-sep vmono">${v.asia||'—'}</td><td class="${dc2}">${bacs.asia||'—'}</td>
-      <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}${aCuireHtml}</td>
+      <td class="${dc2} col-sep" style="color:var(--dsm);font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}${aCuireHtml}${cuitesHtml}</td>
       <td class="${dc2}" style="color:#5b4bb5;font-weight:500;font-family:'DM Mono',monospace">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
