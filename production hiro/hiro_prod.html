@@ -3360,19 +3360,42 @@ async function _evSave(shops){
   await fetch(_CONFIG_API+'/jours-off?key='+_KEY+'&'+mask.join('&'),{
     method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
 }
+var _evSel={};   // jours sélectionnés dans le mini-calendrier : {'2026-10-12':1}
+function evToggle(d){ if(_evSel[d])delete _evSel[d]; else _evSel[d]=1; evRefreshCal(); }
+function evRefreshCal(){
+  var el=document.getElementById('ev-cal'); if(!el)return;
+  var today=_todayNcStr(), p=today.split('-'), t0=new Date(+p[0],+p[1]-1,+p[2]);
+  var start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-((t0.getDay()+6)%7));   // lundi de la semaine en cours
+  var h='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:420px;">';
+  ['L','M','M','J','V','S','D'].forEach(function(l){h+='<div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);">'+l+'</div>';});
+  for(var i=0;i<35;i++){
+    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), k=ds(d);
+    var past=k<today, on=!!_evSel[k];
+    var first=(d.getDate()===1||i===0)?'<div style="font-size:8px;line-height:1;opacity:.7;">'+d.toLocaleDateString('fr-FR',{month:'short'})+'</div>':'';
+    h+='<button type="button" '+(past?'disabled ':'onclick="evToggle(\''+k+'\')" ')+'style="padding:6px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:'+(past?'default':'pointer')+';border:1px solid '+(on?'#1a1a1a':'var(--border)')+';background:'+(on?'#1a1a1a':'var(--surface)')+';color:'+(on?'#fff':'var(--text)')+';opacity:'+(past?'.3':'1')+';">'+first+d.getDate()+'</button>';
+  }
+  h+='</div>';
+  var ks=Object.keys(_evSel).sort();
+  h+='<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">'+(ks.length
+    ? ks.length+' jour'+(ks.length>1?'s':'')+' : '+ks.map(function(k){return new Date(k+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});}).join(', ')
+    : 'Aucun jour sélectionné')+'</div>';
+  el.innerHTML=h;
+}
 async function addEvenement(){
-  var date=(document.getElementById('ev-date')||{}).value;
+  var dates=Object.keys(_evSel).sort();
   var text=((document.getElementById('ev-text')||{}).value||'').trim();
   var shops=['dsm','mgt','paita','ville'].filter(function(s){var c=document.getElementById('ev-'+s);return c&&c.checked;});
-  if(!date||!text){alert('Date et texte obligatoires');return;}
+  if(dates.length===0){alert('Sélectionne au moins un jour');return;}
+  if(!text){alert('Le texte est obligatoire');return;}
   if(shops.length===0){alert('Sélectionne au moins un magasin');return;}
   try{ if(!(await _evFetch())){alert('Chargement impossible, réessaie');return;} }
   catch(e){alert('Chargement impossible, réessaie');return;}   // jamais d'écriture sur une copie périmée
   shops.forEach(function(s){
-    _evData[s]=_evData[s].filter(function(e){return e.date!==date;});
-    _evData[s].push({date:date,text:text});
+    _evData[s]=_evData[s].filter(function(e){return dates.indexOf(e.date)<0;});
+    dates.forEach(function(d){_evData[s].push({date:d,text:text});});
   });
   await _evSave(shops);
+  _evSel={};
   renderEvenements();
 }
 async function removeEvenement(shop,date){
@@ -3388,7 +3411,7 @@ function renderEvenements(){
   var h='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:24px 0 8px;">Évènements</div>'
    +'<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">'
-   +'<input type="date" id="ev-date" min="'+today+'" value="'+today+'" style="border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'
+   +'<div id="ev-cal" style="width:100%;margin-bottom:4px;"></div>'
    +'<input type="text" id="ev-text" maxlength="40" placeholder="ex : Fête de la ville" style="flex:1;min-width:160px;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:13px;">'
    +'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">';
   ['dsm','mgt','paita','ville'].forEach(function(s){
@@ -3400,14 +3423,21 @@ function renderEvenements(){
     var items=_evData[s].filter(function(e){return e.date>=today;}).sort(function(a,b){return a.date>b.date?1:-1;});
     h+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;"><div style="font-size:13px;font-weight:700;color:'+_SHOPS_COLORS[s]+';margin-bottom:10px;">'+_SHOPS_LABELS[s]+'</div>';
     if(!items.length) h+='<div style="font-size:12px;color:var(--text-muted);">Aucun évènement</div>';
-    items.forEach(function(e){
-      var lbl=new Date(e.date+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-      h+='<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);gap:8px;"><div><div style="font-size:12px;">'+lbl+'</div><div style="font-size:10px;font-weight:600;color:#b07000;">📅 '+esc(e.text)+'</div></div>'
-        +'<button onclick="removeEvenement(\''+s+'\',\''+e.date+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:0 4px;">×</button></div>';
+    var groups=[], byText={};
+    items.forEach(function(e){ if(!byText[e.text]){byText[e.text]={text:e.text,days:[]};groups.push(byText[e.text]);} byText[e.text].days.push(e.date); });
+    groups.forEach(function(g){
+      h+='<div style="padding:6px 0;border-bottom:1px solid var(--border);"><div style="font-size:10px;font-weight:600;color:#b07000;margin-bottom:4px;">📅 '+esc(g.text)+'</div><div style="display:flex;flex-wrap:wrap;gap:4px;">';
+      g.days.forEach(function(dt){
+        var lbl=new Date(dt+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+        h+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:12px;border:1px solid var(--border);border-radius:100px;padding:2px 4px 2px 10px;">'+lbl
+          +'<button onclick="removeEvenement(\''+s+'\',\''+dt+'\')" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:14px;padding:0 4px;">×</button></span>';
+      });
+      h+='</div></div>';
     });
     h+='</div>';
   });
   el.innerHTML=h+'</div>';
+  evRefreshCal();
 }
 
 
