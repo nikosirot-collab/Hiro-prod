@@ -3362,22 +3362,31 @@ async function _evSave(shops){
 }
 var _evSel={};   // jours sélectionnés dans le mini-calendrier : {'2026-10-12':1}
 function evToggle(d){ if(_evSel[d])delete _evSel[d]; else _evSel[d]=1; evRefreshCal(); }
+var _evMonth=0;   // décalage en mois par rapport au mois en cours (0 à 12)
+function evNav(n){ _evMonth=Math.max(0,Math.min(12,_evMonth+n)); evRefreshCal(); }
 function evRefreshCal(){
   var el=document.getElementById('ev-cal'); if(!el)return;
-  var today=_todayNcStr(), p=today.split('-'), t0=new Date(+p[0],+p[1]-1,+p[2]);
-  var start=new Date(t0.getFullYear(),t0.getMonth(),t0.getDate()-((t0.getDay()+6)%7));   // lundi de la semaine en cours
-  var h='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:420px;">';
+  var today=_todayNcStr(), p=today.split('-');
+  var first=new Date(+p[0],+p[1]-1+_evMonth,1);
+  var nb=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+  var lead=(first.getDay()+6)%7;   // cases vides avant le 1er (semaine commençant le lundi)
+  var btn='background:none;border:1px solid var(--border);border-radius:8px;width:32px;height:28px;font-size:16px;';
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;max-width:420px;margin-bottom:6px;">'
+    +'<button type="button" '+(_evMonth<=0?'disabled style="'+btn+'opacity:.3;"':'onclick="evNav(-1)" style="'+btn+'cursor:pointer;"')+'>‹</button>'
+    +'<div style="font-size:13px;font-weight:700;text-transform:capitalize;">'+first.toLocaleDateString('fr-FR',{month:'long',year:'numeric'})+'</div>'
+    +'<button type="button" '+(_evMonth>=12?'disabled style="'+btn+'opacity:.3;"':'onclick="evNav(1)" style="'+btn+'cursor:pointer;"')+'>›</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:420px;">';
   ['L','M','M','J','V','S','D'].forEach(function(l){h+='<div style="text-align:center;font-size:10px;font-weight:700;color:var(--text-muted);">'+l+'</div>';});
-  for(var i=0;i<35;i++){
-    var d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i), k=ds(d);
+  for(var i=0;i<lead;i++) h+='<div></div>';
+  for(var n=1;n<=nb;n++){
+    var d=new Date(first.getFullYear(),first.getMonth(),n), k=ds(d);
     var past=k<today, on=!!_evSel[k];
-    var first=(d.getDate()===1||i===0)?'<div style="font-size:8px;line-height:1;opacity:.7;">'+d.toLocaleDateString('fr-FR',{month:'short'})+'</div>':'';
-    h+='<button type="button" '+(past?'disabled ':'onclick="evToggle(\''+k+'\')" ')+'style="padding:6px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:'+(past?'default':'pointer')+';border:1px solid '+(on?'#1a1a1a':'var(--border)')+';background:'+(on?'#1a1a1a':'var(--surface)')+';color:'+(on?'#fff':'var(--text)')+';opacity:'+(past?'.3':'1')+';">'+first+d.getDate()+'</button>';
+    h+='<button type="button" '+(past?'disabled ':'onclick="evToggle(\''+k+'\')" ')+'style="padding:8px 0;border-radius:8px;font-size:13px;font-weight:600;cursor:'+(past?'default':'pointer')+';border:1px solid '+(on?'#1a1a1a':'var(--border)')+';background:'+(on?'#1a1a1a':'var(--surface)')+';color:'+(on?'#fff':'var(--text)')+';opacity:'+(past?'.3':'1')+';">'+n+'</button>';
   }
   h+='</div>';
   var ks=Object.keys(_evSel).sort();
   h+='<div style="font-size:12px;color:var(--text-muted);margin-top:8px;">'+(ks.length
-    ? ks.length+' jour'+(ks.length>1?'s':'')+' : '+ks.map(function(k){return new Date(k+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'});}).join(', ')
+    ? ks.length+' jour'+(ks.length>1?'s':'')+' : '+ks.map(function(k){return new Date(k+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});}).join(', ')
     : 'Aucun jour sélectionné')+'</div>';
   el.innerHTML=h;
 }
@@ -3395,7 +3404,7 @@ async function addEvenement(){
     dates.forEach(function(d){_evData[s].push({date:d,text:text});});
   });
   await _evSave(shops);
-  _evSel={};
+  _evSel={}; _evMonth=0;
   renderEvenements();
 }
 async function removeEvenement(shop,date){
