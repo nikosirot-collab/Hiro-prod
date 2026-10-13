@@ -2235,10 +2235,10 @@ function laboAddDessert(shop){return laboAddLibreLine(shop,'tarte','dessert','de
 function laboAddSalade(shop){return laboAddLibreLine(shop,'salade','salade','salade');}
 
 function laboAddLibreRow(shop,idPrefix,fn,placeholder,color){
-  return '<div style="display:flex;align-items:center;padding:6px 8px;gap:6px;border-bottom:1px solid var(--border);">'
-    +'<input id="'+idPrefix+'qty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:13px;text-align:center;">'
-    +'<input id="'+idPrefix+'name-'+shop+'" type="text" placeholder="'+placeholder+'" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:12px;" onkeydown="if(event.key===\'Enter\')'+fn+'(\''+shop+'\')">'
-    +'<button onclick="'+fn+'(\''+shop+'\')" style="padding:4px 10px;border-radius:5px;border:none;background:'+color+';color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">+</button>'
+  return '<div style="display:flex;align-items:center;padding:6px 8px;gap:6px;border-bottom:1px solid var(--border);min-width:0;box-sizing:border-box;">'
+    +'<input id="'+idPrefix+'qty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:40px;flex-shrink:0;box-sizing:border-box;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:13px;text-align:center;">'
+    +'<input id="'+idPrefix+'name-'+shop+'" type="text" placeholder="'+placeholder+'" style="width:0;flex:1;min-width:0;box-sizing:border-box;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:12px;" onkeydown="if(event.key===\'Enter\')'+fn+'(\''+shop+'\')">'
+    +'<button onclick="'+fn+'(\''+shop+'\')" style="padding:4px 8px;border-radius:5px;border:none;background:'+color+';color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">+</button>'
     +'</div>';
 }
 
@@ -3388,7 +3388,7 @@ function laboRenderFiche(shop,order){
 
   var saladeRows=LABO_SALADE.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStrSal=order.vlibre||order.libre||'';if(_libreStrSal){try{var ls=JSON.parse(_libreStrSal);if(ls.salade){ls.salade.forEach(function(i,idx){if(i.name&&i.qty>0)saladeRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'salade\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
-  saladeRows+=laboAddLibreRow(shop,'salade','laboAddSalade','Nom de la salade...',color);
+  saladeRows+=laboAddLibreRow(shop,'salade','laboAddSalade','Salade...',color);
   var _v=function(k){return isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:(order[k]!==undefined?order[k]:0);};
   var _fish=function(f){
     // Pour commande validée : utiliser vqty_f_X si disponible, sinon calcul auto
@@ -3504,7 +3504,7 @@ function laboRenderFiche(shop,order){
   }
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.forEach(function(i,idx){if(i.name&&i.qty>0)dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'tarte\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
-  dessertRows+=laboAddLibreRow(shop,'dessert','laboAddDessert','Nom du dessert...',color);
+  dessertRows+=laboAddLibreRow(shop,'dessert','laboAddDessert','Dessert...',color);
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
   var tapasRows=tapasList.filter(function(p){return p.key!=='brochettes';}).map(function(p){
     var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);
