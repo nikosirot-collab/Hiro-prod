@@ -2188,8 +2188,26 @@ async function laboAddPlat(shop){
   }catch(e){}
 }
 
-// Ajout d'une ligne libre (dessert -> libre.tarte, salade -> libre.salade)
-async function laboAddLibreLine(shop,groupKey,idPrefix,label){
+// Cherche dans le catalogue de la catégorie (clés autorisées) l'article correspondant au nom saisi
+function laboMatchCatalogKey(name,catalog){
+  var okKeys={};catalog.forEach(function(p){okKeys[p.key]=true;});
+  var norm=name.toLowerCase().trim();
+  var key=_ARTICLE_MAP[norm]||null;
+  if(key&&okKeys[key])return key;
+  key=null;
+  var bestLen=0;
+  Object.keys(_ARTICLE_MAP).forEach(function(k){
+    if(!okKeys[_ARTICLE_MAP[k]])return;
+    if(k.length<4)return;
+    if(norm===k||(norm.length>3&&k.indexOf(norm)!==-1)||(k.length>3&&norm.indexOf(k)!==-1&&norm.length-k.length<=2)){
+      if(k.length>bestLen){bestLen=k.length;key=_ARTICLE_MAP[k];}
+    }
+  });
+  return key;
+}
+
+// Ajout d'une ligne : article du catalogue -> sa clé (garde sa place), sinon ligne libre (dessert -> libre.tarte, salade -> libre.salade)
+async function laboAddLibreLine(shop,groupKey,idPrefix,label,catalog){
   var nameInp=document.getElementById(idPrefix+'name-'+shop);
   var qtyInp=document.getElementById(idPrefix+'qty-'+shop);
   if(!nameInp||!qtyInp)return;
@@ -2202,16 +2220,34 @@ async function laboAddLibreLine(shop,groupKey,idPrefix,label){
     laboOrders[shop]={shop:shop,date:laboDs(laboDate),ts:Date.now()};
     order=laboOrders[shop];
   }
+  var isValidated=order.status==='validated';
 
+  var fields={};
   var libreStr=order.vlibre||order.libre||'{}';
   var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
-  if(!libre[groupKey])libre[groupKey]=[];
-  var found=false;
-  libre[groupKey].forEach(function(i){if(i.name&&i.name.toLowerCase()===name.toLowerCase()){i.qty=(i.qty||0)+qty;found=true;}});
-  if(!found)libre[groupKey].push({name:name,qty:qty});
-  order.vlibre=JSON.stringify(libre);
+  var key=laboMatchCatalogKey(name,catalog);
+  if(key){
+    // Article du catalogue — ajouter à sa clé
+    var cur=isValidated&&order['vqty_'+key]!==undefined?order['vqty_'+key]:(order[key]||0);
+    var newVal=cur+qty;
+    fields[isValidated?'vqty_'+key:key]={integerValue:newVal};
+    if(isValidated){fields[key]={integerValue:newVal};order['vqty_'+key]=newVal;}
+    order[key]=newVal;
+    // Si la ligne avait été supprimée de la fiche, la réafficher
+    if(libre.deleted&&libre.deleted[key]){
+      delete libre.deleted[key];
+      order.vlibre=JSON.stringify(libre);
+      fields['vlibre']={stringValue:order.vlibre};
+    }
+  }else{
+    if(!libre[groupKey])libre[groupKey]=[];
+    var found=false;
+    libre[groupKey].forEach(function(i){if(i.name&&i.name.toLowerCase()===name.toLowerCase()){i.qty=(i.qty||0)+qty;found=true;}});
+    if(!found)libre[groupKey].push({name:name,qty:qty});
+    order.vlibre=JSON.stringify(libre);
+    fields['vlibre']={stringValue:order.vlibre};
+  }
 
-  var fields={'vlibre':{stringValue:order.vlibre}};
   if(!order.ts){
     order.ts=Date.now();
     fields['ts']={integerValue:order.ts};
@@ -2231,8 +2267,8 @@ async function laboAddLibreLine(shop,groupKey,idPrefix,label){
     if(el)el.innerHTML=laboRenderFiche(shop,order);
   }catch(e){}
 }
-function laboAddDessert(shop){return laboAddLibreLine(shop,'tarte','dessert','dessert');}
-function laboAddSalade(shop){return laboAddLibreLine(shop,'salade','salade','salade');}
+function laboAddDessert(shop){return laboAddLibreLine(shop,'tarte','dessert','dessert',LABO_DESSERT);}
+function laboAddSalade(shop){return laboAddLibreLine(shop,'salade','salade','salade',LABO_SALADE);}
 
 function laboAddLibreRow(shop,idPrefix,fn,placeholder,color){
   return '<div style="display:flex;align-items:center;padding:6px 8px;gap:6px;border-bottom:1px solid var(--border);min-width:0;box-sizing:border-box;">'
