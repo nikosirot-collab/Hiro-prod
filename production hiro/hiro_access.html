@@ -3614,14 +3614,14 @@ function laboRenderFiche(shop,order){
 
   var sunColHeader=showSun?'<div style="display:flex;padding:2px 8px 4px;gap:8px;"><div style="width:64px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">SAM</div><div style="width:64px;text-align:center;font-size:9px;font-weight:700;color:var(--hint);">DIM</div></div>':'';
   var topSection=shop==='ville'
-    ?'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
-      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-      +'<div>'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>'
+    ?'<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);min-width:0;">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div style="min-width:0;">'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>'
       +'<div style="display:grid;grid-template-columns:1fr;border-bottom:3px solid var(--border);">'
       +'<div>'+colTitle('Plats chauds')+platsColRows+'</div>'+'</div>'
-    :'<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:3px solid var(--border);">'
-      +'<div style="border-right:1px solid var(--border);">'+colTitle('Salade')+saladeRows+'</div>'
-      +'<div>'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>';
+    :'<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-bottom:3px solid var(--border);">'
+      +'<div style="border-right:1px solid var(--border);min-width:0;">'+colTitle('Salade')+saladeRows+'</div>'
+      +'<div style="min-width:0;">'+colTitle('Poisson / Riz / Poke')+sunColHeader+rightRows+'</div>'+'</div>';
 
   var bottomSection='<div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);">'
     +'<div style="border-right:1px solid var(--border);">'+colTitle('Dessert')+dessertRows+'</div>'
