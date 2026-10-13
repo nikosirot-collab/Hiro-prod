@@ -2188,6 +2188,60 @@ async function laboAddPlat(shop){
   }catch(e){}
 }
 
+// Ajout d'une ligne libre (dessert -> libre.tarte, salade -> libre.salade)
+async function laboAddLibreLine(shop,groupKey,idPrefix,label){
+  var nameInp=document.getElementById(idPrefix+'name-'+shop);
+  var qtyInp=document.getElementById(idPrefix+'qty-'+shop);
+  if(!nameInp||!qtyInp)return;
+  var name=nameInp.value.trim();
+  var qty=parseInt(qtyInp.value)||0;
+  if(!name||!qty)return;
+
+  var order=laboOrders[shop];
+  if(!order){
+    laboOrders[shop]={shop:shop,date:laboDs(laboDate),ts:Date.now()};
+    order=laboOrders[shop];
+  }
+
+  var libreStr=order.vlibre||order.libre||'{}';
+  var libre={};try{libre=JSON.parse(libreStr);}catch(e){}
+  if(!libre[groupKey])libre[groupKey]=[];
+  var found=false;
+  libre[groupKey].forEach(function(i){if(i.name&&i.name.toLowerCase()===name.toLowerCase()){i.qty=(i.qty||0)+qty;found=true;}});
+  if(!found)libre[groupKey].push({name:name,qty:qty});
+  order.vlibre=JSON.stringify(libre);
+
+  var fields={'vlibre':{stringValue:order.vlibre}};
+  if(!order.ts){
+    order.ts=Date.now();
+    fields['ts']={integerValue:order.ts};
+    fields['shop']={stringValue:shop};
+    fields['date']={stringValue:laboDs(laboDate)};
+  }
+
+  var dStr=laboDs(laboDate);
+  var fieldPaths=Object.keys(fields).map(function(k){return encodeURIComponent(k);}).join('&updateMask.fieldPaths=');
+  var url=_ORDERS_API+'/order_'+dStr+'_'+shop+'?key='+_KEY+'&updateMask.fieldPaths='+fieldPaths;
+  try{
+    await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+    laboBackup(shop,'add_'+label+'_'+name);
+    laboShowSaveToast(shop);
+    nameInp.value='';qtyInp.value='';
+    var el=document.getElementById('labo-fiche-'+shop);
+    if(el)el.innerHTML=laboRenderFiche(shop,order);
+  }catch(e){}
+}
+function laboAddDessert(shop){return laboAddLibreLine(shop,'tarte','dessert','dessert');}
+function laboAddSalade(shop){return laboAddLibreLine(shop,'salade','salade','salade');}
+
+function laboAddLibreRow(shop,idPrefix,fn,placeholder,color){
+  return '<div style="display:flex;align-items:center;padding:6px 8px;gap:6px;border-bottom:1px solid var(--border);">'
+    +'<input id="'+idPrefix+'qty-'+shop+'" type="number" min="0" placeholder="Qté" style="width:64px;flex-shrink:0;border:1px solid var(--border);border-radius:5px;padding:2px 4px;font-size:13px;text-align:center;">'
+    +'<input id="'+idPrefix+'name-'+shop+'" type="text" placeholder="'+placeholder+'" style="flex:1;min-width:0;border:1px solid var(--border);border-radius:5px;padding:4px 6px;font-size:12px;" onkeydown="if(event.key===\'Enter\')'+fn+'(\''+shop+'\')">'
+    +'<button onclick="'+fn+'(\''+shop+'\')" style="padding:4px 10px;border-radius:5px;border:none;background:'+color+';color:#fff;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">+</button>'
+    +'</div>';
+}
+
 function laboTrashBtn(onclickJs){
   return '<button onclick="'+onclickJs+'" title="Supprimer" style="flex-shrink:0;border:none;background:transparent;color:var(--hint);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1;">🗑</button>';
 }
@@ -3333,6 +3387,8 @@ function laboRenderFiche(shop,order){
   }
 
   var saladeRows=LABO_SALADE.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
+  var _libreStrSal=order.vlibre||order.libre||'';if(_libreStrSal){try{var ls=JSON.parse(_libreStrSal);if(ls.salade){ls.salade.forEach(function(i,idx){if(i.name&&i.qty>0)saladeRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'salade\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
+  saladeRows+=laboAddLibreRow(shop,'salade','laboAddSalade','Nom de la salade...',color);
   var _v=function(k){return isValidated&&order['vqty_'+k]!==undefined?order['vqty_'+k]:(order[k]!==undefined?order[k]:0);};
   var _fish=function(f){
     // Pour commande validée : utiliser vqty_f_X si disponible, sinon calcul auto
@@ -3448,6 +3504,7 @@ function laboRenderFiche(shop,order){
   }
   var dessertRows=LABO_DESSERT.map(function(p){var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);return makeRow(p.key,p.name,v);}).join('');
   var _libreStr=order.vlibre||order.libre||'';if(_libreStr){try{var lt=JSON.parse(_libreStr);if(lt.tarte){lt.tarte.forEach(function(i,idx){if(i.name&&i.qty>0)dessertRows+='<div style="display:flex;align-items:baseline;padding:6px 12px;gap:10px;border-bottom:1px solid var(--border);background:#fef9f0;"><div style="font-size:20px;font-weight:700;min-width:36px;text-align:right;">'+i.qty+'</div><div style="font-size:13px;font-weight:500;flex:1;">'+esc(i.name)+'</div>'+laboTrashBtn('laboRemoveLibreItem(\''+shop+'\',\'tarte\','+idx+',\''+laboJsEsc(i.name)+'\')')+'</div>';});}}catch(e){}}
+  dessertRows+=laboAddLibreRow(shop,'dessert','laboAddDessert','Nom du dessert...',color);
   var tapasList=shop==='ville'?LABO_TAPAS_VILLE:LABO_TAPAS;
   var tapasRows=tapasList.filter(function(p){return p.key!=='brochettes';}).map(function(p){
     var v=isValidated&&order['vqty_'+p.key]!==undefined?order['vqty_'+p.key]:(order[p.key]!==undefined?order[p.key]:0);
@@ -3639,6 +3696,7 @@ function laboPrint(){
     var dessertRows='';
     LABO_DESSERT.forEach(function(p){var val=v(p.key);if(val>0)dessertRows+=pRow(p.name,val);});
     var libreStr=order.vlibre||order.libre||'';
+    if(libreStr){try{var ls=JSON.parse(libreStr);if(ls.salade)ls.salade.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){saladeRows+=pRow(i.name,i.qty);});}catch(e){}}
     if(libreStr){try{var lt=JSON.parse(libreStr);if(lt.tarte)lt.tarte.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){dessertRows+=pRow(i.name,i.qty);});}catch(e){}}
 
     // Plats chauds (ville)
@@ -3734,6 +3792,7 @@ function laboPrintSalade(){
     function v(k){return order[k]!==undefined?order[k]:(isVal&&order['vqty_'+k]!==undefined?order['vqty_'+k]:0);}
     var rows='';
     LABO_SALADE.forEach(function(p){var val=v(p.key);rows+=pRow(p.name,val);});
+    var _lsStr=order.vlibre||order.libre||'';if(_lsStr){try{var _ls=JSON.parse(_lsStr);if(_ls.salade)_ls.salade.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){rows+=pRow(esc(i.name),i.qty);});}catch(e){}}
     var status=isVal?'✓':'⏳';
     return '<div style="flex:1;border-right:2px solid #ddd;padding:0 12px;min-width:0;">'
       +'<div style="background:'+COLORS[shop]+';color:#fff;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">'

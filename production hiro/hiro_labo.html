@@ -383,6 +383,9 @@ function renderShopCard(shop){
 
   // SALADE
   var saladeRows = SALADE.map(function(p){ return mkRow(p.name,getVal(order,p.key)); }).join('');
+  if(libreObj.salade) libreObj.salade.filter(function(i){return i.name&&i.qty>0;}).forEach(function(i){
+    saladeRows += mkRow(i.name, i.qty, true);
+  });
 
   // POISSON / RIZ / ROLL
   var poissonRows = '';
