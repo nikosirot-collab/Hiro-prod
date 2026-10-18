@@ -1007,7 +1007,7 @@ var _prodJoursOffReady=fetch('https://firestore.googleapis.com/v1/projects/hiro-
 function _toFirestore(obj) {
   const fields = {};
   for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === 'number') fields[k] = { integerValue: v };
+    if (typeof v === 'number') fields[k] = Number.isInteger(v) ? { integerValue: v } : { doubleValue: v };   // décimaux (ex. marmites 0,5) : doubleValue, sinon Firestore refuse
     else if (typeof v === 'string') fields[k] = { stringValue: v };
     else if (typeof v === 'boolean') fields[k] = { booleanValue: v };
   }
@@ -1095,7 +1095,7 @@ async function _fbSaveAll(docId) {
       const v=data[k];
       if(v===undefined) return;
       const ek=_encKey(k);
-      if(typeof v==='number') fields[ek]={integerValue:v};
+      if(typeof v==='number') fields[ek]=Number.isInteger(v)?{integerValue:v}:{doubleValue:v};
       else if(typeof v==='boolean') fields[ek]={booleanValue:v};
       else fields[ek]={stringValue:String(v)};
     });
@@ -1342,6 +1342,7 @@ function fournisseurNameById(id){
   return f?esc(f.nom):'—';
 }
 function fb(x) { return x===0?'0':x%1===0?String(x):x.toFixed(1); }
+function fq(x) { return String(Math.round(x*100)/100).replace('.',','); }   // quarts de marmite : 0,25 / 0,5 / 7
 
 let isFete=false, weekOff=0, data={};
 
@@ -1418,7 +1419,7 @@ function setR(d,s,v){const val=parseInt(v)||0;const k=d+'__r__'+s;data[k]=val;_m
 // Marmites réellement utilisées (saisie quotidienne, sert à affiner le calcul en fin de semaine)
 function getMarmReel(d){ const v=data[d+'__marm_reel']; return v===undefined?null:v; }
 function setMarmReel(d,v){
-  const n=parseInt(v);
+  const n=Math.round(parseFloat(String(v).replace(',','.'))*4)/4;   // marmites entamées : au quart près (0,25 / 0,5 / 0,75)
   if(v===''||isNaN(n)){ render(); return; }          // champ vidé : on ne supprime jamais une saisie, la valeur revient
   const k=d+'__marm_reel'; data[k]=Math.max(0,n);
   _markDirty(k); _scheduleSave(weekDocId()); render();
@@ -2173,11 +2174,11 @@ function render() {
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.paita||''}" placeholder="0" onchange="setV('${dStr}','paita',this.value)"></td><td class="${dc2}">${bacs.paita||'—'}</td>
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.ville||''}" placeholder="0" onchange="setV('${dStr}','ville',this.value)"></td><td class="${dc2}">${bacs.ville||'—'}</td>
       <td class="${dc2} col-sep"><input class="inp" type="number" min="0" step="250" value="${v.asia||''}" placeholder="0" onchange="setV('${dStr}','asia',this.value)"></td><td class="${dc2}">${bacs.asia||'—'}</td>
-      <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}${resteVeilleJ>0&&totBacs>0?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${resteVeilleJ} → cuire ${Math.max(0,marmites-resteVeilleJ)}</span>`:''}</td>
+      <td class="${dc2} col-sep val-marmite">${totBacs>0?fb(marmites)+(mj.legacy?'':`<span style="display:block;font-size:10px;font-weight:400;color:var(--text-muted);white-space:nowrap;" title="Riz cuit : boules ${fr1(mj.kgB)} kg · rolls ${fr1(mj.kgR)} kg (${mj.nbRolls}) · pokés ${fr1(mj.kgP)} kg (${mj.nbPokes})">${fr1(mj.kgCru)} kg cru · ${fr1(mj.m)} → ${marmites}</span>`):'—'}${resteVeilleJ>0&&totBacs>0?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${fq(resteVeilleJ)} → cuire ${Math.max(0,Math.ceil(marmites-resteVeilleJ-1e-9))}</span>`:''}</td>
       <td class="${dc2} col-sep"><input class="inp inp-sm" type="number" min="0" step="1" value="${mc!==null?mc:''}" placeholder="—" onchange="setMarmChamp('${dStr}','marm_cuit',this.value)"></td>
       <td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="1" value="${mm!==null?mm:''}" placeholder="—" onchange="setMarmChamp('${dStr}','marm_melange',this.value)"></td>
-      <td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="1" value="${mr!==null?mr:''}" placeholder="—" onchange="setMarmReel('${dStr}',this.value)">${mr!==null?`<span style="display:block;font-size:10px;font-weight:600;color:${ecartM>0?'#c8860a':ecartM<0?'#0d7a52':'var(--text-muted)'};">${ecartM>0?'+':''}${ecartM}</span>`:''}</td>
-      <td class="${dc2}" style="font-weight:600;color:${resteJour!==null&&resteJour<0?'#c0392b':'var(--text)'};">${resteJour!==null?resteJour:'—'}</td>
+      <td class="${dc2}"><input class="inp inp-sm" type="number" min="0" step="0.25" value="${mr!==null?mr:''}" placeholder="—" onchange="setMarmReel('${dStr}',this.value)">${mr!==null?`<span style="display:block;font-size:10px;font-weight:600;color:${ecartM>0?'#c8860a':ecartM<0?'#0d7a52':'var(--text-muted)'};">${ecartM>0?'+':''}${fq(ecartM)}</span>`:''}</td>
+      <td class="${dc2}" style="font-weight:600;color:${resteJour!==null&&resteJour<0?'#c0392b':'var(--text)'};">${resteJour!==null?fq(resteJour):'—'}</td>
       <td class="${dc2} val-temps">${totBacs>0?fb(temps):'—'}</td>
       <td class="${dc2}">${totBacs>0?fb(marmites*kgMarmite(dStr)):'—'}</td>
     </tr>`;
@@ -2387,7 +2388,7 @@ function render() {
     <td class="td-blue-total col-sep">${fb(wMarmites)}</td>
     <td class="td-blue-total"></td>
     <td class="td-blue-total"></td>
-    <td class="td-blue-total" title="Calculé sur les jours saisis : ${wCalcSaisi}">${wNbReel>0?fb(wReel)+` <span style="font-size:11px;opacity:0.75">(${ecartTot>0?'+':''}${ecartTot} · ${ecartTot>0?'+':''}${String(pctTot).replace('.',',')} %)</span>`:'—'}</td>
+    <td class="td-blue-total" title="Calculé sur les jours saisis : ${wCalcSaisi}">${wNbReel>0?fq(wReel)+` <span style="font-size:11px;opacity:0.75">(${ecartTot>0?'+':''}${fq(ecartTot)} · ${ecartTot>0?'+':''}${String(pctTot).replace('.',',')} %)</span>`:'—'}</td>
     <td class="td-blue-total"></td>
     <td class="td-blue-total" title="Total · Moyenne/jour">${fb(wTemps)} min <span style="font-size:11px;opacity:0.75">(~${fb(Math.round(wTemps/7*10)/10)}/j)</span></td>
     <td class="td-blue-total">${fb(wKgRiz)}</td>
@@ -2594,7 +2595,7 @@ async function _syncOfflineQueue(){
   for(const item of queue){
     try{
       const fields={};
-      Object.entries(item.data).forEach(([k,v])=>{if(typeof v==='number')fields[_encKey(k)]={integerValue:v};else fields[_encKey(k)]={stringValue:String(v)};});
+      Object.entries(item.data).forEach(([k,v])=>{if(typeof v==='number')fields[_encKey(k)]=Number.isInteger(v)?{integerValue:v}:{doubleValue:v};else fields[_encKey(k)]={stringValue:String(v)};});
       fields['init']={stringValue:'true'};
       await _fbFetch(_API+'/'+item.docId+'?key='+_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields})});
     }catch(e){_offlineQueue.push(item);_saveOfflineQueue();}

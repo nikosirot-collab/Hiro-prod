@@ -965,6 +965,7 @@ function updateThonFooter(){
   if(el) el.textContent=total>0?total+' kg':'—';
 }
 function fb(x){return x===0?'0':x%1===0?String(x):x.toFixed(1);}
+function fq(x){return String(Math.round(x*100)/100).replace('.',',');}   // quarts de marmite : 0,25 / 0,5 / 7
 
 let weekOff=0, data={};
 const viewState={riz:'cards',poisson:'cards',rolls:'cards'};
@@ -1160,7 +1161,7 @@ function render(){
     const _mc=data[dStr+'__marm_cuit'], _mr=data[dStr+'__marm_reel'];
     const resteVeilleJ=resteVeille;
     resteVeille=(_mc!==undefined&&_mr!==undefined)?Math.max(0,resteVeilleJ+_mc-_mr):0;
-    const aCuireHtml=(resteVeilleJ>0&&totBacs>0)?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${resteVeilleJ} → cuire ${Math.max(0,marmites-resteVeilleJ)}</span>`:'';
+    const aCuireHtml=(resteVeilleJ>0&&totBacs>0)?`<span style="display:block;font-size:10px;font-weight:600;color:#0d7a52;white-space:nowrap;">reste veille ${fq(resteVeilleJ)} → cuire ${Math.max(0,Math.ceil(marmites-resteVeilleJ-1e-9))}</span>`:'';
     // Marmites réellement cuites (saisies dans Hiro Prod), si renseignées
     const cuitesHtml=(_mc!==undefined)?`<span style="display:block;font-size:10px;font-weight:600;color:#b84a1a;white-space:nowrap;">cuites ${_mc}</span>`:'';
     SHOPS.forEach(s=>{totRiz[s]+=v[s];});
@@ -2349,7 +2350,7 @@ function laboBackup(shop,reason){
   // Copier tous les champs de la commande
   Object.entries(order).forEach(function(e){
     var k=e[0],v=e[1];
-    if(typeof v==='number') fields[k]={integerValue:v};
+    if(typeof v==='number') fields[k]=Number.isInteger(v)?{integerValue:v}:{doubleValue:v};
     else if(typeof v==='string') fields[k]={stringValue:v};
     else if(typeof v==='boolean') fields[k]={booleanValue:v};
   });
