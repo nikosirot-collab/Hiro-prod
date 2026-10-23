@@ -3963,6 +3963,33 @@ function _laboRenderCore(el){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap par type</div>'+pokeRecapSection+'</div>';
     }
 
+    // ── Récap Salades classé par type (total + détail par magasin) ──
+    var saladeByType={},saladeTotals={},saladeOrder=[];
+    function _saladeAdd(name,shop,qty){
+      if(!(qty>0)) return;
+      var k=name.trim().toLowerCase();
+      if(!saladeByType[k]){saladeByType[k]=[];saladeTotals[k]=0;saladeOrder.push({k:k,name:name.trim()});}
+      saladeByType[k].push(LABO_LABELS[shop]+' ×'+qty);saladeTotals[k]+=qty;
+    }
+    LABO_SHOPS.forEach(function(s){
+      var o=laboOrders[s];
+      if(!o) return;
+      var isV=o.status==='validated';
+      LABO_SALADE.forEach(function(p){
+        var raw=o[p.key]!==undefined?o[p.key]:(isV&&o['vqty_'+p.key]!==undefined?o['vqty_'+p.key]:0);
+        _saladeAdd(p.name,s,parseInt(raw)||0);
+      });
+      var ls=o.vlibre||o.libre||'';
+      if(ls){try{var lc=JSON.parse(ls);if(lc.salade)lc.salade.forEach(function(i){if(i&&i.name)_saladeAdd(String(i.name),s,parseInt(i.qty)||0);});}catch(e){}}
+    });
+    var saladeRecapSection='';
+    saladeOrder.forEach(function(e){
+      saladeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--mgt);min-width:70px;">'+esc(e.name)+' ('+saladeTotals[e.k]+')</div><div style="font-size:12px;color:var(--text);">'+saladeByType[e.k].join(' · ')+'</div></div>';
+    });
+    if(saladeRecapSection){
+      cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap salades</div>'+saladeRecapSection+'</div>';
+    }
+
     el.innerHTML=cards;
   }else if(laboCurrentShop==='rie'){
     el.innerHTML=laboRenderFicheRie();
