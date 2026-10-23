@@ -931,6 +931,39 @@ async function saveThonKg(dStr,val){
     body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
   }).catch(()=>{});
 }
+// Fournisseur du thon : mêmes fournisseurs que dans hiro_dock (Pescana, Pacific Tuna), même champ <date>--thon_fournisseur
+const THON_FOURNISSEURS=['pescana','pacific tuna'];
+function thonFournisseurCell(dStr){
+  const cur=data[dStr+'__thon_fournisseur']||'';
+  const opts=_dockFournisseurs.filter(f=>THON_FOURNISSEURS.indexOf((f.nom||'').trim().toLowerCase())!==-1);
+  let h='<option value="">—</option>';
+  opts.forEach(f=>{h+=`<option value="${esc(f.id)}"${f.id===cur?' selected':''}>${esc(f.nom)}</option>`;});
+  // fournisseur déjà enregistré mais hors liste : on le garde visible pour ne pas l'écraser sans le vouloir
+  if(cur&&!opts.some(f=>f.id===cur)){const n=fournisseurNameById(cur);h+=`<option value="${esc(cur)}" selected>${n==='—'?'(autre)':n}</option>`;}
+  return `<select class="thon-four-select" onchange="saveThonFournisseur('${dStr}',this)" style="padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:500;color:var(--dsm);background:var(--bg);max-width:110px;">${h}</select><span class="thon-four-ok" style="display:inline-block;width:14px;margin-left:3px;font-size:12px;"></span>`;
+}
+async function saveThonFournisseur(dStr,sel){
+  const val=sel.value;
+  const okEl=sel.nextElementSibling;
+  const monday=ds(mondayOf(weekOff));
+  const fsKey=(dStr+'__thon_fournisseur').replace(/__/g,'--');
+  const mask=encodeURIComponent('`'+fsKey+'`');
+  let ok=false;
+  try{
+    const res=await fetch(`${_API}/week_${monday}?updateMask.fieldPaths=${mask}&key=${_KEY}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({fields:{[fsKey]:{stringValue:val}}})
+    });
+    ok=res.ok;
+  }catch(e){}
+  if(ok)data[dStr+'__thon_fournisseur']=val;
+  if(okEl){
+    okEl.textContent=ok?'✓':'⚠';
+    okEl.style.color=ok?'var(--mgt)':'#c0392b';
+    setTimeout(()=>{if(okEl)okEl.textContent='';},1800);
+  }
+  sel.blur();
+}
 let _dockFournisseurs=[];
 async function loadDockFournisseurs(){
   try{
@@ -1082,7 +1115,7 @@ function subscribeWeek(){
 
 function renderWithState(){
   // Ne pas écraser une saisie en cours dans le champ kg de thon
-  if(document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains('thon-kg-input'))return;
+  if(document.activeElement&&document.activeElement.classList&&(document.activeElement.classList.contains('thon-kg-input')||document.activeElement.classList.contains('thon-four-select')))return;
   // Sauvegarde les IDs ouverts
   const openIds=new Set();
   document.querySelectorAll('.day-body.open').forEach(el=>openIds.add(el.id));
@@ -1354,7 +1387,7 @@ function render(){
         <td class="${dc2} vmono" style="font-weight:600" id="thon-sat-total">—</td>
         <td class="${dc2} vmono" style="font-weight:600;color:var(--dsm)" id="thon-sat-kg-calc">—</td>
         <td class="${dc2}" style="padding:4px 6px;"><input type="number" id="thon-sat-kg-input" class="thon-kg-input" data-calc="0" min="0" step="5" placeholder="kg" value="${_thonSatManualVal}" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
-        <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
+        <td class="${dc2}" style="padding:4px 6px;white-space:nowrap;">${thonFournisseurCell(dStr)}</td>
       </tr>`;
 
       // Charge les données semaine suivante depuis Firebase
@@ -1398,7 +1431,7 @@ function render(){
         <td class="${dc2} vmono" style="font-weight:600">${tNext||'—'}</td>
         <td class="${dc2} vmono" style="font-weight:600;color:var(--dsm)">${_thonKgCalcStr}</td>
         <td class="${dc2}" style="padding:4px 6px;"><input type="number" class="thon-kg-input" data-calc="${_thonKgCalcNum||0}" value="${_thonKgManualVal}" min="0" step="5" placeholder="kg" style="width:58px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-weight:600;color:var(--dsm);text-align:center;background:var(--bg);" oninput="updateThonFooter()" onchange="saveThonKg('${dStr}',this.value)"></td>
-        <td class="${dc2}" style="font-size:12px;color:var(--dsm);font-weight:500;">${fournisseurNameById(data[dStr+'__thon_fournisseur'])}</td>
+        <td class="${dc2}" style="padding:4px 6px;white-space:nowrap;">${thonFournisseurCell(dStr)}</td>
       </tr>`;
     }
     thonTbl+=thonTblRow;
