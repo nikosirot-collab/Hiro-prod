@@ -3984,7 +3984,7 @@ function _laboRenderCore(el){
     });
     var saladeRecapSection='';
     saladeOrder.forEach(function(e){
-      saladeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--mgt);min-width:70px;">'+esc(e.name)+' ('+saladeTotals[e.k]+')</div><div style="font-size:12px;color:var(--text);">'+saladeByType[e.k].join(' · ')+'</div></div>';
+      saladeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--text);min-width:70px;">'+esc(e.name)+' ('+saladeTotals[e.k]+')</div><div style="font-size:12px;color:var(--text);">'+saladeByType[e.k].join(' · ')+'</div></div>';
     });
     if(saladeRecapSection){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap salades</div>'+saladeRecapSection+'</div>';
