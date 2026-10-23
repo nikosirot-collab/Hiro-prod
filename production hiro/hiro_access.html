@@ -3810,6 +3810,27 @@ function laboPrint(){
   win.focus();
 }
 
+// Total par type de salade du catalogue, tous magasins confondus (salades libres exclues pour l'instant)
+function laboSaladeTotals(){
+  var tot={},list=[];
+  function add(name,qty){
+    if(!(qty>0)) return;
+    var k=name.trim().toLowerCase();
+    if(!tot[k]){tot[k]={name:name.trim(),total:0};list.push(tot[k]);}
+    tot[k].total+=qty;
+  }
+  LABO_SHOPS.forEach(function(s){
+    var o=laboOrders[s];
+    if(!o) return;
+    var isV=o.status==='validated';
+    LABO_SALADE.forEach(function(p){
+      var raw=o[p.key]!==undefined?o[p.key]:(isV&&o['vqty_'+p.key]!==undefined?o['vqty_'+p.key]:0);
+      add(p.name,parseInt(raw)||0);
+    });
+  });
+  return list;
+}
+
 function laboPrintSalade(){
   var shops=['paita','dsm','mgt','ville','asia'];
   var COLORS={dsm:'#1a5fa8',mgt:'#0d7a52',paita:'#b84a1a',ville:'#5b4bb5',asia:'#c8860a'};
@@ -3841,6 +3862,13 @@ function laboPrintSalade(){
       +'</div>';
   });
 
+  var totalItems=laboSaladeTotals();
+  var totalBand=totalItems.length?'<div style="margin-top:14px;border:2px solid #1a1916;border-radius:6px;padding:8px 12px;page-break-inside:avoid;">'
+    +'<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Total salades</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px 26px;">'
+    +totalItems.map(function(e){return '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:16px;font-weight:500;">'+esc(e.name)+'</span><span style="font-size:26px;font-weight:800;font-family:monospace;">'+e.total+'</span></div>';}).join('')
+    +'</div></div>':'';
+
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8">'
     +'<title>Salade '+dateLabel+'</title>'
     +'<style>@page{size:A4 landscape;margin:10mm}*{box-sizing:border-box;}body{font-family:system-ui,sans-serif;margin:0;padding:0;}@media print{.no-print{display:none!important;}}</style>'
@@ -3853,6 +3881,7 @@ function laboPrintSalade(){
     +'<div style="font-size:14px;color:#666;">Livraison : '+dateLabel+'</div>'
     +'</div>'
     +'<div style="display:flex;gap:0;">'+cols.join('')+'</div>'
+    +totalBand
     +'<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();};};<\/script>'
     +'</body></html>';
   var win=window.open('','_blank');
@@ -3963,28 +3992,10 @@ function _laboRenderCore(el){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap par type</div>'+pokeRecapSection+'</div>';
     }
 
-    // ── Récap Salades classé par type (total + détail par magasin) ──
-    var saladeByType={},saladeTotals={},saladeOrder=[];
-    function _saladeAdd(name,shop,qty){
-      if(!(qty>0)) return;
-      var k=name.trim().toLowerCase();
-      if(!saladeByType[k]){saladeByType[k]=[];saladeTotals[k]=0;saladeOrder.push({k:k,name:name.trim()});}
-      saladeByType[k].push(LABO_LABELS[shop]+' ×'+qty);saladeTotals[k]+=qty;
-    }
-    LABO_SHOPS.forEach(function(s){
-      var o=laboOrders[s];
-      if(!o) return;
-      var isV=o.status==='validated';
-      LABO_SALADE.forEach(function(p){
-        var raw=o[p.key]!==undefined?o[p.key]:(isV&&o['vqty_'+p.key]!==undefined?o['vqty_'+p.key]:0);
-        _saladeAdd(p.name,s,parseInt(raw)||0);
-      });
-      var ls=o.vlibre||o.libre||'';
-      if(ls){try{var lc=JSON.parse(ls);if(lc.salade)lc.salade.forEach(function(i){if(i&&i.name)_saladeAdd(String(i.name),s,parseInt(i.qty)||0);});}catch(e){}}
-    });
+    // ── Récap Salades : total par type ──
     var saladeRecapSection='';
-    saladeOrder.forEach(function(e){
-      saladeRecapSection+='<div style="display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:12px;font-weight:700;color:var(--text);min-width:70px;">'+esc(e.name)+' ('+saladeTotals[e.k]+')</div><div style="font-size:12px;color:var(--text);">'+saladeByType[e.k].join(' · ')+'</div></div>';
+    laboSaladeTotals().forEach(function(e){
+      saladeRecapSection+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);"><div style="font-size:13px;font-weight:600;color:var(--text);">'+esc(e.name)+'</div><div style="font-size:22px;font-weight:800;color:var(--text);font-family:\'DM Mono\',monospace;">'+e.total+'</div></div>';
     });
     if(saladeRecapSection){
       cards+='<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:10px;"><div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Récap salades</div>'+saladeRecapSection+'</div>';
