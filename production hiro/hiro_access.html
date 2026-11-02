@@ -3858,7 +3858,9 @@ function laboSaladeTotals(){
     var isV=o.status==='validated';
     LABO_SALADE.forEach(function(p){
       var raw=o[p.key]!==undefined?o[p.key]:(isV&&o['vqty_'+p.key]!==undefined?o['vqty_'+p.key]:0);
-      add(p.name,parseInt(raw)||0);
+      var nm=p.name;
+      if(p.key==='rouleaux') nm=(s==='ville'||s==='asia')?'Rouleau (Ville/Asia)':'Rouleau Hiro';
+      add(nm,parseInt(raw)||0);
     });
   });
   return list;
