@@ -1241,10 +1241,22 @@ function _widgetFields(dStr){
   const isDim=(dt.getDay()===0);
   const v={}; SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
   const totBacs=SHOPS.reduce((a,s)=>a+(v[s]>0?Math.round(v[s]/250*10)/10:0),0);
-  const marm=totBacs>0?marmitesJour(dStr,isDim,v,totBacs).marmites:0;
-  const rs={}; SHOPS.forEach(s=>{rs[s]=Math.round(rollJour(s,dStr,isDim,v[s]||0));});
+  const marm=totBacs>0?marmitesJour(dStr,isDim,v,totBacs,undefined,false).marmites:0;   // toujours en mode normal (fête off) : valeurs identiques sur tous les appareils
+  const rs={}; SHOPS.forEach(s=>{rs[s]=Math.round(rollJour(s,dStr,isDim,v[s]||0,undefined,false));});
   const rolls=SHOPS.reduce((a,s)=>a+rs[s],0);
   return {marm:Math.round(marm),rolls:rolls,rs:rs};
+}
+// Publie marmites/rolls prévus des jours à venir pour le widget (additif ; n'écrit que si la valeur diffère)
+function _syncWidgetWeek(){
+  let changed=false; const todayDs=ds(TODAY_NC);
+  for(let di=0;di<7;di++){
+    const dStr=ds(dayOf(weekOff,di)); if(dStr<todayDs) continue;
+    if(!SHOPS.some(s=>getVEff(dStr,s)>0) && data[dStr+'__marm_prevu']===undefined) continue;
+    const w=_widgetFields(dStr), want={marm_prevu:w.marm,rolls_prevu:w.rolls};
+    SHOPS.forEach(s=>{want['rolls_prevu_'+s]=w.rs[s];});
+    Object.keys(want).forEach(n=>{const k=dStr+'__'+n; if(data[k]!==want[n]){data[k]=want[n];_markDirty(k);changed=true;}});
+  }
+  return changed;
 }
 function fr1(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',','); }
 // Date dynamique Nouméa GMT+11
@@ -1512,6 +1524,7 @@ function subscribeWeek(){
           });
         }
       }
+      try{ if(_syncWidgetWeek()) filledSomething=true; }catch(e){}
       _setStatus(true);
       if(filledSomething) _scheduleSave(weekDocId());
     }
