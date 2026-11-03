@@ -1100,6 +1100,11 @@ async function _fbSaveAll(docId) {
       else fields[ek]={stringValue:String(v)};
     });
     if(Object.keys(fields).length===0) return;
+    // Widget : marmites et rolls prévus des jours modifiés (champs additifs ; un échec ne bloque jamais la sauvegarde)
+    try{
+      const _wDates=new Set(); keysToSave.forEach(k=>{const m=/^(\d{4}-\d{2}-\d{2})__/.exec(k); if(m) _wDates.add(m[1]);});
+      _wDates.forEach(d=>{const w=_widgetFields(d); fields[d+'--marm_prevu']={integerValue:w.marm}; fields[d+'--rolls_prevu']={integerValue:w.rolls};});
+    }catch(e){}
     fields['init']={stringValue:'true'};
     const mask=Object.keys(fields).map(k=>'updateMask.fieldPaths='+encodeURIComponent('`'+k+'`')).join('&');
     const checkRes=await _fbFetch(`${_API}/${docId}?key=${_KEY}`);
@@ -1229,6 +1234,16 @@ function calcRizJour(dStr,isDim,riz,src,fete){
 function marmitesJour(dStr,isDim,riz,totBacs,src,fete){
   if(dStr<DATE_MARMITE_5KG) return {legacy:true,marmites:calcMarmites(totBacs,isDim),kgCru:calcKgRiz(totBacs,isDim)};
   return calcRizJour(dStr,isDim,riz,src,fete);
+}
+// Chiffres prévus du jour, publiés pour le widget iPhone (champs additifs, jamais relus par Prod)
+function _widgetFields(dStr){
+  const p=dStr.split('-'); const dt=new Date(+p[0],+p[1]-1,+p[2]);
+  const isDim=(dt.getDay()===0);
+  const v={}; SHOPS.forEach(s=>{v[s]=getVEff(dStr,s);});
+  const totBacs=SHOPS.reduce((a,s)=>a+(v[s]>0?Math.round(v[s]/250*10)/10:0),0);
+  const marm=totBacs>0?marmitesJour(dStr,isDim,v,totBacs).marmites:0;
+  const rolls=SHOPS.reduce((a,s)=>a+rollJour(s,dStr,isDim,v[s]||0),0);
+  return {marm:Math.round(marm),rolls:Math.round(rolls)};
 }
 function fr1(x){ return (Math.round(x*10)/10).toFixed(1).replace('.',','); }
 // Date dynamique Nouméa GMT+11
