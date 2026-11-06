@@ -3481,7 +3481,7 @@ function laboRenderFiche(shop,order){
   rightItems.push({key:'pokethon',name:'Poke thon',val:_v('pokethon')});
   rightItems.push({key:'pokesaumon',name:'Poke saumon',val:_v('pokesaumon')});
   if(shop!=='ville') rightItems.push({key:'gyoza',name:'Gyoza',val:_v('gyoza')});
-  if(shop==='dsm') rightItems.push({key:'pouletfrit',name:'Poulet frit',val:_v('pouletfrit')});
+  if(shop==='dsm') rightItems.push({key:'pouletfrit',name:'Poulet frit',val:(function(){var s=isValidated&&order['vqty_pouletfrit']!==undefined?order['vqty_pouletfrit']:order['pouletfrit'];return s!==undefined?s:1;})()});
   if(shop==='dsm'||shop==='mgt'||shop==='paita'){
     var _libreStrPlat=order.vlibre||order.libre||'';
     var _platsFree=[];
