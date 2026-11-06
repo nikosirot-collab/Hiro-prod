@@ -1850,25 +1850,58 @@ async function setRizSemaine(dStr,val){
     _rizData[rollKeyAuto+'__auto']=rollAuto;
   }
   // Sauvegarder dans Firebase avec updateMask pour ne toucher qu'à ce champ
-  try{
-    const msg=document.getElementById('riz-save-msg');
-    const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
-    });
-    if(msg){
-      msg.style.display='block';
-      msg.style.color=res.ok?'#27ae60':'#e74c3c';
-      msg.textContent=res.ok?'✓ Riz sauvegardé':'Erreur de sauvegarde';
-      setTimeout(()=>{msg.style.display='none';},2000);
-    }
-  }catch(e){
-    const msg=document.getElementById('riz-save-msg');
-    if(msg){msg.style.display='block';msg.style.color='#e74c3c';msg.textContent='Erreur réseau';setTimeout(()=>{msg.style.display='none';},2000);}
+  const pKey=docId+'|'+fsKey;
+  const pItem={docId:docId,fsKey:fsKey,v:v,dStr:dStr};
+  let ok=false;
+  try{ ok=await _rizSend(docId,fsKey,v); }catch(e){ ok=false; }
+  if(ok){
+    if(_rizPending[pKey]) delete _rizPending[pKey];
+    _rizShow(true,'✓ Riz sauvegardé',false);
+  } else {
+    // Échec : on garde la saisie en file, message persistant, nouvelles tentatives automatiques
+    _rizPending[pKey]=pItem;
+    _rizShow(false,'⚠ Riz non enregistré ('+fmtRizDate(new Date(dStr+'T00:00:00'))+') — nouvelle tentative…',true);
+    if(!_rizRetryTimer) _rizRetryTimer=setInterval(_rizFlush,15000);
   }
   scheduleFishSyncPrompt(dStr,v,docId);
 }
+// ── Envoi riz avec reprise automatique ──
+var _rizPending={};   // 'docId|fsKey' -> {docId,fsKey,v,dStr}
+var _rizRetryTimer=null;
+var _rizMsgTimer=null;
+async function _rizSend(docId,fsKey,v){
+  const res=await fetch(_API_PROD+'/'+docId+'?updateMask.fieldPaths='+encodeURIComponent('`'+fsKey+'`')+'&key='+_KEY,{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({fields:{[fsKey]:{integerValue:v}}})
+  });
+  return res.ok;
+}
+function _rizShow(ok,text,sticky){
+  const msg=document.getElementById('riz-save-msg');
+  if(!msg) return;
+  if(_rizMsgTimer){clearTimeout(_rizMsgTimer);_rizMsgTimer=null;}
+  msg.style.display='block';
+  msg.style.color=ok?'#27ae60':'#e74c3c';
+  msg.textContent=text;
+  if(!sticky) _rizMsgTimer=setTimeout(()=>{msg.style.display='none';},2000);
+}
+var _rizFlushing=false;
+async function _rizFlush(){
+  if(_rizFlushing) return;
+  _rizFlushing=true;
+  try{
+    for(const k of Object.keys(_rizPending)){
+      const p=_rizPending[k];
+      try{ if(await _rizSend(p.docId,p.fsKey,p.v)){ if(_rizPending[k]===p) delete _rizPending[k]; } }catch(e){}
+    }
+    if(!Object.keys(_rizPending).length){
+      if(_rizRetryTimer){clearInterval(_rizRetryTimer);_rizRetryTimer=null;}
+      _rizShow(true,'✓ Riz sauvegardé',false);
+    }
+  } finally { _rizFlushing=false; }
+}
+window.addEventListener('online',function(){ if(Object.keys(_rizPending).length) _rizFlush(); });
 </script>
 
 <datalist id="chr-catalog-list"></datalist>
