@@ -671,16 +671,16 @@ async function loadExistingOrder(){
 loadRiz();
 loadExistingOrder();
 
-// Pré-remplir brochettes à 20 les lundi, mercredi, vendredi si pas de commande
+// Pré-remplir brochettes à 30 les lundi, mercredi, vendredi si pas de commande
 (function(){
   var dow=getTomorrow().getDay(); // 1=lun, 3=mer, 5=ven
   if(dow===1||dow===3||dow===5){
     setTimeout(function(){
       // Seulement si pas déjà de valeur (pas de commande existante)
       if(!qty['brochettes']||qty['brochettes']===0){
-        qty['brochettes']=20;
+        qty['brochettes']=30;
         var el=document.getElementById('q-brochettes');
-        if(el){el.value=20;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}
+        if(el){el.value=30;el.classList.add('active');el.style.color=ACCENT;el.style.borderColor=ACCENT;}
         updateCount();
       }
     },800); // laisser loadExistingOrder se terminer d'abord
