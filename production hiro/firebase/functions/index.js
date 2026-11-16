@@ -4,7 +4,7 @@ const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const webpush = require('web-push');
-const { changePassword, MAX_FAILS, WINDOW_MS } = require('./lib');
+const { changePassword, verifyAuth, MAX_FAILS, WINDOW_MS } = require('./lib');
 const { registerPush, sendTest } = require('./push');
 
 initializeApp();
@@ -19,10 +19,10 @@ const VAPID_SUBJECT = 'mailto:niko.sirot@gmail.com';
 const limiter = (path) => {
   const ref = db.doc(path);
   return {
-    checkLimit: async (now) => {
+    checkLimit: async (now, max = MAX_FAILS) => {
       const s = await ref.get();
       const fails = ((s.exists && s.data().fails) || []).filter((t) => now - t < WINDOW_MS);
-      if (fails.length >= MAX_FAILS) return { blocked: true, retryInSec: Math.ceil((WINDOW_MS - (now - fails[0])) / 1000) };
+      if (fails.length >= max) return { blocked: true, retryInSec: Math.ceil((WINDOW_MS - (now - fails[0])) / 1000) };
       return { blocked: false };
     },
     recordFail: async (now) => {
@@ -52,7 +52,7 @@ const handle = (fn) => async (req, res) => {
   const origin = req.get('origin');
   if (origin && origin !== ALLOWED_ORIGIN) return res.status(403).json({ ok: false, error: 'origine non autorisée' });
   try {
-    const r = await fn(req.body);
+    const r = await fn(req.body, req);
     return res.status(r.status).json(r.body);
   } catch (e) {
     console.error('erreur', e);
@@ -63,6 +63,16 @@ const opts = { region: 'australia-southeast1', cors: [ALLOWED_ORIGIN], maxInstan
 
 exports.changePassword = onRequest(opts, handle((body) =>
   changePassword(body, { ...baseDeps, ...limiter('hiro-auth-limits/change-password') })));
+
+// Vérification d'accès : le navigateur n'a plus besoin de lire les hash de mots de passe.
+// Compteur d'essais par cible ET par IP (une IP qui se trompe ne bloque pas les autres réseaux).
+// La cible vient du navigateur : on ne l'utilise dans le chemin Firestore que si elle est connue
+// (sinon un « / » ou un texte libre fabriquerait un chemin de document arbitraire).
+const ipKey = (req, target) => 'verify-' + (['staff', 'order', 'home'].includes(target) ? target : 'invalide') + '-' +
+  require('crypto').createHash('sha256').update(String((req && req.ip) || 'inconnue')).digest('hex').slice(0, 16);
+
+exports.verifyAuth = onRequest(opts, handle((body, req) =>
+  verifyAuth(body, { ...baseDeps, ...limiter('hiro-auth-limits/' + ipKey(req, body && body.target)) })));
 
 // Abonnements aux notifications : collection privée (aucune règle navigateur => refusée)
 const subs = db.collection('hiro-push');

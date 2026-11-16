@@ -58,4 +58,45 @@ async function changePassword(body, deps) {
   return { status: 200, body: { ok: true } };
 }
 
-module.exports = { changePassword, sha256, TARGETS, STAFF_DOC, MAX_FAILS, WINDOW_MS };
+// ── Vérification d'accès (le hash n'est plus lisible depuis le navigateur) ──
+const VERIFY_TARGETS = { staff: STAFF_DOC, order: TARGETS.order, home: TARGETS.home };
+const MAX_FAILS_PW = 10;     // essais ratés par tranche : saisie du mot de passe
+const MAX_FAILS_HASH = 15;   // essais ratés par tranche : hash d'un appareil déjà connecté
+const isHex64 = (s) => typeof s === 'string' && /^[0-9a-f]{64}$/.test(s);
+
+/**
+ * body : { target: 'staff'|'order'|'home', password } ou { target, hash }
+ * Réponses : 200 { ok:true } | 200 { ok:false } | 200 { ok:false, missing:true }
+ *            400 entrée invalide | 429 trop d'essais.  Ne renvoie JAMAIS le hash.
+ * deps.checkLimit(now, max) : le second argument est le nombre d'échecs toléré.
+ */
+async function verifyAuth(body, deps) {
+  const target = body && body.target;
+  if (!Object.prototype.hasOwnProperty.call(VERIFY_TARGETS, target))
+    return { status: 400, body: { ok: false, error: 'cible invalide' } };
+
+  const pw = body.password, h = body.hash;
+  const byPw = typeof pw === 'string' && pw.length > 0 && pw.length <= 200;
+  const byHash = !byPw && isHex64(h);
+  if (!byPw && !byHash)
+    return { status: 400, body: { ok: false, error: 'mot de passe ou hash manquant' } };
+
+  const now = deps.now();
+  const lim = await deps.checkLimit(now, byPw ? MAX_FAILS_PW : MAX_FAILS_HASH);
+  if (lim.blocked)
+    return { status: 429, body: { ok: false, error: 'trop d\'essais, réessayez dans quelques minutes', retryInSec: lim.retryInSec } };
+
+  const stored = await deps.getHash(VERIFY_TARGETS[target]);
+  if (!stored) return { status: 200, body: { ok: false, missing: true } };
+
+  // Même calcul que les pages : SHA-256 du texte saisi, SANS rognage
+  const candidate = byPw ? sha256(pw) : h;
+  if (!safeEqual(candidate, stored)) {
+    await deps.recordFail(now);
+    return { status: 200, body: { ok: false } };
+  }
+  if (byPw) await deps.recordSuccess(now);   // pas d'écriture Firestore à chaque ouverture de page
+  return { status: 200, body: { ok: true } };
+}
+
+module.exports = { changePassword, verifyAuth, sha256, TARGETS, STAFF_DOC, MAX_FAILS, MAX_FAILS_PW, MAX_FAILS_HASH, WINDOW_MS };
