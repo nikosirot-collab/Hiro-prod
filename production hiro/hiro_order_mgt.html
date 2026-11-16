@@ -158,12 +158,24 @@ th{font-size:11px;font-weight:500;color:var(--text-muted);background:#faf9f6;pad
   </div>
 <script>
 async function _sha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-async function _getOrderHash(){try{var res=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/order-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');if(res.ok){var j=await res.json();if(j.fields&&j.fields.hash)return j.fields.hash.stringValue;}}catch(e){}return null;}
+const _VERIFY_URL='https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/verifyAuth';
+async function _verifyAuth(target,payload){
+  try{
+    var res=await fetch(_VERIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({target:target},payload))});
+    if(res.status===429) return {limited:true};
+    if(!res.ok) return {error:true};
+    return await res.json();
+  }catch(e){return {error:true};}
+}
 async function checkOrderPwd(){
   var v=document.getElementById('pwd-input').value;
-  var hash=await _getOrderHash();
-  if(!hash){document.getElementById('pwd-error').style.display='block';return;}
-  if(await _sha256(v)!==hash){document.getElementById('pwd-error').style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+  var _pe=document.getElementById('pwd-error');
+  var _r=v?await _verifyAuth('order',{password:v}):{ok:false};
+  if(_r.limited){_pe.textContent='Trop d\'essais, réessayez dans quelques minutes';_pe.style.display='block';return;}
+  if(_r.error){_pe.textContent='Erreur de connexion, réessayez';_pe.style.display='block';return;}
+  if(_r.missing){_pe.textContent="Configuration manquante, contactez l'administrateur";_pe.style.display='block';return;}
+  if(!_r.ok){_pe.textContent='Mot de passe incorrect';_pe.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+  var hash=await _sha256(v);
   var _PA='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';
   var _PK='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
   var _devId=localStorage.getItem('hiro-dev-id-mgt');
@@ -181,9 +193,9 @@ function _showPendingScreen(hash,devId,pa,pk){
   document.getElementById('login-screen').innerHTML="<div style='text-align:center;padding:40px 24px;'><div style='font-size:40px;margin-bottom:16px;'>⏳</div><div style='color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;'>En attente d'approbation</div><div style='color:#888;font-size:13px;'>Un administrateur doit valider votre accès</div></div>";
   var _poll=setInterval(async function(){try{var r=await fetch(pa+'/'+devId+'?key='+pk);if(r.ok){var j=await r.json();if(j.fields&&j.fields.pendingApproval&&j.fields.pendingApproval.booleanValue===false){clearInterval(_poll);window._pendingApproval=false;if(j.fields.rejected&&j.fields.rejected.booleanValue===true){document.getElementById('login-screen').innerHTML="<div style='text-align:center;padding:40px 24px;'><div style='font-size:40px;margin-bottom:16px;'>🚫</div><div style='color:#fff;font-size:16px;font-weight:600;margin-bottom:8px;'>Accès refusé</div><div style='color:#888;font-size:13px;'>Contactez l'administrateur</div></div>";return;}localStorage.setItem('hiro-order-hash-mgt',hash);location.reload();}}}catch(e){}},5000);
 }
-(async function(){var stored=localStorage.getItem('hiro-order-hash-mgt');if(!stored)return;var hash=await _getOrderHash();if(!hash||stored!==hash)return;var _devId=localStorage.getItem('hiro-dev-id-mgt');if(!_devId){localStorage.removeItem('hiro-order-hash-mgt');return;}var _PA='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';var _PK='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';try{var chk=await fetch(_PA+'/'+_devId+'?key='+_PK);if(chk.ok){var chkJ=await chk.json();if(chkJ.fields&&chkJ.fields.disabled&&chkJ.fields.disabled.booleanValue===true){localStorage.removeItem('hiro-order-hash-mgt');return;}document.getElementById('login-screen').style.display='none';return;}localStorage.removeItem('hiro-order-hash-mgt');}catch(e){localStorage.removeItem('hiro-order-hash-mgt');}})();
+(async function(){var stored=localStorage.getItem('hiro-order-hash-mgt');if(!stored)return;var _r=await _verifyAuth('order',{hash:stored});if(!_r.ok)return;var _devId=localStorage.getItem('hiro-dev-id-mgt');if(!_devId){localStorage.removeItem('hiro-order-hash-mgt');return;}var _PA='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-presence';var _PK='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';try{var chk=await fetch(_PA+'/'+_devId+'?key='+_PK);if(chk.ok){var chkJ=await chk.json();if(chkJ.fields&&chkJ.fields.disabled&&chkJ.fields.disabled.booleanValue===true){localStorage.removeItem('hiro-order-hash-mgt');return;}document.getElementById('login-screen').style.display='none';return;}localStorage.removeItem('hiro-order-hash-mgt');}catch(e){localStorage.removeItem('hiro-order-hash-mgt');}})();
 // Déverrouillage partagé depuis hiro_home — n'interfère pas avec le mécanisme ci-dessus
-(async function(){var homeHash=localStorage.getItem('hiro-home-hash');if(!homeHash)return;try{var r=await fetch('https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/home-password?key=AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE');if(!r.ok)return;var j=await r.json();if(j.fields&&j.fields.hash&&j.fields.hash.stringValue===homeHash){document.getElementById('login-screen').style.display='none';}}catch(e){}})();
+(async function(){var homeHash=localStorage.getItem('hiro-home-hash');if(!homeHash)return;var r=await _verifyAuth('home',{hash:homeHash});if(r.ok)document.getElementById('login-screen').style.display='none';})();
 </script>
 
 <script>
