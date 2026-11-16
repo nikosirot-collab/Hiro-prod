@@ -147,37 +147,31 @@ body.dark .hdr{background:#1a1a1a;}
 </div>
 <script>
 async function _staffSha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-const _STAFF_CFG='https://firestore.googleapis.com/v1/projects/hiro-sushi-nc/databases/(default)/documents/hiro-config/staff-password';
-const _STAFF_KEY='AIzaSyAeGNmrF96_64HYYQom7xsGM09BjNeI6EE';
-async function _fetchStaffHash(){
+const _VERIFY_URL='https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/verifyAuth';
+async function _verifyAuth(target,payload){
   try{
-    var res=await fetch(_STAFF_CFG+'?key='+_STAFF_KEY);
-    if(res.status===404) return {exists:false};
+    var res=await fetch(_VERIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({target:target},payload))});
+    if(res.status===429) return {limited:true};
     if(!res.ok) return {error:true};
-    var j=await res.json();
-    if(j.fields&&j.fields.hash) return {exists:true,hash:j.fields.hash.stringValue};
-    return {exists:false};
+    return await res.json();
   }catch(e){return {error:true};}
 }
 async function checkPwd(){
   var v=document.getElementById('pwd-input').value;
   var err=document.getElementById('pwd-error');
-  var r=await _fetchStaffHash();
+  var r=v?await _verifyAuth('staff',{password:v}):{ok:false};
+  if(r.limited){err.textContent='Trop d\'essais, réessayez dans quelques minutes';err.style.display='block';return;}
   if(r.error){err.textContent='Erreur de connexion, réessayez';err.style.display='block';return;}
-  if(r.exists){
-    var vHash=await _staffSha256(v);
-    if(vHash!==r.hash){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
-    localStorage.setItem('hiro-staff-hash',r.hash);
-    document.getElementById('login-screen').style.display='none';
-    return;
-  }
-  err.textContent="Configuration manquante, contactez l'administrateur";err.style.display='block';
+  if(r.missing){err.textContent="Configuration manquante, contactez l'administrateur";err.style.display='block';return;}
+  if(!r.ok){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+  localStorage.setItem('hiro-staff-hash',await _staffSha256(v));
+  document.getElementById('login-screen').style.display='none';
 }
 (async function(){
   var stored=localStorage.getItem('hiro-staff-hash');
   if(!stored) return;
-  var r=await _fetchStaffHash();
-  if(r.exists && stored===r.hash) document.getElementById('login-screen').style.display='none';
+  var r=await _verifyAuth('staff',{hash:stored});
+  if(r.ok) document.getElementById('login-screen').style.display='none';
 })();
 </script>
 
