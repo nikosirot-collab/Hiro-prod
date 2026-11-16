@@ -300,20 +300,33 @@ body.dark .td-week-total { background: #252525 !important; }
   </div>
 </div>
 <script>
-function _h(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)+s.charCodeAt(i)|0;return(h>>>0).toString(16);}
-const _PWD='1af5a601';
-function checkPwd(){
-  const v=document.getElementById('pwd-input').value;
-  if(_h(v)===_PWD){
-    localStorage.setItem('hiro-ok','1');
-    document.getElementById('login-screen').style.display='none';
-  } else {
-    document.getElementById('pwd-error').style.display='block';
-    document.getElementById('pwd-input').value='';
-    document.getElementById('pwd-input').focus();
-  }
+async function _staffSha256(s){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+const _VERIFY_URL='https://australia-southeast1-hiro-sushi-nc.cloudfunctions.net/verifyAuth';
+async function _verifyAuth(target,payload){
+  try{
+    var res=await fetch(_VERIFY_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({target:target},payload))});
+    if(res.status===429) return {limited:true};
+    if(!res.ok) return {error:true};
+    return await res.json();
+  }catch(e){return {error:true};}
 }
-if(localStorage.getItem('hiro-ok')==='1') document.getElementById('login-screen').style.display='none';
+async function checkPwd(){
+  var v=document.getElementById('pwd-input').value;
+  var err=document.getElementById('pwd-error');
+  var r=v?await _verifyAuth('staff',{password:v}):{ok:false};
+  if(r.limited){err.textContent='Trop d\'essais, réessayez dans quelques minutes';err.style.display='block';return;}
+  if(r.error){err.textContent='Erreur de connexion, réessayez';err.style.display='block';return;}
+  if(r.missing){err.textContent="Configuration manquante, contactez l'administrateur";err.style.display='block';return;}
+  if(!r.ok){err.textContent='Mot de passe incorrect';err.style.display='block';document.getElementById('pwd-input').value='';document.getElementById('pwd-input').focus();return;}
+  localStorage.setItem('hiro-staff-hash',await _staffSha256(v));
+  document.getElementById('login-screen').style.display='none';
+}
+(async function(){
+  var stored=localStorage.getItem('hiro-staff-hash');
+  if(!stored) return;
+  var r=await _verifyAuth('staff',{hash:stored});
+  if(r.ok) document.getElementById('login-screen').style.display='none';
+})();
 </script>
 
 <!-- APP -->
